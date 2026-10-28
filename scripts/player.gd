@@ -63,7 +63,8 @@ var downed := false:
 		if is_node_ready():
 			_apply_downed()
 
-## Stabled pets as data ({species, level, xp}). Authoritative on the server and
+## The stable's hay beds: MAX_STABLE entries, each a pet as data
+## ({species, level, xp}) or {} for an empty bed. Authoritative on the server and
 ## mirrored to the owning client only.
 var stable: Array[Dictionary] = []
 
@@ -106,6 +107,8 @@ func _enter_tree() -> void:
 
 func _ready() -> void:
 	add_to_group("players")
+	for i in MAX_STABLE:
+		stable.append({})
 	_material.albedo_color = color
 	$Model/Body.material_override = _material
 	name_label.text = display_name
@@ -230,8 +233,40 @@ func party_is_full() -> bool:
 	return world.get_pets(peer_id).size() >= MAX_PARTY
 
 
+func stable_count() -> int:
+	return stable.filter(func(bed: Dictionary) -> bool: return not bed.is_empty()).size()
+
+
 func stable_is_full() -> bool:
-	return stable.size() >= MAX_STABLE
+	return stable_count() >= MAX_STABLE
+
+
+func _first_empty_bed() -> int:
+	for i in stable.size():
+		if stable[i].is_empty():
+			return i
+	return -1
+
+
+func _valid_place(kind: String, index: int) -> bool:
+	if kind == "party":
+		return index >= 0 and index < MAX_PARTY
+	return kind == "bed" and index >= 0 and index < stable.size()
+
+
+## Server: the pet in `bed` joins the party in `slot`; whoever was in that slot
+## takes its place in the bed.
+func _bed_to_party(bed: int, slot: int) -> void:
+	var data := stable[bed]
+	if data.is_empty():
+		return
+	var current := world.get_party_pet(peer_id, slot)
+	if current:
+		stable[bed] = current.to_data()
+		current.queue_free()
+	else:
+		stable[bed] = {}
+	world.spawn_pet(peer_id, data, global_position, slot)
 
 
 # --- Requests (client -> server) -------------------------------------------------
@@ -337,11 +372,11 @@ func request_capture(creature_name: String) -> void:
 		return
 	world.announce.rpc("%s captured a %s!" % [display_name, c.species.display_name], color.lightened(0.3))
 	if party_is_full():
-		stable.append(c.to_data())
+		stable[_first_empty_bed()] = c.to_data()
 		c.queue_free()
 		_push_stable()
 		world.tell(peer_id, "Your party is full, so the %s was sent to the stable (%d/%d)." \
-				% [c.species.display_name, stable.size(), MAX_STABLE], Color(0.6, 0.85, 1.0))
+				% [c.species.display_name, stable_count(), MAX_STABLE], Color(0.6, 0.85, 1.0))
 	else:
 		c.tame(peer_id, world.free_party_slot(peer_id))
 
@@ -396,49 +431,61 @@ func request_ability(slot: int, point: Vector3, target_name: String) -> void:
 		world.tell(peer_id, error, Color(1, 0.8, 0.5))
 
 
+## Drag and drop in the stable window. `kind` is "party" (index = party slot)
+## or "bed" (index = hay bed). Covers every combination:
+## bed -> party: take the pet out (swapping with the pet in that slot, if any);
+## party -> bed: put the pet to bed (swapping with the pet in that bed, if any);
+## bed -> bed / party -> party: swap the two places.
 @rpc("any_peer", "call_local", "reliable")
-func request_stable_store(slot: int) -> void:
-	if not _can_use_stable():
+func request_stable_move(from_kind: String, from_index: int, to_kind: String, to_index: int) -> void:
+	if not _can_use_stable() or not _valid_place(from_kind, from_index) or not _valid_place(to_kind, to_index):
 		return
-	var pet := world.get_party_pet(peer_id, slot)
-	if pet == null or stable_is_full():
+	if from_kind == to_kind and from_index == to_index:
 		return
-	stable.append(pet.to_data())
-	pet.queue_free()
-	_push_stable()
-
-
-## Takes stable entry `index` into the party. If `swap_slot` >= 0, the pet in
-## that party slot goes into the stable in its place.
-@rpc("any_peer", "call_local", "reliable")
-func request_stable_take(index: int, swap_slot: int) -> void:
-	if not _can_use_stable() or index < 0 or index >= stable.size():
-		return
-	var data := stable[index]
-	var slot := world.free_party_slot(peer_id)
-	if swap_slot >= 0:
-		var swapped := world.get_party_pet(peer_id, swap_slot)
-		if swapped == null:
-			return
-		stable[index] = swapped.to_data()
-		swapped.queue_free()
-		slot = swap_slot
-	elif slot >= 0:
-		stable.remove_at(index)
+	if from_kind == "party" and to_kind == "party":
+		var a := world.get_party_pet(peer_id, from_index)
+		var b := world.get_party_pet(peer_id, to_index)
+		if a:
+			a.party_slot = to_index
+		if b:
+			b.party_slot = from_index
+	elif from_kind == "bed" and to_kind == "bed":
+		var moved := stable[from_index]
+		stable[from_index] = stable[to_index]
+		stable[to_index] = moved
+	elif from_kind == "bed":
+		_bed_to_party(from_index, to_index)
 	else:
-		return  # party full and no swap chosen
-	world.spawn_pet(peer_id, data, global_position, slot)
+		var pet := world.get_party_pet(peer_id, from_index)
+		if pet == null:
+			return
+		if stable[to_index].is_empty():
+			stable[to_index] = pet.to_data()
+			pet.queue_free()
+		else:
+			_bed_to_party(to_index, from_index)
 	_push_stable()
 
 
+## Releases the pet in a bed or party slot back into the wild.
 @rpc("any_peer", "call_local", "reliable")
-func request_stable_release(index: int) -> void:
-	if not _can_use_stable() or index < 0 or index >= stable.size():
+func request_stable_release(kind: String, index: int) -> void:
+	if not _can_use_stable() or not _valid_place(kind, index):
 		return
-	var released: Dictionary = stable.pop_at(index)
+	var species_index := -1
+	if kind == "bed" and not stable[index].is_empty():
+		species_index = stable[index].species
+		stable[index] = {}
+	elif kind == "party":
+		var pet := world.get_party_pet(peer_id, index)
+		if pet:
+			species_index = pet.species_index
+			pet.queue_free()
+	if species_index < 0:
+		return
 	_push_stable()
-	world.tell(peer_id, "You released your %s back into the wild." \
-			% SpeciesDB.get_species(released.species).display_name, Color(0.8, 0.8, 0.8))
+	world.tell(peer_id, "You released your %s back into the wild." % SpeciesDB.get_species(species_index).display_name,
+			Color(0.8, 0.8, 0.8))
 
 
 # --- Server-side -----------------------------------------------------------------

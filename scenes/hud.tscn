@@ -1,6 +1,7 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/hud.gd" id="1_hud"]
+[ext_resource type="Script" path="res://scripts/pet_slot.gd" id="2_pet_slot"]
 
 [sub_resource type="Theme" id="hud_theme"]
 Label/colors/font_outline_color = Color(0, 0, 0, 0.85)
@@ -204,10 +205,10 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -480.0
-offset_top = -260.0
-offset_right = 480.0
-offset_bottom = 260.0
+offset_left = -390.0
+offset_top = -300.0
+offset_right = 390.0
+offset_bottom = 300.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("panel_style")
@@ -215,24 +216,24 @@ theme_override_styles/panel = SubResource("panel_style")
 [node name="Margin" type="MarginContainer" parent="StablePanel"]
 layout_mode = 2
 theme_override_constants/margin_left = 20
-theme_override_constants/margin_top = 16
+theme_override_constants/margin_top = 14
 theme_override_constants/margin_right = 20
-theme_override_constants/margin_bottom = 16
+theme_override_constants/margin_bottom = 14
 
 [node name="VBox" type="VBoxContainer" parent="StablePanel/Margin"]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 10
 
 [node name="Title" type="Label" parent="StablePanel/Margin/VBox"]
 layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.55, 1)
 theme_override_font_sizes/font_size = 26
 text = "Stable"
 horizontal_alignment = 1
 
 [node name="Columns" type="HBoxContainer" parent="StablePanel/Margin/VBox"]
 layout_mode = 2
-size_flags_vertical = 3
-theme_override_constants/separation = 30
+theme_override_constants/separation = 26
 
 [node name="PartyColumn" type="VBoxContainer" parent="StablePanel/Margin/VBox/Columns"]
 layout_mode = 2
@@ -241,37 +242,54 @@ layout_mode = 2
 layout_mode = 2
 theme_override_font_sizes/font_size = 18
 text = "Party"
+horizontal_alignment = 1
 
-[node name="StablePartyList" type="VBoxContainer" parent="StablePanel/Margin/VBox/Columns/PartyColumn"]
+[node name="PartySlots" type="VBoxContainer" parent="StablePanel/Margin/VBox/Columns/PartyColumn"]
 unique_name_in_owner = true
 layout_mode = 2
+theme_override_constants/separation = 10
 
-[node name="StableColumn" type="VBoxContainer" parent="StablePanel/Margin/VBox/Columns"]
+[node name="BedsColumn" type="VBoxContainer" parent="StablePanel/Margin/VBox/Columns"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="StableTitle" type="Label" parent="StablePanel/Margin/VBox/Columns/StableColumn"]
+[node name="StableTitle" type="Label" parent="StablePanel/Margin/VBox/Columns/BedsColumn"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 18
-text = "Stable  0 / 12"
+text = "Hay beds  0 / 12"
+horizontal_alignment = 1
 
-[node name="Scroll" type="ScrollContainer" parent="StablePanel/Margin/VBox/Columns/StableColumn"]
-layout_mode = 2
-size_flags_vertical = 3
-horizontal_scroll_mode = 0
-
-[node name="StableList" type="VBoxContainer" parent="StablePanel/Margin/VBox/Columns/StableColumn/Scroll"]
+[node name="BedGrid" type="GridContainer" parent="StablePanel/Margin/VBox/Columns/BedsColumn"]
 unique_name_in_owner = true
 layout_mode = 2
-size_flags_horizontal = 3
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
+columns = 4
 
-[node name="Hint" type="Label" parent="StablePanel/Margin/VBox"]
+[node name="Bottom" type="HBoxContainer" parent="StablePanel/Margin/VBox"]
 layout_mode = 2
-modulate = Color(1, 1, 1, 0.65)
-text = "Stabled pets are fully healed.  To swap when your party is full, select a party pet, then a stable pet.  [F] close"
-horizontal_alignment = 1
+theme_override_constants/separation = 16
+
+[node name="ReleaseGate" type="Control" parent="StablePanel/Margin/VBox/Bottom"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 70)
+layout_mode = 2
+script = ExtResource("2_pet_slot")
+kind = "release"
+
+[node name="Hint" type="Label" parent="StablePanel/Margin/VBox/Bottom"]
+layout_mode = 2
+size_flags_horizontal = 3
+modulate = Color(1, 1, 1, 0.7)
+text = "Drag pets between the hay beds and your party. Drop one on another to swap them. Pets in the stable are fully healed.  [F] close"
 autowrap_mode = 3
+
+[node name="ReleaseDialog" type="ConfirmationDialog" parent="."]
+unique_name_in_owner = true
+title = "Release pet?"
+ok_button_text = "Release"
+dialog_text = "Release this pet back into the wild?"
 
 [node name="ShopPanel" type="PanelContainer" parent="."]
 unique_name_in_owner = true

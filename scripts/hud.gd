@@ -8,10 +8,10 @@ const MAX_MESSAGES := 6
 var _player: Player
 var _party_refresh := 0.0
 var _stable_party_signature := ""
-## Party slot chosen for a swap in the stable window (-1 = none).
-var _selected_slot := -1
-## Stable index waiting for a second click to confirm release (-1 = none).
-var _confirm_release := -1
+var _party_slots: Array[PetSlot] = []
+var _bed_slots: Array[PetSlot] = []
+## The slot whose pet is waiting for the release confirmation.
+var _pending_release: PetSlot
 
 @onready var name_label: Label = %NameLabel
 @onready var health_bar: ProgressBar = %HealthBar
@@ -23,9 +23,11 @@ var _confirm_release := -1
 @onready var messages: VBoxContainer = %Messages
 @onready var downed_label: Label = %DownedLabel
 @onready var stable_panel: Control = %StablePanel
-@onready var stable_party_list: VBoxContainer = %StablePartyList
+@onready var party_slots_box: VBoxContainer = %PartySlots
+@onready var bed_grid: GridContainer = %BedGrid
 @onready var stable_title: Label = %StableTitle
-@onready var stable_list: VBoxContainer = %StableList
+@onready var release_gate: PetSlot = %ReleaseGate
+@onready var release_dialog: ConfirmationDialog = %ReleaseDialog
 @onready var coins_label: Label = %CoinsLabel
 @onready var stance_button: Button = %StanceButton
 @onready var shop_panel: Control = %ShopPanel
@@ -38,6 +40,7 @@ var _confirm_release := -1
 
 
 func _ready() -> void:
+	_build_stable_slots()
 	buy_button.pressed.connect(func() -> void: _player.request_buy_potion.rpc_id(1))
 	boost_button.pressed.connect(func() -> void: _player.request_buy_boost.rpc_id(1))
 	stance_button.pressed.connect(func() -> void: _player.request_toggle_stance.rpc_id(1))
@@ -75,7 +78,7 @@ func _process(delta: float) -> void:
 		_party_refresh = 0.2
 		_rebuild_party()
 		if is_stable_open() and _party_signature() != _stable_party_signature:
-			_rebuild_stable()
+			_refresh_stable()
 
 
 func show_message(text: String, color: Color) -> void:
@@ -139,100 +142,74 @@ func is_stable_open() -> bool:
 
 
 func open_stable() -> void:
-	_selected_slot = -1
-	_confirm_release = -1
 	stable_panel.show()
-	_rebuild_stable()
+	_refresh_stable()
 
 
 func close_stable() -> void:
 	stable_panel.hide()
+	release_dialog.hide()
 
 
 func _on_stable_changed() -> void:
-	_confirm_release = -1
 	if is_stable_open():
-		_rebuild_stable()
+		_refresh_stable()
 
 
-func _rebuild_stable() -> void:
+func _build_stable_slots() -> void:
+	for slot in Player.MAX_PARTY:
+		var party_slot := _new_slot("party", slot, Vector2(170, 120))
+		party_slots_box.add_child(party_slot)
+		_party_slots.append(party_slot)
+	for bed in Player.MAX_STABLE:
+		var bed_slot := _new_slot("bed", bed, Vector2(118, 104))
+		bed_grid.add_child(bed_slot)
+		_bed_slots.append(bed_slot)
+	release_gate.dropped.connect(_on_slot_dropped)
+	release_dialog.confirmed.connect(func() -> void:
+		if _pending_release and not _pending_release.pet.is_empty():
+			_player.request_stable_release.rpc_id(1, _pending_release.kind, _pending_release.index)
+		_pending_release = null)
+
+
+func _new_slot(kind: String, index: int, min_size: Vector2) -> PetSlot:
+	var slot := PetSlot.new()
+	slot.kind = kind
+	slot.index = index
+	slot.custom_minimum_size = min_size
+	slot.dropped.connect(_on_slot_dropped)
+	return slot
+
+
+## Shows the current party and beds in the slots.
+func _refresh_stable() -> void:
 	_stable_party_signature = _party_signature()
-	for child in stable_party_list.get_children() + stable_list.get_children():
-		child.queue_free()
-	var party_full := _player.party_is_full()
-	if _player.world.get_party_pet(_player.peer_id, _selected_slot) == null:
-		_selected_slot = -1
-
 	for slot in Player.MAX_PARTY:
 		var pet := _player.world.get_party_pet(_player.peer_id, slot)
-		var row := HBoxContainer.new()
-		var select := Button.new()
-		select.toggle_mode = true
-		select.custom_minimum_size = Vector2(230, 0)
-		select.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		select.text = "[%d]  %s" % [slot + 1, _pet_text(pet.species_index, pet.level) if pet else "(empty)"]
-		select.disabled = pet == null
-		select.button_pressed = slot == _selected_slot
-		select.tooltip_text = "Select, then pick a stable pet to swap with."
-		select.toggled.connect(func(on: bool) -> void:
-			_selected_slot = slot if on else -1
-			_rebuild_stable())
-		row.add_child(select)
-		var store := Button.new()
-		store.text = "Store"
-		store.disabled = pet == null or _player.stable_is_full()
-		store.pressed.connect(func() -> void: _player.request_stable_store.rpc_id(1, slot))
-		row.add_child(store)
-		stable_party_list.add_child(row)
+		_party_slots[slot].pet = {"species": pet.species_index, "level": pet.level, "fainted": pet.fainted} if pet else {}
+	for bed in Player.MAX_STABLE:
+		var data: Dictionary = _player.stable[bed] if bed < _player.stable.size() else {}
+		_bed_slots[bed].pet = {"species": data.species, "level": data.level} if not data.is_empty() else {}
+	stable_title.text = "Hay beds  %d / %d" % [_player.stable_count(), Player.MAX_STABLE]
 
-	stable_title.text = "Stable  %d / %d" % [_player.stable.size(), Player.MAX_STABLE]
-	if _player.stable.is_empty():
-		var empty := Label.new()
-		empty.text = "No pets stored yet.\nPets you capture with a full party come here."
-		empty.modulate = Color(1, 1, 1, 0.6)
-		stable_list.add_child(empty)
-	for i in _player.stable.size():
-		var data: Dictionary = _player.stable[i]
-		var row := HBoxContainer.new()
-		var label := Label.new()
-		label.text = _pet_text(data.species, data.level)
-		label.modulate = SpeciesDB.get_species(data.species).color.lightened(0.35)
-		label.custom_minimum_size = Vector2(270, 0)
-		row.add_child(label)
-		var take := Button.new()
-		if not party_full:
-			take.text = "Take"
-		elif _selected_slot >= 0:
-			take.text = "Swap with [%d]" % (_selected_slot + 1)
-		else:
-			take.text = "Take"
-			take.disabled = true
-			take.tooltip_text = "Party is full: select a party pet to swap with."
-		take.pressed.connect(func() -> void:
-			_player.request_stable_take.rpc_id(1, i, _selected_slot if party_full else -1)
-			_selected_slot = -1)
-		row.add_child(take)
-		var release := Button.new()
-		release.text = "Confirm?" if _confirm_release == i else "Release"
-		release.pressed.connect(func() -> void:
-			if _confirm_release == i:
-				_player.request_stable_release.rpc_id(1, i)
-			else:
-				_confirm_release = i
-				_rebuild_stable())
-		row.add_child(release)
-		stable_list.add_child(row)
+
+## A pet was dragged from `from` and dropped on `to`.
+func _on_slot_dropped(from: PetSlot, to: PetSlot) -> void:
+	if from.pet.is_empty():
+		return
+	if to.kind == "release":
+		_pending_release = from
+		var species := SpeciesDB.get_species(from.pet.species)
+		release_dialog.dialog_text = "Release your %s (Lv%d) back into the wild?\nThis can't be undone." \
+				% [species.display_name, from.pet.level]
+		release_dialog.popup_centered()
+		return
+	_player.request_stable_move.rpc_id(1, from.kind, from.index, to.kind, to.index)
 
 
 func _party_signature() -> String:
 	return ",".join(_player.world.get_pets(_player.peer_id).map(
-			func(p: Creature) -> String: return "%s:%d:%d" % [p.name, p.party_slot, p.level]))
-
-
-func _pet_text(species_index: int, level: int) -> String:
-	var species := SpeciesDB.get_species(species_index)
-	var ability_name := species.ability.display_name if species.ability else "-"
-	return "%s  Lv%d  (%s)" % [species.display_name, level, ability_name]
+			func(p: Creature) -> String: return "%s:%d:%d:%s" % [p.name, p.party_slot, p.level, p.fainted]))
 
 
 # --- Always-on HUD -------------------------------------------------------------------
@@ -301,7 +278,7 @@ func _update_hover() -> void:
 func _rebuild_party() -> void:
 	var pets := _player.world.get_pets(_player.peer_id)
 	party_title.text = "Pets  %d / %d     Stable  %d / %d" \
-			% [pets.size(), Player.MAX_PARTY, _player.stable.size(), Player.MAX_STABLE]
+			% [pets.size(), Player.MAX_PARTY, _player.stable_count(), Player.MAX_STABLE]
 	for child in party_list.get_children():
 		child.queue_free()
 	if pets.is_empty():

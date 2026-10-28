@@ -133,12 +133,15 @@ played in the browser".
   | Mirelurk | Mud Trap | Damages and roots (can't move) enemies at the target for 2.5s |
   | Marsh Wisp | Life Drain | Hits a target for 2x and heals the wisp *and you* for 60% of the damage |
   | Sporecap | Spore Cloud | Nearby enemies deal 40% less damage for 6s |
-- **Stable:** there is one stable, at the start of every level, holding up to
-  12 pets per player.
-  Walk up to it and press F to store, take out, swap or release pets.
-  Stabled pets are fully healed. If you capture a creature while your party is
-  full, it goes straight to the stable; if the stable is full too, the capture
-  is refused.
+- **Stable:** there is one stable, at the start of every level. Press F there
+  to open it: your party sits on three cushions (numbered by their ability
+  key) and up to **12 pets sleep in hay beds**. Everything is drag and drop:
+  drag a pet from a bed onto the party to bring it along, from the party onto a
+  bed to rest it, onto an occupied place to swap, between beds to rearrange,
+  or between party slots to change which key (1/2/3) uses its ability. Drop a
+  pet on the **release gate** (and confirm) to set it free. Stabled pets are
+  fully healed. If you capture a creature while your party is full it goes to
+  the first free bed; if every bed is full too, the capture is refused.
 - **No friendly fire:** there are two sides: hostiles (wild creatures, rivals
   and rivals' pets) and tamers (every player and every player's pet). Nothing
   can hurt or target its own side, and pets immediately drop a target that
@@ -176,6 +179,7 @@ The host is the authoritative server and also plays.
 | `scripts/abilities/*.gd`, `resources/abilities/*.tres` | `PetAbility` base class and one subclass per ability; tune values in the `.tres` files |
 | `scenes/crate.tscn` + `scripts/crate.gd`, `scenes/coin.tscn` + `scripts/coin.gd` | Breakable crates and the coins they spill |
 | `scripts/components/health.gd` | Health with setter-driven signals (works with replication), plus poison and damage-absorbing shields |
+| `scripts/pet_slot.gd` | A drag-and-drop place in the stable window (hay bed, party cushion or release gate), drawn in code |
 | `scenes/hud.tscn` + `scripts/hud.gd` | Health, pet party, hover/capture info, message feed |
 
 Physics layers: 1 world · 2 players · 3 hostiles (wild creatures, bosses, rival pets) · 4 player pets.
