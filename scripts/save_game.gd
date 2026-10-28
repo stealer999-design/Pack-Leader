@@ -14,7 +14,7 @@ extends Node
 const MAX_SLOTS := 3
 const SAVE_DIR := "user://saves"
 const VERSION := 1
-const AUTOSAVE_INTERVAL := 20.0
+const AUTOSAVE_INTERVAL := 20.0  ## Seconds of real time.
 
 ## The slot being played (or about to be). -1 = none chosen.
 var slot := -1
@@ -23,7 +23,7 @@ var loaded := {}
 
 var _player: Player
 var _world: World
-var _autosave_timer := AUTOSAVE_INTERVAL
+var _next_autosave_msec := 0
 var _party_signature := ""
 
 
@@ -31,12 +31,11 @@ func _ready() -> void:
 	DirAccess.make_dir_recursive_absolute(SAVE_DIR)
 
 
-func _process(delta: float) -> void:
+func _process(_delta: float) -> void:
 	if not is_instance_valid(_player) or slot < 0:
 		return
-	_autosave_timer -= delta
 	var signature := _current_party_signature()
-	if _autosave_timer <= 0.0 or signature != _party_signature:
+	if Time.get_ticks_msec() >= _next_autosave_msec or signature != _party_signature:
 		_party_signature = signature
 		save_now()
 
@@ -117,8 +116,10 @@ func start_level() -> int:
 func on_local_player_spawned(player: Player, world: World) -> void:
 	_player = player
 	_world = world
-	_autosave_timer = AUTOSAVE_INTERVAL
-	if not loaded.is_empty():
+	if loaded.is_empty():
+		_next_autosave_msec = Time.get_ticks_msec() + 2000  # a new game: claim the slot right away
+	else:
+		_next_autosave_msec = Time.get_ticks_msec() + int(AUTOSAVE_INTERVAL * 1000)
 		player.request_restore.rpc_id(1, loaded)
 	player.stable_changed.connect(save_now)
 	world.level_changed.connect(func() -> void:
@@ -152,7 +153,7 @@ func save_now(announce := false) -> void:
 		return
 	file.store_string(JSON.stringify(loaded, "\t"))
 	file.close()
-	_autosave_timer = AUTOSAVE_INTERVAL
+	_next_autosave_msec = Time.get_ticks_msec() + int(AUTOSAVE_INTERVAL * 1000)
 	if announce:
 		_world.hud.show_message("Game saved (slot %d)." % (slot + 1), Color(0.7, 0.9, 0.7))
 
