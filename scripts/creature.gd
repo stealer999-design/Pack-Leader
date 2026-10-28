@@ -345,6 +345,13 @@ func _pet_ai(delta: float) -> Vector3:
 	if not _pending_cast.is_empty():
 		return _tick_pending_cast(delta)
 
+	# Passive stance: never attack (so the owner can weaken a creature and capture
+	# it), just stay close. Abilities the owner triggers still go through above.
+	if master_player is Player and master_player.pets_passive:
+		target = null
+		focus = null
+		return _steer_to(master_player.global_position + _follow_offset(), species.move_speed * 1.3)
+
 	if focus and not _is_valid_target(focus):
 		focus = null
 	if focus:

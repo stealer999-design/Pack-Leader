@@ -67,6 +67,14 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "Pets  0 / 3"
 
+[node name="StanceButton" type="Button" parent="Stats"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(260, 30)
+layout_mode = 2
+focus_mode = 0
+tooltip_text = "Passive pets follow you but never attack, so you can weaken a creature yourself and capture it."
+text = "Pets: Aggressive   [T]"
+
 [node name="PartyList" type="VBoxContainer" parent="Stats"]
 unique_name_in_owner = true
 layout_mode = 2
@@ -144,7 +152,7 @@ offset_right = 900.0
 offset_bottom = -20.0
 grow_vertical = 0
 modulate = Color(1, 1, 1, 0.8)
-text = "WASD move  ·  LMB attack / smash crates  ·  E capture  ·  1 2 3 pet abilities  ·  RMB send pets  ·  Q potion  ·  F stable  ·  Space dash"
+text = "WASD move  ·  LMB attack / smash crates  ·  E capture  ·  1 2 3 pet abilities  ·  RMB send pets  ·  T pet stance  ·  Q potion  ·  F stable / shop  ·  Space dash"
 
 [node name="DownedLabel" type="Label" parent="."]
 unique_name_in_owner = true

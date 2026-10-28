@@ -61,6 +61,7 @@ played in the browser".
 | E | Throw a capture at the creature under the mouse |
 | RMB on a wild creature or the rival | Send your pets to attack it |
 | RMB on the ground | Pets drop their target and regroup |
+| T (or the stance button under your pets) | Toggle pets between **Aggressive** and **Passive** |
 | 1 / 2 / 3 | Use the ability of the pet in that party slot, aimed at the mouse |
 | Q | Drink a health potion (heals 50%) |
 | F (at the stable / lemonade stand) | Open/close the stable or the shop |
@@ -96,6 +97,11 @@ played in the browser".
   gets weaker. It is scaled by the species' `catch_rate` and lowered for
   higher-level creatures. Hover a creature to see the current chance. Failed
   captures make the creature angry.
+- **Pet stance:** in **Passive** mode your pets stop attacking, drop their
+  targets and just follow you, so you can weaken a creature with your own
+  attack and capture it before the pets finish it off. Abilities you trigger
+  yourself (1/2/3) still work; sending pets with RMB is refused until you switch
+  back to **Aggressive** (the default).
 - **Pets:** you can have up to 3 in your party. They automatically defend you
   and each other, and earn XP from kills within 25 units. When a pet runs out
   of health it faints and recovers after 8 seconds.

@@ -27,6 +27,7 @@ var _confirm_release := -1
 @onready var stable_title: Label = %StableTitle
 @onready var stable_list: VBoxContainer = %StableList
 @onready var coins_label: Label = %CoinsLabel
+@onready var stance_button: Button = %StanceButton
 @onready var shop_panel: Control = %ShopPanel
 @onready var shop_info: Label = %ShopInfo
 @onready var buy_button: Button = %BuyButton
@@ -37,6 +38,7 @@ var _confirm_release := -1
 
 func _ready() -> void:
 	buy_button.pressed.connect(func() -> void: _player.request_buy_potion.rpc_id(1))
+	stance_button.pressed.connect(func() -> void: _player.request_toggle_stance.rpc_id(1))
 
 
 func bind(player: Player) -> void:
@@ -65,6 +67,7 @@ func _process(delta: float) -> void:
 	_update_hover()
 	_update_objective()
 	_update_coins()
+	_update_stance()
 	_party_refresh -= delta
 	if _party_refresh <= 0.0:
 		_party_refresh = 0.2
@@ -227,6 +230,21 @@ func _on_health_changed(current: float, maximum: float) -> void:
 	health_bar.max_value = maximum
 	health_bar.value = current
 	health_label.text = "%d / %d" % [ceili(maxf(current, 0.0)), roundi(maximum)]
+
+
+## True while the mouse is over a HUD button, so clicking it doesn't also swing.
+func is_mouse_over_buttons() -> bool:
+	var mouse := stance_button.get_viewport().get_mouse_position()
+	return stance_button.is_visible_in_tree() and stance_button.get_global_rect().has_point(mouse)
+
+
+func _update_stance() -> void:
+	if _player.pets_passive:
+		stance_button.text = "Pets: Passive   [T]"
+		stance_button.self_modulate = Color(0.55, 0.85, 1.0)
+	else:
+		stance_button.text = "Pets: Aggressive   [T]"
+		stance_button.self_modulate = Color(1.0, 0.7, 0.55)
 
 
 func _update_coins() -> void:

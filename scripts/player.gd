@@ -51,6 +51,8 @@ var color := Color.WHITE
 # Replicated from the server.
 var coins := 0
 var potions := MAX_POTIONS
+## Pet stance. Passive pets follow but never attack, so creatures survive to be captured.
+var pets_passive := false
 var downed := false:
 	set(v):
 		downed = v
@@ -164,7 +166,10 @@ func _physics_process(delta: float) -> void:
 	if world.hud.is_window_open():
 		return  # mouse is busy with the stable or shop window
 
-	if Input.is_action_pressed("attack") and _attack_timer <= 0.0:
+	if Input.is_action_just_pressed("pet_stance"):
+		request_toggle_stance.rpc_id(1)
+
+	if Input.is_action_pressed("attack") and _attack_timer <= 0.0 and not world.hud.is_mouse_over_buttons():
 		_attack_timer = attack_cooldown
 		_play_swing_fx()
 		request_attack.rpc_id(1, _aim_dir)
@@ -312,6 +317,10 @@ func request_capture(creature_name: String) -> void:
 func request_command(creature_name: String) -> void:
 	if not _sent_by_owner():
 		return
+	if pets_passive and creature_name != "":
+		world.tell(peer_id, "Your pets are passive. Press T (or the stance button) to let them fight.",
+				Color(1, 0.8, 0.5))
+		return
 	var focus: Node3D = null
 	if creature_name == RIVAL_COMMAND:
 		focus = world.get_rival()
@@ -321,6 +330,20 @@ func request_command(creature_name: String) -> void:
 		focus = null
 	for pet in world.get_pets(peer_id):
 		pet.set_focus(focus)
+
+
+@rpc("any_peer", "call_local", "reliable")
+func request_toggle_stance() -> void:
+	if not _sent_by_owner():
+		return
+	pets_passive = not pets_passive
+	for pet in world.get_pets(peer_id):
+		pet.set_focus(null)
+	if pets_passive:
+		world.tell(peer_id, "Pets are PASSIVE: they won't attack, so you can weaken and capture creatures.",
+				Color(0.6, 0.85, 1.0))
+	else:
+		world.tell(peer_id, "Pets are AGGRESSIVE: they'll defend you and fight again.", Color(1, 0.7, 0.5))
 
 
 ## Ask the pet in party `slot` to use its ability at `point` (or on `target_name`).
