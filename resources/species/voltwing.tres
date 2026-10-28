@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="CreatureSpecies" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/creature_species.gd" id="1_species"]
+[ext_resource type="Resource" path="res://resources/abilities/static_arc.tres" id="2_ability"]
+
+[resource]
+script = ExtResource("1_species")
+display_name = "Voltwing"
+color = Color(0.95, 0.88, 0.25, 1)
+size = 0.7
+max_health = 35.0
+damage = 9.0
+move_speed = 6.0
+attack_range = 0.9
+attack_cooldown = 1.0
+aggressive = true
+aggro_range = 11.0
+spawn_weight = 2.0
+catch_rate = 0.45
+xp_reward = 12
+ability = ExtResource("2_ability")

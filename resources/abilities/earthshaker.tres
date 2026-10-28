@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SlamAbility" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/abilities/slam_ability.gd" id="1_ability"]
+
+[resource]
+script = ExtResource("1_ability")
+display_name = "Earthshaker"
+description = "Slams the ground, damaging and stunning enemies around it for 2s."
+cooldown = 10.0
+radius = 4.0
+damage_multiplier = 1.5
+stun_duration = 2.0
+knockback = 7.0

@@ -1,0 +1,138 @@
+[gd_scene load_steps=14 format=3]
+
+[ext_resource type="Script" path="res://scripts/creature.gd" id="1_creature"]
+[ext_resource type="Script" path="res://scripts/components/health.gd" id="2_health"]
+
+[sub_resource type="SphereShape3D" id="shape"]
+radius = 0.45
+
+[sub_resource type="SphereMesh" id="body_mesh"]
+radius = 0.5
+height = 0.8
+
+[sub_resource type="StandardMaterial3D" id="eye_mat"]
+shading_mode = 0
+albedo_color = Color(1, 1, 0.9, 1)
+
+[sub_resource type="BoxMesh" id="eye_mesh"]
+material = SubResource("eye_mat")
+size = Vector3(0.12, 0.12, 0.08)
+
+[sub_resource type="StandardMaterial3D" id="ear_mat"]
+albedo_color = Color(0.15, 0.13, 0.15, 1)
+
+[sub_resource type="PrismMesh" id="ear_mesh"]
+material = SubResource("ear_mat")
+size = Vector3(0.2, 0.28, 0.1)
+
+[sub_resource type="TorusMesh" id="ring_mesh"]
+inner_radius = 0.6
+outer_radius = 0.72
+
+[sub_resource type="StandardMaterial3D" id="ring_mat"]
+resource_local_to_scene = true
+shading_mode = 0
+
+[sub_resource type="QuadMesh" id="bar_mesh"]
+size = Vector2(1, 0.1)
+
+[sub_resource type="StandardMaterial3D" id="bar_bg_mat"]
+shading_mode = 0
+albedo_color = Color(0.08, 0.08, 0.08, 1)
+
+[sub_resource type="StandardMaterial3D" id="bar_fg_mat"]
+resource_local_to_scene = true
+shading_mode = 0
+albedo_color = Color(0.9, 0.25, 0.2, 1)
+
+[sub_resource type="SceneReplicationConfig" id="sync"]
+properties/0/path = NodePath(".:position")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+properties/1/path = NodePath("Model:rotation")
+properties/1/spawn = true
+properties/1/replication_mode = 1
+properties/2/path = NodePath("Health:max_health")
+properties/2/spawn = true
+properties/2/replication_mode = 2
+properties/3/path = NodePath("Health:current")
+properties/3/spawn = true
+properties/3/replication_mode = 2
+properties/4/path = NodePath(".:owner_id")
+properties/4/spawn = true
+properties/4/replication_mode = 2
+properties/5/path = NodePath(".:level")
+properties/5/spawn = true
+properties/5/replication_mode = 2
+properties/6/path = NodePath(".:xp")
+properties/6/spawn = true
+properties/6/replication_mode = 2
+properties/7/path = NodePath(".:fainted")
+properties/7/spawn = true
+properties/7/replication_mode = 2
+properties/8/path = NodePath(".:party_slot")
+properties/8/spawn = true
+properties/8/replication_mode = 2
+
+[node name="Creature" type="CharacterBody3D"]
+collision_layer = 4
+collision_mask = 15
+platform_floor_layers = 1
+script = ExtResource("1_creature")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
+shape = SubResource("shape")
+
+[node name="Model" type="Node3D" parent="."]
+
+[node name="Body" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
+mesh = SubResource("body_mesh")
+
+[node name="EyeL" type="MeshInstance3D" parent="Model/Body"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.17, 0.1, -0.44)
+mesh = SubResource("eye_mesh")
+
+[node name="EyeR" type="MeshInstance3D" parent="Model/Body"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.17, 0.1, -0.44)
+mesh = SubResource("eye_mesh")
+
+[node name="EarL" type="MeshInstance3D" parent="Model/Body"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.22, 0.42, -0.05)
+mesh = SubResource("ear_mesh")
+
+[node name="EarR" type="MeshInstance3D" parent="Model/Body"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.22, 0.42, -0.05)
+mesh = SubResource("ear_mesh")
+
+[node name="Ring" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 0)
+visible = false
+mesh = SubResource("ring_mesh")
+material_override = SubResource("ring_mat")
+
+[node name="Overhead" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4, 0)
+
+[node name="NameLabel" type="Label3D" parent="Overhead"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.3, 0)
+pixel_size = 0.008
+font_size = 40
+outline_size = 10
+text = "Creature"
+
+[node name="BarBg" type="MeshInstance3D" parent="Overhead"]
+mesh = SubResource("bar_mesh")
+material_override = SubResource("bar_bg_mat")
+
+[node name="BarFg" type="MeshInstance3D" parent="Overhead"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.01)
+mesh = SubResource("bar_mesh")
+material_override = SubResource("bar_fg_mat")
+
+[node name="Health" type="Node" parent="."]
+script = ExtResource("2_health")
+
+[node name="Sync" type="MultiplayerSynchronizer" parent="."]
+replication_config = SubResource("sync")

@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="CreatureSpecies" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/creature_species.gd" id="1_species"]
+[ext_resource type="Resource" path="res://resources/abilities/shell_guard.tres" id="2_ability"]
+
+[resource]
+script = ExtResource("1_species")
+display_name = "Mossback"
+color = Color(0.35, 0.62, 0.3, 1)
+size = 1.2
+max_health = 70.0
+damage = 5.0
+move_speed = 2.5
+attack_range = 1.0
+attack_cooldown = 1.4
+aggressive = false
+aggro_range = 0.0
+spawn_weight = 3.0
+catch_rate = 0.7
+xp_reward = 8
+ability = ExtResource("2_ability")

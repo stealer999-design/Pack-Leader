@@ -1,0 +1,228 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/hud.gd" id="1_hud"]
+
+[sub_resource type="Theme" id="hud_theme"]
+Label/colors/font_outline_color = Color(0, 0, 0, 0.85)
+Label/constants/outline_size = 6
+
+[sub_resource type="StyleBoxFlat" id="panel_style"]
+bg_color = Color(0.1, 0.11, 0.13, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.62, 0.45, 0.28, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="HUD" type="CanvasLayer"]
+script = ExtResource("1_hud")
+
+[node name="Stats" type="VBoxContainer" parent="."]
+theme = SubResource("hud_theme")
+offset_left = 20.0
+offset_top = 20.0
+offset_right = 280.0
+offset_bottom = 400.0
+
+[node name="NameLabel" type="Label" parent="Stats"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Player"
+
+[node name="HealthBar" type="ProgressBar" parent="Stats"]
+unique_name_in_owner = true
+self_modulate = Color(1, 0.3, 0.3, 1)
+custom_minimum_size = Vector2(260, 24)
+layout_mode = 2
+show_percentage = false
+
+[node name="HealthLabel" type="Label" parent="Stats/HealthBar"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Spacer" type="Control" parent="Stats"]
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+
+[node name="PartyTitle" type="Label" parent="Stats"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Pets  0 / 3"
+
+[node name="PartyList" type="VBoxContainer" parent="Stats"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Messages" type="VBoxContainer" parent="."]
+unique_name_in_owner = true
+theme = SubResource("hud_theme")
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -620.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = 220.0
+grow_horizontal = 0
+
+[node name="HoverLabel" type="Label" parent="."]
+unique_name_in_owner = true
+theme = SubResource("hud_theme")
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -500.0
+offset_top = -90.0
+offset_right = 500.0
+offset_bottom = -60.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_font_sizes/font_size = 18
+horizontal_alignment = 1
+
+[node name="Controls" type="Label" parent="."]
+theme = SubResource("hud_theme")
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = -46.0
+offset_right = 900.0
+offset_bottom = -20.0
+grow_vertical = 0
+modulate = Color(1, 1, 1, 0.8)
+text = "WASD move  ·  LMB attack  ·  E capture  ·  1 2 3 pet abilities  ·  RMB send pets / regroup  ·  F stable  ·  Space dash"
+
+[node name="DownedLabel" type="Label" parent="."]
+unique_name_in_owner = true
+theme = SubResource("hud_theme")
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -400.0
+offset_top = -60.0
+offset_right = 400.0
+offset_bottom = 60.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.9, 0.15, 0.15, 1)
+theme_override_font_sizes/font_size = 56
+text = "DOWN — respawning..."
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="InteractLabel" type="Label" parent="."]
+unique_name_in_owner = true
+visible = false
+theme = SubResource("hud_theme")
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -300.0
+offset_top = -130.0
+offset_right = 300.0
+offset_bottom = -100.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_color = Color(1, 0.9, 0.5, 1)
+theme_override_font_sizes/font_size = 20
+text = "[F]  Open stable"
+horizontal_alignment = 1
+
+[node name="StablePanel" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+visible = false
+theme = SubResource("hud_theme")
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -480.0
+offset_top = -260.0
+offset_right = 480.0
+offset_bottom = 260.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("panel_style")
+
+[node name="Margin" type="MarginContainer" parent="StablePanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 16
+
+[node name="VBox" type="VBoxContainer" parent="StablePanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="StablePanel/Margin/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+text = "Stable"
+horizontal_alignment = 1
+
+[node name="Columns" type="HBoxContainer" parent="StablePanel/Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 30
+
+[node name="PartyColumn" type="VBoxContainer" parent="StablePanel/Margin/VBox/Columns"]
+layout_mode = 2
+
+[node name="PartyHeader" type="Label" parent="StablePanel/Margin/VBox/Columns/PartyColumn"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Party"
+
+[node name="StablePartyList" type="VBoxContainer" parent="StablePanel/Margin/VBox/Columns/PartyColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="StableColumn" type="VBoxContainer" parent="StablePanel/Margin/VBox/Columns"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="StableTitle" type="Label" parent="StablePanel/Margin/VBox/Columns/StableColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Stable  0 / 12"
+
+[node name="Scroll" type="ScrollContainer" parent="StablePanel/Margin/VBox/Columns/StableColumn"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="StableList" type="VBoxContainer" parent="StablePanel/Margin/VBox/Columns/StableColumn/Scroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Hint" type="Label" parent="StablePanel/Margin/VBox"]
+layout_mode = 2
+modulate = Color(1, 1, 1, 0.65)
+text = "Stabled pets are fully healed.  To swap when your party is full, select a party pet, then a stable pet.  [F] close"
+horizontal_alignment = 1
+autowrap_mode = 3
