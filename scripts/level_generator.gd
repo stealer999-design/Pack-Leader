@@ -13,6 +13,7 @@ const ARENA_LENGTH := 52.0
 const ARENA_WIDTH := 56.0
 const MIN_PATH_WIDTH := 24.0
 const MAX_PATH_WIDTH := 40.0
+const SHOP_CLEARANCE := 9.0  ## No rocks, creatures or crates this close to the lemonade stand.
 const MAX_SWAY := 20.0  ## How far the path may drift sideways from its start line.
 
 const RIVAL_NAMES := ["Kael", "Mira", "Dax", "Vesper", "Rook", "Sable", "Juno", "Thorne", "Lyra", "Brann"]
@@ -24,6 +25,7 @@ const RIVAL_NAMES := ["Kael", "Mira", "Dax", "Vesper", "Rook", "Sable", "Juno", 
 ##   rocks: [{ pos: Vector3, size: Vector3 }]
 ##   creature_spots: [{ pos: Vector3, depth: float }]   depth = 0..1 along the path
 ##   crate_spots: [{ pos: Vector3, gold: bool }]
+##   shop_point: Vector3, shop_side: float (-1 = left wall, 1 = right wall)
 ##   start_point, stable_point, rival_point, exit_point: Vector3
 ##   total_length: float, rival_name: String, rival_species: int, floor_tint: Color,
 ##   biome: int (index into BiomeDB.BIOMES)
@@ -55,6 +57,18 @@ static func generate(level_seed: int, level_number: int) -> Dictionary:
 		_add_crate_spots(rng, seg, rocks, spots, crates)
 		z -= SEGMENT_LENGTH
 
+	# The lemonade stand: against a wall of the middle path segment, with a
+	# clear, safe area around it.
+	var shop_seg: Dictionary = segments[1 + path_count / 2]
+	var shop_side := -1.0 if rng.randf() < 0.5 else 1.0
+	var shop_point := Vector3(shop_seg.center_x + shop_side * (shop_seg.width * 0.5 - 3.0), 0.0,
+			(shop_seg.z_start + shop_seg.z_end) * 0.5)
+	var away_from_shop := func(item: Dictionary) -> bool:
+		return Vector2(item.pos.x - shop_point.x, item.pos.z - shop_point.z).length() > SHOP_CLEARANCE
+	rocks.assign(rocks.filter(away_from_shop))
+	spots.assign(spots.filter(away_from_shop))
+	crates.assign(crates.filter(away_from_shop))
+
 	var arena_center := clampf(center, -12.0, 12.0)
 	var arena := {"z_start": z, "z_end": z - ARENA_LENGTH, "center_x": arena_center, "width": ARENA_WIDTH, "kind": "arena"}
 	segments.append(arena)
@@ -70,6 +84,8 @@ static func generate(level_seed: int, level_number: int) -> Dictionary:
 		"rocks": rocks,
 		"creature_spots": spots,
 		"crate_spots": crates,
+		"shop_point": shop_point,
+		"shop_side": shop_side,
 		"start_point": Vector3(0.0, 0.0, -14.0),
 		"stable_point": Vector3(-8.0, 0.0, -16.0),
 		"rival_point": Vector3(arena_center, 0.0, arena.z_start - ARENA_LENGTH * 0.55),

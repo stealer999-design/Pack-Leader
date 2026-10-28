@@ -9,6 +9,8 @@ signal stable_changed
 const MAX_PARTY := 3
 const MAX_STABLE := 12
 const RIVAL_COMMAND := "@rival"
+## Potions a player can carry. Everyone starts each level with a full set.
+const MAX_POTIONS := 2
 
 @export_group("Movement")
 @export var move_speed := 6.0
@@ -31,7 +33,8 @@ const RIVAL_COMMAND := "@rival"
 @export var regen_delay := 5.0
 ## Fraction of max health regenerated per second once out of combat.
 @export var regen_rate := 0.03
-@export var potion_cost := 15
+## Coins per potion at the lemonade stand.
+@export var potion_price := 10
 ## Fraction of max health a potion restores.
 @export_range(0.0, 1.0) var potion_heal := 0.5
 @export var potion_cooldown := 8.0
@@ -47,6 +50,7 @@ var color := Color.WHITE
 
 # Replicated from the server.
 var coins := 0
+var potions := MAX_POTIONS
 var downed := false:
 	set(v):
 		downed = v
@@ -146,17 +150,19 @@ func _physics_process(delta: float) -> void:
 	model.rotation.y = atan2(-_aim_dir.x, -_aim_dir.z)
 
 	if Input.is_action_just_pressed("potion") and _potion_timer <= 0.0:
-		if coins >= potion_cost and health.current < health.max_health:
+		if potions > 0 and health.current < health.max_health:
 			_potion_timer = potion_cooldown
 		request_potion.rpc_id(1)  # the server explains if it can't be used
 
 	if Input.is_action_just_pressed("interact"):
-		if world.hud.is_stable_open():
-			world.hud.close_stable()
+		if world.hud.is_window_open():
+			world.hud.close_windows()
 		elif world.is_near_stable(global_position):
 			world.hud.open_stable()
-	if world.hud.is_stable_open():
-		return  # mouse is busy with the stable window
+		elif world.is_near_shop(global_position):
+			world.hud.open_shop()
+	if world.hud.is_window_open():
+		return  # mouse is busy with the stable or shop window
 
 	if Input.is_action_pressed("attack") and _attack_timer <= 0.0:
 		_attack_timer = attack_cooldown
@@ -237,14 +243,33 @@ func request_potion() -> void:
 	if health.current >= health.max_health:
 		world.tell(peer_id, "You're already at full health.", Color(1, 0.8, 0.5))
 		return
-	if coins < potion_cost:
-		world.tell(peer_id, "A potion costs %d coins (you have %d). Smash crates for coins!" % [potion_cost, coins],
+	if potions <= 0:
+		world.tell(peer_id, "You're out of potions. Buy more at the lemonade stand halfway along the path.",
 				Color(1, 0.8, 0.5))
 		return
 	_server_potion_timer = potion_cooldown * 0.8
-	coins -= potion_cost
+	potions -= 1
 	health.heal(health.max_health * potion_heal)
 	world.play_burst.rpc(global_position, Color(0.5, 1.0, 0.55), 1.5)
+
+
+@rpc("any_peer", "call_local", "reliable")
+func request_buy_potion() -> void:
+	if not _sent_by_owner() or downed:
+		return
+	if not world.is_near_shop(global_position):
+		world.tell(peer_id, "You need to be at the lemonade stand.", Color(1, 0.8, 0.5))
+		return
+	if potions >= MAX_POTIONS:
+		world.tell(peer_id, "You can only carry %d potions." % MAX_POTIONS, Color(1, 0.8, 0.5))
+		return
+	if coins < potion_price:
+		world.tell(peer_id, "A potion costs %d coins (you have %d). Smash crates for coins!" % [potion_price, coins],
+				Color(1, 0.8, 0.5))
+		return
+	coins -= potion_price
+	potions += 1
+	world.tell(peer_id, "Thanks! One fresh potion.", Color(1, 0.85, 0.35))
 
 
 @rpc("any_peer", "call_local", "reliable")

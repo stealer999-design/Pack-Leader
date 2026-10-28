@@ -25,6 +25,8 @@ const PATH_YAW := PI / 4.0
 @export var xp_share_range := 25.0
 ## How close a player must be to the stable to use it.
 @export var stable_range := 4.5
+## How close a player must be to the lemonade stand to shop.
+@export var shop_range := 4.5
 ## Stepping this close to the open portal starts the next level.
 @export var exit_radius := 2.5
 ## XP every pet gets for defeating a rival (x level number).
@@ -257,6 +259,14 @@ func is_near_stable(point: Vector3) -> bool:
 	return _flat_distance(point, stable.global_position) <= stable_range
 
 
+func shop_position() -> Vector3:
+	return level_root.to_global(layout.shop_point) if not layout.is_empty() else Vector3.INF
+
+
+func is_near_shop(point: Vector3) -> bool:
+	return not layout.is_empty() and _flat_distance(point, shop_position()) <= shop_range
+
+
 ## Keeps a point on the walkable floor of the current level.
 func clamp_to_level(point: Vector3) -> Vector3:
 	if layout.is_empty():
@@ -318,6 +328,7 @@ func _start_level(number: int) -> void:
 
 	for p in get_players():
 		p.health.current = p.health.max_health
+		p.potions = Player.MAX_POTIONS  # a fresh pair of potions every level
 		p.downed = false
 		p._respawn_at.rpc_id(p.peer_id, player_spawn_point(p.peer_id))
 	for pet in get_all_pets():
@@ -348,6 +359,7 @@ func _start_level(number: int) -> void:
 		})
 	announce.rpc("Level %d, %s: follow the path and defeat %s!" % [number, level_biome.name, boss_objective_name()],
 			Color(1, 0.9, 0.5))
+	announce.rpc("A lemonade stand halfway along the path sells potions.", Color(1, 0.85, 0.35))
 
 
 func on_rival_defeated(rival: Rival) -> void:
@@ -465,10 +477,104 @@ func _build_level() -> void:
 		var body := _add_box(rock.pos + Vector3.UP * rock.size.y * 0.5, rock.size, rock_mat)
 		body.add_to_group("obstacles")
 
+	_build_shop()
 	stable.global_position = level_root.to_global(layout.stable_point)
 	stable.rotation.y = PATH_YAW + PI / 2.0
 	portal.global_position = level_root.to_global(layout.exit_point)
 	level_changed.emit()
+
+
+## The lemonade stand halfway along the path: counter, striped awning, potion
+## bottles and the vendor. Its front faces the middle of the path.
+func _build_shop() -> void:
+	var shop := Node3D.new()
+	shop.name = "LemonadeStand"
+	level_root.add_child(shop)
+	shop.position = layout.shop_point
+	shop.rotation.y = layout.shop_side * PI / 2.0
+
+	var body := StaticBody3D.new()
+	var shape := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = Vector3(2.9, 2.0, 2.6)
+	shape.shape = box
+	shape.position = Vector3(0.0, 1.0, 0.7)
+	body.add_child(shape)
+	shop.add_child(body)
+
+	var wood := _material(Color(0.62, 0.42, 0.24))
+	var light_wood := _material(Color(0.82, 0.66, 0.42))
+	_add_mesh(shop, Vector3(0.0, 0.5, 0.0), Vector3(2.6, 1.0, 0.8), wood)
+	_add_mesh(shop, Vector3(0.0, 1.04, 0.0), Vector3(2.9, 0.08, 1.0), light_wood)
+	for post in [Vector2(-1.35, -0.45), Vector2(1.35, -0.45), Vector2(-1.35, 1.7), Vector2(1.35, 1.7)]:
+		_add_mesh(shop, Vector3(post.x, 1.35, post.y), Vector3(0.12, 2.7, 0.12), wood)
+	var yellow := _material(Color(1.0, 0.85, 0.2))
+	var white := _material(Color(0.97, 0.95, 0.88))
+	for i in 6:
+		_add_mesh(shop, Vector3(-1.25 + i * 0.5, 2.72, 0.62), Vector3(0.5, 0.08, 2.6), yellow if i % 2 == 0 else white)
+	var potion_mat := _material(Color(0.95, 0.25, 0.35))
+	potion_mat.emission_enabled = true
+	potion_mat.emission = Color(0.5, 0.05, 0.1)
+	for x in [-0.8, -0.4, 0.4, 0.8]:
+		var bottle := MeshInstance3D.new()
+		var cylinder := CylinderMesh.new()
+		cylinder.top_radius = 0.06
+		cylinder.bottom_radius = 0.1
+		cylinder.height = 0.3
+		cylinder.material = potion_mat
+		bottle.mesh = cylinder
+		bottle.position = Vector3(x, 1.23, -0.1)
+		shop.add_child(bottle)
+	var lemon_mat := _material(Color(1.0, 0.9, 0.15))
+	var lemon := MeshInstance3D.new()
+	var sphere := SphereMesh.new()
+	sphere.radius = 0.13
+	sphere.height = 0.22
+	sphere.material = lemon_mat
+	lemon.mesh = sphere
+	lemon.position = Vector3(0.0, 1.18, -0.15)
+	shop.add_child(lemon)
+
+	# The vendor behind the counter.
+	var vendor := MeshInstance3D.new()
+	var capsule := CapsuleMesh.new()
+	capsule.radius = 0.35
+	capsule.height = 1.7
+	capsule.material = _material(Color(0.95, 0.75, 0.55))
+	vendor.mesh = capsule
+	vendor.position = Vector3(0.0, 0.85, 0.85)
+	shop.add_child(vendor)
+	_add_mesh(shop, Vector3(0.0, 0.95, 0.5), Vector3(0.6, 0.8, 0.05), yellow)  # apron
+	var hat := MeshInstance3D.new()
+	var brim := CylinderMesh.new()
+	brim.top_radius = 0.42
+	brim.bottom_radius = 0.42
+	brim.height = 0.05
+	brim.material = yellow
+	hat.mesh = brim
+	hat.position = Vector3(0.0, 1.72, 0.85)
+	shop.add_child(hat)
+
+	var sign := Label3D.new()
+	sign.text = "Lemonade Stand\nPotions"
+	sign.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	sign.pixel_size = 0.011
+	sign.font_size = 44
+	sign.outline_size = 12
+	sign.modulate = Color(1.0, 0.9, 0.4)
+	sign.position = Vector3(0.0, 3.5, 0.6)
+	shop.add_child(sign)
+
+
+func _add_mesh(parent: Node3D, pos: Vector3, size: Vector3, mat: Material) -> MeshInstance3D:
+	var mesh := MeshInstance3D.new()
+	var box := BoxMesh.new()
+	box.size = size
+	box.material = mat
+	mesh.mesh = box
+	mesh.position = pos
+	parent.add_child(mesh)
+	return mesh
 
 
 ## Closes the gaps where two path segments of different width/offset meet.

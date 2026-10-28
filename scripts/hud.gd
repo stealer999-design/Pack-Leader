@@ -27,9 +27,16 @@ var _confirm_release := -1
 @onready var stable_title: Label = %StableTitle
 @onready var stable_list: VBoxContainer = %StableList
 @onready var coins_label: Label = %CoinsLabel
+@onready var shop_panel: Control = %ShopPanel
+@onready var shop_info: Label = %ShopInfo
+@onready var buy_button: Button = %BuyButton
 @onready var level_label: Label = %LevelLabel
 @onready var objective_label: Label = %ObjectiveLabel
 @onready var progress_bar: ProgressBar = %ProgressBar
+
+
+func _ready() -> void:
+	buy_button.pressed.connect(func() -> void: _player.request_buy_potion.rpc_id(1))
 
 
 func bind(player: Player) -> void:
@@ -46,9 +53,15 @@ func _process(delta: float) -> void:
 		return
 	downed_label.visible = _player.downed
 	var near_stable := _player.world.is_near_stable(_player.global_position)
+	var near_shop := _player.world.is_near_shop(_player.global_position)
 	if is_stable_open() and not near_stable:
 		close_stable()
-	interact_label.visible = near_stable and not is_stable_open()
+	if shop_panel.visible and not near_shop:
+		shop_panel.hide()
+	interact_label.visible = (near_stable or near_shop) and not is_window_open()
+	interact_label.text = "[F]  Open stable" if near_stable else "[F]  Visit the lemonade stand"
+	if shop_panel.visible:
+		_update_shop()
 	_update_hover()
 	_update_objective()
 	_update_coins()
@@ -72,6 +85,37 @@ func show_message(text: String, color: Color) -> void:
 	tween.tween_interval(4.0)
 	tween.tween_property(label, "modulate:a", 0.0, 1.0)
 	tween.tween_callback(label.queue_free)
+
+
+# --- Windows ---------------------------------------------------------------------------
+
+func is_window_open() -> bool:
+	return stable_panel.visible or shop_panel.visible
+
+
+func close_windows() -> void:
+	stable_panel.hide()
+	shop_panel.hide()
+
+
+func open_shop() -> void:
+	shop_panel.show()
+	_update_shop()
+
+
+func _update_shop() -> void:
+	var price := _player.potion_price
+	shop_info.text = "Potion: %d coins each   (heals %d%%)\nYou have %d coins and %d / %d potions." \
+			% [price, roundi(_player.potion_heal * 100.0), _player.coins, _player.potions, Player.MAX_POTIONS]
+	if _player.potions >= Player.MAX_POTIONS:
+		buy_button.text = "Your bag is full"
+		buy_button.disabled = true
+	elif _player.coins < price:
+		buy_button.text = "Not enough coins"
+		buy_button.disabled = true
+	else:
+		buy_button.text = "Buy a potion (%d coins)" % price
+		buy_button.disabled = false
 
 
 # --- Stable window -------------------------------------------------------------------
@@ -186,10 +230,10 @@ func _on_health_changed(current: float, maximum: float) -> void:
 
 
 func _update_coins() -> void:
-	var potion := "ready" if _player.coins >= _player.potion_cost else "need %d" % _player.potion_cost
+	var potions := "%d / %d" % [_player.potions, Player.MAX_POTIONS]
 	if _player.potion_cooldown_left() > 0.0:
-		potion = "%.0fs" % ceilf(_player.potion_cooldown_left())
-	coins_label.text = "Coins %d      [Q] Potion: %s" % [_player.coins, potion]
+		potions += "  (%.0fs)" % ceilf(_player.potion_cooldown_left())
+	coins_label.text = "Coins %d      [Q] Potions %s" % [_player.coins, potions]
 
 
 func _update_objective() -> void:

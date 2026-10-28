@@ -62,8 +62,8 @@ played in the browser".
 | RMB on a wild creature or the rival | Send your pets to attack it |
 | RMB on the ground | Pets drop their target and regroup |
 | 1 / 2 / 3 | Use the ability of the pet in that party slot, aimed at the mouse |
-| Q | Drink a health potion (costs 15 coins, heals 50%) |
-| F (at the stable) | Open/close the stable |
+| Q | Drink a health potion (heals 50%) |
+| F (at the stable / lemonade stand) | Open/close the stable or the shop |
 | Space | Dash (brief invulnerability) |
 
 - **Levels:** each level is one long, wide, randomly generated path that
@@ -80,11 +80,16 @@ played in the browser".
   | 1, 3, 5… | Greenmeadow | Mossback, Emberfox, Voltwing, Gloomhorn, Bloomling (the first two creatures by the camp are always Bloomlings) | **Rival Tamer** with one pet. The pet fights and uses its ability; when the rival is beaten the pet goes wild, weakened, so you can capture it |
   | 2, 4, 6… | Frostfang Peaks | Frostling, Spikeshell, Aurora Moth, Snowstalker | **Glacier Titan**: drops Avalanches (a red warning circle, then a slam that damages and slows) and summons capturable Frostlings at 66% and 33% health |
 - **Tamer health:** after 5 seconds without taking damage you regenerate 3% of
-  your max health per second. Potions (Q) heal 50% for 15 coins. Bloomlings
-  and Aurora Moths can heal you too.
+  your max health per second. You carry up to **2 potions** (Q heals 50%),
+  and start every level with a full pair. Bloomlings and Aurora Moths can heal
+  you too.
+- **Lemonade stand:** halfway along every level there is a lemonade stand in
+  a safe clearing. Press F there to buy potions from the vendor for 10 coins
+  each (up to the 2 you can carry).
 - **Crates and coins:** crates along the path break in two hits and spill
   coins (gold crates take four hits and hold far more). Walk over coins to
-  pick them up; coins belong to whoever collects them.
+  pick them up; coins belong to whoever collects them and carry over between
+  levels.
 - **Downed players** respawn next to a teammate who is still standing, or at
   the start camp if nobody is.
 - **Capturing:** the chance is 0% at full health and rises as the creature
@@ -156,7 +161,7 @@ Physics layers: 1 world · 2 players · 3 hostiles (wild creatures, bosses, riva
 
 ## Suggested next steps
 1. **Persistence:** save each player's party, stable and coins to disk so they carry between sessions.
-2. **A shop at the camp:** spend coins on capture-chance boosts, pet treats (XP) or cosmetics.
+2. **More for the vendor to sell:** capture-chance boosts, pet treats (XP) or cosmetics.
 3. **Wild abilities:** let wild creatures use their species ability too (rival pets already do).
 4. **More abilities per pet:** e.g. a second ability unlocked at level 5, or abilities learned from items.
 5. **Smoother networking:** interpolate remote players and creatures, which currently snap to each replicated position.
