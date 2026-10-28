@@ -31,6 +31,7 @@ var _confirm_release := -1
 @onready var shop_panel: Control = %ShopPanel
 @onready var shop_info: Label = %ShopInfo
 @onready var buy_button: Button = %BuyButton
+@onready var boost_button: Button = %BoostButton
 @onready var level_label: Label = %LevelLabel
 @onready var objective_label: Label = %ObjectiveLabel
 @onready var progress_bar: ProgressBar = %ProgressBar
@@ -38,6 +39,7 @@ var _confirm_release := -1
 
 func _ready() -> void:
 	buy_button.pressed.connect(func() -> void: _player.request_buy_potion.rpc_id(1))
+	boost_button.pressed.connect(func() -> void: _player.request_buy_boost.rpc_id(1))
 	stance_button.pressed.connect(func() -> void: _player.request_toggle_stance.rpc_id(1))
 
 
@@ -108,8 +110,9 @@ func open_shop() -> void:
 
 func _update_shop() -> void:
 	var price := _player.potion_price
-	shop_info.text = "Potion: %d coins each   (heals %d%%)\nYou have %d coins and %d / %d potions." \
-			% [price, roundi(_player.potion_heal * 100.0), _player.coins, _player.potions, Player.MAX_POTIONS]
+	shop_info.text = "You have %d coins and %d / %d potions." % [_player.coins, _player.potions, Player.MAX_POTIONS]
+	if _player.boost_time_left() > 0.0:
+		shop_info.text += "\nLucky Lemonade active: %ds left." % ceili(_player.boost_time_left())
 	if _player.potions >= Player.MAX_POTIONS:
 		buy_button.text = "Your bag is full"
 		buy_button.disabled = true
@@ -117,8 +120,16 @@ func _update_shop() -> void:
 		buy_button.text = "Not enough coins"
 		buy_button.disabled = true
 	else:
-		buy_button.text = "Buy a potion (%d coins)" % price
+		buy_button.text = "Potion: heals %d%%   (%d coins)" % [roundi(_player.potion_heal * 100.0), price]
 		buy_button.disabled = false
+	var boost := "Lucky Lemonade: capture chance x%.1f for %ds   (%d coins)" \
+			% [_player.boost_multiplier, int(_player.boost_duration), _player.boost_price]
+	if _player.coins < _player.boost_price:
+		boost_button.text = "Lucky Lemonade: not enough coins (%d)" % _player.boost_price
+		boost_button.disabled = true
+	else:
+		boost_button.text = ("Refresh " + boost) if _player.boost_time_left() > 0.0 else boost
+		boost_button.disabled = false
 
 
 # --- Stable window -------------------------------------------------------------------
@@ -252,6 +263,8 @@ func _update_coins() -> void:
 	if _player.potion_cooldown_left() > 0.0:
 		potions += "  (%.0fs)" % ceilf(_player.potion_cooldown_left())
 	coins_label.text = "Coins %d      [Q] Potions %s" % [_player.coins, potions]
+	if _player.boost_time_left() > 0.0:
+		coins_label.text += "\nLucky Lemonade: capture x%.1f  (%ds)" % [_player.boost_multiplier, ceili(_player.boost_time_left())]
 
 
 func _update_objective() -> void:
@@ -276,7 +289,7 @@ func _update_hover() -> void:
 	elif c.is_wild():
 		var where := "  (party full: goes to stable)" if _player.party_is_full() else ""
 		hover_label.text = "Wild %s  Lv%d   —   capture chance %d%%  [E]%s   ·   send pets  [RMB]" \
-				% [c.species.display_name, c.level, roundi(c.capture_chance() * 100.0), where]
+				% [c.species.display_name, c.level, roundi(c.capture_chance(_player.capture_boost()) * 100.0), where]
 	elif c.owner_id == _player.peer_id:
 		hover_label.text = "Your %s  Lv%d" % [c.species.display_name, c.level]
 	else:

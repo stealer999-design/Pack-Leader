@@ -168,9 +168,10 @@ func xp_to_next() -> int:
 
 
 ## Chance (0..1) that a capture attempt succeeds. Zero at full health.
-func capture_chance() -> float:
+## `boost` multiplies it (Lucky Lemonade); it never goes above 95%.
+func capture_chance(boost := 1.0) -> float:
 	var missing := 1.0 - health.fraction()
-	return clampf(species.catch_rate * missing * 1.6 / (1.0 + 0.1 * (level - 1)), 0.0, 0.95)
+	return clampf(species.catch_rate * missing * 1.6 / (1.0 + 0.1 * (level - 1)) * boost, 0.0, 0.95)
 
 
 func ability_cooldown_left() -> float:

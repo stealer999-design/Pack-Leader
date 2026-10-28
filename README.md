@@ -85,8 +85,11 @@ played in the browser".
   and start every level with a full pair. Bloomlings and Aurora Moths can heal
   you too.
 - **Lemonade stand:** halfway along every level there is a lemonade stand in
-  a safe clearing. Press F there to buy potions from the vendor for 10 coins
-  each (up to the 2 you can carry).
+  a safe clearing. Press F there to buy from the vendor:
+  - **Potion** (10 coins), up to the 2 you can carry.
+  - **Lucky Lemonade** (15 coins): capture chance x1.5 for 90 seconds (still
+    capped at 95%). Buying another while it's active resets the timer; it
+    doesn't stack. The HUD and the hover capture chance include the boost.
 - **Crates and coins:** crates along the path break in two hits and spill
   coins (gold crates take four hits and hold far more). Walk over coins to
   pick them up; coins belong to whoever collects them and carry over between
@@ -167,7 +170,7 @@ Physics layers: 1 world · 2 players · 3 hostiles (wild creatures, bosses, riva
 
 ## Suggested next steps
 1. **Persistence:** save each player's party, stable and coins to disk so they carry between sessions.
-2. **More for the vendor to sell:** capture-chance boosts, pet treats (XP) or cosmetics.
+2. **More for the vendor to sell:** pet treats (XP), revive items or cosmetics.
 3. **Wild abilities:** let wild creatures use their species ability too (rival pets already do).
 4. **More abilities per pet:** e.g. a second ability unlocked at level 5, or abilities learned from items.
 5. **Smoother networking:** interpolate remote players and creatures, which currently snap to each replicated position.

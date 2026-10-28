@@ -35,6 +35,10 @@ const MAX_POTIONS := 2
 @export var regen_rate := 0.03
 ## Coins per potion at the lemonade stand.
 @export var potion_price := 10
+## Lucky Lemonade, the stand's capture boost: price, duration and multiplier.
+@export var boost_price := 15
+@export var boost_duration := 90.0
+@export var boost_multiplier := 1.5
 ## Fraction of max health a potion restores.
 @export_range(0.0, 1.0) var potion_heal := 0.5
 @export var potion_cooldown := 8.0
@@ -77,6 +81,9 @@ var _server_attack_timer := 0.0
 var _server_capture_timer := 0.0
 var _server_potion_timer := 0.0
 var _potion_timer := 0.0
+## Seconds of Lucky Lemonade left. Authoritative on the server; the owner keeps a
+## local copy (started by _boost_started) for the HUD and hover capture chance.
+var _boost_timer := 0.0
 var _since_hit := 0.0  ## Server: seconds since this player last took damage.
 var _slow_timer := 0.0
 var _slow_factor := 1.0
@@ -116,6 +123,8 @@ func _physics_process(delta: float) -> void:
 		_server_attack_timer -= delta
 		_server_capture_timer -= delta
 		_server_potion_timer -= delta
+		if not is_multiplayer_authority():
+			_boost_timer -= delta  # the owner counts down below
 		_regenerate(delta)
 	if not is_multiplayer_authority():
 		return
@@ -125,6 +134,7 @@ func _physics_process(delta: float) -> void:
 	_dash_cooldown_timer -= delta
 	_slow_timer -= delta
 	_potion_timer -= delta
+	_boost_timer -= delta
 	_update_aim()
 
 	if downed:
@@ -204,6 +214,14 @@ func radius() -> float:
 	return 0.4
 
 
+func capture_boost() -> float:
+	return boost_multiplier if _boost_timer > 0.0 else 1.0
+
+
+func boost_time_left() -> float:
+	return maxf(_boost_timer, 0.0)
+
+
 func potion_cooldown_left() -> float:
 	return maxf(_potion_timer, 0.0)
 
@@ -278,6 +296,23 @@ func request_buy_potion() -> void:
 
 
 @rpc("any_peer", "call_local", "reliable")
+func request_buy_boost() -> void:
+	if not _sent_by_owner() or downed:
+		return
+	if not world.is_near_shop(global_position):
+		world.tell(peer_id, "You need to be at the lemonade stand.", Color(1, 0.8, 0.5))
+		return
+	if coins < boost_price:
+		world.tell(peer_id, "Lucky Lemonade costs %d coins (you have %d)." % [boost_price, coins], Color(1, 0.8, 0.5))
+		return
+	coins -= boost_price
+	_boost_started.rpc(boost_duration)
+	world.tell(peer_id, "Lucky Lemonade! Capture chance x%.1f for %ds." % [boost_multiplier, int(boost_duration)],
+			Color(1, 0.9, 0.3))
+	world.play_burst.rpc(global_position, Color(1.0, 0.9, 0.3), 1.8)
+
+
+@rpc("any_peer", "call_local", "reliable")
 func request_capture(creature_name: String) -> void:
 	if not _sent_by_owner() or downed or _server_capture_timer > 0.0:
 		return
@@ -294,7 +329,7 @@ func request_capture(creature_name: String) -> void:
 		world.tell(peer_id, "Your party and stable are both full. Release a pet at the stable first.", Color(1, 0.8, 0.5))
 		return
 	_server_capture_timer = capture_cooldown * 0.8
-	var success := randf() < c.capture_chance()
+	var success := randf() < c.capture_chance(capture_boost())
 	world.play_capture_fx.rpc(global_position + Vector3.UP * 1.2, c.global_position + Vector3.UP * c.radius(), success)
 	if not success:
 		c.on_capture_failed(self)
@@ -490,6 +525,14 @@ func _apply_slow(duration: float, factor: float) -> void:
 		_slow_factor = factor
 		_material.albedo_color = color.lerp(Color(0.7, 0.9, 1.0), 0.6)
 		create_tween().tween_property(_material, "albedo_color", color, duration)
+
+
+## Starts (or refreshes) Lucky Lemonade on every peer, so the owner's HUD and the
+## server's capture roll agree.
+@rpc("any_peer", "call_local", "reliable")
+func _boost_started(duration: float) -> void:
+	if _sent_by_server():
+		_boost_timer = duration
 
 
 @rpc("any_peer", "call_local", "reliable")
