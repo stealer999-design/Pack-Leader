@@ -12,6 +12,10 @@ config/features=PackedStringArray("4.4", "Forward Plus")
 window/size/viewport_width=1600
 window/size/viewport_height=900
 
+[rendering]
+
+renderer/rendering_method.web="gl_compatibility"
+
 [input]
 
 move_up={

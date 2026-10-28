@@ -1,12 +1,18 @@
 extends Node
 ## Connection management, autoloaded as `Network`.
 ## The host is the authoritative server and also plays (peer id 1).
+##
+## Uses WebSockets so browser players can join too. Desktop builds can host;
+## browser builds can only join (or play solo), because a web page cannot
+## open a listening socket.
 
 signal player_joined(peer_id: int, info: Dictionary)
 signal player_left(peer_id: int)
 
 const DEFAULT_PORT := 24565
 const MAX_CLIENTS := 3  # plus the host = 4 players
+## Generous buffers: the initial sync of a level sends every creature at once.
+const BUFFER_SIZE := 1 << 20
 const PLAYER_COLORS: Array[Color] = [
 	Color(0.25, 0.5, 0.95), Color(0.3, 0.85, 0.4), Color(0.95, 0.75, 0.2), Color(0.8, 0.35, 0.9),
 ]
@@ -18,25 +24,47 @@ var players := {}
 
 func _ready() -> void:
 	multiplayer.connected_to_server.connect(_on_connected_to_server)
+	multiplayer.peer_connected.connect(_on_peer_connected)
 	multiplayer.peer_disconnected.connect(_on_peer_disconnected)
 
 
+## Hosting needs a listening socket, which browsers don't allow.
+func can_host() -> bool:
+	return not OS.has_feature("web")
+
+
 func host(port := DEFAULT_PORT) -> Error:
-	var peer := ENetMultiplayerPeer.new()
-	var err := peer.create_server(port, MAX_CLIENTS)
+	var peer := _new_peer()
+	var err := peer.create_server(port)
 	if err != OK:
 		return err
 	multiplayer.multiplayer_peer = peer
 	return OK
 
 
+## `address` can be an IP or host name ("192.168.1.20"), with an optional port
+## ("example.com:24565"), or a full WebSocket URL ("wss://abc.trycloudflare.com").
 func join(address: String, port := DEFAULT_PORT) -> Error:
-	var peer := ENetMultiplayerPeer.new()
-	var err := peer.create_client(address, port)
+	var peer := _new_peer()
+	var err := peer.create_client(server_url(address, port))
 	if err != OK:
 		return err
 	multiplayer.multiplayer_peer = peer
 	return OK
+
+
+## Single player: no network at all. This peer is its own server.
+func start_solo() -> void:
+	multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
+
+
+static func server_url(address: String, port := DEFAULT_PORT) -> String:
+	address = address.strip_edges()
+	if address.begins_with("ws://") or address.begins_with("wss://"):
+		return address
+	if ":" in address:
+		return "ws://" + address
+	return "ws://%s:%d" % [address, port]
 
 
 func close() -> void:
@@ -49,8 +77,20 @@ func register_host() -> void:
 	_register(1, player_name)
 
 
+func _new_peer() -> WebSocketMultiplayerPeer:
+	var peer := WebSocketMultiplayerPeer.new()
+	peer.inbound_buffer_size = BUFFER_SIZE
+	peer.outbound_buffer_size = BUFFER_SIZE
+	return peer
+
+
 func _on_connected_to_server() -> void:
 	_request_register.rpc_id(1, player_name)
+
+
+func _on_peer_connected(id: int) -> void:
+	if multiplayer.is_server() and multiplayer.get_peers().size() > MAX_CLIENTS:
+		(multiplayer.multiplayer_peer as WebSocketMultiplayerPeer).disconnect_peer(id)
 
 
 @rpc("any_peer", "reliable")

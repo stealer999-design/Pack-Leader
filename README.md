@@ -8,14 +8,16 @@ rival tamer waiting at the end.
 ![screenshot](screenshot.png)
 
 ## Run
-Open `project.godot` in Godot 4.4+ and press F5. One player clicks **Host**;
-others enter the host's IP and click **Join** (UDP port 24565; for play over
-the internet the host must forward that port).
+Open `project.godot` in Godot 4.4+ and press F5. Click **Play solo**, or have
+one player click **Host** while the others enter the host's address and click
+**Join**. Networking uses WebSockets on **TCP port 24565**; for play over the
+internet the host must forward that port (or use a tunnel, see below).
 
 Quick local test with two instances, from the command line:
 ```
 godot --path . -- --host --name=Alice
 godot --path . -- --join=127.0.0.1 --name=Bob
+godot --path . -- --solo
 ```
 Or in the editor: *Debug → Customize Run Instances*, enable 2 instances, and
 give them the arguments `--host` and `--join=127.0.0.1`.
@@ -30,6 +32,26 @@ share. From the command line:
 ```
 godot --headless --path . --export-release "Windows Desktop" export/windows/PackLeader.exe
 ```
+
+## Playing in a browser
+Export the **Web** preset (or use a release zip): it produces `index.html` plus a
+few files. It needs no special server headers (it is built without threads), so
+any static host works. The easiest is [itch.io](https://itch.io): create an
+HTML game, upload the zipped `export/web` folder, and tick "This file will be
+played in the browser".
+
+- **Solo** works anywhere: click **Play solo**, or open `index.html?solo`.
+- **Multiplayer:** browsers can **join** but not **host**. Someone hosts from the
+  desktop version, and browser players join it. Desktop and browser players can
+  play together.
+- A page served over **https** (like itch.io) may only connect to a secure
+  `wss://` address. The host can get one without a certificate by running a
+  tunnel, for example [Cloudflare's free quick tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/do-more-with-tunnels/trycloudflare/):
+  `cloudflared tunnel --url http://localhost:24565`. It prints an
+  `https://….trycloudflare.com` address; players type it into **Join** as
+  `wss://….trycloudflare.com`.
+- Join links: `index.html?join=wss://example.trycloudflare.com&name=Bob` connects
+  straight away.
 
 ## How to play
 | Input | Action |
@@ -97,7 +119,7 @@ The host is the authoritative server and also plays.
 
 | Path | What it is |
 |---|---|
-| `scripts/network.gd` | Autoload `Network`: host/join, player registry (names, colours) |
+| `scripts/network.gd` | Autoload `Network`: WebSocket host/join, solo mode, player registry (names, colours) |
 | `scenes/main.tscn` + `scripts/main.gd` | Menu + `LevelSpawner` that replicates the world to joining clients |
 | `scenes/world.tscn` + `scripts/world.gd` | Level flow (start → rival → portal → next level), level geometry, spawners, XP sharing, FX |
 | `scripts/level_generator.gd` | Deterministic layout of a level from a seed: path segments, rocks, creature spots, rival, exit |
