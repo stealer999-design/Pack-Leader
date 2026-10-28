@@ -248,6 +248,9 @@ func queue_ability(point: Vector3, cast_target: Creature) -> String:
 		return "Your %s has fainted." % species.display_name
 	if ability_cooldown_left() > 0.0:
 		return "%s is recharging (%.1fs)." % [ability.display_name, ability_cooldown_left()]
+	var reason := ability.cannot_cast_reason(self)
+	if reason != "":
+		return reason
 	if ability.needs_target:
 		if cast_target == null or not _is_valid_target(cast_target):
 			cast_target = world.nearest_enemy(self, point, 4.0)

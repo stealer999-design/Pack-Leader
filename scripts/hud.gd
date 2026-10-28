@@ -26,6 +26,7 @@ var _confirm_release := -1
 @onready var stable_party_list: VBoxContainer = %StablePartyList
 @onready var stable_title: Label = %StableTitle
 @onready var stable_list: VBoxContainer = %StableList
+@onready var coins_label: Label = %CoinsLabel
 @onready var level_label: Label = %LevelLabel
 @onready var objective_label: Label = %ObjectiveLabel
 @onready var progress_bar: ProgressBar = %ProgressBar
@@ -50,6 +51,7 @@ func _process(delta: float) -> void:
 	interact_label.visible = near_stable and not is_stable_open()
 	_update_hover()
 	_update_objective()
+	_update_coins()
 	_party_refresh -= delta
 	if _party_refresh <= 0.0:
 		_party_refresh = 0.2
@@ -181,6 +183,13 @@ func _on_health_changed(current: float, maximum: float) -> void:
 	health_bar.max_value = maximum
 	health_bar.value = current
 	health_label.text = "%d / %d" % [ceili(maxf(current, 0.0)), roundi(maximum)]
+
+
+func _update_coins() -> void:
+	var potion := "ready" if _player.coins >= _player.potion_cost else "need %d" % _player.potion_cost
+	if _player.potion_cooldown_left() > 0.0:
+		potion = "%.0fs" % ceilf(_player.potion_cooldown_left())
+	coins_label.text = "Coins %d      [Q] Potion: %s" % [_player.coins, potion]
 
 
 func _update_objective() -> void:

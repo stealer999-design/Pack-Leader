@@ -26,6 +26,16 @@ const RIVAL_COMMAND := "@rival"
 @export var knockback := 6.0
 @export var respawn_time := 4.0
 
+@export_group("Recovery")
+## Seconds without taking damage before health starts coming back.
+@export var regen_delay := 5.0
+## Fraction of max health regenerated per second once out of combat.
+@export var regen_rate := 0.03
+@export var potion_cost := 15
+## Fraction of max health a potion restores.
+@export_range(0.0, 1.0) var potion_heal := 0.5
+@export var potion_cooldown := 8.0
+
 @export_group("Taming")
 @export var capture_range := 9.0
 @export var capture_cooldown := 1.5
@@ -36,6 +46,7 @@ var display_name := "Player"
 var color := Color.WHITE
 
 # Replicated from the server.
+var coins := 0
 var downed := false:
 	set(v):
 		downed = v
@@ -58,6 +69,9 @@ var _dash_cooldown_timer := 0.0
 var _dash_dir := Vector3.ZERO
 var _server_attack_timer := 0.0
 var _server_capture_timer := 0.0
+var _server_potion_timer := 0.0
+var _potion_timer := 0.0
+var _since_hit := 0.0  ## Server: seconds since this player last took damage.
 var _slow_timer := 0.0
 var _slow_factor := 1.0
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
@@ -95,6 +109,8 @@ func _physics_process(delta: float) -> void:
 	if multiplayer.is_server():
 		_server_attack_timer -= delta
 		_server_capture_timer -= delta
+		_server_potion_timer -= delta
+		_regenerate(delta)
 	if not is_multiplayer_authority():
 		return
 
@@ -102,6 +118,7 @@ func _physics_process(delta: float) -> void:
 	_capture_timer -= delta
 	_dash_cooldown_timer -= delta
 	_slow_timer -= delta
+	_potion_timer -= delta
 	_update_aim()
 
 	if downed:
@@ -127,6 +144,11 @@ func _physics_process(delta: float) -> void:
 	velocity.y = 0.0 if is_on_floor() else velocity.y - _gravity * delta
 	move_and_slide()
 	model.rotation.y = atan2(-_aim_dir.x, -_aim_dir.z)
+
+	if Input.is_action_just_pressed("potion") and _potion_timer <= 0.0:
+		if coins >= potion_cost and health.current < health.max_health:
+			_potion_timer = potion_cooldown
+		request_potion.rpc_id(1)  # the server explains if it can't be used
 
 	if Input.is_action_just_pressed("interact"):
 		if world.hud.is_stable_open():
@@ -171,6 +193,10 @@ func radius() -> float:
 	return 0.4
 
 
+func potion_cooldown_left() -> float:
+	return maxf(_potion_timer, 0.0)
+
+
 func party_is_full() -> bool:
 	return world.get_pets(peer_id).size() >= MAX_PARTY
 
@@ -196,7 +222,29 @@ func request_attack(aim: Vector3) -> void:
 		to.y = 0.0
 		if aim.angle_to(to.normalized()) <= half_arc:
 			enemy.receive_damage(attack_damage, self, to.normalized() * knockback)
+	for crate in world.crates_near(global_position, attack_range):
+		var to := crate.global_position - global_position
+		to.y = 0.0
+		if to.length() < 0.01 or aim.angle_to(to.normalized()) <= half_arc:
+			crate.hit(attack_damage)
 	_show_swing.rpc(aim)
+
+
+@rpc("any_peer", "call_local", "reliable")
+func request_potion() -> void:
+	if not _sent_by_owner() or downed or _server_potion_timer > 0.0:
+		return
+	if health.current >= health.max_health:
+		world.tell(peer_id, "You're already at full health.", Color(1, 0.8, 0.5))
+		return
+	if coins < potion_cost:
+		world.tell(peer_id, "A potion costs %d coins (you have %d). Smash crates for coins!" % [potion_cost, coins],
+				Color(1, 0.8, 0.5))
+		return
+	_server_potion_timer = potion_cooldown * 0.8
+	coins -= potion_cost
+	health.heal(health.max_health * potion_heal)
+	world.play_burst.rpc(global_position, Color(0.5, 1.0, 0.55), 1.5)
 
 
 @rpc("any_peer", "call_local", "reliable")
@@ -317,8 +365,16 @@ func receive_damage(amount: float, source: Node3D, _knockback := Vector3.ZERO) -
 		return
 	if source and not Combat.are_enemies(source, self):
 		return  # no friendly fire
+	_since_hit = 0.0
 	health.take_damage(amount)
 	_flash.rpc()
+
+
+## Server: out of combat, health slowly comes back.
+func _regenerate(delta: float) -> void:
+	_since_hit += delta
+	if not downed and _since_hit >= regen_delay and health.current < health.max_health:
+		health.heal(health.max_health * regen_rate * delta)
 
 
 ## Server: slows this player. Movement runs on the owning client, so it is applied there.

@@ -28,6 +28,15 @@ func _ready() -> void:
 	multiplayer.peer_disconnected.connect(_on_peer_disconnected)
 
 
+func _notification(what: int) -> void:
+	# Disconnect before the scene tree is torn down. Otherwise a quitting host
+	# sends a despawn for every node, after the world itself was already removed
+	# on the clients, which floods their logs with errors.
+	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+		multiplayer.multiplayer_peer.close()
+		multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
+
+
 ## Hosting needs a listening socket, which browsers don't allow.
 func can_host() -> bool:
 	return not OS.has_feature("web")

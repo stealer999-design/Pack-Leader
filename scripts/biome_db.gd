@@ -3,12 +3,14 @@ class_name BiomeDB
 ## second, and so on, wrapping around (with creature levels still rising).
 ##
 ## species: indices into SpeciesDB that live in this biome.
+## starter_species: if set, the first two creatures near the camp are always this one.
 ## boss: "rival" (a tamer with one pet) or "titan" (the Glacier Titan).
 
 const BIOMES := [
 	{
 		"name": "Greenmeadow",
-		"species": [0, 1, 2, 3],
+		"species": [0, 1, 2, 3, 8],
+		"starter_species": 8,
 		"boss": "rival",
 		"floor_hue": Vector2(0.22, 0.36), "floor_sat": 0.25, "floor_val": 0.38,
 		"camp": Color(0.45, 0.43, 0.38), "arena": Color(0.36, 0.3, 0.3),

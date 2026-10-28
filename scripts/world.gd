@@ -19,6 +19,8 @@ const PATH_YAW := PI / 4.0
 @export var creature_scene: PackedScene
 @export var rival_scene: PackedScene
 @export var titan_scene: PackedScene
+@export var crate_scene: PackedScene
+@export var coin_scene: PackedScene
 ## Pets within this distance of a kill share the XP.
 @export var xp_share_range := 25.0
 ## How close a player must be to the stable to use it.
@@ -27,6 +29,8 @@ const PATH_YAW := PI / 4.0
 @export var exit_radius := 2.5
 ## XP every pet gets for defeating a rival (x level number).
 @export var rival_defeat_xp := 40
+## Players pick up coins within this distance.
+@export var coin_pickup_radius := 1.4
 
 ## Replicated: x = seed, y = level number. Changing it rebuilds the level on every peer.
 var level_state := Vector2i.ZERO:
@@ -55,6 +59,10 @@ var _advancing := false
 @onready var player_spawner: MultiplayerSpawner = $PlayerSpawner
 @onready var creature_spawner: MultiplayerSpawner = $CreatureSpawner
 @onready var rival_spawner: MultiplayerSpawner = $RivalSpawner
+@onready var crates_root: Node3D = $Crates
+@onready var coins_root: Node3D = $Coins
+@onready var crate_spawner: MultiplayerSpawner = $CrateSpawner
+@onready var coin_spawner: MultiplayerSpawner = $CoinSpawner
 @onready var stable: Node3D = $Stable
 @onready var portal: Node3D = $Portal
 @onready var camera_rig: Node3D = $CameraRig
@@ -70,6 +78,8 @@ func _ready() -> void:
 	player_spawner.spawn_function = _spawn_player
 	creature_spawner.spawn_function = _spawn_creature
 	rival_spawner.spawn_function = _spawn_rival
+	crate_spawner.spawn_function = _spawn_crate
+	coin_spawner.spawn_function = _spawn_coin
 	portal.visible = exit_open
 	if level_state != Vector2i.ZERO:
 		_build_level()  # a client joining mid-game
@@ -88,7 +98,10 @@ func _process(delta: float) -> void:
 
 
 func _physics_process(_delta: float) -> void:
-	if not multiplayer.is_server() or not exit_open or _advancing:
+	if not multiplayer.is_server():
+		return
+	_collect_coins()
+	if not exit_open or _advancing:
 		return
 	for p in get_players():
 		if not p.downed and _flat_distance(p.global_position, exit_point()) < exit_radius:
@@ -219,6 +232,15 @@ func nearest_enemy(attacker: Node3D, point: Vector3, max_range: float) -> Creatu
 	return best
 
 
+## Crates whose edge is within `max_range` of `center`.
+func crates_near(center: Vector3, max_range: float) -> Array[Crate]:
+	var out: Array[Crate] = []
+	for crate: Crate in crates_root.get_children():
+		if not crate.is_queued_for_deletion() and _flat_distance(crate.global_position, center) <= max_range + crate.radius():
+			out.append(crate)
+	return out
+
+
 ## The creature closest to `point` on the ground, if the point is on or near it.
 func creature_near(point: Vector3, tolerance := 0.8) -> Creature:
 	var best: Creature = null
@@ -289,8 +311,8 @@ func _start_level(number: int) -> void:
 	_advancing = false
 	for c in _creatures_where(func(c: Creature) -> bool: return not c.is_player_pet()):
 		c.queue_free()
-	for r in rivals_root.get_children():
-		r.queue_free()
+	for node in rivals_root.get_children() + crates_root.get_children() + coins_root.get_children():
+		node.queue_free()
 	exit_open = false
 	level_state = Vector2i(randi_range(1, 2_000_000_000), number)  # rebuilds the level here and on clients
 
@@ -304,12 +326,19 @@ func _start_level(number: int) -> void:
 
 	var base_level := 1 + (number - 1) * 2
 	var level_biome := biome()
-	for spot: Dictionary in layout.creature_spots:
+	var spots: Array = layout.creature_spots
+	for i in spots.size():
+		var spot: Dictionary = spots[i]
+		# The first two creatures by the camp are the biome's starter species (if it has one).
+		var species: int = level_biome.starter_species if level_biome.has("starter_species") and i < 2 \
+				else SpeciesDB.pick_random_index(level_biome.species)
 		creature_spawner.spawn({
-			"species": SpeciesDB.pick_random_index(level_biome.species),
+			"species": species,
 			"level": base_level + int(spot.depth * 2.5) + randi() % 2,
 			"pos": level_root.to_global(spot.pos),
 		})
+	for crate: Dictionary in layout.crate_spots:
+		crate_spawner.spawn({"pos": level_root.to_global(crate.pos), "gold": crate.gold, "level": number})
 	var boss_pos := level_root.to_global(layout.rival_point)
 	rival_spawner.spawn({"type": level_biome.boss, "name": layout.rival_name, "level": number, "pos": boss_pos})
 	if level_biome.boss == "rival":
@@ -333,6 +362,26 @@ func on_rival_defeated(rival: Rival) -> void:
 		if not pet.fainted:
 			pet.gain_xp(rival_defeat_xp * level_number)
 	exit_open = true
+
+
+## Scatters coins worth `total` around `at` (from a smashed crate).
+func spill_coins(at: Vector3, total: int) -> void:
+	var count := clampi(total, 1, 6)
+	for i in count:
+		var value := total / count + (1 if i < total % count else 0)
+		var offset := Vector3.FORWARD.rotated(Vector3.UP, TAU * i / count + randf() * 0.5) * randf_range(0.8, 1.6)
+		coin_spawner.spawn({"pos": clamp_to_level(at + offset), "value": value})
+
+
+func _collect_coins() -> void:
+	for coin: Coin in coins_root.get_children():
+		if coin.is_queued_for_deletion():
+			continue
+		for p in get_players():
+			if not p.downed and _flat_distance(p.global_position, coin.global_position) <= coin_pickup_radius:
+				p.coins += coin.value
+				coin.queue_free()
+				break
 
 
 func award_xp(killed: Creature) -> void:
@@ -483,6 +532,21 @@ func _spawn_creature(data: Dictionary) -> Node:
 
 
 ## Spawns the level's boss: a rival tamer or the Glacier Titan (both are Rivals).
+func _spawn_crate(data: Dictionary) -> Node:
+	var crate: Crate = crate_scene.instantiate()
+	crate.position = data.pos
+	crate.gold = data.gold
+	crate.level_number = data.level
+	return crate
+
+
+func _spawn_coin(data: Dictionary) -> Node:
+	var coin: Coin = coin_scene.instantiate()
+	coin.position = data.pos
+	coin.value = data.value
+	return coin
+
+
 func _spawn_rival(data: Dictionary) -> Node:
 	var scene := titan_scene if data.get("type", "rival") == "titan" else rival_scene
 	var rival: Rival = scene.instantiate()
@@ -567,6 +631,16 @@ func _bolt_segment(a: Vector3, b: Vector3, mat: Material) -> MeshInstance3D:
 	add_child(bolt)
 	bolt.look_at_from_position((a + b) * 0.5, b, Vector3.UP)
 	return bolt
+
+
+## A short beam between two points (e.g. a heal).
+@rpc("authority", "call_local", "unreliable")
+func play_beam(from: Vector3, to: Vector3, color: Color) -> void:
+	var mat := _fx_material(color)
+	var beam := _bolt_segment(from, to, mat)
+	var tween := beam.create_tween()
+	tween.tween_property(mat, "albedo_color:a", 0.0, 0.4)
+	tween.tween_callback(beam.queue_free)
 
 
 ## A red warning circle that fills up over `delay` seconds (boss attacks).

@@ -23,6 +23,7 @@ const RIVAL_NAMES := ["Kael", "Mira", "Dax", "Vesper", "Rook", "Sable", "Juno", 
 ##   segments: [{ z_start, z_end, center_x, width, kind }]   kind = "start" | "path" | "arena"
 ##   rocks: [{ pos: Vector3, size: Vector3 }]
 ##   creature_spots: [{ pos: Vector3, depth: float }]   depth = 0..1 along the path
+##   crate_spots: [{ pos: Vector3, gold: bool }]
 ##   start_point, stable_point, rival_point, exit_point: Vector3
 ##   total_length: float, rival_name: String, rival_species: int, floor_tint: Color,
 ##   biome: int (index into BiomeDB.BIOMES)
@@ -35,6 +36,7 @@ static func generate(level_seed: int, level_number: int) -> Dictionary:
 	var segments: Array[Dictionary] = []
 	var rocks: Array[Dictionary] = []
 	var spots: Array[Dictionary] = []
+	var crates: Array[Dictionary] = []
 
 	var z := 0.0
 	segments.append({"z_start": z, "z_end": z - START_LENGTH, "center_x": 0.0, "width": START_WIDTH, "kind": "start"})
@@ -50,6 +52,7 @@ static func generate(level_seed: int, level_number: int) -> Dictionary:
 		_add_rocks(rng, seg, rocks)
 		# Keep the first stretch next to the camp clear so the camp is safe.
 		_add_creature_spots(rng, seg, rocks, spots, float(i + 1) / path_count, 8.0 if i == 0 else 2.0)
+		_add_crate_spots(rng, seg, rocks, spots, crates)
 		z -= SEGMENT_LENGTH
 
 	var arena_center := clampf(center, -12.0, 12.0)
@@ -66,6 +69,7 @@ static func generate(level_seed: int, level_number: int) -> Dictionary:
 		"segments": segments,
 		"rocks": rocks,
 		"creature_spots": spots,
+		"crate_spots": crates,
 		"start_point": Vector3(0.0, 0.0, -14.0),
 		"stable_point": Vector3(-8.0, 0.0, -16.0),
 		"rival_point": Vector3(arena_center, 0.0, arena.z_start - ARENA_LENGTH * 0.55),
@@ -106,6 +110,28 @@ static func _add_rocks(rng: RandomNumberGenerator, seg: Dictionary, rocks: Array
 					rng.randf_range(seg.z_end + 3.0, seg.z_start - 3.0)),
 			"size": size,
 		})
+
+
+## Crates sit near the walls of each path segment, clear of rocks and creatures.
+static func _add_crate_spots(rng: RandomNumberGenerator, seg: Dictionary, rocks: Array[Dictionary],
+		spots: Array[Dictionary], crates: Array[Dictionary]) -> void:
+	var want := rng.randi_range(2, 4)
+	for attempt in 16:
+		if want <= 0:
+			return
+		var side := -1.0 if rng.randf() < 0.5 else 1.0
+		var pos := Vector3(seg.center_x + side * (seg.width * 0.5 - rng.randf_range(1.5, 4.0)), 0.0,
+				rng.randf_range(seg.z_end + 2.0, seg.z_start - 2.0))
+		var blocked := false
+		for rock: Dictionary in rocks:
+			if Vector2(rock.pos.x - pos.x, rock.pos.z - pos.z).length() < 3.0:
+				blocked = true
+		for spot: Dictionary in spots + crates:
+			if Vector2(spot.pos.x - pos.x, spot.pos.z - pos.z).length() < 2.5:
+				blocked = true
+		if not blocked:
+			crates.append({"pos": pos, "gold": rng.randf() < 0.12})
+			want -= 1
 
 
 static func _add_creature_spots(rng: RandomNumberGenerator, seg: Dictionary, rocks: Array[Dictionary],

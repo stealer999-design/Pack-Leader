@@ -11,6 +11,7 @@ const PATHS := [
 	"res://resources/species/spikeshell.tres",
 	"res://resources/species/aurora_moth.tres",
 	"res://resources/species/snowstalker.tres",
+	"res://resources/species/bloomling.tres",
 ]
 
 static var _all: Array[CreatureSpecies] = []

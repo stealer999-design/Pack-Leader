@@ -17,3 +17,9 @@ extends Resource
 
 func execute(_pet: Creature, _point: Vector3, _target: Creature) -> void:
 	pass
+
+
+## Return a reason the ability can't be used right now, or "" if it can.
+## Checked before the cast is queued, so a refused cast doesn't use the cooldown.
+func cannot_cast_reason(_pet: Creature) -> String:
+	return ""

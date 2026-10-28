@@ -52,6 +52,12 @@ grow_vertical = 2
 horizontal_alignment = 1
 vertical_alignment = 1
 
+[node name="CoinsLabel" type="Label" parent="Stats"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+text = "Coins 0"
+
 [node name="Spacer" type="Control" parent="Stats"]
 custom_minimum_size = Vector2(0, 10)
 layout_mode = 2
@@ -138,7 +144,7 @@ offset_right = 900.0
 offset_bottom = -20.0
 grow_vertical = 0
 modulate = Color(1, 1, 1, 0.8)
-text = "WASD move  ·  LMB attack  ·  E capture  ·  1 2 3 pet abilities  ·  RMB send pets / regroup  ·  F stable  ·  Space dash"
+text = "WASD move  ·  LMB attack / smash crates  ·  E capture  ·  1 2 3 pet abilities  ·  RMB send pets  ·  Q potion  ·  F stable  ·  Space dash"
 
 [node name="DownedLabel" type="Label" parent="."]
 unique_name_in_owner = true

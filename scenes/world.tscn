@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=3]
+[gd_scene load_steps=20 format=3]
 
 [ext_resource type="Script" path="res://scripts/world.gd" id="1_world"]
 [ext_resource type="PackedScene" path="res://scenes/hud.tscn" id="2_hud"]
@@ -7,6 +7,8 @@
 [ext_resource type="PackedScene" path="res://scenes/creature.tscn" id="5_creature"]
 [ext_resource type="PackedScene" path="res://scenes/rival.tscn" id="6_rival"]
 [ext_resource type="PackedScene" path="res://scenes/titan.tscn" id="7_titan"]
+[ext_resource type="PackedScene" path="res://scenes/crate.tscn" id="8_crate"]
+[ext_resource type="PackedScene" path="res://scenes/coin.tscn" id="9_coin"]
 
 [sub_resource type="Environment" id="env"]
 background_mode = 1
@@ -59,6 +61,8 @@ player_scene = ExtResource("4_player")
 creature_scene = ExtResource("5_creature")
 rival_scene = ExtResource("6_rival")
 titan_scene = ExtResource("7_titan")
+crate_scene = ExtResource("8_crate")
+coin_scene = ExtResource("9_coin")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("env")
@@ -132,6 +136,10 @@ text = "Next level"
 
 [node name="Rivals" type="Node3D" parent="."]
 
+[node name="Crates" type="Node3D" parent="."]
+
+[node name="Coins" type="Node3D" parent="."]
+
 [node name="PlayerSpawner" type="MultiplayerSpawner" parent="."]
 spawn_path = NodePath("../Players")
 
@@ -140,6 +148,12 @@ spawn_path = NodePath("../Creatures")
 
 [node name="RivalSpawner" type="MultiplayerSpawner" parent="."]
 spawn_path = NodePath("../Rivals")
+
+[node name="CrateSpawner" type="MultiplayerSpawner" parent="."]
+spawn_path = NodePath("../Crates")
+
+[node name="CoinSpawner" type="MultiplayerSpawner" parent="."]
+spawn_path = NodePath("../Coins")
 
 [node name="LevelSync" type="MultiplayerSynchronizer" parent="."]
 replication_config = SubResource("level_sync")

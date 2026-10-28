@@ -57,11 +57,12 @@ played in the browser".
 | Input | Action |
 |---|---|
 | WASD | Move |
-| LMB | Attack toward the mouse (weak, used to weaken creatures) |
+| LMB | Attack toward the mouse (weak, used to weaken creatures and smash crates) |
 | E | Throw a capture at the creature under the mouse |
 | RMB on a wild creature or the rival | Send your pets to attack it |
 | RMB on the ground | Pets drop their target and regroup |
 | 1 / 2 / 3 | Use the ability of the pet in that party slot, aimed at the mouse |
+| Q | Drink a health potion (costs 15 coins, heals 50%) |
 | F (at the stable) | Open/close the stable |
 | Space | Dash (brief invulnerability) |
 
@@ -76,8 +77,14 @@ played in the browser".
 
   | Level | Biome | Creatures | Boss |
   |---|---|---|---|
-  | 1, 3, 5… | Greenmeadow | Mossback, Emberfox, Voltwing, Gloomhorn | **Rival Tamer** with one pet. The pet fights and uses its ability; when the rival is beaten the pet goes wild, weakened, so you can capture it |
+  | 1, 3, 5… | Greenmeadow | Mossback, Emberfox, Voltwing, Gloomhorn, Bloomling (the first two creatures by the camp are always Bloomlings) | **Rival Tamer** with one pet. The pet fights and uses its ability; when the rival is beaten the pet goes wild, weakened, so you can capture it |
   | 2, 4, 6… | Frostfang Peaks | Frostling, Spikeshell, Aurora Moth, Snowstalker | **Glacier Titan**: drops Avalanches (a red warning circle, then a slam that damages and slows) and summons capturable Frostlings at 66% and 33% health |
+- **Tamer health:** after 5 seconds without taking damage you regenerate 3% of
+  your max health per second. Potions (Q) heal 50% for 15 coins. Bloomlings
+  and Aurora Moths can heal you too.
+- **Crates and coins:** crates along the path break in two hits and spill
+  coins (gold crates take four hits and hold far more). Walk over coins to
+  pick them up; coins belong to whoever collects them.
 - **Downed players** respawn next to a teammate who is still standing, or at
   the start camp if nobody is.
 - **Capturing:** the chance is 0% at full health and rises as the creature
@@ -97,6 +104,7 @@ played in the browser".
   | Emberfox | Pounce | Leaps to the target point and deals 2.5x damage around the landing |
   | Voltwing | Static Arc | Lightning that chains between up to 3 enemies (needs a target) |
   | Gloomhorn | Earthshaker | Damages and stuns every enemy within 4 units for 2s |
+  | Bloomling | Mending Bloom | Heals the most injured ally nearby (a pet or a player, including you) for 45% |
   | Frostling | Frost Nova | Damages every enemy around it and slows them to half speed for 3s |
   | Spikeshell | Frost Armor | For 5s, reflects 60% of the damage it takes back at the attacker |
   | Aurora Moth | Healing Aurora | Heals every nearby pet *and player* for 35% of their max health |
@@ -140,16 +148,18 @@ The host is the authoritative server and also plays.
 | `scripts/creature_species.gd`, `resources/species/*.tres`, `scripts/species_db.gd` | Species data. Add a `.tres` and list it in `SpeciesDB` to add a species |
 | `scripts/combat.gd` | Faction rule (`Combat.are_enemies`) that enforces no friendly fire |
 | `scripts/abilities/*.gd`, `resources/abilities/*.tres` | `PetAbility` base class and one subclass per ability; tune values in the `.tres` files |
+| `scenes/crate.tscn` + `scripts/crate.gd`, `scenes/coin.tscn` + `scripts/coin.gd` | Breakable crates and the coins they spill |
 | `scripts/components/health.gd` | Health with setter-driven signals (works with replication) |
 | `scenes/hud.tscn` + `scripts/hud.gd` | Health, pet party, hover/capture info, message feed |
 
 Physics layers: 1 world · 2 players · 3 hostiles (wild creatures, bosses, rival pets) · 4 player pets.
 
 ## Suggested next steps
-1. **Persistence:** save each player's party and stable to disk so pets carry between sessions.
-2. **Wild abilities:** let wild creatures use their species ability too (rival pets already do).
-3. **More abilities per pet:** e.g. a second ability unlocked at level 5, or abilities learned from items.
-4. **Smoother networking:** interpolate remote players and creatures, which currently snap to each replicated position.
-5. **Real art:** replace the placeholder meshes with glTF models and an `AnimationTree`.
-6. **Level variety:** more biomes, side branches with treasure, and rival tamers with more pets on later levels.
-7. **Pathfinding:** a `NavigationRegion3D` with a `NavigationAgent3D` on each creature, so they route around rocks.
+1. **Persistence:** save each player's party, stable and coins to disk so they carry between sessions.
+2. **A shop at the camp:** spend coins on capture-chance boosts, pet treats (XP) or cosmetics.
+3. **Wild abilities:** let wild creatures use their species ability too (rival pets already do).
+4. **More abilities per pet:** e.g. a second ability unlocked at level 5, or abilities learned from items.
+5. **Smoother networking:** interpolate remote players and creatures, which currently snap to each replicated position.
+6. **Real art:** replace the placeholder meshes with glTF models and an `AnimationTree`.
+7. **Level variety:** more biomes, side branches with treasure, and rival tamers with more pets on later levels.
+8. **Pathfinding:** a `NavigationRegion3D` with a `NavigationAgent3D` on each creature, so they route around rocks.
