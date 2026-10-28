@@ -92,6 +92,7 @@ pet_stance={
 [autoload]
 
 Network="*res://scripts/network.gd"
+SaveGame="*res://scripts/save_game.gd"
 
 [layer_names]
 

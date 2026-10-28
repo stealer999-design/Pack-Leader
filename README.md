@@ -22,6 +22,21 @@ godot --path . -- --solo
 Or in the editor: *Debug → Customize Run Instances*, enable 2 instances, and
 give them the arguments `--host` and `--join=127.0.0.1`.
 
+## Saving
+Progress is saved automatically: when a level starts, whenever your party or
+stable changes, every 20 seconds, and when you close the game. There are
+**3 save slots**; the title screen shows which one you're about to play, with
+**New Game** (first free slot) and **Load Game** (load or delete a slot).
+
+A save holds your tamer's name, party, hay beds, coins, potions and the
+furthest level reached. Each player's save lives on **their own computer**
+(`user://saves`, e.g. `%APPDATA%/Godot/app_userdata/Pack Leader/saves` on
+Windows; in the browser it's stored by the browser), so you can bring your
+tamer and pets into a friend's game. When you join, your save is sent to the
+host, which checks it (real species, sensible levels, at most 3 party pets
+and 12 beds) before restoring it. The host's save decides which level the
+game starts on.
+
 ## Building a Windows .exe
 Export presets for Windows and Linux are included (`export_presets.cfg`).
 1. In Godot: **Editor → Manage Export Templates → Download and Install** (once).
@@ -163,6 +178,7 @@ The host is the authoritative server and also plays.
 
 | Path | What it is |
 |---|---|
+| `scripts/save_game.gd` | Autoload `SaveGame`: save slots, autosave, and handing a save to the server to restore |
 | `scripts/network.gd` | Autoload `Network`: WebSocket host/join, solo mode, player registry (names, colours) |
 | `scenes/main.tscn` + `scripts/main.gd` | Menu + `LevelSpawner` that replicates the world to joining clients |
 | `scenes/world.tscn` + `scripts/world.gd` | Level flow (start → rival → portal → next level), level geometry, spawners, XP sharing, FX |
@@ -185,11 +201,10 @@ The host is the authoritative server and also plays.
 Physics layers: 1 world · 2 players · 3 hostiles (wild creatures, bosses, rival pets) · 4 player pets.
 
 ## Suggested next steps
-1. **Persistence:** save each player's party, stable and coins to disk so they carry between sessions.
-2. **More for the vendor to sell:** pet treats (XP), revive items or cosmetics.
-3. **Wild abilities:** let wild creatures use their species ability too (rival pets already do).
-4. **More abilities per pet:** e.g. a second ability unlocked at level 5, or abilities learned from items.
-5. **Smoother networking:** interpolate remote players and creatures, which currently snap to each replicated position.
-6. **Real art:** replace the placeholder meshes with glTF models and an `AnimationTree`.
-7. **Level variety:** more biomes, side branches with treasure, and rival tamers with more pets on later levels.
-8. **Pathfinding:** a `NavigationRegion3D` with a `NavigationAgent3D` on each creature, so they route around rocks.
+1. **More for the vendor to sell:** pet treats (XP), revive items or cosmetics.
+2. **Wild abilities:** let wild creatures use their species ability too (rival pets already do).
+3. **More abilities per pet:** e.g. a second ability unlocked at level 5, or abilities learned from items.
+4. **Smoother networking:** interpolate remote players and creatures, which currently snap to each replicated position.
+5. **Real art:** replace the placeholder meshes with glTF models and an `AnimationTree`.
+6. **Level variety:** more biomes, side branches with treasure, and rival tamers with more pets on later levels.
+7. **Pathfinding:** a `NavigationRegion3D` with a `NavigationAgent3D` on each creature, so they route around rocks.

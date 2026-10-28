@@ -86,6 +86,7 @@ var _potion_timer := 0.0
 ## local copy (started by _boost_started) for the HUD and hover capture chance.
 var _boost_timer := 0.0
 var _since_hit := 0.0  ## Server: seconds since this player last took damage.
+var _restored := false  ## Server: a save has been restored for this player.
 var _slow_timer := 0.0
 var _slow_factor := 1.0
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
@@ -429,6 +430,51 @@ func request_ability(slot: int, point: Vector3, target_name: String) -> void:
 	var error := pet.queue_ability(point, target)
 	if error != "":
 		world.tell(peer_id, error, Color(1, 0.8, 0.5))
+
+
+## The owner's saved progress (see SaveGame), sent once after spawning. Saves
+## live on each player's own computer, so everything is checked before use.
+@rpc("any_peer", "call_local", "reliable")
+func request_restore(data: Dictionary) -> void:
+	if not _sent_by_owner() or _restored:
+		return
+	_restored = true
+	coins = clampi(int(data.get("coins", 0)), 0, 999_999)
+	potions = clampi(int(data.get("potions", MAX_POTIONS)), 0, MAX_POTIONS)
+	var beds = data.get("stable", [])
+	if beds is Array:
+		for i in mini(beds.size(), MAX_STABLE):
+			stable[i] = _clean_pet(beds[i])
+	var party = data.get("party", [])
+	var restored_pets := 0
+	if party is Array:
+		for entry in party.slice(0, MAX_PARTY):
+			var pet := _clean_pet(entry)
+			if pet.is_empty():
+				continue
+			var slot := clampi(int(entry.get("slot", 0)), 0, MAX_PARTY - 1)
+			if world.get_party_pet(peer_id, slot):
+				slot = world.free_party_slot(peer_id)
+			if slot >= 0:
+				world.spawn_pet(peer_id, pet, global_position, slot)
+				restored_pets += 1
+	_push_stable()
+	world.tell(peer_id, "Welcome back, %s! %d pets in your party, %d in the stable." \
+			% [display_name, restored_pets, stable_count()], Color(0.7, 0.9, 0.7))
+
+
+## A saved pet made safe to use: a real species and sensible numbers, or {}.
+static func _clean_pet(entry) -> Dictionary:
+	if not entry is Dictionary or not entry.has("species"):
+		return {}
+	var species := int(entry.species)
+	if species < 0 or species >= SpeciesDB.PATHS.size():
+		return {}
+	return {
+		"species": species,
+		"level": clampi(int(entry.get("level", 1)), 1, 99),
+		"xp": clampi(int(entry.get("xp", 0)), 0, 1_000_000),
+	}
 
 
 ## Drag and drop in the stable window. `kind` is "party" (index = party slot)

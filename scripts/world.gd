@@ -93,7 +93,7 @@ func _ready() -> void:
 		return
 	Network.player_joined.connect(_on_player_joined)
 	Network.player_left.connect(_on_player_left)
-	_start_level(1)
+	_start_level(SaveGame.start_level())
 	for id in Network.players:
 		_on_player_joined(id, Network.players[id])
 
@@ -705,6 +705,7 @@ func on_local_player_spawned(player: Player) -> void:
 	camera_rig.target = player
 	camera_rig.global_position = player.global_position
 	hud.bind(player)
+	SaveGame.on_local_player_spawned(player, self)
 
 
 @rpc("authority", "call_local", "reliable")
