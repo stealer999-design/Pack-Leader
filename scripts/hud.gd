@@ -26,6 +26,9 @@ var _confirm_release := -1
 @onready var stable_party_list: VBoxContainer = %StablePartyList
 @onready var stable_title: Label = %StableTitle
 @onready var stable_list: VBoxContainer = %StableList
+@onready var level_label: Label = %LevelLabel
+@onready var objective_label: Label = %ObjectiveLabel
+@onready var progress_bar: ProgressBar = %ProgressBar
 
 
 func bind(player: Player) -> void:
@@ -46,6 +49,7 @@ func _process(delta: float) -> void:
 		close_stable()
 	interact_label.visible = near_stable and not is_stable_open()
 	_update_hover()
+	_update_objective()
 	_party_refresh -= delta
 	if _party_refresh <= 0.0:
 		_party_refresh = 0.2
@@ -179,6 +183,21 @@ func _on_health_changed(current: float, maximum: float) -> void:
 	health_label.text = "%d / %d" % [ceili(maxf(current, 0.0)), roundi(maximum)]
 
 
+func _update_objective() -> void:
+	var world := _player.world
+	if world.layout.is_empty():
+		return
+	level_label.text = "Level %d" % world.level_number
+	progress_bar.value = world.level_progress(_player.global_position) * 100.0
+	var rival := world.get_rival()
+	if world.exit_open:
+		objective_label.text = "Rival defeated! Step into the portal at the end of the path."
+	elif rival and rival.engaged:
+		objective_label.text = "Defeat Rival %s!" % rival.display_name
+	else:
+		objective_label.text = "Follow the path and defeat Rival %s at the end." % world.layout.rival_name
+
+
 func _update_hover() -> void:
 	var c := _player.hovered_creature
 	if c == null or not is_instance_valid(c):
@@ -190,8 +209,9 @@ func _update_hover() -> void:
 	elif c.owner_id == _player.peer_id:
 		hover_label.text = "Your %s  Lv%d" % [c.species.display_name, c.level]
 	else:
-		var other := _player.world.get_player(c.owner_id)
-		hover_label.text = "%s's %s  Lv%d" % [other.display_name if other else "?", c.species.display_name, c.level]
+		var other = _player.world.get_tamer(c.owner_id)  # Player or Rival
+		var owner_name: String = ("Rival " + other.display_name if c.is_rival_pet() else other.display_name) if other else "?"
+		hover_label.text = "%s's %s  Lv%d" % [owner_name, c.species.display_name, c.level]
 
 
 func _rebuild_party() -> void:

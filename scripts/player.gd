@@ -8,6 +8,7 @@ signal stable_changed
 
 const MAX_PARTY := 3
 const MAX_STABLE := 12
+const RIVAL_COMMAND := "@rival"
 
 @export_group("Movement")
 @export var move_speed := 6.0
@@ -142,9 +143,13 @@ func _physics_process(delta: float) -> void:
 		request_capture.rpc_id(1, hovered_creature.name)
 
 	if Input.is_action_just_pressed("command"):
-		if hovered_creature and hovered_creature.is_wild():
+		var rival := world.get_rival()
+		if hovered_creature and Combat.are_enemies(self, hovered_creature):
 			world.ping(hovered_creature.global_position, Color(1, 0.35, 0.3))
 			request_command.rpc_id(1, hovered_creature.name)
+		elif rival and rival.global_position.distance_to(_aim_point) < 1.5:
+			world.ping(rival.global_position, Color(1, 0.35, 0.3))
+			request_command.rpc_id(1, RIVAL_COMMAND)
 		else:
 			world.ping(global_position, color)
 			request_command.rpc_id(1, "")
@@ -196,6 +201,9 @@ func request_capture(creature_name: String) -> void:
 	if not _sent_by_owner() or downed or _server_capture_timer > 0.0:
 		return
 	var c := world.get_creature(creature_name)
+	if c and c.is_rival_pet():
+		world.tell(peer_id, "That pet belongs to the rival. Defeat the rival first!", Color(1, 0.8, 0.5))
+		return
 	if c == null or not c.is_wild() or not c.is_targetable():
 		return
 	if c.global_position.distance_to(global_position) > capture_range + c.radius():
@@ -223,11 +231,16 @@ func request_capture(creature_name: String) -> void:
 
 
 ## Empty name = regroup (pets drop their focus and return to you).
+## RIVAL_COMMAND = attack the rival tamer.
 @rpc("any_peer", "call_local", "reliable")
 func request_command(creature_name: String) -> void:
 	if not _sent_by_owner():
 		return
-	var focus := world.get_creature(creature_name) if creature_name != "" else null
+	var focus: Node3D = null
+	if creature_name == RIVAL_COMMAND:
+		focus = world.get_rival()
+	elif creature_name != "":
+		focus = world.get_creature(creature_name)
 	if focus and not Combat.are_enemies(self, focus):
 		focus = null
 	for pet in world.get_pets(peer_id):
@@ -313,7 +326,7 @@ func _on_died() -> void:
 		return
 	health.current = health.max_health
 	downed = false
-	_respawn_at.rpc_id(peer_id, world.player_spawn_point(peer_id))
+	_respawn_at.rpc_id(peer_id, world.respawn_point(peer_id))
 
 
 func _can_use_stable() -> bool:

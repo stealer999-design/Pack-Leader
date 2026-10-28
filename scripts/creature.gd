@@ -23,7 +23,7 @@ var species_index := 0
 var home := Vector3.ZERO
 
 # Replicated state.
-var owner_id := 0:  # 0 = wild, otherwise the owning player's peer id
+var owner_id := 0:  # 0 = wild, World.RIVAL_ID = the rival's pet, otherwise the owning player's peer id
 	set(v):
 		owner_id = v
 		if is_node_ready():
@@ -57,6 +57,7 @@ var _guard_timer := 0.0
 var _guard_reduction := 0.0
 var _leaping := false
 var _pending_cast := {}  ## { point, target, time_left } while moving into ability range.
+var _ai_cast_delay := 3.0  ## Rival pets: time until they next consider using their ability.
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 
 ## Local clock time when the ability is ready again. Set on every peer by _ability_used.
@@ -115,8 +116,12 @@ func _physics_process(delta: float) -> void:
 	var desired := Vector3.ZERO
 	if _stun_timer > 0.0:
 		_stun_timer -= delta
+	elif is_wild():
+		desired = _wild_ai(delta)
+	elif is_rival_pet():
+		desired = _rival_pet_ai(delta)
 	else:
-		desired = _wild_ai(delta) if is_wild() else _pet_ai(delta)
+		desired = _pet_ai(delta)
 	velocity.x = desired.x + _knockback.x
 	velocity.z = desired.z + _knockback.z
 	_knockback = _knockback.move_toward(Vector3.ZERO, 40.0 * delta)
@@ -128,6 +133,14 @@ func _physics_process(delta: float) -> void:
 
 func is_wild() -> bool:
 	return owner_id == 0
+
+
+func is_player_pet() -> bool:
+	return owner_id > 0
+
+
+func is_rival_pet() -> bool:
+	return owner_id == World.RIVAL_ID
 
 
 func is_targetable() -> bool:
@@ -189,6 +202,18 @@ func tame(new_owner: int, slot: int) -> void:
 	_stun_timer = 0.0
 	_knockback = Vector3.ZERO
 	health.current = maxf(health.current, health.max_health * 0.5)
+
+
+## The rival was defeated: its pet goes wild, weakened, ready to be captured.
+func release_to_wild() -> void:
+	owner_id = 0
+	party_slot = -1
+	fainted = false
+	target = null
+	focus = null
+	_pending_cast = {}
+	home = global_position
+	health.current = health.max_health * 0.3
 
 
 func on_capture_failed(player: Node3D) -> void:
@@ -280,7 +305,7 @@ func _wild_ai(delta: float) -> Vector3:
 
 
 func _pet_ai(delta: float) -> Vector3:
-	var master_player := world.get_player(owner_id)
+	var master_player := world.get_tamer(owner_id)
 	if master_player == null:
 		return Vector3.ZERO
 	if _flat_distance(master_player.global_position) > leash_range:
@@ -306,6 +331,27 @@ func _pet_ai(delta: float) -> Vector3:
 	var follow_point := master_player.global_position + _follow_offset()
 	var speed := species.move_speed * (1.6 if _flat_distance(follow_point) > 6.0 else 1.0)
 	return _steer_to(follow_point, speed)
+
+
+## The rival's pet stays by the rival until the fight starts, then attacks the
+## nearest player or pet and uses its ability whenever it is ready.
+func _rival_pet_ai(delta: float) -> Vector3:
+	var rival := world.get_tamer(owner_id) as Rival
+	if rival == null:
+		return Vector3.ZERO
+	if not _pending_cast.is_empty():
+		return _tick_pending_cast(delta)
+	if not rival.engaged:
+		return _steer_to(rival.global_position + _follow_offset(), species.move_speed)
+	if not _is_valid_target(target) or target.global_position.distance_to(rival.home) > rival.leash_range + 4.0:
+		target = _nearest_hostile(rival.leash_range + 4.0)
+	if target == null:
+		return _steer_to(rival.global_position + _follow_offset(), species.move_speed)
+	_ai_cast_delay -= delta
+	if _ai_cast_delay <= 0.0 and ability_cooldown_left() <= 0.0:
+		_ai_cast_delay = randf_range(1.0, 3.0)
+		queue_ability(target.global_position, target as Creature)
+	return _chase_and_attack(target)
 
 
 ## Moves into range of a queued ability, then casts it.
@@ -369,18 +415,20 @@ func _nearest_hostile(max_range: float) -> Node3D:
 	return best
 
 
-## Pets defend: the nearest wild creature fighting the owner or the owner's pets.
-func _threat_to(master_player: Player) -> Creature:
-	var best: Creature = null
+## Pets defend: the nearest enemy (wild creature, rival or rival pet) that is
+## fighting the owner or the owner's pets.
+func _threat_to(master_player: Node3D) -> Node3D:
+	var best: Node3D = null
 	var best_dist := assist_range
-	for c in world.get_wild_creatures():
-		if not is_instance_valid(c.target):
+	for enemy in world.get_hostiles():
+		var enemy_target = enemy.get("target")
+		if not is_instance_valid(enemy_target) or not _is_valid_target(enemy):
 			continue
-		var on_our_side: bool = c.target == master_player \
-				or (c.target is Creature and c.target.owner_id == owner_id)
-		var d := c.global_position.distance_to(master_player.global_position)
+		var on_our_side: bool = enemy_target == master_player \
+				or (enemy_target is Creature and enemy_target.owner_id == owner_id)
+		var d := enemy.global_position.distance_to(master_player.global_position)
 		if on_our_side and d < best_dist:
-			best = c
+			best = enemy
 			best_dist = d
 	return best
 
@@ -404,7 +452,7 @@ func _tick_faint(delta: float) -> void:
 	_faint_timer -= delta
 	if _faint_timer > 0.0:
 		return
-	var master_player := world.get_player(owner_id)
+	var master_player := world.get_tamer(owner_id)
 	if master_player:
 		global_position = master_player.global_position + _follow_offset()
 	health.current = health.max_health * 0.5
@@ -452,14 +500,14 @@ func _build_visuals() -> void:
 
 
 func _apply_ownership() -> void:
-	collision_layer = 0 if fainted else (WILD_LAYER if is_wild() else PET_LAYER)
-	collision_mask = WILD_MASK if is_wild() else PET_MASK
+	collision_layer = 0 if fainted else (PET_LAYER if is_player_pet() else WILD_LAYER)
+	collision_mask = PET_MASK if is_player_pet() else WILD_MASK
 	ring.visible = not is_wild()
 	var bar_mat := bar_fg.material_override as StandardMaterial3D
-	bar_mat.albedo_color = Color(0.9, 0.25, 0.2) if is_wild() else Color(0.3, 0.9, 0.35)
+	bar_mat.albedo_color = Color(0.3, 0.9, 0.35) if is_player_pet() else Color(0.9, 0.25, 0.2)
 	if not is_wild():
-		var master_player := world.get_player(owner_id) if world else null
-		var color := master_player.color if master_player else Color.WHITE
+		var master_player = world.get_tamer(owner_id) if world else null  # Player or Rival
+		var color: Color = master_player.color if master_player else Color.WHITE
 		(ring.material_override as StandardMaterial3D).albedo_color = color
 	_refresh_label()
 
@@ -474,7 +522,7 @@ func _refresh_label() -> void:
 	if species == null:
 		return
 	name_label.text = "%s  Lv%d" % [species.display_name, level]
-	var master_player := world.get_player(owner_id) if world and not is_wild() else null
+	var master_player = world.get_tamer(owner_id) if world and not is_wild() else null  # Player or Rival
 	name_label.modulate = master_player.color.lightened(0.3) if master_player else Color.WHITE
 
 

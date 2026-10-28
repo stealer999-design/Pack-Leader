@@ -2,7 +2,8 @@
 
 Co-op (2–4 players) isometric action RPG where **pets are the focus**: every
 creature in the world can be captured, then follows you, fights for you and
-levels up.
+levels up. Each level is a randomly generated path from a start camp to a
+rival tamer waiting at the end.
 
 ![screenshot](screenshot.png)
 
@@ -36,12 +37,22 @@ godot --headless --path . --export-release "Windows Desktop" export/windows/Pack
 | WASD | Move |
 | LMB | Attack toward the mouse (weak, used to weaken creatures) |
 | E | Throw a capture at the creature under the mouse |
-| RMB on a wild creature | Send your pets to attack it |
+| RMB on a wild creature or the rival | Send your pets to attack it |
 | RMB on the ground | Pets drop their target and regroup |
 | 1 / 2 / 3 | Use the ability of the pet in that party slot, aimed at the mouse |
 | F (at the stable) | Open/close the stable |
 | Space | Dash (brief invulnerability) |
 
+- **Levels:** each level is one randomly generated path that always runs up
+  the screen, winding left and right, with rocks and packs of wild creatures
+  that get tougher the further you go. It starts at a camp with the stable and
+  ends in an arena where a **Rival Tamer** waits with one pet. Get close and
+  the rival challenges you; its pet fights and uses its ability too. Defeat the
+  rival and a portal opens at the far end. Step in and everyone moves on to the
+  next, harder level. Defeating a rival also gives every pet bonus XP, and the
+  rival's pet goes wild (weakened), so you can capture it.
+- **Downed players** respawn next to a teammate who is still standing, or at
+  the start camp if nobody is.
 - **Capturing:** the chance is 0% at full health and rises as the creature
   gets weaker. It is scaled by the species' `catch_rate` and lowered for
   higher-level creatures. Hover a creature to see the current chance. Failed
@@ -59,16 +70,17 @@ godot --headless --path . --export-release "Windows Desktop" export/windows/Pack
   | Emberfox | Pounce | Leaps to the target point and deals 2.5x damage around the landing |
   | Voltwing | Static Arc | Lightning that chains between up to 3 enemies (needs a target) |
   | Gloomhorn | Earthshaker | Damages and stuns every enemy within 4 units for 2s |
-- **Stable:** the building north of the camp holds up to 12 pets per player.
+- **Stable:** there is one stable, at the start of every level, holding up to
+  12 pets per player.
   Walk up to it and press F to store, take out, swap or release pets.
   Stabled pets are fully healed. If you capture a creature while your party is
   full, it goes straight to the stable; if the stable is full too, the capture
   is refused.
-- **No friendly fire:** there are two sides, wild creatures and tamers (every
-  player and every pet). Nothing can hurt or target its own side, and pets
-  immediately drop a target that someone else captures.
-- **The world:** creatures get stronger the further they are from the central
-  camp. Mossbacks are passive, which makes them good first captures.
+- **No friendly fire:** there are two sides: hostiles (wild creatures, rivals
+  and rivals' pets) and tamers (every player and every player's pet). Nothing
+  can hurt or target its own side, and pets immediately drop a target that
+  someone else captures. Mossbacks are passive, which makes them good first
+  captures.
 
 ## Architecture
 The host is the authoritative server and also plays.
@@ -77,14 +89,19 @@ The host is the authoritative server and also plays.
   feels responsive.
 - **Requests:** attacks, captures and pet commands are sent to the server as
   RPCs, which checks and resolves them.
-- **Server-owned state:** all creature AI, damage, health, ownership and XP
-  run on the server and are replicated to clients.
+- **Server-owned state:** all creature and rival AI, damage, health,
+  ownership and XP run on the server and are replicated to clients.
+- **Levels** are generated from a seed. Only the seed and level number are
+  replicated (`World.level_state`); every peer builds identical geometry from
+  them, including players who join mid-game.
 
 | Path | What it is |
 |---|---|
 | `scripts/network.gd` | Autoload `Network`: host/join, player registry (names, colours) |
 | `scenes/main.tscn` + `scripts/main.gd` | Menu + `LevelSpawner` that replicates the world to joining clients |
-| `scenes/world.tscn` + `scripts/world.gd` | Arena, player/creature spawners, wild population, XP sharing, FX |
+| `scenes/world.tscn` + `scripts/world.gd` | Level flow (start → rival → portal → next level), level geometry, spawners, XP sharing, FX |
+| `scripts/level_generator.gd` | Deterministic layout of a level from a seed: path segments, rocks, creature spots, rival, exit |
+| `scenes/rival.tscn` + `scripts/rival.gd` | The AI rival tamer at the end of each level |
 | `scenes/player.tscn` + `scripts/player.gd` | Movement, aim, and server-validated attack/capture/command requests |
 | `scenes/creature.tscn` + `scripts/creature.gd` | One scene for wild creatures *and* pets: wild AI, pet AI, taming, levelling |
 | `scripts/creature_species.gd`, `resources/species/*.tres`, `scripts/species_db.gd` | Species data. Add a `.tres` and list it in `SpeciesDB` to add a species |
@@ -93,12 +110,13 @@ The host is the authoritative server and also plays.
 | `scripts/components/health.gd` | Health with setter-driven signals (works with replication) |
 | `scenes/hud.tscn` + `scripts/hud.gd` | Health, pet party, hover/capture info, message feed |
 
-Physics layers: 1 world · 2 players · 3 wild creatures · 4 pets.
+Physics layers: 1 world · 2 players · 3 hostiles (wild creatures, rivals, rival pets) · 4 player pets.
 
 ## Suggested next steps
 1. **Persistence:** save each player's party and stable to disk so pets carry between sessions.
-2. **Wild abilities:** let wild creatures use their species ability too, for tougher fights.
+2. **Wild abilities:** let wild creatures use their species ability too (rival pets already do).
 3. **More abilities per pet:** e.g. a second ability unlocked at level 5, or abilities learned from items.
 4. **Smoother networking:** interpolate remote players and creatures, which currently snap to each replicated position.
 5. **Real art:** replace the placeholder meshes with glTF models and an `AnimationTree`.
-6. **Pathfinding:** a `NavigationRegion3D` with a `NavigationAgent3D` on each creature, so they route around rocks.
+6. **Level variety:** themed biomes per level, side branches with treasure, and rival tamers with more pets on later levels.
+7. **Pathfinding:** a `NavigationRegion3D` with a `NavigationAgent3D` on each creature, so they route around rocks.

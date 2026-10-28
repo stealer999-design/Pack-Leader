@@ -1,10 +1,11 @@
-[gd_scene load_steps=15 format=3]
+[gd_scene load_steps=17 format=3]
 
 [ext_resource type="Script" path="res://scripts/world.gd" id="1_world"]
 [ext_resource type="PackedScene" path="res://scenes/hud.tscn" id="2_hud"]
 [ext_resource type="Script" path="res://scripts/camera_rig.gd" id="3_cam"]
 [ext_resource type="PackedScene" path="res://scenes/player.tscn" id="4_player"]
 [ext_resource type="PackedScene" path="res://scenes/creature.tscn" id="5_creature"]
+[ext_resource type="PackedScene" path="res://scenes/rival.tscn" id="6_rival"]
 
 [sub_resource type="Environment" id="env"]
 background_mode = 1
@@ -14,28 +15,48 @@ ambient_light_color = Color(0.55, 0.6, 0.75, 1)
 ambient_light_energy = 0.5
 tonemap_mode = 2
 
-[sub_resource type="StandardMaterial3D" id="floor_mat"]
-albedo_color = Color(0.32, 0.38, 0.28, 1)
-
-[sub_resource type="StandardMaterial3D" id="center_mat"]
-albedo_color = Color(0.45, 0.43, 0.38, 1)
-
-[sub_resource type="StandardMaterial3D" id="wall_mat"]
-albedo_color = Color(0.4, 0.38, 0.42, 1)
-
-[sub_resource type="StandardMaterial3D" id="rock_mat"]
-albedo_color = Color(0.55, 0.5, 0.45, 1)
-
 [sub_resource type="StandardMaterial3D" id="stable_wall_mat"]
 albedo_color = Color(0.55, 0.38, 0.24, 1)
 
 [sub_resource type="StandardMaterial3D" id="stable_roof_mat"]
 albedo_color = Color(0.62, 0.2, 0.16, 1)
 
+[sub_resource type="StandardMaterial3D" id="door_mat"]
+albedo_color = Color(0.55, 0.5, 0.45, 1)
+
+[sub_resource type="StandardMaterial3D" id="portal_mat"]
+shading_mode = 0
+albedo_color = Color(0.55, 0.85, 1, 1)
+
+[sub_resource type="TorusMesh" id="portal_ring"]
+material = SubResource("portal_mat")
+inner_radius = 1.2
+outer_radius = 1.5
+
+[sub_resource type="StandardMaterial3D" id="portal_core_mat"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.55, 0.85, 1, 0.35)
+
+[sub_resource type="CylinderMesh" id="portal_core"]
+material = SubResource("portal_core_mat")
+top_radius = 1.25
+bottom_radius = 1.25
+height = 0.05
+
+[sub_resource type="SceneReplicationConfig" id="level_sync"]
+properties/0/path = NodePath(".:level_state")
+properties/0/spawn = true
+properties/0/replication_mode = 2
+properties/1/path = NodePath(".:exit_open")
+properties/1/spawn = true
+properties/1/replication_mode = 2
+
 [node name="World" type="Node3D"]
 script = ExtResource("1_world")
 player_scene = ExtResource("4_player")
 creature_scene = ExtResource("5_creature")
+rival_scene = ExtResource("6_rival")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("env")
@@ -45,107 +66,9 @@ rotation = Vector3(-0.95, 0.5, 0)
 light_energy = 1.2
 shadow_enabled = true
 
-[node name="Arena" type="Node3D" parent="."]
-
-[node name="Floor" type="CSGBox3D" parent="Arena"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
-use_collision = true
-size = Vector3(80, 1, 80)
-material = SubResource("floor_mat")
-
-[node name="Camp" type="CSGCylinder3D" parent="Arena"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.48, 0)
-radius = 6.0
-height = 1.0
-sides = 24
-material = SubResource("center_mat")
-
-[node name="WallNorth" type="CSGBox3D" parent="Arena"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, -40)
-use_collision = true
-size = Vector3(80, 2, 1)
-material = SubResource("wall_mat")
-
-[node name="WallSouth" type="CSGBox3D" parent="Arena"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 40)
-use_collision = true
-size = Vector3(80, 2, 1)
-material = SubResource("wall_mat")
-
-[node name="WallWest" type="CSGBox3D" parent="Arena"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -40, 1, 0)
-use_collision = true
-size = Vector3(1, 2, 80)
-material = SubResource("wall_mat")
-
-[node name="WallEast" type="CSGBox3D" parent="Arena"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 40, 1, 0)
-use_collision = true
-size = Vector3(1, 2, 80)
-material = SubResource("wall_mat")
-
-[node name="Rock1" type="CSGBox3D" parent="Arena" groups=["obstacles"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 1.25, -12)
-use_collision = true
-size = Vector3(2.5, 2.5, 2.5)
-material = SubResource("rock_mat")
-
-[node name="Rock2" type="CSGBox3D" parent="Arena" groups=["obstacles"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 1.25, -12)
-use_collision = true
-size = Vector3(2.5, 2.5, 2.5)
-material = SubResource("rock_mat")
-
-[node name="Rock3" type="CSGBox3D" parent="Arena" groups=["obstacles"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 1.25, 12)
-use_collision = true
-size = Vector3(2.5, 2.5, 2.5)
-material = SubResource("rock_mat")
-
-[node name="Rock4" type="CSGBox3D" parent="Arena" groups=["obstacles"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 1.25, 12)
-use_collision = true
-size = Vector3(2.5, 2.5, 2.5)
-material = SubResource("rock_mat")
-
-[node name="Rock5" type="CSGBox3D" parent="Arena" groups=["obstacles"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -25, 1.25, 3)
-use_collision = true
-size = Vector3(2.5, 2.5, 2.5)
-material = SubResource("rock_mat")
-
-[node name="Rock6" type="CSGBox3D" parent="Arena" groups=["obstacles"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 26, 1.25, -6)
-use_collision = true
-size = Vector3(2.5, 2.5, 2.5)
-material = SubResource("rock_mat")
-
-[node name="Rock7" type="CSGBox3D" parent="Arena" groups=["obstacles"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 1.25, 27)
-use_collision = true
-size = Vector3(2.5, 2.5, 2.5)
-material = SubResource("rock_mat")
-
-[node name="Rock8" type="CSGBox3D" parent="Arena" groups=["obstacles"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 1.25, -26)
-use_collision = true
-size = Vector3(2.5, 2.5, 2.5)
-material = SubResource("rock_mat")
-
-[node name="Rock9" type="CSGBox3D" parent="Arena" groups=["obstacles"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -28, 1.25, -24)
-use_collision = true
-size = Vector3(2.5, 2.5, 2.5)
-material = SubResource("rock_mat")
-
-[node name="Rock10" type="CSGBox3D" parent="Arena" groups=["obstacles"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 27, 1.25, 25)
-use_collision = true
-size = Vector3(2.5, 2.5, 2.5)
-material = SubResource("rock_mat")
+[node name="Level" type="Node3D" parent="."]
 
 [node name="Stable" type="Node3D" parent="." groups=["obstacles"]]
-transform = Transform3D(0.707107, 0, 0.707107, 0, 1, 0, -0.707107, 0, 0.707107, 0, 0, -8)
 
 [node name="Walls" type="CSGBox3D" parent="Stable"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
@@ -164,7 +87,7 @@ material = SubResource("stable_roof_mat")
 [node name="Door" type="CSGBox3D" parent="Stable"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 1.26)
 size = Vector3(1, 1.4, 0.05)
-material = SubResource("rock_mat")
+material = SubResource("door_mat")
 
 [node name="Sign" type="Label3D" parent="Stable"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.6, 0)
@@ -175,15 +98,49 @@ font_size = 48
 outline_size = 12
 text = "Stable"
 
+[node name="Portal" type="Node3D" parent="."]
+visible = false
+
+[node name="Ring" type="MeshInstance3D" parent="Portal"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 0)
+mesh = SubResource("portal_ring")
+
+[node name="Core" type="MeshInstance3D" parent="Portal"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.06, 0)
+mesh = SubResource("portal_core")
+
+[node name="Glow" type="OmniLight3D" parent="Portal"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
+light_color = Color(0.55, 0.85, 1, 1)
+light_energy = 2.0
+omni_range = 6.0
+
+[node name="Sign" type="Label3D" parent="Portal"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.4, 0)
+pixel_size = 0.012
+billboard = 1
+modulate = Color(0.7, 0.9, 1, 1)
+font_size = 44
+outline_size = 12
+text = "Next level"
+
 [node name="Players" type="Node3D" parent="."]
 
 [node name="Creatures" type="Node3D" parent="."]
+
+[node name="Rivals" type="Node3D" parent="."]
 
 [node name="PlayerSpawner" type="MultiplayerSpawner" parent="."]
 spawn_path = NodePath("../Players")
 
 [node name="CreatureSpawner" type="MultiplayerSpawner" parent="."]
 spawn_path = NodePath("../Creatures")
+
+[node name="RivalSpawner" type="MultiplayerSpawner" parent="."]
+spawn_path = NodePath("../Rivals")
+
+[node name="LevelSync" type="MultiplayerSynchronizer" parent="."]
+replication_config = SubResource("level_sync")
 
 [node name="CameraRig" type="Node3D" parent="."]
 script = ExtResource("3_cam")

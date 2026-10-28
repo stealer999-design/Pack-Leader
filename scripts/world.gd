@@ -1,29 +1,61 @@
 class_name World
 extends Node3D
-## The shared game world. Spawned on every peer by Main's LevelSpawner; the
-## server spawns players and creatures, which the spawners replicate.
+## The shared game world. Spawned on every peer by Main's LevelSpawner.
+##
+## Each level is generated from a seed (see LevelGenerator): a start camp with
+## the stable, a winding path full of wild creatures, and an arena with a rival
+## tamer at the end. Only `level_state` (seed + number) is replicated; every peer
+## builds the same geometry from it. The server spawns players, creatures and
+## the rival, which the spawners replicate.
+
+signal level_changed
+
+## owner_id used for the rival's pet.
+const RIVAL_ID := -1
+## Direction the path runs in. 45° makes it run straight up the screen.
+const PATH_YAW := PI / 4.0
 
 @export var player_scene: PackedScene
 @export var creature_scene: PackedScene
-@export var max_wild_creatures := 18
-@export var wild_spawn_interval := 2.5
-@export var arena_half_size := 36.0
-## Wild creatures never spawn closer than this to a player.
-@export var spawn_clearance := 14.0
-## Creature level rises by one every this many units from the centre.
-@export var level_band_width := 12.0
+@export var rival_scene: PackedScene
 ## Pets within this distance of a kill share the XP.
 @export var xp_share_range := 25.0
 ## How close a player must be to the stable to use it.
 @export var stable_range := 4.5
+## Stepping this close to the open portal starts the next level.
+@export var exit_radius := 2.5
+## XP every pet gets for defeating a rival (x level number).
+@export var rival_defeat_xp := 40
 
-var _spawn_timer := 0.0
+## Replicated: x = seed, y = level number. Changing it rebuilds the level on every peer.
+var level_state := Vector2i.ZERO:
+	set(v):
+		level_state = v
+		if is_node_ready():
+			_build_level()
+## Replicated: true once the rival is defeated.
+var exit_open := false:
+	set(v):
+		exit_open = v
+		if is_node_ready():
+			portal.visible = v
 
+var layout := {}
+var level_number: int:
+	get:
+		return level_state.y
+
+var _advancing := false
+
+@onready var level_root: Node3D = $Level
 @onready var players_root: Node3D = $Players
 @onready var creatures_root: Node3D = $Creatures
+@onready var rivals_root: Node3D = $Rivals
 @onready var player_spawner: MultiplayerSpawner = $PlayerSpawner
 @onready var creature_spawner: MultiplayerSpawner = $CreatureSpawner
+@onready var rival_spawner: MultiplayerSpawner = $RivalSpawner
 @onready var stable: Node3D = $Stable
+@onready var portal: Node3D = $Portal
 @onready var camera_rig: Node3D = $CameraRig
 @onready var hud: HUD = $HUD
 
@@ -33,26 +65,36 @@ func _enter_tree() -> void:
 
 
 func _ready() -> void:
+	level_root.rotation.y = PATH_YAW
 	player_spawner.spawn_function = _spawn_player
 	creature_spawner.spawn_function = _spawn_creature
+	rival_spawner.spawn_function = _spawn_rival
+	portal.visible = exit_open
+	if level_state != Vector2i.ZERO:
+		_build_level()  # a client joining mid-game
 	if not multiplayer.is_server():
 		return
 	Network.player_joined.connect(_on_player_joined)
 	Network.player_left.connect(_on_player_left)
+	_start_level(1)
 	for id in Network.players:
 		_on_player_joined(id, Network.players[id])
-	for i in max_wild_creatures * 2 / 3:
-		_spawn_wild_creature()
 
 
-func _physics_process(delta: float) -> void:
-	if not multiplayer.is_server():
+func _process(delta: float) -> void:
+	if portal.visible:
+		portal.rotate_y(delta * 1.5)
+
+
+func _physics_process(_delta: float) -> void:
+	if not multiplayer.is_server() or not exit_open or _advancing:
 		return
-	_spawn_timer -= delta
-	if _spawn_timer <= 0.0:
-		_spawn_timer = wild_spawn_interval
-		if get_wild_creatures().size() < max_wild_creatures:
-			_spawn_wild_creature()
+	for p in get_players():
+		if not p.downed and _flat_distance(p.global_position, exit_point()) < exit_radius:
+			_advancing = true
+			announce.rpc("%s stepped through the portal..." % p.display_name, p.color.lightened(0.3))
+			get_tree().create_timer(1.0).timeout.connect(_start_level.bind(level_number + 1))
+			return
 
 
 # --- Lookups ---------------------------------------------------------------------
@@ -69,6 +111,18 @@ func get_players() -> Array[Player]:
 	return out
 
 
+func get_rival() -> Rival:
+	for r: Rival in rivals_root.get_children():
+		if not r.is_queued_for_deletion():
+			return r
+	return null
+
+
+## The player or rival that owns pets with this owner id.
+func get_tamer(owner_id: int) -> Node3D:
+	return get_rival() if owner_id == RIVAL_ID else get_player(owner_id)
+
+
 func get_creature(creature_name: String) -> Creature:
 	return creatures_root.get_node_or_null(creature_name) as Creature
 
@@ -77,8 +131,9 @@ func get_wild_creatures() -> Array[Creature]:
 	return _creatures_where(func(c: Creature) -> bool: return c.is_wild())
 
 
+## Every player-owned pet.
 func get_all_pets() -> Array[Creature]:
-	return _creatures_where(func(c: Creature) -> bool: return not c.is_wild())
+	return _creatures_where(func(c: Creature) -> bool: return c.is_player_pet())
 
 
 ## A player's party, ordered by party slot.
@@ -95,17 +150,29 @@ func get_party_pet(peer_id: int, slot: int) -> Creature:
 	return null
 
 
+## Everything on the hostile side: wild creatures, rivals and rival pets.
+func get_hostiles() -> Array[Node3D]:
+	var out: Array[Node3D] = []
+	out.append_array(_creatures_where(func(c: Creature) -> bool: return not c.is_player_pet()))
+	var rival := get_rival()
+	if rival:
+		out.append(rival)
+	return out
+
+
 ## Every targetable enemy of `attacker` within `max_range` of `center` (no friendly fire).
 func enemies_near(attacker: Node3D, center: Vector3, max_range: float) -> Array[Node3D]:
 	var out: Array[Node3D] = []
 	var candidates: Array[Node3D] = []
 	candidates.append_array(get_players())
 	candidates.append_array(_creatures_where(func(_c: Creature) -> bool: return true))
+	var rival := get_rival()
+	if rival:
+		candidates.append(rival)
 	for node in candidates:
 		if not Combat.are_enemies(attacker, node) or not node.is_targetable():
 			continue
-		var d := Vector2(node.global_position.x - center.x, node.global_position.z - center.z).length()
-		if d <= max_range + node.radius():
+		if _flat_distance(node.global_position, center) <= max_range + node.radius():
 			out.append(node)
 	return out
 
@@ -126,7 +193,7 @@ func creature_near(point: Vector3, tolerance := 0.8) -> Creature:
 	var best: Creature = null
 	var best_dist := INF
 	for c in _creatures_where(func(c: Creature) -> bool: return not c.fainted):
-		var d := Vector2(c.global_position.x - point.x, c.global_position.z - point.z).length()
+		var d := _flat_distance(c.global_position, point)
 		if d < c.radius() + tolerance and d < best_dist:
 			best = c
 			best_dist = d
@@ -134,19 +201,43 @@ func creature_near(point: Vector3, tolerance := 0.8) -> Creature:
 
 
 func is_near_stable(point: Vector3) -> bool:
-	return Vector2(point.x - stable.global_position.x, point.z - stable.global_position.z).length() <= stable_range
+	return _flat_distance(point, stable.global_position) <= stable_range
 
 
-func clamp_to_arena(point: Vector3) -> Vector3:
-	return Vector3(clampf(point.x, -arena_half_size, arena_half_size), point.y,
-			clampf(point.z, -arena_half_size, arena_half_size))
+## Keeps a point on the walkable floor of the current level.
+func clamp_to_level(point: Vector3) -> Vector3:
+	if layout.is_empty():
+		return point
+	var clamped := LevelGenerator.clamp_to_floor(layout, level_root.to_local(point))
+	var out := level_root.to_global(clamped)
+	out.y = point.y
+	return out
 
 
-## Server only: spawn slots follow join order so players never overlap.
+func exit_point() -> Vector3:
+	return level_root.to_global(layout.exit_point) if not layout.is_empty() else Vector3.ZERO
+
+
+## 0 at the start camp, 1 at the end of the arena.
+func level_progress(point: Vector3) -> float:
+	if layout.is_empty():
+		return 0.0
+	return clampf(-level_root.to_local(point).z / layout.total_length, 0.0, 1.0)
+
+
+## Server only: spawn slots at the start camp follow join order so players never overlap.
 func player_spawn_point(peer_id: int) -> Vector3:
 	var slot := maxi(Network.players.keys().find(peer_id), 0)
-	var angle := float(slot) * TAU / 4.0
-	return Vector3(cos(angle), 0.0, sin(angle)) * 2.0
+	var offset := Vector3((slot - 1.5) * 1.6, 0.0, 0.0)
+	return level_root.to_global(layout.start_point + offset)
+
+
+## Server only: next to a teammate who is still standing, otherwise at the start camp.
+func respawn_point(peer_id: int) -> Vector3:
+	for p in get_players():
+		if p.peer_id != peer_id and not p.downed:
+			return clamp_to_level(p.global_position + Vector3(1.5, 0.0, 1.5))
+	return player_spawn_point(peer_id)
 
 
 func _creatures_where(predicate: Callable) -> Array[Creature]:
@@ -157,7 +248,57 @@ func _creatures_where(predicate: Callable) -> Array[Creature]:
 	return out
 
 
-# --- Server-side -------------------------------------------------------------------
+func _flat_distance(a: Vector3, b: Vector3) -> float:
+	return Vector2(a.x - b.x, a.z - b.z).length()
+
+
+# --- Level flow (server) -------------------------------------------------------------
+
+func _start_level(number: int) -> void:
+	_advancing = false
+	for c in _creatures_where(func(c: Creature) -> bool: return not c.is_player_pet()):
+		c.queue_free()
+	for r in rivals_root.get_children():
+		r.queue_free()
+	exit_open = false
+	level_state = Vector2i(randi_range(1, 2_000_000_000), number)  # rebuilds the level here and on clients
+
+	for p in get_players():
+		p.health.current = p.health.max_health
+		p.downed = false
+		p._respawn_at.rpc_id(p.peer_id, player_spawn_point(p.peer_id))
+	for pet in get_all_pets():
+		pet.global_position = player_spawn_point(pet.owner_id) + pet._follow_offset()
+		pet.set_focus(null)
+
+	var base_level := 1 + (number - 1) * 2
+	for spot: Dictionary in layout.creature_spots:
+		creature_spawner.spawn({
+			"species": SpeciesDB.pick_random_index(),
+			"level": base_level + int(spot.depth * 2.5) + randi() % 2,
+			"pos": level_root.to_global(spot.pos),
+		})
+	var rival_pos := level_root.to_global(layout.rival_point)
+	rival_spawner.spawn({"name": layout.rival_name, "level": number, "pos": rival_pos})
+	creature_spawner.spawn({
+		"species": layout.rival_species, "level": base_level + 1,
+		"owner": RIVAL_ID, "slot": 0, "pos": rival_pos + Vector3(1.5, 0.0, 1.5),
+	})
+	announce.rpc("Level %d: follow the path and defeat Rival %s!" % [number, layout.rival_name], Color(1, 0.9, 0.5))
+
+
+func on_rival_defeated(rival: Rival) -> void:
+	announce.rpc("Rival %s is defeated! A portal has opened at the end of the path." % rival.display_name,
+			Color(1, 0.9, 0.5))
+	play_burst.rpc(rival.global_position, rival.color, 4.0)
+	for pet in _creatures_where(func(c: Creature) -> bool: return c.is_rival_pet()):
+		pet.release_to_wild()
+		announce.rpc("The rival's %s has gone wild. Capture it!" % pet.species.display_name, Color(0.6, 0.85, 1.0))
+	for pet in get_all_pets():
+		if not pet.fainted:
+			pet.gain_xp(rival_defeat_xp * level_number)
+	exit_open = true
+
 
 func award_xp(killed: Creature) -> void:
 	var amount := killed.species.xp_reward * killed.level
@@ -184,9 +325,10 @@ func spawn_pet(peer_id: int, data: Dictionary, near: Vector3, slot: int) -> Crea
 	}) as Creature
 
 
-## Sends a HUD message to one player.
+## Sends a HUD message to one player (ignored for the rival).
 func tell(peer_id: int, text: String, color: Color) -> void:
-	announce.rpc_id(peer_id, text, color)
+	if peer_id > 0:
+		announce.rpc_id(peer_id, text, color)
 
 
 func _on_player_joined(peer_id: int, info: Dictionary) -> void:
@@ -203,25 +345,81 @@ func _on_player_left(peer_id: int) -> void:
 		player.queue_free()
 
 
-func _spawn_wild_creature() -> void:
-	for attempt in 12:
-		var pos := Vector3(randf_range(-arena_half_size, arena_half_size), 0.0,
-				randf_range(-arena_half_size, arena_half_size))
-		if _is_blocked(pos):
-			continue
-		var level := 1 + int(Vector2(pos.x, pos.z).length() / level_band_width) + randi() % 2
-		creature_spawner.spawn({"species": SpeciesDB.pick_random_index(), "level": level, "pos": pos})
-		return
+# --- Level geometry (every peer) -------------------------------------------------------
+
+func _build_level() -> void:
+	layout = LevelGenerator.generate(level_state.x, level_state.y)
+	for child in level_root.get_children():
+		level_root.remove_child(child)
+		child.queue_free()
+
+	var floor_mat := _material(layout.floor_tint)
+	var camp_mat := _material(Color(0.45, 0.43, 0.38))
+	var arena_mat := _material(Color(0.36, 0.3, 0.3))
+	var wall_mat := _material(Color(0.4, 0.38, 0.42))
+	var rock_mat := _material(Color(0.55, 0.5, 0.45))
+
+	var segments: Array = layout.segments
+	for i in segments.size():
+		var seg: Dictionary = segments[i]
+		var length: float = seg.z_start - seg.z_end
+		var mid_z: float = (seg.z_start + seg.z_end) * 0.5
+		var mat: Material = {"start": camp_mat, "arena": arena_mat}.get(seg.kind, floor_mat)
+		_add_box(Vector3(seg.center_x, -0.5, mid_z), Vector3(seg.width, 1.0, length + 0.5), mat)
+		for side in [-1.0, 1.0]:
+			_add_box(Vector3(seg.center_x + side * (seg.width * 0.5 + 0.5), 1.0, mid_z),
+					Vector3(1.0, 2.0, length), wall_mat)
+		if i > 0:
+			_add_join_walls(segments[i - 1], seg, wall_mat)
+	var first: Dictionary = segments[0]
+	var last: Dictionary = segments[-1]
+	_add_box(Vector3(first.center_x, 1.0, first.z_start + 0.5), Vector3(first.width + 2.0, 2.0, 1.0), wall_mat)
+	_add_box(Vector3(last.center_x, 1.0, last.z_end - 0.5), Vector3(last.width + 2.0, 2.0, 1.0), wall_mat)
+
+	for rock: Dictionary in layout.rocks:
+		var body := _add_box(rock.pos + Vector3.UP * rock.size.y * 0.5, rock.size, rock_mat)
+		body.add_to_group("obstacles")
+
+	stable.global_position = level_root.to_global(layout.stable_point)
+	stable.rotation.y = PATH_YAW + PI / 2.0
+	portal.global_position = level_root.to_global(layout.exit_point)
+	level_changed.emit()
 
 
-func _is_blocked(pos: Vector3) -> bool:
-	for p in get_players():
-		if p.global_position.distance_to(pos) < spawn_clearance:
-			return true
-	for obstacle: Node3D in get_tree().get_nodes_in_group("obstacles"):
-		if Vector2(obstacle.global_position.x - pos.x, obstacle.global_position.z - pos.z).length() < 3.0:
-			return true
-	return false
+## Closes the gaps where two path segments of different width/offset meet.
+func _add_join_walls(prev: Dictionary, next: Dictionary, mat: Material) -> void:
+	var z: float = next.z_start
+	for side in [-1.0, 1.0]:
+		var a: float = prev.center_x + side * prev.width * 0.5
+		var b: float = next.center_x + side * next.width * 0.5
+		var lo := minf(a, b) - (1.0 if side < 0.0 else 0.0)
+		var hi := maxf(a, b) + (1.0 if side > 0.0 else 0.0)
+		if hi - lo > 0.05:
+			_add_box(Vector3((lo + hi) * 0.5, 1.0, z), Vector3(hi - lo, 2.0, 1.0), mat)
+
+
+func _add_box(local_pos: Vector3, size: Vector3, mat: Material) -> StaticBody3D:
+	var body := StaticBody3D.new()
+	var shape := CollisionShape3D.new()
+	var box_shape := BoxShape3D.new()
+	box_shape.size = size
+	shape.shape = box_shape
+	body.add_child(shape)
+	var mesh := MeshInstance3D.new()
+	var box_mesh := BoxMesh.new()
+	box_mesh.size = size
+	box_mesh.material = mat
+	mesh.mesh = box_mesh
+	body.add_child(mesh)
+	body.position = local_pos
+	level_root.add_child(body)
+	return body
+
+
+func _material(color: Color) -> StandardMaterial3D:
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = color
+	return mat
 
 
 # --- Spawn functions (run on every peer) --------------------------------------------
@@ -246,6 +444,15 @@ func _spawn_creature(data: Dictionary) -> Node:
 	creature.position = data.pos
 	creature.home = data.pos
 	return creature
+
+
+func _spawn_rival(data: Dictionary) -> Node:
+	var rival: Rival = rival_scene.instantiate()
+	rival.display_name = data.name
+	rival.level_number = data.level
+	rival.position = data.pos
+	rival.home = data.pos
+	return rival
 
 
 # --- Local / broadcast presentation -----------------------------------------------
