@@ -19,6 +19,17 @@ godot --path . -- --join=127.0.0.1 --name=Bob
 Or in the editor: *Debug → Customize Run Instances*, enable 2 instances, and
 give them the arguments `--host` and `--join=127.0.0.1`.
 
+## Building a Windows .exe
+Export presets for Windows and Linux are included (`export_presets.cfg`).
+1. In Godot: **Editor → Manage Export Templates → Download and Install** (once).
+2. **Project → Export**, choose **Windows Desktop**, click **Export Project**.
+
+The game data is embedded, so the result is a single `PackLeader.exe` you can
+share. From the command line:
+```
+godot --headless --path . --export-release "Windows Desktop" export/windows/PackLeader.exe
+```
+
 ## How to play
 | Input | Action |
 |---|---|
