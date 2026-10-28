@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1_ability")
 display_name = "Tongue Lash"
-description = "Yanks a target next to the Bogtoad and hits it for 1.5x damage."
+description = "Yanks a target next to the Bogleon and hits it for 1.5x damage."
 cooldown = 7.0
 cast_range = 9.0
 needs_target = true

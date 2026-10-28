@@ -1,29 +1,10 @@
-[gd_scene load_steps=14 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://scripts/creature.gd" id="1_creature"]
 [ext_resource type="Script" path="res://scripts/components/health.gd" id="2_health"]
 
 [sub_resource type="SphereShape3D" id="shape"]
 radius = 0.45
-
-[sub_resource type="SphereMesh" id="body_mesh"]
-radius = 0.5
-height = 0.8
-
-[sub_resource type="StandardMaterial3D" id="eye_mat"]
-shading_mode = 0
-albedo_color = Color(1, 1, 0.9, 1)
-
-[sub_resource type="BoxMesh" id="eye_mesh"]
-material = SubResource("eye_mat")
-size = Vector3(0.12, 0.12, 0.08)
-
-[sub_resource type="StandardMaterial3D" id="ear_mat"]
-albedo_color = Color(0.15, 0.13, 0.15, 1)
-
-[sub_resource type="PrismMesh" id="ear_mesh"]
-material = SubResource("ear_mat")
-size = Vector3(0.2, 0.28, 0.1)
 
 [sub_resource type="TorusMesh" id="ring_mesh"]
 inner_radius = 0.6
@@ -88,23 +69,6 @@ shape = SubResource("shape")
 
 [node name="Body" type="MeshInstance3D" parent="Model"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
-mesh = SubResource("body_mesh")
-
-[node name="EyeL" type="MeshInstance3D" parent="Model/Body"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.17, 0.1, -0.44)
-mesh = SubResource("eye_mesh")
-
-[node name="EyeR" type="MeshInstance3D" parent="Model/Body"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.17, 0.1, -0.44)
-mesh = SubResource("eye_mesh")
-
-[node name="EarL" type="MeshInstance3D" parent="Model/Body"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.22, 0.42, -0.05)
-mesh = SubResource("ear_mesh")
-
-[node name="EarR" type="MeshInstance3D" parent="Model/Body"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.22, 0.42, -0.05)
-mesh = SubResource("ear_mesh")
 
 [node name="Ring" type="MeshInstance3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 0)

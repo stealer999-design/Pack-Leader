@@ -6,6 +6,10 @@ extends Resource
 @export var display_name := "Creature"
 @export var color := Color.WHITE
 @export var size := 1.0
+## The body the creature is built with (see CreatureModel). Each biome has its own.
+@export_enum("cat", "bird", "dog", "lizard") var body_type := "cat"
+## An extra body detail for this species (see CreatureModel).
+@export_enum("none", "big_ears", "spines") var feature := "none"
 
 @export_group("Stats (level 1)")
 @export var max_health := 50.0

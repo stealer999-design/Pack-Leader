@@ -127,29 +127,84 @@ func _draw_gate() -> void:
 	_draw_centered_text("drop a pet here", size.y - 8, 11, Color(1, 1, 1, 0.55))
 
 
-## A pet portrait: body, ears and eyes (closed while sleeping), in its species colour.
+## A pet portrait in its species colour, shaped by its body type: a cat, bird,
+## dog or lizard. Eyes are closed while it sleeps on a hay bed.
 func _draw_pet(center: Vector2, r: float, sleeping: bool) -> void:
 	var species := SpeciesDB.get_species(pet.species)
 	var body := species.color.darkened(0.5) if pet.get("fainted", false) else species.color
+	var accent := body.darkened(0.45)
+	var light := body.lightened(0.45)
+	var kind := species.body_type
+	var eye_y := -0.05
+	var eye_x := 0.35
 	draw_circle(center + Vector2(0, r * 0.18), r * 1.05, Color(0, 0, 0, 0.25))  # shadow
+	match kind:
+		"bird":
+			for i in 3:  # crest
+				_triangle(center + Vector2((i - 1) * r * 0.22, -r * 0.85), r * 0.14, r * 0.4, accent)
+			for side in [-1.0, 1.0]:  # wings
+				_ellipse(center + Vector2(side * r * 0.95, r * 0.15), Vector2(r * 0.3, r * 0.55), accent)
+			draw_circle(center, r, body)
+			_ellipse(center + Vector2(0, r * 0.45), Vector2(r * 0.6, r * 0.45), light)  # breast
+		"dog":
+			if species.feature == "big_ears":
+				for side in [-1.0, 1.0]:
+					_triangle(center + Vector2(side * r * 0.55, -r * 0.6), r * 0.32, r * 0.95, body)
+			draw_circle(center, r, body)
+			if species.feature != "big_ears":
+				for side in [-1.0, 1.0]:  # floppy ears
+					_ellipse(center + Vector2(side * r * 0.85, -r * 0.1), Vector2(r * 0.25, r * 0.5), accent)
+			_ellipse(center + Vector2(0, r * 0.38), Vector2(r * 0.42, r * 0.3), light)  # snout
+			draw_circle(center + Vector2(0, r * 0.25), r * 0.12, Color(0.1, 0.1, 0.1))  # nose
+			eye_y = -0.25
+		"lizard":
+			for i in 5:  # spikes
+				_triangle(center + Vector2((i - 2) * r * 0.3, -r * 0.55), r * 0.12, r * 0.3, accent)
+			_ellipse(center, Vector2(r * 1.2, r * 0.7), body)
+			draw_line(center + Vector2(-r * 0.5, r * 0.3), center + Vector2(r * 0.5, r * 0.3), accent, 2.0)  # grin
+			eye_y = -0.45
+			eye_x = 0.55
+			for side in [-1.0, 1.0]:  # bulging eye sockets
+				draw_circle(center + Vector2(side * r * eye_x, r * eye_y), r * 0.26, body)
+		_:  # cat
+			for side in [-1.0, 1.0]:
+				var ear := PackedVector2Array([
+					center + Vector2(side * r * 0.75, -r * 0.45), center + Vector2(side * r * 0.25, -r * 0.8),
+					center + Vector2(side * r * 0.55, -r * 1.35),
+				])
+				draw_colored_polygon(ear, body)
+			draw_circle(center, r, body)
+			for side in [-1.0, 1.0]:  # whiskers
+				for dy in [0.2, 0.35]:
+					draw_line(center + Vector2(side * r * 0.35, r * dy), center + Vector2(side * r * 1.15, r * (dy * 1.4 - 0.05)),
+							Color(0.1, 0.1, 0.1, 0.6), 1.0)
+			_triangle(center + Vector2(0, r * 0.25), r * 0.1, -r * 0.12, Color(0.9, 0.5, 0.55))  # nose
+	if kind != "lizard":
+		draw_circle(center + Vector2(-r * 0.3, -r * 0.35), r * 0.3, body.lightened(0.35))  # shine
 	for side in [-1.0, 1.0]:
-		var ear := PackedVector2Array([
-			center + Vector2(side * r * 0.75, -r * 0.45), center + Vector2(side * r * 0.25, -r * 0.8),
-			center + Vector2(side * r * 0.55, -r * 1.35),
-		])
-		draw_colored_polygon(ear, Color(0.15, 0.12, 0.12))
-	draw_circle(center, r, body)
-	draw_circle(center + Vector2(-r * 0.3, -r * 0.35), r * 0.3, body.lightened(0.35))  # shine
-	for side in [-1.0, 1.0]:
-		var eye := center + Vector2(side * r * 0.35, -r * 0.05)
+		var eye := center + Vector2(side * r * eye_x, r * eye_y)
 		if sleeping:
 			draw_arc(eye, r * 0.14, 0.2, PI - 0.2, 8, Color(0.1, 0.1, 0.1), 2.0)
 		else:
 			draw_circle(eye, r * 0.15, Color.WHITE)
 			draw_circle(eye + Vector2(0, r * 0.03), r * 0.07, Color(0.1, 0.1, 0.1))
+	if kind == "bird":  # beak, drawn over the face
+		_triangle(center + Vector2(0, r * 0.12), r * 0.18, -r * 0.3, Color(1.0, 0.68, 0.15))
 	if sleeping:
 		_draw_text_at("z", center + Vector2(r * 0.9, -r * 0.9), 14, Color(1, 1, 1, 0.85))
 		_draw_text_at("z", center + Vector2(r * 1.25, -r * 1.35), 11, Color(1, 1, 1, 0.6))
+
+
+## A triangle standing on a base of half-width `half` centred at `base`, `height` tall
+## (pointing up; a negative height points it down).
+func _triangle(base: Vector2, half: float, height: float, color: Color) -> void:
+	draw_colored_polygon(PackedVector2Array([base + Vector2(-half, 0), base + Vector2(half, 0), base + Vector2(0, -height)]), color)
+
+
+func _ellipse(center: Vector2, radii: Vector2, color: Color) -> void:
+	draw_set_transform(center, 0.0, radii / radii.x)
+	draw_circle(Vector2.ZERO, radii.x, color)
+	draw_set_transform(Vector2.ZERO)
 
 
 func _draw_centered_text(text: String, baseline: float, font_size: int, color: Color) -> void:

@@ -301,7 +301,7 @@ func add_shield(amount: float, duration: float) -> void:
 	_status_fx.rpc("shield", duration)
 
 
-## Yanked to `point` (e.g. by a Bogtoad's tongue).
+## Yanked to `point` (e.g. by a Bogleon's tongue).
 func pull_to(point: Vector3, duration := 0.2) -> void:
 	_pending_cast = {}
 	var tween := create_tween().set_process_mode(Tween.TWEEN_PROCESS_PHYSICS)
@@ -561,7 +561,7 @@ static func _now() -> float:
 
 func _build_visuals() -> void:
 	_material.albedo_color = species.color
-	body.material_override = _material
+	CreatureModel.build(body, species.body_type, _material, species.color, species.feature)
 	model.scale = Vector3.ONE * species.size
 	ring.scale = Vector3.ONE * species.size
 	var shape := SphereShape3D.new()

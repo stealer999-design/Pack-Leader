@@ -5,9 +5,10 @@
 
 [resource]
 script = ExtResource("1_species")
-display_name = "Sporecap"
+display_name = "Sporeguana"
 color = Color(0.8, 0.3, 0.28, 1)
 size = 0.9
+body_type = "lizard"
 max_health = 55.0
 damage = 6.0
 move_speed = 3.2

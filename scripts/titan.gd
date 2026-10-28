@@ -5,7 +5,7 @@ extends Rival
 ## Huge and slow, it has no pet. Instead it:
 ## - calls down an Avalanche: a red warning circle appears under a player or
 ##   pet, and after a short delay everything still inside is hit and slowed;
-## - summons Frostlings (which can be captured) at 66% and 33% health.
+## - summons Frostfinches (which can be captured) at 66% and 33% health.
 
 const FROSTLING := 4  ## SpeciesDB index.
 
@@ -73,7 +73,7 @@ func _cast_avalanche() -> void:
 
 
 func _summon_frostlings() -> void:
-	world.announce.rpc("The Glacier Titan calls its Frostlings!", color.lightened(0.3))
+	world.announce.rpc("The Glacier Titan calls its Frostfinches!", color.lightened(0.3))
 	for i in summon_count:
 		var offset := Vector3.FORWARD.rotated(Vector3.UP, randf() * TAU) * 3.0
 		var frostling := world.creature_spawner.spawn({

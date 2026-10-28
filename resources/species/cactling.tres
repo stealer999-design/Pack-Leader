@@ -5,9 +5,11 @@
 
 [resource]
 script = ExtResource("1_species")
-display_name = "Cactling"
+display_name = "Cactipup"
 color = Color(0.3, 0.62, 0.28, 1)
 size = 0.9
+body_type = "dog"
+feature = "spines"
 max_health = 60.0
 damage = 5.0
 move_speed = 3.0

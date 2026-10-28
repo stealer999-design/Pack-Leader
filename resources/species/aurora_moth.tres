@@ -5,9 +5,10 @@
 
 [resource]
 script = ExtResource("1_species")
-display_name = "Aurora Moth"
+display_name = "Aurora Swift"
 color = Color(0.88, 0.6, 1, 1)
 size = 0.7
+body_type = "bird"
 max_health = 32.0
 damage = 5.0
 move_speed = 5.5

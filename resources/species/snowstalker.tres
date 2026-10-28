@@ -5,9 +5,10 @@
 
 [resource]
 script = ExtResource("1_species")
-display_name = "Snowstalker"
+display_name = "Snowl"
 color = Color(0.93, 0.95, 1, 1)
 size = 1.0
+body_type = "bird"
 max_health = 55.0
 damage = 11.0
 move_speed = 5.8

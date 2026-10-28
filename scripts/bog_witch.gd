@@ -4,9 +4,9 @@ extends Rival
 ##
 ## A ranged caster: her bolts hit from a distance and poison. She blinks away
 ## when someone gets close, drops toxic puddles (with a warning circle first)
-## under players and pets, and summons Bogtoads at 60% and 30% health.
+## under players and pets, and summons Bogleons at 60% and 30% health.
 
-const BOGTOAD := 13  ## SpeciesDB index.
+const BOGLEON := 13  ## SpeciesDB index.
 
 @export var blink_cooldown := 5.0
 @export var blink_trigger_range := 3.5
@@ -41,7 +41,7 @@ func _max_health() -> float:
 
 
 func _challenge_text() -> String:
-	return "The Bog Witch cackles. \"More frogs for my pot!\""
+	return "The Bog Witch cackles. \"More lizards for my stew!\""
 
 
 ## Her bolts poison.
@@ -94,11 +94,11 @@ func _drop_puddles() -> void:
 
 
 func _summon_toads() -> void:
-	world.announce.rpc("The Bog Witch summons her Bogtoads!", color.lightened(0.3))
+	world.announce.rpc("The Bog Witch summons her Bogleons!", color.lightened(0.3))
 	for i in summon_count:
 		var offset := Vector3.FORWARD.rotated(Vector3.UP, randf() * TAU) * 2.5
 		var toad := world.creature_spawner.spawn({
-			"species": BOGTOAD, "level": 1 + (level_number - 1) * 2,
+			"species": BOGLEON, "level": 1 + (level_number - 1) * 2,
 			"pos": world.clamp_to_level(global_position + offset),
 		}) as Creature
 		toad.target = target
