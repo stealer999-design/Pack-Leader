@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ShadowStepAbility" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/abilities/shadow_step_ability.gd" id="1_ability"]
+
+[resource]
+script = ExtResource("1_ability")
+display_name = "Shadow Step"
+description = "Teleports behind a target and strikes it for triple damage."
+cooldown = 7.0
+cast_range = 12.0
+needs_target = true
+damage_multiplier = 3.0

@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="CreatureSpecies" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/creature_species.gd" id="1_species"]
+[ext_resource type="Resource" path="res://resources/abilities/healing_aurora.tres" id="2_ability"]
+
+[resource]
+script = ExtResource("1_species")
+display_name = "Aurora Moth"
+color = Color(0.88, 0.6, 1, 1)
+size = 0.7
+max_health = 32.0
+damage = 5.0
+move_speed = 5.5
+attack_range = 1.0
+attack_cooldown = 1.0
+aggressive = false
+aggro_range = 0.0
+spawn_weight = 2.0
+catch_rate = 0.5
+xp_reward = 12
+ability = ExtResource("2_ability")

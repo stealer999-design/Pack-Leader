@@ -65,14 +65,19 @@ played in the browser".
 | F (at the stable) | Open/close the stable |
 | Space | Dash (brief invulnerability) |
 
-- **Levels:** each level is one randomly generated path that always runs up
-  the screen, winding left and right, with rocks and packs of wild creatures
-  that get tougher the further you go. It starts at a camp with the stable and
-  ends in an arena where a **Rival Tamer** waits with one pet. Get close and
-  the rival challenges you; its pet fights and uses its ability too. Defeat the
-  rival and a portal opens at the far end. Step in and everyone moves on to the
-  next, harder level. Defeating a rival also gives every pet bonus XP, and the
-  rival's pet goes wild (weakened), so you can capture it.
+- **Levels:** each level is one long, wide, randomly generated path that
+  always runs up the screen, winding left and right, with rocks and packs of
+  wild creatures that get tougher the further you go. It starts at a camp with
+  the stable and ends in a boss arena. Defeat the boss and a portal opens at
+  the far end; step in and everyone moves on to the next, harder level, and
+  every pet gets bonus XP.
+- **Biomes:** levels alternate between two biomes, each with its own four
+  creatures and its own boss (and creature levels keep rising):
+
+  | Level | Biome | Creatures | Boss |
+  |---|---|---|---|
+  | 1, 3, 5… | Greenmeadow | Mossback, Emberfox, Voltwing, Gloomhorn | **Rival Tamer** with one pet. The pet fights and uses its ability; when the rival is beaten the pet goes wild, weakened, so you can capture it |
+  | 2, 4, 6… | Frostfang Peaks | Frostling, Spikeshell, Aurora Moth, Snowstalker | **Glacier Titan**: drops Avalanches (a red warning circle, then a slam that damages and slows) and summons capturable Frostlings at 66% and 33% health |
 - **Downed players** respawn next to a teammate who is still standing, or at
   the start camp if nobody is.
 - **Capturing:** the chance is 0% at full health and rises as the creature
@@ -92,6 +97,10 @@ played in the browser".
   | Emberfox | Pounce | Leaps to the target point and deals 2.5x damage around the landing |
   | Voltwing | Static Arc | Lightning that chains between up to 3 enemies (needs a target) |
   | Gloomhorn | Earthshaker | Damages and stuns every enemy within 4 units for 2s |
+  | Frostling | Frost Nova | Damages every enemy around it and slows them to half speed for 3s |
+  | Spikeshell | Frost Armor | For 5s, reflects 60% of the damage it takes back at the attacker |
+  | Aurora Moth | Healing Aurora | Heals every nearby pet *and player* for 35% of their max health |
+  | Snowstalker | Shadow Step | Teleports behind a target and strikes it for 3x damage |
 - **Stable:** there is one stable, at the start of every level, holding up to
   12 pets per player.
   Walk up to it and press F to store, take out, swap or release pets.
@@ -122,8 +131,10 @@ The host is the authoritative server and also plays.
 | `scripts/network.gd` | Autoload `Network`: WebSocket host/join, solo mode, player registry (names, colours) |
 | `scenes/main.tscn` + `scripts/main.gd` | Menu + `LevelSpawner` that replicates the world to joining clients |
 | `scenes/world.tscn` + `scripts/world.gd` | Level flow (start → rival → portal → next level), level geometry, spawners, XP sharing, FX |
-| `scripts/level_generator.gd` | Deterministic layout of a level from a seed: path segments, rocks, creature spots, rival, exit |
-| `scenes/rival.tscn` + `scripts/rival.gd` | The AI rival tamer at the end of each level |
+| `scripts/level_generator.gd` | Deterministic layout of a level from a seed: path segments, rocks, creature spots, boss, exit |
+| `scripts/biome_db.gd` | The biomes levels cycle through: their creatures, boss and colours |
+| `scenes/rival.tscn` + `scripts/rival.gd` | The AI rival tamer boss (and the base class for every boss) |
+| `scenes/titan.tscn` + `scripts/titan.gd` | The Glacier Titan boss: Avalanche and Frostling summons |
 | `scenes/player.tscn` + `scripts/player.gd` | Movement, aim, and server-validated attack/capture/command requests |
 | `scenes/creature.tscn` + `scripts/creature.gd` | One scene for wild creatures *and* pets: wild AI, pet AI, taming, levelling |
 | `scripts/creature_species.gd`, `resources/species/*.tres`, `scripts/species_db.gd` | Species data. Add a `.tres` and list it in `SpeciesDB` to add a species |
@@ -132,7 +143,7 @@ The host is the authoritative server and also plays.
 | `scripts/components/health.gd` | Health with setter-driven signals (works with replication) |
 | `scenes/hud.tscn` + `scripts/hud.gd` | Health, pet party, hover/capture info, message feed |
 
-Physics layers: 1 world · 2 players · 3 hostiles (wild creatures, rivals, rival pets) · 4 player pets.
+Physics layers: 1 world · 2 players · 3 hostiles (wild creatures, bosses, rival pets) · 4 player pets.
 
 ## Suggested next steps
 1. **Persistence:** save each player's party and stable to disk so pets carry between sessions.
@@ -140,5 +151,5 @@ Physics layers: 1 world · 2 players · 3 hostiles (wild creatures, rivals, riva
 3. **More abilities per pet:** e.g. a second ability unlocked at level 5, or abilities learned from items.
 4. **Smoother networking:** interpolate remote players and creatures, which currently snap to each replicated position.
 5. **Real art:** replace the placeholder meshes with glTF models and an `AnimationTree`.
-6. **Level variety:** themed biomes per level, side branches with treasure, and rival tamers with more pets on later levels.
+6. **Level variety:** more biomes, side branches with treasure, and rival tamers with more pets on later levels.
 7. **Pathfinding:** a `NavigationRegion3D` with a `NavigationAgent3D` on each creature, so they route around rocks.

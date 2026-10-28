@@ -55,6 +55,10 @@ var _faint_timer := 0.0
 var _stun_timer := 0.0
 var _guard_timer := 0.0
 var _guard_reduction := 0.0
+var _slow_timer := 0.0
+var _slow_factor := 1.0
+var _reflect_timer := 0.0
+var _reflect_fraction := 0.0
 var _leaping := false
 var _pending_cast := {}  ## { point, target, time_left } while moving into ability range.
 var _ai_cast_delay := 3.0  ## Rival pets: time until they next consider using their ability.
@@ -107,6 +111,8 @@ func _physics_process(delta: float) -> void:
 		return  # position is driven by the leap tween
 	_attack_timer -= delta
 	_guard_timer -= delta
+	_slow_timer -= delta
+	_reflect_timer -= delta
 	# Targets can be freed at any time (killed, captured owner left...).
 	if not is_instance_valid(target):
 		target = null
@@ -122,6 +128,8 @@ func _physics_process(delta: float) -> void:
 		desired = _rival_pet_ai(delta)
 	else:
 		desired = _pet_ai(delta)
+	if _slow_timer > 0.0:
+		desired *= _slow_factor
 	velocity.x = desired.x + _knockback.x
 	velocity.z = desired.z + _knockback.z
 	_knockback = _knockback.move_toward(Vector3.ZERO, 40.0 * delta)
@@ -187,6 +195,9 @@ func receive_damage(amount: float, source: Node3D, knockback := Vector3.ZERO) ->
 	_knockback = knockback
 	health.take_damage(amount)
 	_flash.rpc()
+	# Reflected damage has no source, so it can't bounce back again.
+	if _reflect_timer > 0.0 and source and is_instance_valid(source):
+		source.receive_damage(amount * _reflect_fraction, null)
 	if health.is_dead():
 		return
 	# Fight back against whoever hit us (wild creatures retaliate, pets defend themselves).
@@ -249,6 +260,19 @@ func queue_ability(point: Vector3, cast_target: Creature) -> String:
 func stun(duration: float) -> void:
 	_stun_timer = maxf(_stun_timer, duration)
 	_status_fx.rpc("stun", duration)
+
+
+## Movement speed is multiplied by `factor` for `duration` seconds.
+func slow(duration: float, factor: float) -> void:
+	_slow_timer = maxf(_slow_timer, duration)
+	_slow_factor = factor
+	_status_fx.rpc("slow", duration)
+
+
+func reflect(duration: float, fraction: float) -> void:
+	_reflect_timer = duration
+	_reflect_fraction = fraction
+	_status_fx.rpc("reflect", duration)
 
 
 func guard(duration: float, reduction: float) -> void:
@@ -562,20 +586,28 @@ func _leap_fx(duration: float) -> void:
 	tween.tween_property(model, "position:y", 0.0, duration * 0.5).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
 
 
-## Temporary status visuals: "guard" (shield bubble) or "stun" (spinning halo).
+## Temporary status visuals: "guard" (shield bubble), "reflect" (icy shell),
+## "slow" (frost ring at the feet) or "stun" (spinning halo).
 @rpc("authority", "call_local", "unreliable")
 func _status_fx(kind: String, duration: float) -> void:
 	var fx := MeshInstance3D.new()
 	var mat := StandardMaterial3D.new()
 	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	if kind == "guard":
+	if kind == "guard" or kind == "reflect":
 		var sphere := SphereMesh.new()
 		sphere.radius = radius() * 1.8
 		sphere.height = radius() * 3.6
 		fx.mesh = sphere
 		fx.position.y = radius()
-		mat.albedo_color = Color(0.4, 0.7, 1.0, 0.3)
+		mat.albedo_color = Color(0.4, 0.7, 1.0, 0.3) if kind == "guard" else Color(0.85, 0.95, 1.0, 0.45)
+	elif kind == "slow":
+		var frost := TorusMesh.new()
+		frost.inner_radius = radius() * 1.1
+		frost.outer_radius = radius() * 1.5
+		fx.mesh = frost
+		fx.position.y = 0.08
+		mat.albedo_color = Color(0.55, 0.85, 1.0, 0.8)
 	else:
 		var halo := TorusMesh.new()
 		halo.inner_radius = 0.25

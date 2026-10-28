@@ -58,6 +58,8 @@ var _dash_cooldown_timer := 0.0
 var _dash_dir := Vector3.ZERO
 var _server_attack_timer := 0.0
 var _server_capture_timer := 0.0
+var _slow_timer := 0.0
+var _slow_factor := 1.0
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 var _material := StandardMaterial3D.new()
 var _swing_fx: MeshInstance3D
@@ -99,6 +101,7 @@ func _physics_process(delta: float) -> void:
 	_attack_timer -= delta
 	_capture_timer -= delta
 	_dash_cooldown_timer -= delta
+	_slow_timer -= delta
 	_update_aim()
 
 	if downed:
@@ -116,7 +119,7 @@ func _physics_process(delta: float) -> void:
 		velocity.x = _dash_dir.x * dash_speed
 		velocity.z = _dash_dir.z * dash_speed
 	else:
-		var target_velocity := move_dir * move_speed
+		var target_velocity := move_dir * move_speed * (_slow_factor if _slow_timer > 0.0 else 1.0)
 		velocity.x = move_toward(velocity.x, target_velocity.x, acceleration * delta)
 		velocity.z = move_toward(velocity.z, target_velocity.z, acceleration * delta)
 	health.invulnerable = _dash_timer > 0.0  # replicated to the server
@@ -147,7 +150,7 @@ func _physics_process(delta: float) -> void:
 		if hovered_creature and Combat.are_enemies(self, hovered_creature):
 			world.ping(hovered_creature.global_position, Color(1, 0.35, 0.3))
 			request_command.rpc_id(1, hovered_creature.name)
-		elif rival and rival.global_position.distance_to(_aim_point) < 1.5:
+		elif rival and rival.global_position.distance_to(_aim_point) < rival.radius() + 1.0:
 			world.ping(rival.global_position, Color(1, 0.35, 0.3))
 			request_command.rpc_id(1, RIVAL_COMMAND)
 		else:
@@ -318,6 +321,11 @@ func receive_damage(amount: float, source: Node3D, _knockback := Vector3.ZERO) -
 	_flash.rpc()
 
 
+## Server: slows this player. Movement runs on the owning client, so it is applied there.
+func slow(duration: float, factor: float) -> void:
+	_apply_slow.rpc_id(peer_id, duration, factor)
+
+
 func _on_died() -> void:
 	downed = true
 	world.announce.rpc("%s is down!" % display_name, Color(1, 0.45, 0.4))
@@ -369,6 +377,15 @@ func _flash() -> void:
 		return
 	_material.albedo_color = Color.WHITE
 	create_tween().tween_property(_material, "albedo_color", color, 0.15)
+
+
+@rpc("any_peer", "call_local", "reliable")
+func _apply_slow(duration: float, factor: float) -> void:
+	if _sent_by_server():
+		_slow_timer = maxf(_slow_timer, duration)
+		_slow_factor = factor
+		_material.albedo_color = color.lerp(Color(0.7, 0.9, 1.0), 0.6)
+		create_tween().tween_property(_material, "albedo_color", color, duration)
 
 
 @rpc("any_peer", "call_local", "reliable")

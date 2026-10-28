@@ -1,17 +1,19 @@
 class_name LevelGenerator
 ## Builds the layout of one level from a seed: a single path that always
 ## heads the same way (local -Z), winding left and right, from a start camp
-## (with the stable) to a rival's arena at the end.
+## (with the stable) to the boss arena at the end.
 ##
 ## Pure data and fully deterministic: every peer generates the same layout from
 ## the same seed, so only the seed has to be sent over the network.
 
-const SEGMENT_LENGTH := 16.0
-const START_LENGTH := 18.0
-const START_WIDTH := 22.0
-const ARENA_LENGTH := 26.0
-const ARENA_WIDTH := 28.0
-const MAX_SWAY := 10.0  ## How far the path may drift sideways from its start line.
+const SEGMENT_LENGTH := 32.0
+const START_LENGTH := 36.0
+const START_WIDTH := 44.0
+const ARENA_LENGTH := 52.0
+const ARENA_WIDTH := 56.0
+const MIN_PATH_WIDTH := 24.0
+const MAX_PATH_WIDTH := 40.0
+const MAX_SWAY := 20.0  ## How far the path may drift sideways from its start line.
 
 const RIVAL_NAMES := ["Kael", "Mira", "Dax", "Vesper", "Rook", "Sable", "Juno", "Thorne", "Lyra", "Brann"]
 
@@ -22,12 +24,14 @@ const RIVAL_NAMES := ["Kael", "Mira", "Dax", "Vesper", "Rook", "Sable", "Juno", 
 ##   rocks: [{ pos: Vector3, size: Vector3 }]
 ##   creature_spots: [{ pos: Vector3, depth: float }]   depth = 0..1 along the path
 ##   start_point, stable_point, rival_point, exit_point: Vector3
-##   total_length: float, rival_name: String, rival_species: int, floor_tint: Color
+##   total_length: float, rival_name: String, rival_species: int, floor_tint: Color,
+##   biome: int (index into BiomeDB.BIOMES)
 ## }
 ## All positions are in the level's local space (start at z = 0, end at z = -total_length).
 static func generate(level_seed: int, level_number: int) -> Dictionary:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = level_seed
+	var biome := BiomeDB.for_level(level_number)
 	var segments: Array[Dictionary] = []
 	var rocks: Array[Dictionary] = []
 	var spots: Array[Dictionary] = []
@@ -39,8 +43,8 @@ static func generate(level_seed: int, level_number: int) -> Dictionary:
 	var path_count := 5 + mini(level_number, 5)
 	var center := 0.0
 	for i in path_count:
-		center = clampf(center + rng.randf_range(-5.0, 5.0), -MAX_SWAY, MAX_SWAY)
-		var width := rng.randf_range(12.0, 20.0)
+		center = clampf(center + rng.randf_range(-10.0, 10.0), -MAX_SWAY, MAX_SWAY)
+		var width := rng.randf_range(MIN_PATH_WIDTH, MAX_PATH_WIDTH)
 		var seg := {"z_start": z, "z_end": z - SEGMENT_LENGTH, "center_x": center, "width": width, "kind": "path"}
 		segments.append(seg)
 		_add_rocks(rng, seg, rocks)
@@ -48,13 +52,13 @@ static func generate(level_seed: int, level_number: int) -> Dictionary:
 		_add_creature_spots(rng, seg, rocks, spots, float(i + 1) / path_count, 8.0 if i == 0 else 2.0)
 		z -= SEGMENT_LENGTH
 
-	var arena_center := clampf(center, -6.0, 6.0)
+	var arena_center := clampf(center, -12.0, 12.0)
 	var arena := {"z_start": z, "z_end": z - ARENA_LENGTH, "center_x": arena_center, "width": ARENA_WIDTH, "kind": "arena"}
 	segments.append(arena)
 	for corner in [Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1)]:
 		rocks.append({
-			"pos": Vector3(arena_center + corner.x * 7.0, 0.0, z - ARENA_LENGTH * 0.5 + corner.y * 6.0),
-			"size": Vector3(2.0, 2.5, 2.0),
+			"pos": Vector3(arena_center + corner.x * 14.0, 0.0, z - ARENA_LENGTH * 0.5 + corner.y * 12.0),
+			"size": Vector3(3.0, 3.5, 3.0),
 		})
 	z -= ARENA_LENGTH
 
@@ -62,14 +66,16 @@ static func generate(level_seed: int, level_number: int) -> Dictionary:
 		"segments": segments,
 		"rocks": rocks,
 		"creature_spots": spots,
-		"start_point": Vector3(0.0, 0.0, -7.0),
-		"stable_point": Vector3(-7.0, 0.0, -9.0),
+		"start_point": Vector3(0.0, 0.0, -14.0),
+		"stable_point": Vector3(-8.0, 0.0, -16.0),
 		"rival_point": Vector3(arena_center, 0.0, arena.z_start - ARENA_LENGTH * 0.55),
 		"exit_point": Vector3(arena_center, 0.0, z + 4.0),
 		"total_length": -z,
 		"rival_name": RIVAL_NAMES[rng.randi() % RIVAL_NAMES.size()],
-		"rival_species": rng.randi() % SpeciesDB.PATHS.size(),
-		"floor_tint": Color.from_hsv(rng.randf_range(0.22, 0.36), 0.25, 0.38),
+		"rival_species": biome.species[rng.randi() % biome.species.size()],
+		"floor_tint": Color.from_hsv(rng.randf_range(biome.floor_hue.x, biome.floor_hue.y),
+				biome.floor_sat, biome.floor_val),
+		"biome": BiomeDB.index_for_level(level_number),
 	}
 
 
@@ -92,9 +98,9 @@ static func clamp_to_floor(layout: Dictionary, local_point: Vector3, margin := 1
 
 
 static func _add_rocks(rng: RandomNumberGenerator, seg: Dictionary, rocks: Array[Dictionary]) -> void:
-	for i in rng.randi_range(1, 3):
+	for i in rng.randi_range(3, 6):
 		var half: float = seg.width * 0.5 - 2.5
-		var size := Vector3(rng.randf_range(1.5, 3.0), rng.randf_range(1.5, 3.0), rng.randf_range(1.5, 3.0))
+		var size := Vector3(rng.randf_range(1.5, 3.5), rng.randf_range(1.5, 3.0), rng.randf_range(1.5, 3.5))
 		rocks.append({
 			"pos": Vector3(seg.center_x + rng.randf_range(-half, half), 0.0,
 					rng.randf_range(seg.z_end + 3.0, seg.z_start - 3.0)),
@@ -105,8 +111,8 @@ static func _add_rocks(rng: RandomNumberGenerator, seg: Dictionary, rocks: Array
 static func _add_creature_spots(rng: RandomNumberGenerator, seg: Dictionary, rocks: Array[Dictionary],
 		spots: Array[Dictionary], depth: float, entry_clearance: float) -> void:
 	var placed := 0
-	var want := rng.randi_range(2, 3)
-	for attempt in 12:
+	var want := rng.randi_range(4, 6)
+	for attempt in 24:
 		if placed >= want:
 			return
 		var half: float = seg.width * 0.5 - 2.0

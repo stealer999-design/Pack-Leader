@@ -22,6 +22,8 @@ var engaged := false
 
 var target: Node3D
 var _attack_timer := 0.0
+var _slow_timer := 0.0
+var _slow_factor := 1.0
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 var _material := StandardMaterial3D.new()
 
@@ -37,10 +39,10 @@ func _ready() -> void:
 	add_to_group("rivals")
 	_material.albedo_color = color
 	$Model/Body.material_override = _material
-	name_label.text = "Rival %s" % display_name
+	name_label.text = title()
 	health.changed.connect(_on_health_changed)
 	if multiplayer.is_server():
-		health.max_health = 160.0 + 60.0 * (level_number - 1)
+		health.max_health = _max_health()
 		health.current = health.max_health
 		health.died.connect(_on_died)
 	_on_health_changed(health.current, health.max_health)
@@ -60,6 +62,7 @@ func _physics_process(delta: float) -> void:
 	if not multiplayer.is_server() or health.is_dead():
 		return
 	_attack_timer -= delta
+	_slow_timer -= delta
 	var desired := Vector3.ZERO
 	if not engaged:
 		for p in world.get_players():
@@ -69,10 +72,23 @@ func _physics_process(delta: float) -> void:
 		if not _is_valid_target(target) or target.global_position.distance_to(home) > leash_range:
 			target = _nearest_enemy()
 		desired = _chase_and_attack(target) if target else _steer_to(home)
+		_boss_tick(delta)
+	if _slow_timer > 0.0:
+		desired *= _slow_factor
 	velocity.x = desired.x
 	velocity.z = desired.z
 	velocity.y = 0.0 if is_on_floor() else velocity.y - _gravity * delta
 	move_and_slide()
+
+
+## Name shown above the boss and in messages.
+func title() -> String:
+	return "Rival %s" % display_name
+
+
+## How the boss is referred to in sentences ("Defeat Rival Kael", "Defeat the Glacier Titan").
+func objective_name() -> String:
+	return title()
 
 
 func is_targetable() -> bool:
@@ -85,6 +101,24 @@ func radius() -> float:
 
 func attack_damage() -> float:
 	return 6.0 + 2.0 * (level_number - 1)
+
+
+func slow(duration: float, factor: float) -> void:
+	_slow_timer = maxf(_slow_timer, duration)
+	_slow_factor = factor
+
+
+func _max_health() -> float:
+	return 160.0 + 60.0 * (level_number - 1)
+
+
+## Extra behaviour while engaged. Bosses override this with their special attacks.
+func _boss_tick(_delta: float) -> void:
+	pass
+
+
+func _challenge_text() -> String:
+	return "%s challenges you!" % title()
 
 
 func receive_damage(amount: float, source: Node3D, _knockback := Vector3.ZERO) -> void:
@@ -102,7 +136,7 @@ func receive_damage(amount: float, source: Node3D, _knockback := Vector3.ZERO) -
 
 func _engage() -> void:
 	engaged = true
-	world.announce.rpc("Rival %s challenges you!" % display_name, color.lightened(0.3))
+	world.announce.rpc(_challenge_text(), color.lightened(0.3))
 
 
 func _nearest_enemy() -> Node3D:
@@ -157,7 +191,7 @@ func _on_died() -> void:
 func _on_health_changed(current: float, maximum: float) -> void:
 	var pct := clampf(current / maximum, 0.0, 1.0) if maximum > 0.0 else 0.0
 	bar_fg.scale.x = maxf(pct, 0.001)
-	bar_fg.position.x = -(1.0 - pct) * 0.7
+	bar_fg.position.x = -(1.0 - pct) * (bar_fg.mesh as QuadMesh).size.x * 0.5
 
 
 @rpc("authority", "call_local", "unreliable")

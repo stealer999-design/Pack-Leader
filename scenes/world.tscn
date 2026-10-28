@@ -1,4 +1,4 @@
-[gd_scene load_steps=17 format=3]
+[gd_scene load_steps=18 format=3]
 
 [ext_resource type="Script" path="res://scripts/world.gd" id="1_world"]
 [ext_resource type="PackedScene" path="res://scenes/hud.tscn" id="2_hud"]
@@ -6,6 +6,7 @@
 [ext_resource type="PackedScene" path="res://scenes/player.tscn" id="4_player"]
 [ext_resource type="PackedScene" path="res://scenes/creature.tscn" id="5_creature"]
 [ext_resource type="PackedScene" path="res://scenes/rival.tscn" id="6_rival"]
+[ext_resource type="PackedScene" path="res://scenes/titan.tscn" id="7_titan"]
 
 [sub_resource type="Environment" id="env"]
 background_mode = 1
@@ -57,6 +58,7 @@ script = ExtResource("1_world")
 player_scene = ExtResource("4_player")
 creature_scene = ExtResource("5_creature")
 rival_scene = ExtResource("6_rival")
+titan_scene = ExtResource("7_titan")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("env")

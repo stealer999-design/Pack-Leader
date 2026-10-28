@@ -7,6 +7,10 @@ const PATHS := [
 	"res://resources/species/emberfox.tres",
 	"res://resources/species/voltwing.tres",
 	"res://resources/species/gloomhorn.tres",
+	"res://resources/species/frostling.tres",
+	"res://resources/species/spikeshell.tres",
+	"res://resources/species/aurora_moth.tres",
+	"res://resources/species/snowstalker.tres",
 ]
 
 static var _all: Array[CreatureSpecies] = []
@@ -23,13 +27,16 @@ static func get_species(index: int) -> CreatureSpecies:
 	return all()[clampi(index, 0, PATHS.size() - 1)]
 
 
-static func pick_random_index() -> int:
+## Weighted random pick among `indices` (every species if empty).
+static func pick_random_index(indices: Array = []) -> int:
+	if indices.is_empty():
+		indices = range(all().size())
 	var total := 0.0
-	for s in all():
-		total += s.spawn_weight
+	for i in indices:
+		total += all()[i].spawn_weight
 	var roll := randf() * total
-	for i in all().size():
+	for i in indices:
 		roll -= all()[i].spawn_weight
 		if roll <= 0.0:
 			return i
-	return all().size() - 1
+	return indices[-1]

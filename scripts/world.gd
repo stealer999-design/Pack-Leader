@@ -18,6 +18,7 @@ const PATH_YAW := PI / 4.0
 @export var player_scene: PackedScene
 @export var creature_scene: PackedScene
 @export var rival_scene: PackedScene
+@export var titan_scene: PackedScene
 ## Pets within this distance of a kill share the XP.
 @export var xp_share_range := 25.0
 ## How close a player must be to the stable to use it.
@@ -177,6 +178,36 @@ func enemies_near(attacker: Node3D, center: Vector3, max_range: float) -> Array[
 	return out
 
 
+## Every targetable ally of `caster` (same side, including itself) within `max_range` of `center`.
+func allies_near(caster: Node3D, center: Vector3, max_range: float) -> Array[Node3D]:
+	var out: Array[Node3D] = []
+	var candidates: Array[Node3D] = []
+	candidates.append_array(get_players())
+	candidates.append_array(_creatures_where(func(_c: Creature) -> bool: return true))
+	var rival := get_rival()
+	if rival:
+		candidates.append(rival)
+	for node in candidates:
+		if Combat.are_enemies(caster, node) or not node.is_targetable():
+			continue
+		if _flat_distance(node.global_position, center) <= max_range + node.radius():
+			out.append(node)
+	return out
+
+
+## The biome of the current level (see BiomeDB).
+func biome() -> Dictionary:
+	return BiomeDB.BIOMES[layout.get("biome", 0)]
+
+
+## "Rival Kael" or "the Glacier Titan", for objective text.
+func boss_objective_name() -> String:
+	var boss := get_rival()
+	if boss:
+		return boss.objective_name()
+	return "the Glacier Titan" if biome().boss == "titan" else "Rival %s" % layout.get("rival_name", "")
+
+
 func nearest_enemy(attacker: Node3D, point: Vector3, max_range: float) -> Creature:
 	var best: Creature = null
 	var best_dist := INF
@@ -272,23 +303,27 @@ func _start_level(number: int) -> void:
 		pet.set_focus(null)
 
 	var base_level := 1 + (number - 1) * 2
+	var level_biome := biome()
 	for spot: Dictionary in layout.creature_spots:
 		creature_spawner.spawn({
-			"species": SpeciesDB.pick_random_index(),
+			"species": SpeciesDB.pick_random_index(level_biome.species),
 			"level": base_level + int(spot.depth * 2.5) + randi() % 2,
 			"pos": level_root.to_global(spot.pos),
 		})
-	var rival_pos := level_root.to_global(layout.rival_point)
-	rival_spawner.spawn({"name": layout.rival_name, "level": number, "pos": rival_pos})
-	creature_spawner.spawn({
-		"species": layout.rival_species, "level": base_level + 1,
-		"owner": RIVAL_ID, "slot": 0, "pos": rival_pos + Vector3(1.5, 0.0, 1.5),
-	})
-	announce.rpc("Level %d: follow the path and defeat Rival %s!" % [number, layout.rival_name], Color(1, 0.9, 0.5))
+	var boss_pos := level_root.to_global(layout.rival_point)
+	rival_spawner.spawn({"type": level_biome.boss, "name": layout.rival_name, "level": number, "pos": boss_pos})
+	if level_biome.boss == "rival":
+		creature_spawner.spawn({
+			"species": layout.rival_species, "level": base_level + 1,
+			"owner": RIVAL_ID, "slot": 0, "pos": boss_pos + Vector3(1.5, 0.0, 1.5),
+		})
+	announce.rpc("Level %d, %s: follow the path and defeat %s!" % [number, level_biome.name, boss_objective_name()],
+			Color(1, 0.9, 0.5))
 
 
 func on_rival_defeated(rival: Rival) -> void:
-	announce.rpc("Rival %s is defeated! A portal has opened at the end of the path." % rival.display_name,
+	var boss_name := rival.objective_name()
+	announce.rpc("%s is defeated! A portal has opened at the end of the path." % (boss_name[0].to_upper() + boss_name.substr(1)),
 			Color(1, 0.9, 0.5))
 	play_burst.rpc(rival.global_position, rival.color, 4.0)
 	for pet in _creatures_where(func(c: Creature) -> bool: return c.is_rival_pet()):
@@ -353,11 +388,12 @@ func _build_level() -> void:
 		level_root.remove_child(child)
 		child.queue_free()
 
+	var level_biome := biome()
 	var floor_mat := _material(layout.floor_tint)
-	var camp_mat := _material(Color(0.45, 0.43, 0.38))
-	var arena_mat := _material(Color(0.36, 0.3, 0.3))
-	var wall_mat := _material(Color(0.4, 0.38, 0.42))
-	var rock_mat := _material(Color(0.55, 0.5, 0.45))
+	var camp_mat := _material(level_biome.camp)
+	var arena_mat := _material(level_biome.arena)
+	var wall_mat := _material(level_biome.wall)
+	var rock_mat := _material(level_biome.rock)
 
 	var segments: Array = layout.segments
 	for i in segments.size():
@@ -446,8 +482,10 @@ func _spawn_creature(data: Dictionary) -> Node:
 	return creature
 
 
+## Spawns the level's boss: a rival tamer or the Glacier Titan (both are Rivals).
 func _spawn_rival(data: Dictionary) -> Node:
-	var rival: Rival = rival_scene.instantiate()
+	var scene := titan_scene if data.get("type", "rival") == "titan" else rival_scene
+	var rival: Rival = scene.instantiate()
 	rival.display_name = data.name
 	rival.level_number = data.level
 	rival.position = data.pos
@@ -529,6 +567,26 @@ func _bolt_segment(a: Vector3, b: Vector3, mat: Material) -> MeshInstance3D:
 	add_child(bolt)
 	bolt.look_at_from_position((a + b) * 0.5, b, Vector3.UP)
 	return bolt
+
+
+## A red warning circle that fills up over `delay` seconds (boss attacks).
+@rpc("authority", "call_local", "reliable")
+func play_telegraph(at: Vector3, radius: float, delay: float) -> void:
+	var mat := _fx_material(Color(1.0, 0.25, 0.2, 0.35))
+	var disc := MeshInstance3D.new()
+	var mesh := CylinderMesh.new()
+	mesh.top_radius = radius
+	mesh.bottom_radius = radius
+	mesh.height = 0.04
+	disc.mesh = mesh
+	disc.material_override = mat
+	add_child(disc)
+	disc.global_position = at + Vector3.UP * 0.06
+	disc.scale = Vector3(0.15, 1.0, 0.15)
+	var tween := disc.create_tween()
+	tween.tween_property(disc, "scale", Vector3.ONE, delay)
+	tween.parallel().tween_property(mat, "albedo_color:a", 0.65, delay)
+	tween.tween_callback(disc.queue_free)
 
 
 ## Local-only feedback ring (e.g. when issuing a pet command).
