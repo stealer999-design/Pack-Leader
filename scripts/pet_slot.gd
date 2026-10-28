@@ -226,4 +226,8 @@ func _tooltip() -> String:
 	var text := "%s  Lv%d" % [species.display_name, pet.level]
 	if species.ability:
 		text += "\n%s: %s" % [species.ability.display_name, species.ability.description]
+	text += "\n\nPassive skills:"
+	for skill in PetSkills.all_for(pet.species):
+		var learned: bool = pet.level >= skill.level
+		text += "\n  Lv%d  %s%s" % [skill.level, PetSkills.describe(skill), "" if learned else "   (locked)"]
 	return text + "\n\nDrag to move it."

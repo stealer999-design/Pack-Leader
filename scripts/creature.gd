@@ -64,6 +64,7 @@ var _weaken_timer := 0.0
 var _weaken_factor := 1.0
 var _leaping := false
 var _pending_cast := {}  ## { point, target, time_left } while moving into ability range.
+var _stats_timer := 0.0
 var _ai_cast_delay := 3.0  ## Rival pets: time until they next consider using their ability.
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 
@@ -107,6 +108,10 @@ func _process(_delta: float) -> void:
 func _physics_process(delta: float) -> void:
 	if not multiplayer.is_server():
 		return
+	_stats_timer -= delta
+	if _stats_timer <= 0.0:
+		_stats_timer = 1.0
+		_refresh_max_health()
 	if fainted:
 		_tick_faint(delta)
 		return
@@ -165,7 +170,21 @@ func radius() -> float:
 
 
 func get_damage() -> float:
-	return species.damage * _level_multiplier() * (_weaken_factor if _weaken_timer > 0.0 else 1.0)
+	return species.damage * _level_multiplier() * (1.0 + skill_bonus("damage")) \
+			* (_weaken_factor if _weaken_timer > 0.0 else 1.0)
+
+
+## The total boost to `stat` ("damage", "health" or "armor") from passive skills:
+## this pet's own, plus the pack skills of every awake pet in the same party.
+func skill_bonus(stat: String) -> float:
+	if is_wild() or species == null:
+		return 0.0
+	var bonus := PetSkills.total(species_index, level, stat)
+	if world:
+		for ally in world.get_pets(owner_id):
+			if not ally.fainted:
+				bonus += PetSkills.total(ally.species_index, ally.level, "pack_" + stat)
+	return minf(bonus, PetSkills.MAX_ARMOR) if stat == "armor" else bonus
 
 
 func xp_to_next() -> int:
@@ -195,6 +214,7 @@ func receive_damage(amount: float, source: Node3D, knockback := Vector3.ZERO) ->
 		return
 	if source and not Combat.are_enemies(source, self):
 		return  # no friendly fire
+	amount *= 1.0 - skill_bonus("armor")
 	if _guard_timer > 0.0:
 		amount *= 1.0 - _guard_reduction
 		knockback = Vector3.ZERO
@@ -347,6 +367,10 @@ func gain_xp(amount: int) -> void:
 		_apply_level_stats()
 		health.current = health.max_health
 		world.tell(owner_id, "Your %s grew to level %d!" % [species.display_name, level], Color(0.6, 0.85, 1.0))
+		var skill := PetSkills.unlocked_at(species_index, level)
+		if not skill.is_empty():
+			world.tell(owner_id, "Your %s learned %s" % [species.display_name, PetSkills.describe(skill)],
+					Color(1.0, 0.85, 0.4))
 
 
 # --- AI (server only) ----------------------------------------------------------
@@ -546,7 +570,16 @@ func _on_died() -> void:
 
 
 func _apply_level_stats() -> void:
-	health.max_health = roundf(species.max_health * _level_multiplier())
+	health.max_health = roundf(species.max_health * _level_multiplier() * (1.0 + skill_bonus("health")))
+
+
+## Pack health skills come and go as pets join, faint and wake up: keep max
+## health current, scaling health with it so the bar stays at the same fraction.
+func _refresh_max_health() -> void:
+	var old_max := health.max_health
+	_apply_level_stats()
+	if not is_equal_approx(old_max, health.max_health) and old_max > 0.0 and health.current > 0.0:
+		health.current = health.current * health.max_health / old_max
 
 
 func _level_multiplier() -> float:

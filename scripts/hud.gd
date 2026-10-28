@@ -269,6 +269,9 @@ func _update_hover() -> void:
 				% [c.species.display_name, c.level, roundi(c.capture_chance(_player.capture_boost()) * 100.0), where]
 	elif c.owner_id == _player.peer_id:
 		hover_label.text = "Your %s  Lv%d" % [c.species.display_name, c.level]
+		var skill_names := PetSkills.learned(c.species_index, c.level).map(func(k: Dictionary) -> String: return k.name)
+		if not skill_names.is_empty():
+			hover_label.text += "   ·   " + ", ".join(skill_names)
 	else:
 		var other = _player.world.get_tamer(c.owner_id)  # Player or Rival
 		var owner_name: String = ("Rival " + other.display_name if c.is_rival_pet() else other.display_name) if other else "?"
@@ -290,8 +293,9 @@ func _rebuild_party() -> void:
 		var entry := VBoxContainer.new()
 		entry.add_theme_constant_override("separation", 1)
 		var label := Label.new()
-		label.text = "[%d]  %s  Lv%d%s" % [pet.party_slot + 1, pet.species.display_name, pet.level,
-				"   (fainted)" if pet.fainted else ""]
+		var skills := PetSkills.learned(pet.species_index, pet.level).size()
+		label.text = "[%d]  %s  Lv%d%s%s" % [pet.party_slot + 1, pet.species.display_name, pet.level,
+				"  · %d skill%s" % [skills, "" if skills == 1 else "s"] if skills > 0 else "", "   (fainted)" if pet.fainted else ""]
 		label.modulate = pet.species.color.lightened(0.35)
 		entry.add_child(label)
 		entry.add_child(_bar(pet.health.current, pet.health.max_health, Color(0.35, 0.9, 0.4), 14))

@@ -5,9 +5,12 @@
 [resource]
 script = ExtResource("1_ability")
 display_name = "Mud Trap"
-description = "Sticky mud at the target: damages and roots enemies there for 2.5s."
-cooldown = 10.0
-cast_range = 8.0
-radius = 4.0
+description = "Hides a mud trap where the Mirelurk stands (up to 3). The first enemy to step on it springs it: enemies nearby are damaged and rooted for 2.5s."
+cooldown = 8.0
+cast_range = 0.0
+radius = 3.0
 damage_multiplier = 1.0
 root_duration = 2.5
+trigger_radius = 1.5
+trap_duration = 30.0
+max_traps = 3

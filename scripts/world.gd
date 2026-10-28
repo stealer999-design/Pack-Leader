@@ -57,6 +57,9 @@ var level_number: int:
 var _advancing := false
 ## Server: active ground zones (Sandstorm, toxic puddles...). See add_zone().
 var _zones: Array[Dictionary] = []
+## Server: armed traps (Mud Trap) waiting for an enemy to step on them. See add_trap().
+var _traps: Array[Dictionary] = []
+var _next_trap_id := 0
 
 @onready var level_root: Node3D = $Level
 @onready var players_root: Node3D = $Players
@@ -108,6 +111,7 @@ func _physics_process(delta: float) -> void:
 		return
 	_collect_coins()
 	_tick_zones(delta)
+	_tick_traps(delta)
 	if not exit_open or _advancing:
 		return
 	for p in get_players():
@@ -327,6 +331,9 @@ func _start_level(number: int) -> void:
 	for c in _creatures_where(func(c: Creature) -> bool: return not c.is_player_pet()):
 		c.queue_free()
 	_zones.clear()
+	for trap in _traps:
+		end_trap.rpc(trap.id, false)
+	_traps.clear()
 	for node in rivals_root.get_children() + crates_root.get_children() + coins_root.get_children():
 		node.queue_free()
 	exit_open = false
@@ -408,6 +415,37 @@ func _tick_zones(delta: float) -> void:
 			enemy.receive_damage(zone.dps * 0.5, zone.source)
 			if zone.poison_dps > 0.0 and enemy.has_method("poison"):
 				enemy.poison(zone.poison_dps, 2.0)
+
+
+## Server: a hidden-in-plain-sight trap on the ground at `at`. When an enemy of
+## `source` comes within `trigger_radius`, `on_trigger` is called with the trap's
+## position and the trap is used up. It disappears after `duration` seconds, or
+## when its source is gone; a source keeps at most `max_traps` (oldest go first).
+func add_trap(source: Node3D, at: Vector3, trigger_radius: float, duration: float, max_traps: int,
+		on_trigger: Callable, color: Color) -> void:
+	var own := _traps.filter(func(t: Dictionary) -> bool: return t.source == source)
+	while own.size() >= max_traps:
+		var oldest: Dictionary = own.pop_front()
+		_traps.erase(oldest)
+		end_trap.rpc(oldest.id, false)
+	_next_trap_id += 1
+	_traps.append({
+		"id": _next_trap_id, "source": source, "pos": at, "radius": trigger_radius,
+		"time_left": duration, "on_trigger": on_trigger,
+	})
+	play_trap.rpc(_next_trap_id, at, trigger_radius, color)
+
+
+func _tick_traps(delta: float) -> void:
+	for trap in _traps.duplicate():
+		trap.time_left -= delta
+		if trap.time_left <= 0.0 or not is_instance_valid(trap.source):
+			_traps.erase(trap)
+			end_trap.rpc(trap.id, false)
+		elif not enemies_near(trap.source, trap.pos, trap.radius).is_empty():
+			_traps.erase(trap)
+			end_trap.rpc(trap.id, true)
+			trap.on_trigger.call(trap.pos)
 
 
 ## Scatters coins worth `total` around `at` (from a smashed crate).
@@ -803,6 +841,55 @@ func play_zone(at: Vector3, radius: float, duration: float, color: Color) -> voi
 	pulse.tween_property(mat, "albedo_color:a", 0.6, 0.4)
 	pulse.tween_property(mat, "albedo_color:a", 0.3, 0.4)
 	get_tree().create_timer(duration).timeout.connect(disc.queue_free)
+
+
+## A trap on the ground: a dark disc with a lighter rim and a few lumps.
+@rpc("authority", "call_local", "reliable")
+func play_trap(id: int, at: Vector3, radius: float, color: Color) -> void:
+	var trap := Node3D.new()
+	trap.name = "Trap%d" % id
+	add_child(trap)
+	trap.global_position = at + Vector3.UP * 0.05
+	var rim := MeshInstance3D.new()
+	var rim_mesh := CylinderMesh.new()
+	rim_mesh.top_radius = radius
+	rim_mesh.bottom_radius = radius
+	rim_mesh.height = 0.04
+	rim.mesh = rim_mesh
+	rim.material_override = _fx_material(Color(color.lightened(0.25), 0.75))
+	trap.add_child(rim)
+	var pool := MeshInstance3D.new()
+	var pool_mesh := CylinderMesh.new()
+	pool_mesh.top_radius = radius * 0.8
+	pool_mesh.bottom_radius = radius * 0.8
+	pool_mesh.height = 0.06
+	pool.mesh = pool_mesh
+	pool.material_override = _fx_material(Color(color.darkened(0.35), 0.9))
+	trap.add_child(pool)
+	for i in 4:
+		var lump := MeshInstance3D.new()
+		var lump_mesh := SphereMesh.new()
+		lump_mesh.radius = radius * 0.12
+		lump_mesh.height = radius * 0.12
+		lump.mesh = lump_mesh
+		lump.material_override = pool.material_override
+		lump.position = Vector3.FORWARD.rotated(Vector3.UP, TAU * i / 4.0 + 0.6) * radius * 0.45 + Vector3.UP * 0.04
+		trap.add_child(lump)
+	trap.scale = Vector3(0.2, 1.0, 0.2)
+	trap.create_tween().tween_property(trap, "scale", Vector3.ONE, 0.25)
+
+
+@rpc("authority", "call_local", "reliable")
+func end_trap(id: int, sprung: bool) -> void:
+	var trap := get_node_or_null("Trap%d" % id)
+	if trap == null:
+		return
+	if sprung:
+		trap.queue_free()
+		return
+	var tween := trap.create_tween()
+	tween.tween_property(trap, "scale", Vector3(0.05, 1.0, 0.05), 0.3)
+	tween.tween_callback(trap.queue_free)
 
 
 ## A red warning circle that fills up over `delay` seconds (boss attacks).

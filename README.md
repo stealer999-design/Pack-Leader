@@ -145,9 +145,18 @@ played in the browser".
   | Cactipup | Spine Shield | Shields nearby pets *and players*, absorbing damage equal to 30% of their max health for 6s |
   | Sunfennec | Sun Flare | Damages nearby enemies and makes half their attacks miss for 4s |
   | Bogleon | Tongue Lash | Yanks a target next to the Bogleon and hits it for 1.5x damage (bosses are too heavy to pull) |
-  | Mirelurk | Mud Trap | Damages and roots (can't move) enemies at the target for 2.5s |
+  | Mirelurk | Mud Trap | Hides a mud trap where it stands (up to 3, for 30s). The first enemy to step on it springs it: enemies nearby are damaged and rooted (can't move) for 2.5s |
   | Wisp Gecko | Life Drain | Hits a target for 2x and heals the gecko *and you* for 60% of the damage |
   | Sporeguana | Spore Cloud | Nearby enemies deal 40% less damage for 6s |
+- **Passive skills:** every pet learns a passive skill at levels 5, 10, 15,
+  20, 25 and 30 (six in all). Each one fits the pet: tanks like the Mossback
+  and Mirelurk get armor (take less damage) and health, strikers like the
+  Emberfox and Snowl get attack damage, and supports like the Bloomling and
+  Cactipup get **pack skills** that boost *every* pet in your party while they
+  are awake. Hover a pet in the stable to see all its skills and which are
+  learned; the party panel shows how many each pet has. Armor is capped at
+  60%. Rivals' pets have skills too. The full list is in
+  `scripts/pet_skills.gd`.
 - **Stable:** there is one stable, at the start of every level. Press F there
   to open it: your party sits on three cushions (numbered by their ability
   key) and up to **12 pets sleep in hay beds**. Everything is drag and drop:
@@ -190,6 +199,7 @@ The host is the authoritative server and also plays.
 | `scenes/bog_witch.tscn` + `scripts/bog_witch.gd` | The Bog Witch boss: poison bolts, blink, toxic puddles, Bogleon summons |
 | `scenes/player.tscn` + `scripts/player.gd` | Movement, aim, and server-validated attack/capture/command requests |
 | `scenes/creature.tscn` + `scripts/creature.gd` | One scene for wild creatures *and* pets: wild AI, pet AI, taming, levelling |
+| `scripts/pet_skills.gd` | Every species's six passive skills (levels 5-30) and how they add up |
 | `scripts/creature_model.gd` | Builds each creature's body from simple meshes: a cat, bird, dog or lizard, depending on its biome |
 | `scripts/creature_species.gd`, `resources/species/*.tres`, `scripts/species_db.gd` | Species data. Add a `.tres` and list it in `SpeciesDB` to add a species |
 | `scripts/combat.gd` | Faction rule (`Combat.are_enemies`) that enforces no friendly fire |
