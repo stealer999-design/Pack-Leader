@@ -73,13 +73,15 @@ played in the browser".
   the stable and ends in a boss arena. Defeat the boss and a portal opens at
   the far end; step in and everyone moves on to the next, harder level, and
   every pet gets bonus XP.
-- **Biomes:** levels alternate between two biomes, each with its own four
-  creatures and its own boss (and creature levels keep rising):
+- **Biomes:** levels cycle through four biomes, each with its own creatures
+  and its own boss (and creature levels keep rising each time round):
 
   | Level | Biome | Creatures | Boss |
   |---|---|---|---|
-  | 1, 3, 5… | Greenmeadow | Mossback, Emberfox, Voltwing, Gloomhorn, Bloomling (the first two creatures by the camp are always Bloomlings) | **Rival Tamer** with one pet. The pet fights and uses its ability; when the rival is beaten the pet goes wild, weakened, so you can capture it |
-  | 2, 4, 6… | Frostfang Peaks | Frostling, Spikeshell, Aurora Moth, Snowstalker | **Glacier Titan**: drops Avalanches (a red warning circle, then a slam that damages and slows) and summons capturable Frostlings at 66% and 33% health |
+  | 1, 5, 9… | Greenmeadow | Mossback, Emberfox, Voltwing, Gloomhorn, Bloomling (the first two creatures by the camp are always Bloomlings) | **Rival Tamer** with one pet. The pet fights and uses its ability; when the rival is beaten the pet goes wild, weakened, so you can capture it |
+  | 2, 6, 10… | Frostfang Peaks | Frostling, Spikeshell, Aurora Moth, Snowstalker | **Glacier Titan**: drops Avalanches (a red warning circle, then a slam that damages and slows) and summons capturable Frostlings at 66% and 33% health |
+  | 3, 7, 11… | Sunscorch Dunes (desert) | Sandviper, Dunescuttle, Cactling, Sunfennec | **Sand Wyrm**: burrows underground (it can't be hit there), tunnels under a player or pet behind a warning circle and erupts; at half health it whips up sandstorms |
+  | 4, 8, 12… | Mirewood Bog (swamp) | Bogtoad, Mirelurk, Marsh Wisp, Sporecap | **Bog Witch**: a ranged caster whose bolts poison; she blinks away when you get close, drops toxic puddles and summons Bogtoads at 60% and 30% health |
 - **Tamer health:** after 5 seconds without taking damage you regenerate 3% of
   your max health per second. You carry up to **2 potions** (Q heals 50%),
   and start every level with a full pair. Bloomlings and Aurora Moths can heal
@@ -123,6 +125,14 @@ played in the browser".
   | Spikeshell | Frost Armor | For 5s, reflects 60% of the damage it takes back at the attacker |
   | Aurora Moth | Healing Aurora | Heals every nearby pet *and player* for 35% of their max health |
   | Snowstalker | Shadow Step | Teleports behind a target and strikes it for 3x damage |
+  | Sandviper | Venom Fang | Bites a target and poisons it (damage over 5s) |
+  | Dunescuttle | Sandstorm | A sandstorm at the target that damages enemies inside it for 5s |
+  | Cactling | Spine Shield | Shields nearby pets *and players*, absorbing damage equal to 30% of their max health for 6s |
+  | Sunfennec | Sun Flare | Damages nearby enemies and makes half their attacks miss for 4s |
+  | Bogtoad | Tongue Lash | Yanks a target next to the toad and hits it for 1.5x damage (bosses are too heavy to pull) |
+  | Mirelurk | Mud Trap | Damages and roots (can't move) enemies at the target for 2.5s |
+  | Marsh Wisp | Life Drain | Hits a target for 2x and heals the wisp *and you* for 60% of the damage |
+  | Sporecap | Spore Cloud | Nearby enemies deal 40% less damage for 6s |
 - **Stable:** there is one stable, at the start of every level, holding up to
   12 pets per player.
   Walk up to it and press F to store, take out, swap or release pets.
@@ -157,13 +167,15 @@ The host is the authoritative server and also plays.
 | `scripts/biome_db.gd` | The biomes levels cycle through: their creatures, boss and colours |
 | `scenes/rival.tscn` + `scripts/rival.gd` | The AI rival tamer boss (and the base class for every boss) |
 | `scenes/titan.tscn` + `scripts/titan.gd` | The Glacier Titan boss: Avalanche and Frostling summons |
+| `scenes/sand_wyrm.tscn` + `scripts/sand_wyrm.gd` | The Sand Wyrm boss: burrow, erupt, sandstorms |
+| `scenes/bog_witch.tscn` + `scripts/bog_witch.gd` | The Bog Witch boss: poison bolts, blink, toxic puddles, Bogtoad summons |
 | `scenes/player.tscn` + `scripts/player.gd` | Movement, aim, and server-validated attack/capture/command requests |
 | `scenes/creature.tscn` + `scripts/creature.gd` | One scene for wild creatures *and* pets: wild AI, pet AI, taming, levelling |
 | `scripts/creature_species.gd`, `resources/species/*.tres`, `scripts/species_db.gd` | Species data. Add a `.tres` and list it in `SpeciesDB` to add a species |
 | `scripts/combat.gd` | Faction rule (`Combat.are_enemies`) that enforces no friendly fire |
 | `scripts/abilities/*.gd`, `resources/abilities/*.tres` | `PetAbility` base class and one subclass per ability; tune values in the `.tres` files |
 | `scenes/crate.tscn` + `scripts/crate.gd`, `scenes/coin.tscn` + `scripts/coin.gd` | Breakable crates and the coins they spill |
-| `scripts/components/health.gd` | Health with setter-driven signals (works with replication) |
+| `scripts/components/health.gd` | Health with setter-driven signals (works with replication), plus poison and damage-absorbing shields |
 | `scenes/hud.tscn` + `scripts/hud.gd` | Health, pet party, hover/capture info, message feed |
 
 Physics layers: 1 world · 2 players · 3 hostiles (wild creatures, bosses, rival pets) · 4 player pets.

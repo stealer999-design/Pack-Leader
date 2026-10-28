@@ -24,6 +24,9 @@ var target: Node3D
 var _attack_timer := 0.0
 var _slow_timer := 0.0
 var _slow_factor := 1.0
+var _blind_timer := 0.0
+var _weaken_timer := 0.0
+var _weaken_factor := 1.0
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 var _material := StandardMaterial3D.new()
 
@@ -63,7 +66,12 @@ func _physics_process(delta: float) -> void:
 		return
 	_attack_timer -= delta
 	_slow_timer -= delta
+	_blind_timer -= delta
+	_weaken_timer -= delta
 	var desired := Vector3.ZERO
+	if _is_busy():
+		_boss_tick(delta)
+		return  # mid special move (e.g. burrowed): the move drives the position
 	if not engaged:
 		for p in world.get_players():
 			if p.is_targetable() and _flat_distance(p.global_position) < engage_range:
@@ -106,6 +114,35 @@ func attack_damage() -> float:
 func slow(duration: float, factor: float) -> void:
 	_slow_timer = maxf(_slow_timer, duration)
 	_slow_factor = factor
+
+
+func blind(duration: float) -> void:
+	_blind_timer = maxf(_blind_timer, duration)
+
+
+func weaken(duration: float, factor: float) -> void:
+	_weaken_timer = maxf(_weaken_timer, duration)
+	_weaken_factor = factor
+
+
+func poison(dps: float, duration: float) -> void:
+	health.add_poison(dps, duration)
+
+
+## Damage this boss deals after debuffs (Spore Cloud's weaken). Bosses' special
+## attacks should pass their damage through this too.
+func outgoing(amount: float) -> float:
+	return amount * (_weaken_factor if _weaken_timer > 0.0 else 1.0)
+
+
+## True during a special move that controls the boss's position (no chasing).
+func _is_busy() -> bool:
+	return false
+
+
+## Called when a basic attack lands. Bosses override it for on-hit effects.
+func _on_attack_hit(_victim: Node3D) -> void:
+	pass
 
 
 func _max_health() -> float:
@@ -161,8 +198,11 @@ func _chase_and_attack(victim: Node3D) -> Vector3:
 		return to / dist * move_speed
 	if _attack_timer <= 0.0:
 		_attack_timer = attack_cooldown
-		victim.receive_damage(attack_damage(), self, to / dist * 4.0)
 		_swing.rpc()
+		if _blind_timer > 0.0 and randf() < 0.5:
+			return Vector3.ZERO  # blinded: the attack misses
+		victim.receive_damage(outgoing(attack_damage()), self, to / dist * 4.0)
+		_on_attack_hit(victim)
 	return Vector3.ZERO
 
 

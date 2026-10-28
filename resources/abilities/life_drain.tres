@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="LifeDrainAbility" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/abilities/life_drain_ability.gd" id="1_ability"]
+
+[resource]
+script = ExtResource("1_ability")
+display_name = "Life Drain"
+description = "Drains a target for 2x damage and heals the wisp and you for 60% of it."
+cooldown = 8.0
+cast_range = 9.0
+needs_target = true
+damage_multiplier = 2.0
+heal_fraction = 0.6

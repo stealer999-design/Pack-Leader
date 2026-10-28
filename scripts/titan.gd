@@ -66,7 +66,7 @@ func _cast_avalanche() -> void:
 		if not is_instance_valid(self) or health.is_dead():
 			return
 		for enemy in world.enemies_near(self, spot, avalanche_radius):
-			enemy.receive_damage(attack_damage() * 1.6, self)
+			enemy.receive_damage(outgoing(attack_damage() * 1.6), self)
 			if enemy.has_method("slow"):
 				enemy.slow(2.5, 0.5)
 		world.play_burst.rpc(spot, Color(0.75, 0.9, 1.0), avalanche_radius))

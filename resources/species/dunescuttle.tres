@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="CreatureSpecies" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/creature_species.gd" id="1_species"]
+[ext_resource type="Resource" path="res://resources/abilities/sandstorm.tres" id="2_ability"]
+
+[resource]
+script = ExtResource("1_species")
+display_name = "Dunescuttle"
+color = Color(0.55, 0.38, 0.2, 1)
+size = 1.1
+max_health = 75.0
+damage = 7.0
+move_speed = 3.5
+attack_range = 1.0
+attack_cooldown = 1.2
+aggressive = true
+aggro_range = 8.0
+spawn_weight = 3.0
+catch_rate = 0.5
+xp_reward = 14
+ability = ExtResource("2_ability")

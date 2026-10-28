@@ -1,0 +1,140 @@
+[gd_scene load_steps=14 format=3]
+
+[ext_resource type="Script" path="res://scripts/bog_witch.gd" id="1_witch"]
+[ext_resource type="Script" path="res://scripts/components/health.gd" id="2_health"]
+
+[sub_resource type="CapsuleShape3D" id="shape"]
+radius = 0.4
+height = 1.9
+
+[sub_resource type="CapsuleMesh" id="body_mesh"]
+radius = 0.4
+height = 1.9
+
+[sub_resource type="StandardMaterial3D" id="hat_mat"]
+albedo_color = Color(0.12, 0.15, 0.1, 1)
+
+[sub_resource type="CylinderMesh" id="hat_mesh"]
+material = SubResource("hat_mat")
+top_radius = 0.0
+bottom_radius = 0.42
+height = 0.95
+
+[sub_resource type="CylinderMesh" id="brim_mesh"]
+material = SubResource("hat_mat")
+top_radius = 0.68
+bottom_radius = 0.68
+height = 0.05
+
+[sub_resource type="StandardMaterial3D" id="staff_mat"]
+albedo_color = Color(0.35, 0.24, 0.14, 1)
+
+[sub_resource type="BoxMesh" id="staff_mesh"]
+material = SubResource("staff_mat")
+size = Vector3(0.08, 2.2, 0.08)
+
+[sub_resource type="StandardMaterial3D" id="orb_mat"]
+shading_mode = 0
+albedo_color = Color(0.5, 1, 0.35, 1)
+
+[sub_resource type="SphereMesh" id="orb_mesh"]
+material = SubResource("orb_mat")
+radius = 0.16
+height = 0.32
+
+[sub_resource type="QuadMesh" id="bar_mesh"]
+size = Vector2(2.2, 0.2)
+
+[sub_resource type="StandardMaterial3D" id="bar_bg_mat"]
+shading_mode = 0
+albedo_color = Color(0.08, 0.08, 0.08, 1)
+
+[sub_resource type="StandardMaterial3D" id="bar_fg_mat"]
+shading_mode = 0
+albedo_color = Color(0.95, 0.2, 0.25, 1)
+
+[sub_resource type="SceneReplicationConfig" id="sync"]
+properties/0/path = NodePath(".:position")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+properties/1/path = NodePath("Model:rotation")
+properties/1/spawn = true
+properties/1/replication_mode = 1
+properties/2/path = NodePath("Health:max_health")
+properties/2/spawn = true
+properties/2/replication_mode = 2
+properties/3/path = NodePath("Health:current")
+properties/3/spawn = true
+properties/3/replication_mode = 2
+properties/4/path = NodePath(".:engaged")
+properties/4/spawn = true
+properties/4/replication_mode = 2
+
+[node name="BogWitch" type="CharacterBody3D"]
+collision_layer = 4
+collision_mask = 15
+platform_floor_layers = 1
+script = ExtResource("1_witch")
+move_speed = 3.5
+attack_range = 9.0
+attack_cooldown = 1.6
+engage_range = 16.0
+leash_range = 18.0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.95, 0)
+shape = SubResource("shape")
+
+[node name="Model" type="Node3D" parent="."]
+
+[node name="Body" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.95, 0)
+mesh = SubResource("body_mesh")
+
+[node name="Hat" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(0.98, -0.17, 0, 0.17, 0.98, 0, 0, 0, 1, 0.05, 2.35, 0)
+mesh = SubResource("hat_mesh")
+
+[node name="Brim" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.88, 0)
+mesh = SubResource("brim_mesh")
+
+[node name="Staff" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.6, 1.1, -0.1)
+mesh = SubResource("staff_mesh")
+
+[node name="Orb" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.6, 2.3, -0.1)
+mesh = SubResource("orb_mesh")
+
+[node name="OrbLight" type="OmniLight3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.6, 2.3, -0.1)
+light_color = Color(0.5, 1, 0.35, 1)
+light_energy = 1.5
+omni_range = 4.0
+
+[node name="Overhead" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.2, 0)
+
+[node name="NameLabel" type="Label3D" parent="Overhead"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4, 0)
+pixel_size = 0.012
+modulate = Color(0.8, 1, 0.6, 1)
+font_size = 44
+outline_size = 12
+text = "Bog Witch"
+
+[node name="BarBg" type="MeshInstance3D" parent="Overhead"]
+mesh = SubResource("bar_mesh")
+material_override = SubResource("bar_bg_mat")
+
+[node name="BarFg" type="MeshInstance3D" parent="Overhead"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.01)
+mesh = SubResource("bar_mesh")
+material_override = SubResource("bar_fg_mat")
+
+[node name="Health" type="Node" parent="."]
+script = ExtResource("2_health")
+
+[node name="Sync" type="MultiplayerSynchronizer" parent="."]
+replication_config = SubResource("sync")

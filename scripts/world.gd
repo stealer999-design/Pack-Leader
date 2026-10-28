@@ -19,6 +19,8 @@ const PATH_YAW := PI / 4.0
 @export var creature_scene: PackedScene
 @export var rival_scene: PackedScene
 @export var titan_scene: PackedScene
+@export var wyrm_scene: PackedScene
+@export var witch_scene: PackedScene
 @export var crate_scene: PackedScene
 @export var coin_scene: PackedScene
 ## Pets within this distance of a kill share the XP.
@@ -53,6 +55,8 @@ var level_number: int:
 		return level_state.y
 
 var _advancing := false
+## Server: active ground zones (Sandstorm, toxic puddles...). See add_zone().
+var _zones: Array[Dictionary] = []
 
 @onready var level_root: Node3D = $Level
 @onready var players_root: Node3D = $Players
@@ -99,10 +103,11 @@ func _process(delta: float) -> void:
 		portal.rotate_y(delta * 1.5)
 
 
-func _physics_process(_delta: float) -> void:
+func _physics_process(delta: float) -> void:
 	if not multiplayer.is_server():
 		return
 	_collect_coins()
+	_tick_zones(delta)
 	if not exit_open or _advancing:
 		return
 	for p in get_players():
@@ -220,7 +225,7 @@ func boss_objective_name() -> String:
 	var boss := get_rival()
 	if boss:
 		return boss.objective_name()
-	return "the Glacier Titan" if biome().boss == "titan" else "Rival %s" % layout.get("rival_name", "")
+	return biome().get("boss_name", "Rival %s" % layout.get("rival_name", ""))
 
 
 func nearest_enemy(attacker: Node3D, point: Vector3, max_range: float) -> Creature:
@@ -321,6 +326,7 @@ func _start_level(number: int) -> void:
 	_advancing = false
 	for c in _creatures_where(func(c: Creature) -> bool: return not c.is_player_pet()):
 		c.queue_free()
+	_zones.clear()
 	for node in rivals_root.get_children() + crates_root.get_children() + coins_root.get_children():
 		node.queue_free()
 	exit_open = false
@@ -374,6 +380,34 @@ func on_rival_defeated(rival: Rival) -> void:
 		if not pet.fainted:
 			pet.gain_xp(rival_defeat_xp * level_number)
 	exit_open = true
+
+
+## Server: a damaging area on the ground. Every 0.5s it hurts the enemies of
+## `source` inside it (`dps` per second); `poison_dps` also poisons them.
+## The zone ends early if its source is removed.
+func add_zone(source: Node3D, at: Vector3, radius: float, duration: float, dps: float, color: Color,
+		poison_dps := 0.0) -> void:
+	_zones.append({
+		"source": source, "pos": at, "radius": radius, "time_left": duration,
+		"dps": dps, "poison_dps": poison_dps, "tick": 0.0,
+	})
+	play_zone.rpc(at, radius, duration, color)
+
+
+func _tick_zones(delta: float) -> void:
+	for zone in _zones.duplicate():
+		zone.time_left -= delta
+		zone.tick -= delta
+		if zone.time_left <= 0.0 or not is_instance_valid(zone.source):
+			_zones.erase(zone)
+			continue
+		if zone.tick > 0.0:
+			continue
+		zone.tick = 0.5
+		for enemy in enemies_near(zone.source, zone.pos, zone.radius):
+			enemy.receive_damage(zone.dps * 0.5, zone.source)
+			if zone.poison_dps > 0.0 and enemy.has_method("poison"):
+				enemy.poison(zone.poison_dps, 2.0)
 
 
 ## Scatters coins worth `total` around `at` (from a smashed crate).
@@ -654,7 +688,9 @@ func _spawn_coin(data: Dictionary) -> Node:
 
 
 func _spawn_rival(data: Dictionary) -> Node:
-	var scene := titan_scene if data.get("type", "rival") == "titan" else rival_scene
+	var scene: PackedScene = {
+		"titan": titan_scene, "wyrm": wyrm_scene, "witch": witch_scene,
+	}.get(data.get("type", "rival"), rival_scene)
 	var rival: Rival = scene.instantiate()
 	rival.display_name = data.name
 	rival.level_number = data.level
@@ -747,6 +783,25 @@ func play_beam(from: Vector3, to: Vector3, color: Color) -> void:
 	var tween := beam.create_tween()
 	tween.tween_property(mat, "albedo_color:a", 0.0, 0.4)
 	tween.tween_callback(beam.queue_free)
+
+
+## A pulsing coloured disc on the ground for `duration` seconds (a damage zone).
+@rpc("authority", "call_local", "reliable")
+func play_zone(at: Vector3, radius: float, duration: float, color: Color) -> void:
+	var mat := _fx_material(Color(color, 0.4))
+	var disc := MeshInstance3D.new()
+	var mesh := CylinderMesh.new()
+	mesh.top_radius = radius
+	mesh.bottom_radius = radius
+	mesh.height = 0.05
+	disc.mesh = mesh
+	disc.material_override = mat
+	add_child(disc)
+	disc.global_position = at + Vector3.UP * 0.07
+	var pulse := disc.create_tween().set_loops(maxi(ceili(duration / 0.8), 1))
+	pulse.tween_property(mat, "albedo_color:a", 0.6, 0.4)
+	pulse.tween_property(mat, "albedo_color:a", 0.3, 0.4)
+	get_tree().create_timer(duration).timeout.connect(disc.queue_free)
 
 
 ## A red warning circle that fills up over `delay` seconds (boss attacks).

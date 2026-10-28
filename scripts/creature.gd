@@ -59,6 +59,9 @@ var _slow_timer := 0.0
 var _slow_factor := 1.0
 var _reflect_timer := 0.0
 var _reflect_fraction := 0.0
+var _blind_timer := 0.0
+var _weaken_timer := 0.0
+var _weaken_factor := 1.0
 var _leaping := false
 var _pending_cast := {}  ## { point, target, time_left } while moving into ability range.
 var _ai_cast_delay := 3.0  ## Rival pets: time until they next consider using their ability.
@@ -113,6 +116,8 @@ func _physics_process(delta: float) -> void:
 	_guard_timer -= delta
 	_slow_timer -= delta
 	_reflect_timer -= delta
+	_blind_timer -= delta
+	_weaken_timer -= delta
 	# Targets can be freed at any time (killed, captured owner left...).
 	if not is_instance_valid(target):
 		target = null
@@ -160,7 +165,7 @@ func radius() -> float:
 
 
 func get_damage() -> float:
-	return species.damage * _level_multiplier()
+	return species.damage * _level_multiplier() * (_weaken_factor if _weaken_timer > 0.0 else 1.0)
 
 
 func xp_to_next() -> int:
@@ -266,11 +271,41 @@ func stun(duration: float) -> void:
 	_status_fx.rpc("stun", duration)
 
 
-## Movement speed is multiplied by `factor` for `duration` seconds.
+## Movement speed is multiplied by `factor` for `duration` seconds (0 = rooted).
 func slow(duration: float, factor: float) -> void:
 	_slow_timer = maxf(_slow_timer, duration)
 	_slow_factor = factor
-	_status_fx.rpc("slow", duration)
+	_status_fx.rpc("root" if factor <= 0.0 else "slow", duration)
+
+
+## Half of this creature's attacks miss for `duration` seconds.
+func blind(duration: float) -> void:
+	_blind_timer = maxf(_blind_timer, duration)
+	_status_fx.rpc("blind", duration)
+
+
+## This creature deals `factor` times its normal damage for `duration` seconds.
+func weaken(duration: float, factor: float) -> void:
+	_weaken_timer = maxf(_weaken_timer, duration)
+	_weaken_factor = factor
+	_status_fx.rpc("weaken", duration)
+
+
+func poison(dps: float, duration: float) -> void:
+	health.add_poison(dps, duration)
+	_status_fx.rpc("poison", duration)
+
+
+func add_shield(amount: float, duration: float) -> void:
+	health.add_shield(amount, duration)
+	_status_fx.rpc("shield", duration)
+
+
+## Yanked to `point` (e.g. by a Bogtoad's tongue).
+func pull_to(point: Vector3, duration := 0.2) -> void:
+	_pending_cast = {}
+	var tween := create_tween().set_process_mode(Tween.TWEEN_PROCESS_PHYSICS)
+	tween.tween_property(self, "global_position", world.clamp_to_level(point), duration)
 
 
 func reflect(duration: float, fraction: float) -> void:
@@ -421,8 +456,10 @@ func _chase_and_attack(victim: Node3D) -> Vector3:
 		return to / dist * species.move_speed
 	if _attack_timer <= 0.0:
 		_attack_timer = species.attack_cooldown
-		victim.receive_damage(get_damage(), self, to / dist * 3.0)
 		_lunge.rpc()
+		if _blind_timer > 0.0 and randf() < 0.5:
+			return Vector3.ZERO  # blinded: the attack misses
+		victim.receive_damage(get_damage(), self, to / dist * 3.0)
 	return Vector3.ZERO
 
 
@@ -597,35 +634,43 @@ func _leap_fx(duration: float) -> void:
 	tween.tween_property(model, "position:y", 0.0, duration * 0.5).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
 
 
-## Temporary status visuals: "guard" (shield bubble), "reflect" (icy shell),
-## "slow" (frost ring at the feet) or "stun" (spinning halo).
+## Temporary status visuals: bubbles for "guard", "reflect" and "shield";
+## rings at the feet for "slow", "root", "poison" and "weaken"; a spinning
+## halo for "stun" and "blind".
 @rpc("authority", "call_local", "unreliable")
 func _status_fx(kind: String, duration: float) -> void:
 	var fx := MeshInstance3D.new()
 	var mat := StandardMaterial3D.new()
 	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	if kind == "guard" or kind == "reflect":
+	var bubble_colors := {
+		"guard": Color(0.4, 0.7, 1.0, 0.3), "reflect": Color(0.85, 0.95, 1.0, 0.45), "shield": Color(1.0, 0.85, 0.3, 0.35),
+	}
+	var ring_colors := {
+		"slow": Color(0.55, 0.85, 1.0, 0.8), "root": Color(0.45, 0.32, 0.18, 0.95),
+		"poison": Color(0.45, 0.95, 0.3, 0.8), "weaken": Color(0.7, 0.35, 0.85, 0.8),
+	}
+	if kind in bubble_colors:
 		var sphere := SphereMesh.new()
 		sphere.radius = radius() * 1.8
 		sphere.height = radius() * 3.6
 		fx.mesh = sphere
 		fx.position.y = radius()
-		mat.albedo_color = Color(0.4, 0.7, 1.0, 0.3) if kind == "guard" else Color(0.85, 0.95, 1.0, 0.45)
-	elif kind == "slow":
-		var frost := TorusMesh.new()
-		frost.inner_radius = radius() * 1.1
-		frost.outer_radius = radius() * 1.5
-		fx.mesh = frost
+		mat.albedo_color = bubble_colors[kind]
+	elif kind in ring_colors:
+		var ring_mesh := TorusMesh.new()
+		ring_mesh.inner_radius = radius() * 1.1
+		ring_mesh.outer_radius = radius() * 1.5
+		fx.mesh = ring_mesh
 		fx.position.y = 0.08
-		mat.albedo_color = Color(0.55, 0.85, 1.0, 0.8)
+		mat.albedo_color = ring_colors[kind]
 	else:
 		var halo := TorusMesh.new()
 		halo.inner_radius = 0.25
 		halo.outer_radius = 0.35
 		fx.mesh = halo
 		fx.position.y = overhead.position.y - 0.25
-		mat.albedo_color = Color(1.0, 0.9, 0.3, 0.9)
+		mat.albedo_color = Color(1.0, 0.95, 0.6, 0.9) if kind == "blind" else Color(1.0, 0.9, 0.3, 0.9)
 		fx.create_tween().set_loops(ceili(duration / 0.5)).tween_property(fx, "rotation:y", TAU, 0.5).from(0.0)
 	fx.material_override = mat
 	add_child(fx)

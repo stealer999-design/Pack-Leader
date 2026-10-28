@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="RootAbility" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/abilities/root_ability.gd" id="1_ability"]
+
+[resource]
+script = ExtResource("1_ability")
+display_name = "Mud Trap"
+description = "Sticky mud at the target: damages and roots enemies there for 2.5s."
+cooldown = 10.0
+cast_range = 8.0
+radius = 4.0
+damage_multiplier = 1.0
+root_duration = 2.5

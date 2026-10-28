@@ -12,6 +12,14 @@ const PATHS := [
 	"res://resources/species/aurora_moth.tres",
 	"res://resources/species/snowstalker.tres",
 	"res://resources/species/bloomling.tres",
+	"res://resources/species/sandviper.tres",
+	"res://resources/species/dunescuttle.tres",
+	"res://resources/species/cactling.tres",
+	"res://resources/species/sunfennec.tres",
+	"res://resources/species/bogtoad.tres",
+	"res://resources/species/mirelurk.tres",
+	"res://resources/species/marsh_wisp.tres",
+	"res://resources/species/sporecap.tres",
 ]
 
 static var _all: Array[CreatureSpecies] = []

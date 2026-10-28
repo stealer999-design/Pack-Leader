@@ -1,0 +1,152 @@
+[gd_scene load_steps=16 format=3]
+
+[ext_resource type="Script" path="res://scripts/sand_wyrm.gd" id="1_wyrm"]
+[ext_resource type="Script" path="res://scripts/components/health.gd" id="2_health"]
+
+[sub_resource type="CapsuleShape3D" id="shape"]
+radius = 1.0
+height = 2.2
+
+[sub_resource type="SphereMesh" id="head_mesh"]
+radius = 1.0
+height = 1.8
+
+[sub_resource type="StandardMaterial3D" id="segment_mat"]
+albedo_color = Color(0.52, 0.36, 0.2, 1)
+
+[sub_resource type="SphereMesh" id="seg1"]
+material = SubResource("segment_mat")
+radius = 0.85
+height = 1.5
+
+[sub_resource type="SphereMesh" id="seg2"]
+material = SubResource("segment_mat")
+radius = 0.7
+height = 1.25
+
+[sub_resource type="SphereMesh" id="seg3"]
+material = SubResource("segment_mat")
+radius = 0.55
+height = 1.0
+
+[sub_resource type="StandardMaterial3D" id="mandible_mat"]
+albedo_color = Color(0.25, 0.18, 0.1, 1)
+
+[sub_resource type="PrismMesh" id="mandible_mesh"]
+material = SubResource("mandible_mat")
+size = Vector3(0.3, 0.9, 0.3)
+
+[sub_resource type="StandardMaterial3D" id="eye_mat"]
+shading_mode = 0
+albedo_color = Color(1, 0.4, 0.15, 1)
+
+[sub_resource type="SphereMesh" id="eye_mesh"]
+material = SubResource("eye_mat")
+radius = 0.12
+height = 0.24
+
+[sub_resource type="QuadMesh" id="bar_mesh"]
+size = Vector2(2.2, 0.2)
+
+[sub_resource type="StandardMaterial3D" id="bar_bg_mat"]
+shading_mode = 0
+albedo_color = Color(0.08, 0.08, 0.08, 1)
+
+[sub_resource type="StandardMaterial3D" id="bar_fg_mat"]
+shading_mode = 0
+albedo_color = Color(0.95, 0.2, 0.25, 1)
+
+[sub_resource type="SceneReplicationConfig" id="sync"]
+properties/0/path = NodePath(".:position")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+properties/1/path = NodePath("Model:rotation")
+properties/1/spawn = true
+properties/1/replication_mode = 1
+properties/2/path = NodePath("Health:max_health")
+properties/2/spawn = true
+properties/2/replication_mode = 2
+properties/3/path = NodePath("Health:current")
+properties/3/spawn = true
+properties/3/replication_mode = 2
+properties/4/path = NodePath(".:engaged")
+properties/4/spawn = true
+properties/4/replication_mode = 2
+properties/5/path = NodePath(".:burrowed")
+properties/5/spawn = true
+properties/5/replication_mode = 2
+
+[node name="SandWyrm" type="CharacterBody3D"]
+collision_layer = 4
+collision_mask = 15
+platform_floor_layers = 1
+script = ExtResource("1_wyrm")
+move_speed = 3.8
+attack_range = 1.6
+attack_cooldown = 1.4
+engage_range = 18.0
+leash_range = 22.0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, 0)
+shape = SubResource("shape")
+
+[node name="Model" type="Node3D" parent="."]
+
+[node name="Body" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, 0)
+mesh = SubResource("head_mesh")
+
+[node name="Segment1" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.85, 1.35)
+mesh = SubResource("seg1")
+
+[node name="Segment2" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 2.45)
+mesh = SubResource("seg2")
+
+[node name="Segment3" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.55, 3.35)
+mesh = SubResource("seg3")
+
+[node name="MandibleL" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(0.94, 0, 0.34, 0, 1, 0, -0.34, 0, 0.94, -0.45, 0.75, -0.9)
+mesh = SubResource("mandible_mesh")
+
+[node name="MandibleR" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(0.94, 0, -0.34, 0, 1, 0, 0.34, 0, 0.94, 0.45, 0.75, -0.9)
+mesh = SubResource("mandible_mesh")
+
+[node name="EyeL" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.38, 1.55, -0.78)
+mesh = SubResource("eye_mesh")
+
+[node name="EyeR" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.38, 1.55, -0.78)
+mesh = SubResource("eye_mesh")
+
+[node name="Overhead" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.3, 0)
+
+[node name="NameLabel" type="Label3D" parent="Overhead"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4, 0)
+pixel_size = 0.012
+modulate = Color(1, 0.85, 0.55, 1)
+font_size = 44
+outline_size = 12
+text = "Sand Wyrm"
+
+[node name="BarBg" type="MeshInstance3D" parent="Overhead"]
+mesh = SubResource("bar_mesh")
+material_override = SubResource("bar_bg_mat")
+
+[node name="BarFg" type="MeshInstance3D" parent="Overhead"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.01)
+mesh = SubResource("bar_mesh")
+material_override = SubResource("bar_fg_mat")
+
+[node name="Health" type="Node" parent="."]
+script = ExtResource("2_health")
+
+[node name="Sync" type="MultiplayerSynchronizer" parent="."]
+replication_config = SubResource("sync")

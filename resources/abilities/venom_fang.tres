@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="PoisonStrikeAbility" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/abilities/poison_strike_ability.gd" id="1_ability"]
+
+[resource]
+script = ExtResource("1_ability")
+display_name = "Venom Fang"
+description = "Bites a target and poisons it, dealing damage over 5s."
+cooldown = 7.0
+cast_range = 8.0
+needs_target = true
+damage_multiplier = 1.0
+poison_dps_multiplier = 0.6
+poison_duration = 5.0

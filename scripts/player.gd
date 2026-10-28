@@ -460,6 +460,14 @@ func _regenerate(delta: float) -> void:
 		health.heal(health.max_health * regen_rate * delta)
 
 
+func poison(dps: float, duration: float) -> void:
+	health.add_poison(dps, duration)
+
+
+func add_shield(amount: float, duration: float) -> void:
+	health.add_shield(amount, duration)
+
+
 ## Server: slows this player. Movement runs on the owning client, so it is applied there.
 func slow(duration: float, factor: float) -> void:
 	_apply_slow.rpc_id(peer_id, duration, factor)
