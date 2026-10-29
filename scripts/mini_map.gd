@@ -62,7 +62,7 @@ func _apply_mode() -> void:
 		offset_right = -30
 		offset_top = 230
 		offset_bottom = -100
-		_legend.text = "You (arrow)  ·  your pets: green  ·  wild: red  ·  boss: big red  ·  stand: yellow  ·  stable: brown  ·  portal: purple       [M] close"
+		_legend.text = "You (arrow)  ·  your pets: green  ·  wild: red  ·  boss: big red  ·  stand: yellow  ·  bat shop: red  ·  stable: brown  ·  portal: purple       [M] close"
 	else:
 		set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
 		offset_left = -20 - COMPACT_SIZE.x
@@ -110,6 +110,9 @@ func _draw_map() -> void:
 		var bounds := Rect2(_to_map(Vector3(segments[0].center_x, 0, segments[0].z_start)), Vector2.ZERO)
 		for seg in segments:
 			bounds = bounds.merge(_segment_rect(seg))
+		if layout.has("village"):
+			var plaza: Rect2 = layout.village.plaza
+			bounds = bounds.expand(_to_map(Vector3(plaza.position.x - 1.0, 0, plaza.position.y)))
 		_scale = minf(_canvas.size.x / bounds.size.x, _canvas.size.y / bounds.size.y) * 0.96
 		_origin = bounds.get_center()
 	else:
@@ -125,6 +128,21 @@ func _draw_map() -> void:
 		elif seg.kind == "arena":
 			color = biome.arena
 		_draw_rect_map(_segment_rect(seg), color.darkened(0.15))
+	if layout.has("village"):
+		var v: Dictionary = layout.village
+		var half := LevelGenerator.VILLAGE_PATH_WIDTH * 0.5
+		var path_a := _to_map(Vector3(v.wall_x + 0.5, 0, v.z - half))
+		var path_b := _to_map(Vector3(v.path_end_x, 0, v.z + half))
+		_draw_rect_map(Rect2(path_a, Vector2.ZERO).expand(path_b), floor_color.darkened(0.15))
+		var plaza: Rect2 = v.plaza
+		var plaza_a := _to_map(Vector3(plaza.position.x, 0, plaza.position.y))
+		var plaza_b := _to_map(Vector3(plaza.end.x, 0, plaza.end.y))
+		_draw_rect_map(Rect2(plaza_a, Vector2.ZERO).expand(plaza_b), Color(biome.camp).lerp(Color(0.62, 0.58, 0.52), 0.6).darkened(0.15))
+		for house in v.houses:
+			var size: Vector3 = house.size
+			var center := _to_map(house.pos)
+			var half_size := Vector2(size.z, size.x) * 0.5
+			_draw_rect_map(Rect2(center - half_size, half_size * 2.0), Color(0.62, 0.25, 0.2))
 	for rock in layout.rocks:
 		var size: Vector3 = rock.size
 		var center := _to_map(rock.pos)
@@ -139,6 +157,11 @@ func _draw_map() -> void:
 	var shop_at := _to_canvas(_to_map(layout.shop_point))
 	_canvas.draw_circle(shop_at, 6.5, Color(0.2, 0.15, 0.05))
 	_canvas.draw_circle(shop_at, 5.0, Color(1.0, 0.88, 0.2))
+	if layout.has("village"):
+		var bat_at := _to_canvas(_to_map(layout.village.bat_shop_point))
+		_canvas.draw_circle(bat_at, 6.5, Color(0.2, 0.05, 0.05))
+		_canvas.draw_circle(bat_at, 5.0, Color(0.95, 0.35, 0.3))
+		_canvas.draw_line(bat_at + Vector2(-3, 3), bat_at + Vector2(3, -3), Color(0.4, 0.25, 0.12), 2.5)  # a bat
 	var portal_at := _to_canvas(_to_map(layout.exit_point))
 	_canvas.draw_arc(portal_at, 7.0, 0, TAU, 20, Color(0.75, 0.45, 1.0), 2.5)
 	if world.exit_open:

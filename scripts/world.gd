@@ -275,6 +275,14 @@ func shop_position() -> Vector3:
 	return level_root.to_global(layout.shop_point) if not layout.is_empty() else Vector3.INF
 
 
+func bat_shop_position() -> Vector3:
+	return level_root.to_global(layout.village.bat_shop_point) if not layout.is_empty() else Vector3.INF
+
+
+func is_near_bat_shop(point: Vector3) -> bool:
+	return not layout.is_empty() and _flat_distance(point, bat_shop_position()) <= shop_range
+
+
 func is_near_shop(point: Vector3) -> bool:
 	return not layout.is_empty() and _flat_distance(point, shop_position()) <= shop_range
 
@@ -578,8 +586,15 @@ func _build_level() -> void:
 		var mat: Material = {"start": camp_mat, "arena": arena_mat}.get(seg.kind, floor_mat)
 		_add_box(Vector3(seg.center_x, -0.5, mid_z), Vector3(seg.width, 1.0, length + 0.5), mat)
 		for side in [-1.0, 1.0]:
-			_add_box(Vector3(seg.center_x + side * (seg.width * 0.5 + 0.5), 1.0, mid_z),
-					Vector3(1.0, 2.0, length), wall_mat, side > 0.0)
+			var wall_x: float = seg.center_x + side * (seg.width * 0.5 + 0.5)
+			if side < 0.0 and i == layout.village.segment:
+				# A doorway in the far wall: the way into the village.
+				var door_half := LevelGenerator.VILLAGE_PATH_WIDTH * 0.5
+				var door_z: float = layout.village.z
+				_add_wall_z(wall_x, seg.z_start, door_z + door_half, wall_mat)
+				_add_wall_z(wall_x, door_z - door_half, seg.z_end, wall_mat)
+			else:
+				_add_box(Vector3(wall_x, 1.0, mid_z), Vector3(1.0, 2.0, length), wall_mat, side > 0.0)
 		if i > 0:
 			_add_join_walls(segments[i - 1], seg, wall_mat)
 	var first: Dictionary = segments[0]
@@ -592,6 +607,7 @@ func _build_level() -> void:
 		body.add_to_group("obstacles")
 
 	_build_shop()
+	_build_village(level_biome, wall_mat)
 	stable.global_position = level_root.to_global(layout.stable_point)
 	stable.rotation.y = PATH_YAW + PI / 2.0
 	portal.global_position = level_root.to_global(layout.exit_point)
@@ -601,31 +617,8 @@ func _build_level() -> void:
 ## The lemonade stand halfway along the path: counter, striped awning, potion
 ## bottles and the vendor. Its front faces the middle of the path.
 func _build_shop() -> void:
-	var shop := Node3D.new()
-	shop.name = "LemonadeStand"
-	level_root.add_child(shop)
-	shop.position = layout.shop_point
-	shop.rotation.y = layout.shop_side * PI / 2.0
-
-	var body := StaticBody3D.new()
-	var shape := CollisionShape3D.new()
-	var box := BoxShape3D.new()
-	box.size = Vector3(2.9, 2.0, 2.6)
-	shape.shape = box
-	shape.position = Vector3(0.0, 1.0, 0.7)
-	body.add_child(shape)
-	shop.add_child(body)
-
-	var wood := _material(Color(0.62, 0.42, 0.24))
-	var light_wood := _material(Color(0.82, 0.66, 0.42))
-	_add_mesh(shop, Vector3(0.0, 0.5, 0.0), Vector3(2.6, 1.0, 0.8), wood)
-	_add_mesh(shop, Vector3(0.0, 1.04, 0.0), Vector3(2.9, 0.08, 1.0), light_wood)
-	for post in [Vector2(-1.35, -0.45), Vector2(1.35, -0.45), Vector2(-1.35, 1.7), Vector2(1.35, 1.7)]:
-		_add_mesh(shop, Vector3(post.x, 1.35, post.y), Vector3(0.12, 2.7, 0.12), wood)
-	var yellow := _material(Color(1.0, 0.85, 0.2))
-	var white := _material(Color(0.97, 0.95, 0.88))
-	for i in 6:
-		_add_mesh(shop, Vector3(-1.25 + i * 0.5, 2.72, 0.62), Vector3(0.5, 0.08, 2.6), yellow if i % 2 == 0 else white)
+	var shop := _build_stall("LemonadeStand", layout.shop_point, layout.shop_side * PI / 2.0,
+			Color(1.0, 0.85, 0.2), "Lemonade Stand\nPotions", Color(1.0, 0.9, 0.4))
 	var potion_mat := _material(Color(0.95, 0.25, 0.35))
 	potion_mat.emission_enabled = true
 	potion_mat.emission = Color(0.5, 0.05, 0.1)
@@ -649,32 +642,12 @@ func _build_shop() -> void:
 	lemon.position = Vector3(0.0, 1.18, -0.15)
 	shop.add_child(lemon)
 
-	# The vendor behind the counter.
-	var vendor := MeshInstance3D.new()
-	var capsule := CapsuleMesh.new()
-	capsule.radius = 0.35
-	capsule.height = 1.7
-	capsule.material = _material(Color(0.95, 0.75, 0.55))
-	vendor.mesh = capsule
-	vendor.position = Vector3(0.0, 0.85, 0.85)
-	shop.add_child(vendor)
-	_add_mesh(shop, Vector3(0.0, 0.95, 0.5), Vector3(0.6, 0.8, 0.05), yellow)  # apron
-	var hat := MeshInstance3D.new()
-	var brim := CylinderMesh.new()
-	brim.top_radius = 0.42
-	brim.bottom_radius = 0.42
-	brim.height = 0.05
-	brim.material = yellow
-	hat.mesh = brim
-	hat.position = Vector3(0.0, 1.72, 0.85)
-	shop.add_child(hat)
-
 	# The checkpoint flag beside the stand: grey until this player reaches it.
 	var flag := Node3D.new()
 	flag.name = "CheckpointFlag"
 	flag.position = Vector3(2.1, 0.0, -0.5)
 	shop.add_child(flag)
-	_add_mesh(flag, Vector3(0.0, 1.4, 0.0), Vector3(0.08, 2.8, 0.08), wood)
+	_add_mesh(flag, Vector3(0.0, 1.4, 0.0), Vector3(0.08, 2.8, 0.08), _material(Color(0.62, 0.42, 0.24)))
 	var cloth := MeshInstance3D.new()
 	cloth.name = "Cloth"
 	var cloth_mesh := BoxMesh.new()
@@ -684,15 +657,159 @@ func _build_shop() -> void:
 	cloth.position = Vector3(0.47, 1.2, 0.0)  # low: raised when reached
 	flag.add_child(cloth)
 
+
+## The village off the middle of the path: a side path up to a square with a few
+## houses and the bat shop. A safe place: no creatures are placed there.
+func _build_village(level_biome: Dictionary, wall_mat: Material) -> void:
+	var v: Dictionary = layout.village
+	var plaza: Rect2 = v.plaza
+	var half := LevelGenerator.VILLAGE_PATH_WIDTH * 0.5
+	var path_len: float = v.wall_x - v.path_end_x
+	var cobbles := _material(Color(level_biome.camp).lerp(Color(0.62, 0.58, 0.52), 0.6))
+	# Floors: the side path (reaching into the doorway) and the square.
+	_add_box(Vector3(v.path_end_x + path_len * 0.5 + 0.5, -0.5, v.z), Vector3(path_len + 1.0, 1.0, half * 2.0),
+			_material(layout.floor_tint))
+	_add_box(Vector3(plaza.get_center().x, -0.5, plaza.get_center().y), Vector3(plaza.size.x, 1.0, plaza.size.y), cobbles)
+	# Side path walls.
+	for side in [-1.0, 1.0]:
+		_add_box(Vector3(v.path_end_x + path_len * 0.5, 1.0, v.z + side * (half + 0.5)), Vector3(path_len, 2.0, 1.0), wall_mat)
+	# Square walls: tall at the back and sides; low on the camera's side, with a gap for the path.
+	_add_wall_z(plaza.position.x - 0.5, plaza.end.y + 1.0, plaza.position.y - 1.0, wall_mat)
+	for z in [plaza.position.y - 0.5, plaza.end.y + 0.5]:
+		_add_box(Vector3(plaza.get_center().x, 1.0, z), Vector3(plaza.size.x + 2.0, 2.0, 1.0), wall_mat)
+	_add_wall_z(plaza.end.x + 0.5, plaza.end.y + 1.0, v.z + half, wall_mat, true)
+	_add_wall_z(plaza.end.x + 0.5, v.z - half, plaza.position.y - 1.0, wall_mat, true)
+
+	# Houses: walls, a pitched roof, a door and a window.
+	var roof_mat := _material(Color(0.62, 0.25, 0.2))
+	var house_mat := _material(Color(0.92, 0.86, 0.72))
+	var door_mat := _material(Color(0.42, 0.27, 0.15))
+	var glass := _material(Color(0.55, 0.75, 0.95))
+	for house in v.houses:
+		var size: Vector3 = house.size
+		var body := _add_box(house.pos + Vector3.UP * size.y * 0.5, size, house_mat)
+		body.add_to_group("obstacles")
+		var roof := MeshInstance3D.new()
+		var prism := PrismMesh.new()
+		prism.size = Vector3(size.x + 0.6, 1.6, size.z + 0.6)
+		prism.material = roof_mat
+		roof.mesh = prism
+		roof.position = house.pos + Vector3.UP * (size.y + 0.8)
+		level_root.add_child(roof)
+		# Door and window on the side facing the middle of the square.
+		var facing := signf(plaza.get_center().x - house.pos.x)
+		var front_x: float = house.pos.x + facing * (size.x * 0.5 + 0.02)
+		_add_mesh(level_root, Vector3(front_x, 0.9, house.pos.z - 0.8), Vector3(0.06, 1.8, 1.0), door_mat)
+		_add_mesh(level_root, Vector3(front_x, 1.9, house.pos.z + 1.2), Vector3(0.06, 0.8, 0.9), glass)
+
+	# The bat shop: a stall at the back of the square, facing the way in.
+	var shop := _build_stall("BatShop", v.bat_shop_point, -PI / 2.0, Color(0.75, 0.2, 0.2), "Bat Shop\nUpgrades",
+			Color(1.0, 0.6, 0.5))
+	var bat_wood := _material(Color(0.62, 0.4, 0.22))
+	var spike_mat := _material(Color(0.75, 0.77, 0.8))
+	for x in [-0.7, 0.6]:  # bats on the counter, one of them spiked
+		var bat := MeshInstance3D.new()
+		var mesh := CylinderMesh.new()
+		mesh.top_radius = 0.07
+		mesh.bottom_radius = 0.035
+		mesh.height = 0.8
+		mesh.material = bat_wood
+		bat.mesh = mesh
+		bat.position = Vector3(x, 1.14, -0.1)
+		bat.rotation = Vector3(0.0, 0.3, PI / 2.0)
+		shop.add_child(bat)
+		if x > 0.0:
+			for i in 4:
+				var spike := MeshInstance3D.new()
+				var cone := CylinderMesh.new()
+				cone.top_radius = 0.0
+				cone.bottom_radius = 0.03
+				cone.height = 0.1
+				cone.material = spike_mat
+				spike.mesh = cone
+				spike.position = Vector3(0.0, 0.25 - i * 0.07, 0.0) + Vector3.FORWARD.rotated(Vector3.UP, i * 1.6) * 0.07
+				spike.rotation = Vector3(PI / 2.0, i * 1.6, 0.0)
+				bat.add_child(spike)
+
 	var sign := Label3D.new()
-	sign.text = "Lemonade Stand\nPotions"
+	sign.text = "Village"
+	sign.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	sign.pixel_size = 0.012
+	sign.font_size = 44
+	sign.outline_size = 12
+	sign.modulate = Color(0.95, 0.9, 0.75)
+	sign.position = Vector3(v.wall_x - 1.0, 3.2, v.z)
+	level_root.add_child(sign)
+
+
+## A wall along z at local `x`, from `z_from` to `z_to`.
+func _add_wall_z(x: float, z_from: float, z_to: float, mat: Material, low := false) -> void:
+	var length := absf(z_from - z_to)
+	if length > 0.05:
+		_add_box(Vector3(x, 1.0, (z_from + z_to) * 0.5), Vector3(1.0, 2.0, length), mat, low)
+
+
+## A market stall in level space at `point`, turned by `rot_y` (its counter faces
+## local -Z): counter, posts, a striped awning in `stripe` and white, a vendor
+## behind the counter and a sign. Returns it so the caller can add goods.
+func _build_stall(stall_name: String, point: Vector3, rot_y: float, stripe: Color, sign_text: String,
+		sign_color: Color) -> Node3D:
+	var stall := Node3D.new()
+	stall.name = stall_name
+	level_root.add_child(stall)
+	stall.position = point
+	stall.rotation.y = rot_y
+
+	var body := StaticBody3D.new()
+	var shape := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = Vector3(2.9, 2.0, 2.6)
+	shape.shape = box
+	shape.position = Vector3(0.0, 1.0, 0.7)
+	body.add_child(shape)
+	stall.add_child(body)
+
+	var wood := _material(Color(0.62, 0.42, 0.24))
+	var light_wood := _material(Color(0.82, 0.66, 0.42))
+	_add_mesh(stall, Vector3(0.0, 0.5, 0.0), Vector3(2.6, 1.0, 0.8), wood)
+	_add_mesh(stall, Vector3(0.0, 1.04, 0.0), Vector3(2.9, 0.08, 1.0), light_wood)
+	for post in [Vector2(-1.35, -0.45), Vector2(1.35, -0.45), Vector2(-1.35, 1.7), Vector2(1.35, 1.7)]:
+		_add_mesh(stall, Vector3(post.x, 1.35, post.y), Vector3(0.12, 2.7, 0.12), wood)
+	var stripe_mat := _material(stripe)
+	var white := _material(Color(0.97, 0.95, 0.88))
+	for i in 6:
+		_add_mesh(stall, Vector3(-1.25 + i * 0.5, 2.72, 0.62), Vector3(0.5, 0.08, 2.6), stripe_mat if i % 2 == 0 else white)
+
+	# The vendor behind the counter.
+	var vendor := MeshInstance3D.new()
+	var capsule := CapsuleMesh.new()
+	capsule.radius = 0.35
+	capsule.height = 1.7
+	capsule.material = _material(Color(0.95, 0.75, 0.55))
+	vendor.mesh = capsule
+	vendor.position = Vector3(0.0, 0.85, 0.85)
+	stall.add_child(vendor)
+	_add_mesh(stall, Vector3(0.0, 0.95, 0.5), Vector3(0.6, 0.8, 0.05), stripe_mat)  # apron
+	var hat := MeshInstance3D.new()
+	var brim := CylinderMesh.new()
+	brim.top_radius = 0.42
+	brim.bottom_radius = 0.42
+	brim.height = 0.05
+	brim.material = stripe_mat
+	hat.mesh = brim
+	hat.position = Vector3(0.0, 1.72, 0.85)
+	stall.add_child(hat)
+
+	var sign := Label3D.new()
+	sign.text = sign_text
 	sign.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	sign.pixel_size = 0.011
 	sign.font_size = 44
 	sign.outline_size = 12
-	sign.modulate = Color(1.0, 0.9, 0.4)
+	sign.modulate = sign_color
 	sign.position = Vector3(0.0, 3.5, 0.6)
-	shop.add_child(sign)
+	stall.add_child(sign)
+	return stall
 
 
 func _add_mesh(parent: Node3D, pos: Vector3, size: Vector3, mat: Material) -> MeshInstance3D:

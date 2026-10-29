@@ -11,6 +11,12 @@ const MAX_STABLE := 12
 const RIVAL_COMMAND := "@rival"
 ## Potions a player can carry. Everyone starts each level with a full set.
 const MAX_POTIONS := 2
+## The bats a tamer can wield, upgraded at the village bat shop. Every bat
+## still stops at 1 HP on creatures, so they stay ready to capture.
+const BATS := [
+	{"name": "Wooden Bat", "damage": 12.0, "price": 0},
+	{"name": "Spiked Bat", "damage": 22.0, "price": 60},
+]
 const HAIR_COLORS: Array[Color] = [Color(0.3, 0.18, 0.1), Color(0.12, 0.1, 0.08), Color(0.85, 0.65, 0.3),
 		Color(0.6, 0.25, 0.12), Color(0.45, 0.32, 0.2)]
 
@@ -23,7 +29,6 @@ const HAIR_COLORS: Array[Color] = [Color(0.3, 0.18, 0.1), Color(0.12, 0.1, 0.08)
 
 @export_group("Combat")
 ## Deliberately weak: the player weakens creatures, the pets do the real fighting.
-@export var attack_damage := 12.0
 @export var attack_range := 2.4
 @export var attack_arc_degrees := 120.0
 @export var attack_cooldown := 0.4
@@ -59,6 +64,12 @@ var coins := 0
 var potions := MAX_POTIONS
 ## Pet stance. Passive pets follow but never attack, so creatures survive to be captured.
 var pets_passive := false
+## Index into BATS. Replicated, so everyone sees the spikes.
+var bat_tier := 0:
+	set(v):
+		bat_tier = v
+		if person:
+			person.set_spiked(bat_tier >= 1)
 ## Server: reached this level's checkpoint (the lemonade stand), so respawns there.
 var checkpoint := false
 var downed := false:
@@ -120,6 +131,7 @@ func _ready() -> void:
 	person.name = "Person"
 	model.add_child(person)
 	person.build(_material, HAIR_COLORS[absi(peer_id) % HAIR_COLORS.size()])
+	person.set_spiked(bat_tier >= 1)
 	name_label.text = display_name
 	name_label.modulate = color.lightened(0.3)
 	_swing_fx = _build_swing_fx()
@@ -189,6 +201,8 @@ func _physics_process(delta: float) -> void:
 			world.hud.open_stable()
 		elif world.is_near_shop(global_position):
 			world.hud.open_shop()
+		elif world.is_near_bat_shop(global_position):
+			world.hud.open_bat_shop()
 	if world.hud.is_window_open():
 		return  # mouse is busy with the stable or shop window
 
@@ -298,7 +312,7 @@ func request_attack(aim: Vector3) -> void:
 		var to := enemy.global_position - global_position
 		to.y = 0.0
 		if aim.angle_to(to.normalized()) <= half_arc:
-			var damage := attack_damage
+			var damage := bat_damage()
 			if enemy is Creature:
 				# The bat only weakens creatures: it never takes them below 1 HP,
 				# so they're left ready to capture (a 99% chance at 1 HP).
@@ -309,7 +323,7 @@ func request_attack(aim: Vector3) -> void:
 		var to := crate.global_position - global_position
 		to.y = 0.0
 		if to.length() < 0.01 or aim.angle_to(to.normalized()) <= half_arc:
-			crate.hit(attack_damage)
+			crate.hit(bat_damage())
 			world.play_bonk.rpc(crate.global_position + Vector3.UP * 1.2)
 	_show_swing.rpc(aim)
 
@@ -348,6 +362,36 @@ func request_buy_potion() -> void:
 	coins -= potion_price
 	potions += 1
 	world.tell(peer_id, "Thanks! One fresh potion.", Color(1, 0.85, 0.35))
+
+
+func bat_damage() -> float:
+	return BATS[bat_tier].damage
+
+
+## The next bat up, or {} if this tamer already has the best one.
+func next_bat() -> Dictionary:
+	return BATS[bat_tier + 1] if bat_tier + 1 < BATS.size() else {}
+
+
+@rpc("any_peer", "call_local", "reliable")
+func request_buy_bat() -> void:
+	if not _sent_by_owner() or downed:
+		return
+	if not world.is_near_bat_shop(global_position):
+		world.tell(peer_id, "You need to be at the bat shop in the village.", Color(1, 0.8, 0.5))
+		return
+	var bat := next_bat()
+	if bat.is_empty():
+		world.tell(peer_id, "You already have the best bat in the shop.", Color(1, 0.8, 0.5))
+		return
+	if coins < bat.price:
+		world.tell(peer_id, "The %s costs %d coins (you have %d)." % [bat.name, bat.price, coins], Color(1, 0.8, 0.5))
+		return
+	coins -= bat.price
+	bat_tier += 1
+	world.tell(peer_id, "You got the %s! It hits for %d (it still stops at 1 HP on creatures)."
+			% [bat.name, roundi(bat.damage)], Color(1.0, 0.85, 0.4))
+	world.play_burst.rpc(global_position, Color(0.85, 0.85, 0.9), 1.8)
 
 
 @rpc("any_peer", "call_local", "reliable")
@@ -491,6 +535,7 @@ func request_restore(data: Dictionary) -> void:
 	_restored = true
 	coins = clampi(int(data.get("coins", 0)), 0, 999_999)
 	potions = clampi(int(data.get("potions", MAX_POTIONS)), 0, MAX_POTIONS)
+	bat_tier = clampi(int(data.get("bat", 0)), 0, BATS.size() - 1)
 	var beds = data.get("stable", [])
 	if beds is Array:
 		for i in mini(beds.size(), MAX_STABLE):

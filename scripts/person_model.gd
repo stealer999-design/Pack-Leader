@@ -22,6 +22,12 @@ var _last_position := Vector3.INF
 var _speed := 0.0
 var _walk_phase := 0.0
 var _swinging := false
+var _spikes: Node3D
+
+
+func set_spiked(spiked: bool) -> void:
+	if _spikes:
+		_spikes.visible = spiked
 
 
 func build(body_material: StandardMaterial3D, hair_color: Color) -> void:
@@ -60,6 +66,18 @@ func build(body_material: StandardMaterial3D, hair_color: Color) -> void:
 	_part(bat, _cylinder(0.035, 0.035, 0.3), _mat(Color(0.2, 0.12, 0.08)), Vector3(0, 0.0, 0), Vector3(-90, 0, 0))  # grip
 	_part(bat, _cylinder(0.09, 0.045, 0.65), wood, Vector3(0, 0, -0.47), Vector3(-90, 0, 0))
 	_part(bat, _sphere(0.09), wood, Vector3(0, 0, -0.8))
+	# Spikes, shown once the bat is upgraded: steel cones around the barrel.
+	_spikes = _pivot(bat, Vector3.ZERO)
+	_spikes.visible = false
+	var steel := _mat(Color(0.78, 0.8, 0.84))
+	steel.metallic = 0.7
+	steel.roughness = 0.35
+	for i in 12:
+		var along := -0.5 - (i / 4) * 0.13
+		var angle := i * TAU / 4.0 + (i / 4) * 0.8
+		var out := Vector3(cos(angle), sin(angle), 0.0)
+		var spike := _part(_spikes, _cylinder(0.0, 0.05, 0.22), steel, Vector3(0, 0, along) + out * 0.13)
+		spike.basis = Basis.looking_at(out, Vector3.FORWARD) * Basis(Vector3.RIGHT, -PI / 2.0)  # tip outwards
 	_rest_bat()
 
 

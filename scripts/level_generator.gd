@@ -15,6 +15,11 @@ const MIN_PATH_WIDTH := 24.0
 const MAX_PATH_WIDTH := 40.0
 const SHOP_CLEARANCE := 9.0  ## No rocks, creatures or crates this close to the lemonade stand.
 const MAX_SWAY := 20.0  ## How far the path may drift sideways from its start line.
+## The village: a side path off the far wall of the middle segment, at a right
+## angle (up the screen), leading to a square with the bat shop.
+const VILLAGE_PATH_WIDTH := 12.0
+const VILLAGE_PATH_LENGTH := 18.0
+const PLAZA_SIZE := Vector2(30.0, 28.0)  ## x (away from the path) by z (along it).
 
 const RIVAL_NAMES := ["Kael", "Mira", "Dax", "Vesper", "Rook", "Sable", "Juno", "Thorne", "Lyra", "Brann"]
 
@@ -26,6 +31,8 @@ const RIVAL_NAMES := ["Kael", "Mira", "Dax", "Vesper", "Rook", "Sable", "Juno", 
 ##   creature_spots: [{ pos: Vector3, depth: float }]   depth = 0..1 along the path
 ##   crate_spots: [{ pos: Vector3, gold: bool }]
 ##   shop_point: Vector3, shop_side: float (-1 = the far wall, as seen by the camera)
+##   village: { segment: int, z: float, wall_x: float, path_end_x: float,
+##              plaza: Rect2 (x, z), bat_shop_point: Vector3, houses: [{ pos: Vector3, size: Vector3 }] }
 ##   start_point, stable_point, rival_point, exit_point: Vector3
 ##   total_length: float, rival_name: String, rival_species: int, floor_tint: Color,
 ##   biome: int (index into BiomeDB.BIOMES)
@@ -57,9 +64,11 @@ static func generate(level_seed: int, level_number: int) -> Dictionary:
 		_add_crate_spots(rng, seg, rocks, spots, crates)
 		z -= SEGMENT_LENGTH
 
-	# The lemonade stand: against a wall of the middle path segment, with a
-	# clear, safe area around it.
-	var shop_seg: Dictionary = segments[1 + path_count / 2]
+	# The village branches off the middle path segment; the lemonade stand is
+	# against the far wall of the segment before it, with a clear, safe area around it.
+	var village_index := 1 + path_count / 2
+	var village := _village(segments[village_index], village_index)
+	var shop_seg: Dictionary = segments[village_index - 1]
 	# Always on the far wall (local -x), so the stand faces the camera; the near
 	# wall is drawn low and the stand would be seen from behind there.
 	var shop_side := -1.0
@@ -70,6 +79,12 @@ static func generate(level_seed: int, level_number: int) -> Dictionary:
 	rocks.assign(rocks.filter(away_from_shop))
 	spots.assign(spots.filter(away_from_shop))
 	crates.assign(crates.filter(away_from_shop))
+	# Keep the way into the village clear.
+	var clear_of_village := func(item: Dictionary) -> bool:
+		return item.pos.x > village.wall_x + 7.0 or absf(item.pos.z - village.z) > VILLAGE_PATH_WIDTH * 0.5 + 3.0
+	rocks.assign(rocks.filter(clear_of_village))
+	spots.assign(spots.filter(clear_of_village))
+	crates.assign(crates.filter(clear_of_village))
 
 	var arena_center := clampf(center, -12.0, 12.0)
 	var arena := {"z_start": z, "z_end": z - ARENA_LENGTH, "center_x": arena_center, "width": ARENA_WIDTH, "kind": "arena"}
@@ -88,6 +103,7 @@ static func generate(level_seed: int, level_number: int) -> Dictionary:
 		"crate_spots": crates,
 		"shop_point": shop_point,
 		"shop_side": shop_side,
+		"village": village,
 		"start_point": Vector3(0.0, 0.0, -14.0),
 		"stable_point": Vector3(-8.0, 0.0, -16.0),
 		"rival_point": Vector3(arena_center, 0.0, arena.z_start - ARENA_LENGTH * 0.55),
@@ -109,8 +125,42 @@ static func segment_at(layout: Dictionary, local_z: float) -> Dictionary:
 	return layout.segments[0] if local_z > 0.0 else layout.segments[-1]
 
 
+## The village's side path and square, from its segment.
+static func _village(seg: Dictionary, index: int) -> Dictionary:
+	var z: float = (seg.z_start + seg.z_end) * 0.5
+	var wall_x: float = seg.center_x - seg.width * 0.5
+	var path_end_x := wall_x - VILLAGE_PATH_LENGTH
+	var plaza := Rect2(path_end_x - PLAZA_SIZE.x, z - PLAZA_SIZE.y * 0.5, PLAZA_SIZE.x, PLAZA_SIZE.y)
+	return {
+		"segment": index,
+		"z": z,
+		"wall_x": wall_x,
+		"path_end_x": path_end_x,
+		"plaza": plaza,
+		# Against the far side of the square, facing the way in.
+		"bat_shop_point": Vector3(plaza.position.x + 4.0, 0.0, z),
+		"houses": [
+			{"pos": Vector3(plaza.position.x + 5.0, 0.0, plaza.position.y + 5.0), "size": Vector3(6.0, 3.2, 5.0)},
+			{"pos": Vector3(plaza.position.x + 5.0, 0.0, plaza.end.y - 5.0), "size": Vector3(6.0, 3.6, 5.0)},
+			{"pos": Vector3(plaza.end.x - 6.0, 0.0, plaza.position.y + 4.5), "size": Vector3(5.0, 3.0, 5.0)},
+		],
+	}
+
+
+## True if a local point is on the village's side path or square (with `margin` to the walls).
+static func in_village(layout: Dictionary, local_point: Vector3, margin := 0.0) -> bool:
+	if not layout.has("village"):
+		return false
+	var v: Dictionary = layout.village
+	var point := Vector2(local_point.x, local_point.z)
+	var path := Rect2(v.path_end_x, v.z - VILLAGE_PATH_WIDTH * 0.5, v.wall_x - v.path_end_x + 2.0, VILLAGE_PATH_WIDTH)
+	return path.grow(-margin).has_point(point) or (v.plaza as Rect2).grow(-margin).has_point(point)
+
+
 ## Clamps a local point so it stays on the walkable floor.
 static func clamp_to_floor(layout: Dictionary, local_point: Vector3, margin := 1.0) -> Vector3:
+	if in_village(layout, local_point, margin):
+		return local_point
 	var p := local_point
 	p.z = clampf(p.z, -layout.total_length + margin, -margin)
 	var seg := segment_at(layout, p.z)

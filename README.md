@@ -122,6 +122,12 @@ played in the browser".
 - **Your tamer** is a little person with a bat, drawn in your colour (hair
   colour varies by player). They walk with swinging arms and legs; attacking
   swings the bat, and every hit pops a ring of spinning stars.
+- **Village:** halfway along every level, a side path leads up the screen
+  (through a doorway in the far wall) to a small village square: a few houses
+  and the **Bat Shop**. No wild creatures are placed there. At the Bat Shop (F)
+  you can upgrade your Wooden Bat (12 damage) to a **Spiked Bat** (22 damage)
+  for 60 coins. Every bat still stops creatures at 1 HP. Your bat is saved.
+  The lemonade stand now sits on the stretch of path just before the village.
 - **Checkpoint:** downed players get back up after a few seconds at the start
   camp, or at the **lemonade stand** once they have reached it (come near it
   or get past it) this level. A grey flag beside the stand rises and turns
@@ -220,6 +226,7 @@ The host is the authoritative server and also plays.
 | `scenes/player.tscn` + `scripts/player.gd` | Movement, aim, and server-validated attack/capture/command requests |
 | `scenes/creature.tscn` + `scripts/creature.gd` | One scene for wild creatures *and* pets: wild AI, pet AI, taming, levelling |
 | `scripts/pet_skills.gd` | Every species's six skills, skill points and ranks, and how they add up |
+| `scripts/level_generator.gd` (village) + `World._build_village` | The village side path, square, houses and bat shop |
 | `scripts/person_model.gd` | The tamer's body, bat, walk cycle and bat swing, built from simple meshes |
 | `scripts/mini_map.gd` | The mini map (and the large map, M), drawn from the level layout |
 | `scripts/skill_window.gd`, `scripts/skill_icons.gd` | The skills screen (K) and its skill icons, drawn in code |

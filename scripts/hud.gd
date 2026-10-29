@@ -10,6 +10,9 @@ var _party_refresh := 0.0
 var _dialog_closed_frame := -1
 var skill_window: SkillWindow
 var mini_map: MiniMap
+var bat_shop_panel: PanelContainer
+var _bat_shop_info: Label
+var _bat_buy_button: Button
 var _stable_party_signature := ""
 var _party_slots: Array[PetSlot] = []
 var _bed_slots: Array[PetSlot] = []
@@ -53,6 +56,7 @@ func _ready() -> void:
 	skill_window.theme = stable_panel.theme
 	skill_window.add_theme_stylebox_override("panel", stable_panel.get_theme_stylebox("panel"))
 	add_child(skill_window)
+	_build_bat_shop_panel()
 	mini_map = MiniMap.new()
 	add_child(mini_map)
 	move_child(mini_map, 0)  # under the windows
@@ -79,10 +83,20 @@ func _process(delta: float) -> void:
 		close_stable()
 	if shop_panel.visible and not near_shop:
 		shop_panel.hide()
-	interact_label.visible = (near_stable or near_shop) and not is_window_open()
-	interact_label.text = "[F]  Open stable" if near_stable else "[F]  Visit the lemonade stand"
+	var near_bat_shop := _player.world.is_near_bat_shop(_player.global_position)
+	if bat_shop_panel.visible and not near_bat_shop:
+		bat_shop_panel.hide()
+	interact_label.visible = (near_stable or near_shop or near_bat_shop) and not is_window_open()
+	if near_stable:
+		interact_label.text = "[F]  Open stable"
+	elif near_shop:
+		interact_label.text = "[F]  Visit the lemonade stand"
+	else:
+		interact_label.text = "[F]  Visit the bat shop"
 	if shop_panel.visible:
 		_update_shop()
+	if bat_shop_panel.visible:
+		_update_bat_shop()
 	_update_hover()
 	_update_objective()
 	_update_coins()
@@ -130,13 +144,14 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func is_window_open() -> bool:
-	return stable_panel.visible or shop_panel.visible or skill_window.visible
+	return stable_panel.visible or shop_panel.visible or skill_window.visible or bat_shop_panel.visible
 
 
 func close_windows() -> void:
 	stable_panel.hide()
 	shop_panel.hide()
 	skill_window.hide()
+	bat_shop_panel.hide()
 
 
 ## The skills screen (K) can open anywhere; it replaces any other open window.
@@ -146,6 +161,67 @@ func toggle_skills() -> void:
 		return
 	close_windows()
 	skill_window.open()
+
+
+func open_bat_shop() -> void:
+	bat_shop_panel.show()
+	_update_bat_shop()
+
+
+func _update_bat_shop() -> void:
+	var current: Dictionary = Player.BATS[_player.bat_tier]
+	var next := _player.next_bat()
+	_bat_shop_info.text = "Your bat: %s (hits for %d).   You have %d coins." % [current.name, roundi(current.damage), _player.coins]
+	if next.is_empty():
+		_bat_buy_button.text = "You have the best bat in the shop"
+		_bat_buy_button.disabled = true
+	elif _player.coins < next.price:
+		_bat_buy_button.text = "%s: hits for %d   (%d coins, not enough)" % [next.name, roundi(next.damage), next.price]
+		_bat_buy_button.disabled = true
+	else:
+		_bat_buy_button.text = "Upgrade to the %s: hits for %d   (%d coins)" % [next.name, roundi(next.damage), next.price]
+		_bat_buy_button.disabled = false
+
+
+## The bat shop window, built like the lemonade stand's.
+func _build_bat_shop_panel() -> void:
+	bat_shop_panel = PanelContainer.new()
+	bat_shop_panel.name = "BatShopPanel"
+	bat_shop_panel.visible = false
+	bat_shop_panel.theme = shop_panel.theme
+	bat_shop_panel.add_theme_stylebox_override("panel", shop_panel.get_theme_stylebox("panel"))
+	bat_shop_panel.set_anchors_preset(Control.PRESET_CENTER)
+	bat_shop_panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	bat_shop_panel.grow_vertical = Control.GROW_DIRECTION_BOTH
+	add_child(bat_shop_panel)
+	var margin := MarginContainer.new()
+	for side in ["left", "right", "top", "bottom"]:
+		margin.add_theme_constant_override("margin_" + side, 18)
+	bat_shop_panel.add_child(margin)
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 10)
+	margin.add_child(box)
+	var title := Label.new()
+	title.text = "Bat Shop"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 26)
+	title.modulate = Color(1.0, 0.6, 0.5)
+	box.add_child(title)
+	var greeting := Label.new()
+	greeting.text = "\"A better bat bonks harder, but don't worry: it still won't knock 'em out.\""
+	greeting.modulate = Color(1, 1, 1, 0.75)
+	box.add_child(greeting)
+	_bat_shop_info = Label.new()
+	box.add_child(_bat_shop_info)
+	_bat_buy_button = Button.new()
+	_bat_buy_button.focus_mode = Control.FOCUS_NONE
+	_bat_buy_button.custom_minimum_size = Vector2(520, 40)
+	_bat_buy_button.pressed.connect(func() -> void: _player.request_buy_bat.rpc_id(1))
+	box.add_child(_bat_buy_button)
+	var hint := Label.new()
+	hint.text = "Every bat stops at 1 HP on creatures, and a creature at 1 HP is a 99% catch.   [F / Esc] close"
+	hint.modulate = Color(1, 1, 1, 0.6)
+	box.add_child(hint)
 
 
 func open_shop() -> void:
