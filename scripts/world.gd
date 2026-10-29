@@ -113,6 +113,7 @@ func _physics_process(delta: float) -> void:
 	_collect_coins()
 	_tick_zones(delta)
 	_tick_traps(delta)
+	_check_checkpoints()
 	if not exit_open or _advancing:
 		return
 	for p in get_players():
@@ -306,11 +307,49 @@ func player_spawn_point(peer_id: int) -> Vector3:
 
 
 ## Server only: next to a teammate who is still standing, otherwise at the start camp.
+## Where a downed player gets back up: at the lemonade stand once they have
+## reached it this level (the checkpoint), otherwise at the camp.
 func respawn_point(peer_id: int) -> Vector3:
-	for p in get_players():
-		if p.peer_id != peer_id and not p.downed:
-			return clamp_to_level(p.global_position + Vector3(1.5, 0.0, 1.5))
+	var player := get_player(peer_id)
+	if player and player.checkpoint:
+		return checkpoint_point(peer_id)
 	return player_spawn_point(peer_id)
+
+
+## A spot in front of the lemonade stand, one per player so nobody stacks up.
+func checkpoint_point(peer_id: int) -> Vector3:
+	var stand := level_root.get_node_or_null("LemonadeStand") as Node3D
+	if stand == null:
+		return player_spawn_point(peer_id)
+	var slot := maxi(Network.players.keys().find(peer_id), 0)
+	return clamp_to_level(stand.to_global(Vector3((slot - 1.5) * 1.4, 0.0, -3.5)))
+
+
+## Server: players reach the checkpoint by coming near the lemonade stand, or by
+## getting past it anywhere across the path.
+func _check_checkpoints() -> void:
+	if layout.is_empty():
+		return
+	var stand_progress := level_progress(shop_position())
+	for p in get_players():
+		var reached := _flat_distance(p.global_position, shop_position()) <= shop_range * 2.0 \
+				or level_progress(p.global_position) > stand_progress
+		if reached and not p.checkpoint and not p.downed:
+			p.checkpoint = true
+			show_checkpoint.rpc_id(p.peer_id)
+			tell(p.peer_id, "Checkpoint! If you go down, you'll get back up at the lemonade stand.",
+					Color(0.5, 1.0, 0.55))
+
+
+## Raises this player's checkpoint flag at the stand (each player sees their own).
+@rpc("authority", "call_local", "reliable")
+func show_checkpoint() -> void:
+	var flag := level_root.get_node_or_null("LemonadeStand/CheckpointFlag") as Node3D
+	if flag == null:
+		return
+	var cloth := flag.get_node("Cloth") as MeshInstance3D
+	(cloth.material_override as StandardMaterial3D).albedo_color = Color(0.3, 0.85, 0.35)
+	cloth.create_tween().tween_property(cloth, "position:y", 2.25, 0.8).set_trans(Tween.TRANS_BACK)
 
 
 func _creatures_where(predicate: Callable) -> Array[Creature]:
@@ -344,6 +383,7 @@ func _start_level(number: int) -> void:
 		p.health.current = p.health.max_health
 		p.potions = Player.MAX_POTIONS  # a fresh pair of potions every level
 		p.downed = false
+		p.checkpoint = false
 		p._respawn_at.rpc_id(p.peer_id, player_spawn_point(p.peer_id))
 	for pet in get_all_pets():
 		pet.global_position = player_spawn_point(pet.owner_id) + pet._follow_offset()
@@ -627,6 +667,21 @@ func _build_shop() -> void:
 	hat.mesh = brim
 	hat.position = Vector3(0.0, 1.72, 0.85)
 	shop.add_child(hat)
+
+	# The checkpoint flag beside the stand: grey until this player reaches it.
+	var flag := Node3D.new()
+	flag.name = "CheckpointFlag"
+	flag.position = Vector3(2.1, 0.0, -0.5)
+	shop.add_child(flag)
+	_add_mesh(flag, Vector3(0.0, 1.4, 0.0), Vector3(0.08, 2.8, 0.08), wood)
+	var cloth := MeshInstance3D.new()
+	cloth.name = "Cloth"
+	var cloth_mesh := BoxMesh.new()
+	cloth_mesh.size = Vector3(0.9, 0.55, 0.04)
+	cloth.mesh = cloth_mesh
+	cloth.material_override = _material(Color(0.6, 0.6, 0.6))
+	cloth.position = Vector3(0.47, 1.2, 0.0)  # low: raised when reached
+	flag.add_child(cloth)
 
 	var sign := Label3D.new()
 	sign.text = "Lemonade Stand\nPotions"

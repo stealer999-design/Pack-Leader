@@ -113,8 +113,11 @@ played in the browser".
   coins (gold crates take four hits and hold far more). Walk over coins to
   pick them up; coins belong to whoever collects them and carry over between
   levels.
-- **Downed players** respawn next to a teammate who is still standing, or at
-  the start camp if nobody is.
+- **Checkpoint:** downed players get back up after a few seconds at the start
+  camp, or at the **lemonade stand** once they have reached it (come near it
+  or get past it) this level. A grey flag beside the stand rises and turns
+  green when you claim it. Each player has their own checkpoint; it resets on
+  every new level.
 - **Capturing:** the chance is 0% at full health and rises as the creature
   gets weaker. It is scaled by the species' `catch_rate` and lowered for
   higher-level creatures. Hover a creature to see the current chance. Failed

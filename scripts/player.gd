@@ -57,6 +57,8 @@ var coins := 0
 var potions := MAX_POTIONS
 ## Pet stance. Passive pets follow but never attack, so creatures survive to be captured.
 var pets_passive := false
+## Server: reached this level's checkpoint (the lemonade stand), so respawns there.
+var checkpoint := false
 var downed := false:
 	set(v):
 		downed = v
