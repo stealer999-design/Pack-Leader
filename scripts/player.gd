@@ -11,6 +11,8 @@ const MAX_STABLE := 12
 const RIVAL_COMMAND := "@rival"
 ## Potions a player can carry. Everyone starts each level with a full set.
 const MAX_POTIONS := 2
+const HAIR_COLORS: Array[Color] = [Color(0.3, 0.18, 0.1), Color(0.12, 0.1, 0.08), Color(0.85, 0.65, 0.3),
+		Color(0.6, 0.25, 0.12), Color(0.45, 0.32, 0.2)]
 
 @export_group("Movement")
 @export var move_speed := 10.5
@@ -94,6 +96,7 @@ var _slow_factor := 1.0
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 var _material := StandardMaterial3D.new()
 var _swing_fx: MeshInstance3D
+var person: PersonModel
 
 @onready var world: World = get_tree().get_first_node_in_group("world")
 @onready var health: Health = $Health
@@ -113,7 +116,10 @@ func _ready() -> void:
 	for i in MAX_STABLE:
 		stable.append({})
 	_material.albedo_color = color
-	$Model/Body.material_override = _material
+	person = PersonModel.new()
+	person.name = "Person"
+	model.add_child(person)
+	person.build(_material, HAIR_COLORS[absi(peer_id) % HAIR_COLORS.size()])
 	name_label.text = display_name
 	name_label.modulate = color.lightened(0.3)
 	_swing_fx = _build_swing_fx()
@@ -292,12 +298,19 @@ func request_attack(aim: Vector3) -> void:
 		var to := enemy.global_position - global_position
 		to.y = 0.0
 		if aim.angle_to(to.normalized()) <= half_arc:
-			enemy.receive_damage(attack_damage, self, to.normalized() * knockback)
+			var damage := attack_damage
+			if enemy is Creature:
+				# The bat only weakens creatures: it never takes them below 1 HP,
+				# so they're left ready to capture (a 99% chance at 1 HP).
+				damage = maxf(minf(damage, enemy.health.current - 1.0), 0.0)
+			enemy.receive_damage(damage, self, to.normalized() * knockback)
+			world.play_bonk.rpc(enemy.global_position + Vector3.UP * (enemy.radius() * 2.0 + 0.4))
 	for crate in world.crates_near(global_position, attack_range):
 		var to := crate.global_position - global_position
 		to.y = 0.0
 		if to.length() < 0.01 or aim.angle_to(to.normalized()) <= half_arc:
 			crate.hit(attack_damage)
+			world.play_bonk.rpc(crate.global_position + Vector3.UP * 1.2)
 	_show_swing.rpc(aim)
 
 
@@ -730,6 +743,7 @@ func _apply_downed() -> void:
 
 
 func _play_swing_fx() -> void:
+	person.swing(attack_cooldown * 0.7)
 	_swing_fx.visible = true
 	_swing_fx.scale = Vector3(0.6, 1.0, 0.6)
 	var tween := create_tween()
@@ -754,7 +768,7 @@ func _build_swing_fx() -> MeshInstance3D:
 	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
-	mat.albedo_color = Color(1.0, 0.85, 0.3, 0.45)
+	mat.albedo_color = Color(1.0, 0.95, 0.8, 0.18)  # a faint swoosh behind the bat
 	var fx := MeshInstance3D.new()
 	fx.mesh = st.commit()
 	fx.material_override = mat

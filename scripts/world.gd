@@ -60,6 +60,7 @@ var _advancing := false
 var _zones: Array[Dictionary] = []
 ## Server: armed traps (Mud Trap) waiting for an enemy to step on them. See add_trap().
 var _traps: Array[Dictionary] = []
+var _star_mesh: ArrayMesh
 var _next_trap_id := 0
 
 @onready var level_root: Node3D = $Level
@@ -832,6 +833,53 @@ func play_capture_fx(from: Vector3, to: Vector3, success: bool) -> void:
 	tween.tween_property(orb, "scale", Vector3.ONE * 5.0, 0.3)
 	tween.parallel().tween_property(mat, "albedo_color:a", 0.0, 0.3)
 	tween.tween_callback(orb.queue_free)
+
+
+## The bat's bonk: a ring of little yellow stars that pops up and spins around
+## the spot (above the head of whatever was hit), then fades.
+@rpc("authority", "call_local", "unreliable")
+func play_bonk(at: Vector3) -> void:
+	if _star_mesh == null:
+		_star_mesh = _make_star_mesh()
+	var ring := Node3D.new()
+	add_child(ring)
+	ring.global_position = at
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	mat.no_depth_test = true
+	mat.albedo_color = Color(1.0, 0.92, 0.3)
+	for i in 5:
+		var star := MeshInstance3D.new()
+		star.mesh = _star_mesh
+		star.material_override = mat
+		star.position = Vector3.FORWARD.rotated(Vector3.UP, TAU * i / 5.0) * 0.45
+		ring.add_child(star)
+	ring.scale = Vector3.ONE * 0.2
+	var tween := ring.create_tween().set_parallel()
+	tween.tween_property(ring, "scale", Vector3.ONE, 0.15).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(ring, "rotation:y", TAU * 0.6, 0.7)
+	tween.tween_property(ring, "position:y", at.y + 0.3, 0.7)
+	tween.tween_property(mat, "albedo_color:a", 0.0, 0.3).set_delay(0.4)
+	tween.chain().tween_callback(ring.queue_free)
+
+
+## A flat five-pointed star, 0.32 across, facing +Z (billboarded when drawn).
+func _make_star_mesh() -> ArrayMesh:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var points: Array[Vector3] = []
+	for i in 10:
+		var r := 0.16 if i % 2 == 0 else 0.07
+		var angle := PI / 2.0 + TAU * i / 10.0
+		points.append(Vector3(cos(angle) * r, sin(angle) * r, 0.0))
+	for i in 10:
+		st.add_vertex(Vector3.ZERO)
+		st.add_vertex(points[i])
+		st.add_vertex(points[(i + 1) % 10])
+	return st.commit()
 
 
 ## Expanding ring that ends at `final_radius`.

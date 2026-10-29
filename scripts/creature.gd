@@ -194,8 +194,11 @@ func xp_to_next() -> int:
 
 
 ## Chance (0..1) that a capture attempt succeeds. Zero at full health.
-## `boost` multiplies it (Lucky Lemonade); it never goes above 95%.
+## `boost` multiplies it (Lucky Lemonade); it never goes above 95%, except that a
+## creature bonked down to 1 HP (the tamer's bat stops there) is a 99% catch.
 func capture_chance(boost := 1.0) -> float:
+	if health.current <= 1.0:
+		return 0.99
 	var missing := 1.0 - health.fraction()
 	return clampf(species.catch_rate * missing * 1.6 / (1.0 + 0.1 * (level - 1)) * boost, 0.0, 0.95)
 

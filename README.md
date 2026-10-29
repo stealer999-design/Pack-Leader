@@ -72,7 +72,7 @@ played in the browser".
 | Input | Action |
 |---|---|
 | WASD | Move |
-| LMB | Attack toward the mouse (weak, used to weaken creatures and smash crates) |
+| LMB | Swing your bat toward the mouse: weakens creatures (never below 1 HP) and smashes crates |
 | E | Throw a capture at the creature under the mouse |
 | RMB on a wild creature or the rival | Send your pets to attack it |
 | RMB on the ground | Pets drop their target and regroup |
@@ -119,6 +119,9 @@ played in the browser".
   portal (purple, filled when open), the boss (big red), wild creatures (red),
   your pets (green), other players and their pets (in their colours) and you
   (an arrow). Press M for the whole level, large; M or Esc to shrink it.
+- **Your tamer** is a little person with a bat, drawn in your colour (hair
+  colour varies by player). They walk with swinging arms and legs; attacking
+  swings the bat, and every hit pops a ring of spinning stars.
 - **Checkpoint:** downed players get back up after a few seconds at the start
   camp, or at the **lemonade stand** once they have reached it (come near it
   or get past it) this level. A grey flag beside the stand rises and turns
@@ -126,7 +129,10 @@ played in the browser".
   every new level.
 - **Capturing:** the chance is 0% at full health and rises as the creature
   gets weaker. It is scaled by the species' `catch_rate` and lowered for
-  higher-level creatures. Hover a creature to see the current chance. Failed
+  higher-level creatures (at most 95%). Your **bat** never takes a creature
+  below 1 HP, and a creature at 1 HP is a **99%** catch, so bonk it down and
+  press E. (Pets can still knock a creature out, so set them to Passive when
+  you want a capture.) Hover a creature to see the current chance. Failed
   captures make the creature angry.
 - **Pet stance:** in **Passive** mode your pets stop attacking, drop their
   targets and just follow you, so you can weaken a creature with your own
@@ -214,6 +220,7 @@ The host is the authoritative server and also plays.
 | `scenes/player.tscn` + `scripts/player.gd` | Movement, aim, and server-validated attack/capture/command requests |
 | `scenes/creature.tscn` + `scripts/creature.gd` | One scene for wild creatures *and* pets: wild AI, pet AI, taming, levelling |
 | `scripts/pet_skills.gd` | Every species's six skills, skill points and ranks, and how they add up |
+| `scripts/person_model.gd` | The tamer's body, bat, walk cycle and bat swing, built from simple meshes |
 | `scripts/mini_map.gd` | The mini map (and the large map, M), drawn from the level layout |
 | `scripts/skill_window.gd`, `scripts/skill_icons.gd` | The skills screen (K) and its skill icons, drawn in code |
 | `scripts/creature_model.gd` | Builds each creature's body from simple meshes: a cat, bird, dog or lizard, depending on its biome |
