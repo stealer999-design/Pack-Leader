@@ -499,14 +499,10 @@ func request_capture(creature_name: String) -> void:
 
 
 ## Empty name = regroup (pets drop their focus and return to you).
-## RIVAL_COMMAND = attack the rival tamer.
+## RIVAL_COMMAND = attack the rival tamer. Sending pets at an enemy switches Passive pets back to Aggressive.
 @rpc("any_peer", "call_local", "reliable")
 func request_command(creature_name: String) -> void:
 	if not _sent_by_owner():
-		return
-	if pets_passive and creature_name != "":
-		world.tell(peer_id, "Your pets are passive. Press T (or the stance button) to let them fight.",
-				Color(1, 0.8, 0.5))
 		return
 	var focus: Node3D = null
 	if creature_name == RIVAL_COMMAND:
@@ -515,6 +511,10 @@ func request_command(creature_name: String) -> void:
 		focus = world.get_creature(creature_name)
 	if focus and not Combat.are_enemies(self, focus):
 		focus = null
+	# Sending pets at an enemy ends Passive stance: they're told to fight.
+	if focus and pets_passive:
+		pets_passive = false
+		world.tell(peer_id, "Pets are AGGRESSIVE again: attacking!", Color(1, 0.7, 0.5))
 	for pet in world.get_pets(peer_id):
 		pet.set_focus(focus)
 

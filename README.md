@@ -189,8 +189,8 @@ played in the browser".
 - **Pet stance:** in **Passive** mode your pets stop attacking, drop their
   targets and just follow you, so you can weaken a creature with your own
   attack and capture it before the pets finish it off. Abilities you trigger
-  yourself (1/2/3) still work; sending pets with RMB is refused until you switch
-  back to **Aggressive** (the default).
+  yourself (1/2/3) still work. Sending pets at an enemy with RMB switches them
+  back to **Aggressive** (the default) and they attack; T switches too.
 - **Pets:** you can have up to 3 in your party. They automatically defend you
   and each other, and earn XP from kills within 25 units. When a pet runs out
   of health it faints and recovers after 8 seconds.
