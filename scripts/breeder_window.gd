@@ -11,6 +11,7 @@ var _result: PetSlot
 var _info: Label
 var _breed: Button
 var _grid: GridContainer
+var _scroll: ScrollContainer
 var _list_signature := ""
 
 
@@ -21,16 +22,16 @@ func _init() -> void:
 	grow_vertical = Control.GROW_DIRECTION_BOTH
 	var margin := MarginContainer.new()
 	for side in ["left", "right", "top", "bottom"]:
-		margin.add_theme_constant_override("margin_" + side, 18)
+		margin.add_theme_constant_override("margin_" + side, 14)
 	add_child(margin)
 	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 10)
+	box.add_theme_constant_override("separation", 6)
 	margin.add_child(box)
 
 	var title := Label.new()
 	title.text = "Breeder"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 26)
+	title.add_theme_font_size_override("font_size", 22)
 	title.modulate = Color(1.0, 0.7, 0.85)
 	box.add_child(title)
 	UiIcons.title(title, "heart")
@@ -38,43 +39,49 @@ func _init() -> void:
 	greeting.text = "\"Two different pets of the same kind, level %d or higher, and I'll raise you something special.\"" \
 			% BreedingDB.MIN_PARENT_LEVEL
 	greeting.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	greeting.add_theme_font_size_override("font_size", 14)
 	greeting.modulate = Color(1, 1, 1, 0.75)
 	box.add_child(greeting)
 
 	var pair := HBoxContainer.new()
 	pair.alignment = BoxContainer.ALIGNMENT_CENTER
-	pair.add_theme_constant_override("separation", 14)
+	pair.add_theme_constant_override("separation", 10)
 	box.add_child(pair)
+	# The parents, the result and the Breed button share one compact row, so the
+	# button is always on screen, even in a short browser window.
 	for i in 2:
-		var parent := _slot("parent", Vector2(130, 120))
+		var parent := _slot("parent", Vector2(92, 84))
 		parent.clicked.connect(func(_s: PetSlot) -> void: _set_parent(i, null))
 		pair.add_child(parent)
 		_parents.append(parent)
 		pair.add_child(_sign("+" if i == 0 else "="))
-	_result = _slot("result", Vector2(150, 140))
+	_result = _slot("result", Vector2(100, 90))
 	pair.add_child(_result)
+	_breed = Button.new()
+	_breed.focus_mode = Control.FOCUS_NONE
+	_breed.custom_minimum_size = Vector2(190, 56)
+	_breed.pressed.connect(_on_breed)
+	UiIcons.button(_breed, "egg")
+	pair.add_child(_breed)
 
 	_info = Label.new()
 	_info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_info.custom_minimum_size = Vector2(760, 52)
+	_info.custom_minimum_size = Vector2(700, 36)
+	_info.add_theme_font_size_override("font_size", 14)
 	box.add_child(_info)
-	_breed = Button.new()
-	_breed.focus_mode = Control.FOCUS_NONE
-	_breed.custom_minimum_size = Vector2(0, 40)
-	_breed.pressed.connect(_on_breed)
-	UiIcons.button(_breed, "egg")
-	box.add_child(_breed)
 
 	var list_title := Label.new()
 	list_title.text = "Your pets (party and stable), by kind: click two of the same kind to pair them"
+	list_title.add_theme_font_size_override("font_size", 14)
 	box.add_child(list_title)
 	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(760, 190)
+	_scroll = scroll
+	scroll.custom_minimum_size = Vector2(700, 150)
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	box.add_child(scroll)
 	_grid = GridContainer.new()
-	_grid.columns = 8
+	_grid.columns = 9
 	_grid.add_theme_constant_override("h_separation", 6)
 	_grid.add_theme_constant_override("v_separation", 6)
 	scroll.add_child(_grid)
@@ -83,10 +90,13 @@ func _init() -> void:
 	hint.text = "Breeding costs %d coins. The parents stay with you; the baby (level 1) joins your party, or the stable.   [F / Esc] close" \
 			% BreedingDB.PRICE
 	hint.modulate = Color(1, 1, 1, 0.6)
+	hint.add_theme_font_size_override("font_size", 12)
 	box.add_child(hint)
 
 
 func open() -> void:
+	# The pet list gives up height on short screens (the rest of the window is fixed).
+	_scroll.custom_minimum_size.y = clampf(get_viewport_rect().size.y - 420.0, 70.0, 150.0)
 	_list_signature = ""
 	for parent in _parents:
 		_set_parent(_parents.find(parent), null)
@@ -131,7 +141,7 @@ func _rebuild_list(candidates: Array) -> void:
 		_grid.remove_child(child)
 		child.queue_free()
 	for c in candidates:
-		var pick := _slot("pick", Vector2(88, 84))
+		var pick := _slot("pick", Vector2(74, 62))
 		pick.pet = c.pet
 		pick.source = c.source
 		var why := _cannot_be_parent(c.pet)
@@ -193,7 +203,7 @@ func _update_result() -> void:
 	if reason == "" and player.coins < BreedingDB.PRICE:
 		reason = "not enough coins"
 	_breed.disabled = reason != ""
-	_breed.text = "Breed  (%d coins, you have %d)" % [BreedingDB.PRICE, player.coins]
+	_breed.text = "Breed  (%d coins)\nyou have %d" % [BreedingDB.PRICE, player.coins]
 
 
 func _on_breed() -> void:

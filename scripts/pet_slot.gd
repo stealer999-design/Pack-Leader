@@ -98,7 +98,7 @@ func _draw() -> void:
 		if kind != "preview":
 			var species := SpeciesDB.get_species(pet.species)
 			var label := "%s  Lv%d" % [species.display_name, pet.level]
-			_draw_centered_text(label, size.y - 8.0 if kind == "pick" else size.y - 10.0, 10 if kind == "pick" else 13, Color.WHITE)
+			_draw_centered_text(label, size.y - 8.0 if kind == "pick" else size.y - 10.0, 9 if kind == "pick" else 13, Color.WHITE)
 	if selected:
 		draw_rect(Rect2(Vector2(2, 2), size - Vector2(4, 4)), Color(1.0, 0.75, 0.85), false, 3.0)
 	if _drop_hover:
