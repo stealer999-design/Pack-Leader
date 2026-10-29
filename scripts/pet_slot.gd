@@ -163,6 +163,13 @@ func _draw_pet(center: Vector2, r: float, sleeping: bool) -> void:
 	var eye_y := -0.05
 	var eye_x := 0.35
 	draw_circle(center + Vector2(0, r * 0.18), r * 1.05, Color(0, 0, 0, 0.25))  # shadow
+	# Hybrid features behind the body: a mane (or frill, or ruff) and wings.
+	if species.feature == "mane":
+		for i in 12:
+			draw_circle(center + Vector2.from_angle(TAU * i / 12.0) * r * 0.95, r * 0.3, accent)
+	if species.feature == "wings":
+		for side in [-1.0, 1.0]:
+			_ellipse(center + Vector2(side * r * 1.15, -r * 0.2), Vector2(r * 0.32, r * 0.6), light)
 	match kind:
 		"bird":
 			for i in 3:  # crest
@@ -198,15 +205,7 @@ func _draw_pet(center: Vector2, r: float, sleeping: bool) -> void:
 					center + Vector2(side * r * 0.55, -r * 1.35),
 				])
 				draw_colored_polygon(ear, body)
-			if species.feature == "mane":
-				for i in 12:
-					draw_circle(center + Vector2.from_angle(TAU * i / 12.0) * r * 0.95, r * 0.3, accent)
-			if species.feature == "wings":
-				for side in [-1.0, 1.0]:
-					_ellipse(center + Vector2(side * r * 1.05, -r * 0.1), Vector2(r * 0.32, r * 0.6), light)
 			draw_circle(center, r, body)
-			if species.feature == "horn":
-				_triangle(center + Vector2(0, -r * 0.7), r * 0.14, r * 0.6, Color(1.0, 0.82, 0.3))
 			for side in [-1.0, 1.0]:  # whiskers
 				for dy in [0.2, 0.35]:
 					draw_line(center + Vector2(side * r * 0.35, r * dy), center + Vector2(side * r * 1.15, r * (dy * 1.4 - 0.05)),
@@ -221,6 +220,14 @@ func _draw_pet(center: Vector2, r: float, sleeping: bool) -> void:
 		else:
 			draw_circle(eye, r * 0.15, Color.WHITE)
 			draw_circle(eye + Vector2(0, r * 0.03), r * 0.07, Color(0.1, 0.1, 0.1))
+	# ...and in front: a horn or a crown.
+	var gold := Color(1.0, 0.82, 0.3)
+	if species.feature == "horn":
+		_triangle(center + Vector2(0, -r * 0.7), r * 0.14, r * 0.6, gold)
+	if species.feature == "crown":
+		for i in 3:
+			_triangle(center + Vector2((i - 1) * r * 0.28, -r * 0.82), r * 0.12, r * 0.38, gold)
+		draw_rect(Rect2(center + Vector2(-r * 0.45, -r * 0.9), Vector2(r * 0.9, r * 0.14)), gold)
 	if kind == "bird":  # beak, drawn over the face
 		_triangle(center + Vector2(0, r * 0.12), r * 0.18, -r * 0.3, Color(1.0, 0.68, 0.15))
 	if sleeping:

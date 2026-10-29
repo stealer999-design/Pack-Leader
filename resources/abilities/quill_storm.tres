@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="FrostNovaAbility" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/abilities/frost_nova_ability.gd" id="1_ability"]
+
+[resource]
+script = ExtResource("1_ability")
+display_name = "Quill Storm"
+description = "A burst of frozen quills: heavy damage to every enemy around it, slowing them for 3s."
+cooldown = 8.0
+radius = 5.0
+damage_multiplier = 2.4
+slow_duration = 3.0
+slow_factor = 0.5

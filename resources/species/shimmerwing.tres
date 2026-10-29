@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="CreatureSpecies" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/creature_species.gd" id="1_species"]
+[ext_resource type="Resource" path="res://resources/abilities/frost_aurora.tres" id="2_ability"]
+
+[resource]
+script = ExtResource("1_species")
+display_name = "Shimmerwing"
+color = Color(0.45, 0.95, 0.85, 1)
+size = 0.84
+body_type = "bird"
+feature = "crown"
+max_health = 46.0
+damage = 8.4
+move_speed = 5.5
+attack_range = 1.0
+attack_cooldown = 0.95
+aggressive = true
+aggro_range = 9.0
+spawn_weight = 0.0
+catch_rate = 0.3
+xp_reward = 17
+ability = ExtResource("2_ability")

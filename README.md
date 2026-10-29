@@ -129,9 +129,11 @@ played in the browser".
   **Spiked Bat** (22 damage) for 60 coins. Every bat still stops creatures at 1 HP. Your bat is saved.
   The lemonade stand now sits on the stretch of path just before the village.
 - **Breeder (village):** press F at the pink stall with the hay pen. Pick two
-  different cats (from your party or stable, each level 5+) and pay 50 coins:
-  they have a **hybrid** baby, a new species that only comes from breeding.
-  Each of the 10 cat pairings makes its own hybrid, stronger than either parent
+  different pets **of the same kind** (from your party or stable, each level
+  5+) and pay 50 coins: they have a **hybrid** baby, a new species that only
+  comes from breeding. No cross-breeding: cats only breed with cats, birds
+  with birds, dogs with dogs and lizards with lizards. Each of the 28 pairings
+  (10 cat, 6 bird, 6 dog, 6 lizard) makes its own hybrid, stronger than either parent
   (20% more health and attack than the better one), bigger, with a horn, mane
   or wings and a powered-up ability. The parents stay with you; the baby
   (level 1) joins your party, or the first free hay bed. Hybrids can't be bred
@@ -149,6 +151,24 @@ played in the browser".
   | Voltwing + Gloomhorn | Stormhorn | Thunder Chain: lightning jumps 5 times |
   | Voltwing + Bloomling | Sparkblossom | Static Ward: shields everyone 40% for 7s |
   | Gloomhorn + Bloomling | Duskbloom | Dusk Veil: enemies deal 50% less for 7s |
+  | Frostfinch + Quillpuff | Glacipuff | Blizzard Nova: big frost blast, slows to 40% for 4s |
+  | Frostfinch + Aurora Swift | Shimmerwing | Frost Aurora: heals everyone nearby 45% |
+  | Frostfinch + Snowl | Rimeowl | Frost Ambush: teleports behind a target, 4x damage |
+  | Quillpuff + Aurora Swift | Prismpuff | Prism Armor: reflects 85% of damage for 6s |
+  | Quillpuff + Snowl | Quillowl | Quill Storm: heavy damage all around, slows 3s |
+  | Aurora Swift + Snowl | Dawnowl | Dawn Song: heals everyone nearby 50% |
+  | Fangjackal + Dunehound | Duneripper | Toxic Sandstorm: a big damaging storm for 6s |
+  | Fangjackal + Cactipup | Thornjackal | Thorn Fang: hard bite, poisons for 6s |
+  | Fangjackal + Sunfennec | Solarjackal | Solar Flare: half of nearby enemies' attacks miss for 5s |
+  | Dunehound + Cactipup | Cactihound | Cactus Wall: shields everyone 45% for 7s |
+  | Dunehound + Sunfennec | Sunhound | Heat Haze: scorching damage zone for 6s |
+  | Cactipup + Sunfennec | Bloomfennec | Desert Bloom: heals everyone nearby 40% |
+  | Bogleon + Mirelurk | Swampdrake | Mud Lash: yanks a target in for 2.5x damage |
+  | Bogleon + Wisp Gecko | Glowleon | Soul Lash: 2.8x damage, heals it and you 70% of it |
+  | Bogleon + Sporeguana | Toxileon | Toxic Haze: enemies deal 50% less for 7s |
+  | Mirelurk + Wisp Gecko | Wraithlurk | Spirit Trap: up to 4 traps that root for 3.5s |
+  | Mirelurk + Sporeguana | Mossdrake | Toxic Bog: poisonous damage zone for 6s |
+  | Wisp Gecko + Sporeguana | Sporewisp | Glow Spores: heals everyone nearby 40% |
 - **Pets are animated** too, at the pace they actually move: cats and dogs
   trot (diagonal legs together) and sway or wag their tails, birds hop and flap,
   lizards paddle in a sprawl and swing their bodies and tails, winged hybrids

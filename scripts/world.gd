@@ -751,7 +751,7 @@ func _build_village(level_biome: Dictionary, wall_mat: Material) -> void:
 				bat.add_child(spike)
 
 	# The breeder: a pink stall facing into the square, with a hay pen beside it.
-	var breeder := _build_stall("Breeder", v.breeder_point, PI, Color(0.95, 0.55, 0.7), "Breeder\nCats", Color(1.0, 0.7, 0.85))
+	var breeder := _build_stall("Breeder", v.breeder_point, PI, Color(0.95, 0.55, 0.7), "Breeder\nAll pets", Color(1.0, 0.7, 0.85))
 	var fence_mat := _material(Color(0.55, 0.38, 0.22))
 	var pen := Node3D.new()
 	pen.position = Vector3(3.6, 0.0, 0.4)  # in the stall's frame: beside it

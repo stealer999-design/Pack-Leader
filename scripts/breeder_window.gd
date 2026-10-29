@@ -1,8 +1,8 @@
 class_name BreederWindow
 extends PanelContainer
 ## The breeder's window (F at the breeder in the village): pick two of your
-## cats (from the party or the stable) and see the hybrid they would have, then
-## pay to breed them. The server checks everything again (see Player.request_breed).
+## pets of the same kind (from the party or the stable) and see the hybrid
+## they would have, then pay to breed them. The server checks everything again (see Player.request_breed).
 
 var player: Player
 
@@ -34,7 +34,7 @@ func _init() -> void:
 	title.modulate = Color(1.0, 0.7, 0.85)
 	box.add_child(title)
 	var greeting := Label.new()
-	greeting.text = "\"Bring me two different cats, level %d or higher, and I'll raise you something special.\"" \
+	greeting.text = "\"Two different pets of the same kind, level %d or higher, and I'll raise you something special.\"" \
 			% BreedingDB.MIN_PARENT_LEVEL
 	greeting.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	greeting.modulate = Color(1, 1, 1, 0.75)
@@ -65,7 +65,7 @@ func _init() -> void:
 	box.add_child(_breed)
 
 	var list_title := Label.new()
-	list_title.text = "Your cats (party and stable): click two to pair them"
+	list_title.text = "Your pets (party and stable), by kind: click two of the same kind to pair them"
 	box.add_child(list_title)
 	var scroll := ScrollContainer.new()
 	scroll.custom_minimum_size = Vector2(760, 190)
@@ -108,16 +108,19 @@ func refresh() -> void:
 	_update_result()
 
 
-## Every cat this tamer has: {pet, source} for each party pet and hay bed.
+## Every pet this tamer has, grouped by kind (cats, birds, dogs, lizards):
+## {pet, source} for each party pet and hay bed.
 func _candidates() -> Array:
 	var out := []
 	for pet in player.world.get_pets(player.peer_id):
-		if pet.species.body_type == "cat":
-			out.append({"pet": pet.to_data(), "source": {"kind": "party", "index": pet.party_slot}})
+		out.append({"pet": pet.to_data(), "source": {"kind": "party", "index": pet.party_slot}})
 	for i in player.stable.size():
 		var bed: Dictionary = player.stable[i]
-		if not bed.is_empty() and SpeciesDB.get_species(bed.species).body_type == "cat":
+		if not bed.is_empty():
 			out.append({"pet": bed, "source": {"kind": "bed", "index": i}})
+	var order := ["cat", "bird", "dog", "lizard"]
+	out.sort_custom(func(x: Dictionary, y: Dictionary) -> bool:
+		return order.find(SpeciesDB.get_species(x.pet.species).body_type) < order.find(SpeciesDB.get_species(y.pet.species).body_type))
 	return out
 
 
@@ -131,7 +134,6 @@ func _rebuild_list(candidates: Array) -> void:
 		pick.source = c.source
 		var why := _cannot_be_parent(c.pet)
 		if why != "":
-			pick.modulate = Color(1, 1, 1, 0.4)
 			pick.tooltip_text += "\n" + why
 		pick.clicked.connect(_on_pick)
 		_grid.add_child(pick)
@@ -162,8 +164,14 @@ func _set_parent(i: int, pick: PetSlot) -> void:
 
 
 func _mark_selected() -> void:
+	# Once one parent is picked, pets of other kinds fade out: no cross-breeding.
+	var first: Dictionary = _parents[0].pet if not _parents[0].pet.is_empty() else _parents[1].pet
+	var kind: String = SpeciesDB.get_species(first.species).body_type if not first.is_empty() else ""
 	for pick: PetSlot in _grid.get_children():
 		pick.selected = _parents.any(func(p: PetSlot) -> bool: return p.source == pick.source)
+		var usable := _cannot_be_parent(pick.pet) == "" \
+				and (kind == "" or SpeciesDB.get_species(pick.pet.species).body_type == kind)
+		pick.modulate = Color.WHITE if usable or pick.selected else Color(1, 1, 1, 0.35)
 
 
 func _update_result() -> void:

@@ -138,6 +138,78 @@ const SKILLS := [
 		["Night Horn", "damage", 0.06], ["Shadow Petals", "armor", 0.05], ["Gloom Bulk", "health", 0.06],
 		["Twilight Veil", "pack_armor", 0.03], ["Nightfall", "damage", 0.09], ["Eclipse", "pack_health", 0.04],
 	],
+	[  # 27 Glacipuff (tank)
+		["Glacial Skin", "armor", 0.05], ["Glacial Bulk", "health", 0.06], ["Glacial Plating", "armor", 0.05],
+		["Glacial Ward", "pack_armor", 0.03], ["Glacial Colossus", "health", 0.09], ["Glacial Bulwark", "armor", 0.06],
+	],
+	[  # 28 Shimmerwing (support)
+		["Shimmer Aura", "health", 0.06], ["Shimmer Song", "pack_health", 0.03], ["Shimmer Veil", "armor", 0.04],
+		["Shimmer Shelter", "pack_armor", 0.025], ["Shimmer Vitality", "health", 0.09], ["Shimmer Lifebond", "pack_health", 0.05],
+	],
+	[  # 29 Rimeowl (striker)
+		["Rime Strike", "damage", 0.06], ["Rime Hide", "health", 0.05], ["Rime Fury", "damage", 0.06],
+		["Rime Call", "pack_damage", 0.03], ["Rime Frenzy", "damage", 0.09], ["Rime Apex", "damage", 0.09],
+	],
+	[  # 30 Prismpuff (tank)
+		["Prism Skin", "armor", 0.05], ["Prism Bulk", "health", 0.06], ["Prism Plating", "armor", 0.05],
+		["Prism Ward", "pack_armor", 0.03], ["Prism Colossus", "health", 0.09], ["Prism Bulwark", "armor", 0.06],
+	],
+	[  # 31 Quillowl (striker)
+		["Quill Strike", "damage", 0.06], ["Quill Hide", "health", 0.05], ["Quill Fury", "damage", 0.06],
+		["Quill Call", "pack_damage", 0.03], ["Quill Frenzy", "damage", 0.09], ["Quill Apex", "damage", 0.09],
+	],
+	[  # 32 Dawnowl (support)
+		["Dawn Aura", "health", 0.06], ["Dawn Song", "pack_health", 0.03], ["Dawn Veil", "armor", 0.04],
+		["Dawn Shelter", "pack_armor", 0.025], ["Dawn Vitality", "health", 0.09], ["Dawn Lifebond", "pack_health", 0.05],
+	],
+	[  # 33 Duneripper (striker)
+		["Dune Strike", "damage", 0.06], ["Dune Hide", "health", 0.05], ["Dune Fury", "damage", 0.06],
+		["Dune Call", "pack_damage", 0.03], ["Dune Frenzy", "damage", 0.09], ["Dune Apex", "damage", 0.09],
+	],
+	[  # 34 Thornjackal (striker)
+		["Thorn Strike", "damage", 0.06], ["Thorn Hide", "health", 0.05], ["Thorn Fury", "damage", 0.06],
+		["Thorn Call", "pack_damage", 0.03], ["Thorn Frenzy", "damage", 0.09], ["Thorn Apex", "damage", 0.09],
+	],
+	[  # 35 Solarjackal (striker)
+		["Solar Strike", "damage", 0.06], ["Solar Hide", "health", 0.05], ["Solar Fury", "damage", 0.06],
+		["Solar Call", "pack_damage", 0.03], ["Solar Frenzy", "damage", 0.09], ["Solar Apex", "damage", 0.09],
+	],
+	[  # 36 Cactihound (tank)
+		["Cactus Skin", "armor", 0.05], ["Cactus Bulk", "health", 0.06], ["Cactus Plating", "armor", 0.05],
+		["Cactus Ward", "pack_armor", 0.03], ["Cactus Colossus", "health", 0.09], ["Cactus Bulwark", "armor", 0.06],
+	],
+	[  # 37 Sunhound (tank)
+		["Sun Skin", "armor", 0.05], ["Sun Bulk", "health", 0.06], ["Sun Plating", "armor", 0.05],
+		["Sun Ward", "pack_armor", 0.03], ["Sun Colossus", "health", 0.09], ["Sun Bulwark", "armor", 0.06],
+	],
+	[  # 38 Bloomfennec (support)
+		["Oasis Aura", "health", 0.06], ["Oasis Song", "pack_health", 0.03], ["Oasis Veil", "armor", 0.04],
+		["Oasis Shelter", "pack_armor", 0.025], ["Oasis Vitality", "health", 0.09], ["Oasis Lifebond", "pack_health", 0.05],
+	],
+	[  # 39 Swampdrake (tank)
+		["Drake Skin", "armor", 0.05], ["Drake Bulk", "health", 0.06], ["Drake Plating", "armor", 0.05],
+		["Drake Ward", "pack_armor", 0.03], ["Drake Colossus", "health", 0.09], ["Drake Bulwark", "armor", 0.06],
+	],
+	[  # 40 Glowleon (striker)
+		["Glow Strike", "damage", 0.06], ["Glow Hide", "health", 0.05], ["Glow Fury", "damage", 0.06],
+		["Glow Call", "pack_damage", 0.03], ["Glow Frenzy", "damage", 0.09], ["Glow Apex", "damage", 0.09],
+	],
+	[  # 41 Toxileon (support)
+		["Toxic Aura", "health", 0.06], ["Toxic Song", "pack_health", 0.03], ["Toxic Veil", "armor", 0.04],
+		["Toxic Shelter", "pack_armor", 0.025], ["Toxic Vitality", "health", 0.09], ["Toxic Lifebond", "pack_health", 0.05],
+	],
+	[  # 42 Wraithlurk (tank)
+		["Wraith Skin", "armor", 0.05], ["Wraith Bulk", "health", 0.06], ["Wraith Plating", "armor", 0.05],
+		["Wraith Ward", "pack_armor", 0.03], ["Wraith Colossus", "health", 0.09], ["Wraith Bulwark", "armor", 0.06],
+	],
+	[  # 43 Mossdrake (tank)
+		["Bog Skin", "armor", 0.05], ["Bog Bulk", "health", 0.06], ["Bog Plating", "armor", 0.05],
+		["Bog Ward", "pack_armor", 0.03], ["Bog Colossus", "health", 0.09], ["Bog Bulwark", "armor", 0.06],
+	],
+	[  # 44 Sporewisp (support)
+		["Glimmer Aura", "health", 0.06], ["Glimmer Song", "pack_health", 0.03], ["Glimmer Veil", "armor", 0.04],
+		["Glimmer Shelter", "pack_armor", 0.025], ["Glimmer Vitality", "health", 0.09], ["Glimmer Lifebond", "pack_health", 0.05],
+	],
 ]
 
 ## Armor from all sources is capped, so nothing becomes unkillable.

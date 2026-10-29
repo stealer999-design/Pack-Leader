@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="CreatureSpecies" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/creature_species.gd" id="1_species"]
+[ext_resource type="Resource" path="res://resources/abilities/mud_lash.tres" id="2_ability"]
+
+[resource]
+script = ExtResource("1_species")
+display_name = "Swampdrake"
+color = Color(0.30, 0.50, 0.25, 1)
+size = 1.57
+body_type = "lizard"
+feature = "wings"
+max_health = 144.0
+damage = 14.4
+move_speed = 4.0
+attack_range = 1.1
+attack_cooldown = 1.3
+aggressive = true
+aggro_range = 9.0
+spawn_weight = 0.0
+catch_rate = 0.3
+xp_reward = 27
+ability = ExtResource("2_ability")

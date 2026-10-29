@@ -9,6 +9,12 @@ class_name CreatureModel
 ## (at the hip; 0/3 and 1/2 step together), "Tail" (at its base) and "Wing0/1".
 
 const GROUND := -0.42
+## Where each body type's head and back are, for the hybrids' horns, manes,
+## crowns and wings.
+const HEAD := {"cat": Vector3(0, 0.2, -0.3), "dog": Vector3(0, 0.24, -0.3), "bird": Vector3(0, 0.32, -0.2),
+		"lizard": Vector3(0, -0.1, -0.5)}
+const BACK := {"cat": Vector3(0, 0.2, 0.15), "dog": Vector3(0, 0.22, 0.12), "bird": Vector3(0, 0.25, 0.05),
+		"lizard": Vector3(0, -0.02, 0.0)}
 
 ## Meshes and materials are shared between every creature that uses the same one.
 static var _cache := {}
@@ -57,20 +63,33 @@ static func build(body: MeshInstance3D, body_type: String, main: StandardMateria
 				var spine := _part(body, _cylinder(0.0, 0.018, 0.14), m.light, Vector3(0, -0.02, 0.1) + dir * Vector3(0.28, 0.25, 0.4))
 				spine.basis = Basis.looking_at(dir, Vector3.FORWARD if absf(dir.y) > 0.99 else Vector3.UP) \
 						* Basis(Vector3.RIGHT, -PI / 2)  # the cone's tip (+Y) points along dir
-		# Hybrid cats from the breeder.
+		# Hybrids from the breeder.
 		"horn":  # a gold horn on the forehead
-			_part(body, _cylinder(0.0, 0.07, 0.32), m.gold, Vector3(0, 0.5, -0.4), Vector3(-30, 0, 0))
-			_part(body, _cylinder(0.0, 0.03, 0.12), m.gold, Vector3(0, 0.36, -0.5), Vector3(-60, 0, 0))
-		"mane":  # a fluffy ring around the head
+			var head: Vector3 = HEAD.get(body_type, HEAD.cat)
+			_part(body, _cylinder(0.0, 0.07, 0.32), m.gold, head + Vector3(0, 0.3, -0.1), Vector3(-30, 0, 0))
+			_part(body, _cylinder(0.0, 0.03, 0.12), m.gold, head + Vector3(0, 0.16, -0.2), Vector3(-60, 0, 0))
+		"mane":  # a fluffy ring around the head (a frill on lizards, a ruff on birds)
+			var head: Vector3 = HEAD.get(body_type, HEAD.cat)
 			for i in 10:
 				var angle := TAU * i / 10.0
-				var at := Vector3(cos(angle) * 0.27, 0.2 + sin(angle) * 0.25, -0.2)
+				var at := head + Vector3(cos(angle) * 0.27, sin(angle) * 0.25, 0.1)
 				_part(body, _sphere(0.11), m.accent, at, Vector3.ZERO, Vector3(1, 1, 0.8))
+		"crown":  # a little gold crown of spikes on top of the head
+			var head: Vector3 = HEAD.get(body_type, HEAD.cat)
+			for i in 5:
+				var angle := TAU * i / 5.0
+				_part(body, _cylinder(0.0, 0.035, 0.14), m.gold, head + Vector3(cos(angle) * 0.1, 0.24, sin(angle) * 0.1))
+			_part(body, _cylinder(0.12, 0.12, 0.04), m.gold, head + Vector3(0, 0.18, 0))
 		"wings":  # a pair of feathered wings, raised up and out from the back
+			var back: Vector3 = BACK.get(body_type, BACK.cat)
 			for x in [-1.0, 1.0]:
-				var wing := _pivot(body, "Wing%d" % (0 if x < 0 else 1), Vector3(x * 0.15, 0.2, 0.15))
-				for f in 3:  # three feathers per wing, fanning outwards
-					_part(wing, _sphere(0.3), m.white if f == 0 else m.light,
+				var wing := _pivot(body, "Wing%d" % (0 if x < 0 else 1), back + Vector3(x * 0.15, 0, 0))
+				# Feathered and white, except lizards' leathery dragon wings in their own colours.
+				var front_mat: Material = m.accent if body_type == "lizard" else m.white
+				var back_mat: Material = m.main if body_type == "lizard" else m.light
+				var span := 0.75 if body_type == "lizard" else 1.0
+				for f in 3:  # three feathers (or wing ribs) per wing, fanning outwards
+					_part(wing, _sphere(0.3 * span), front_mat if f == 0 else back_mat,
 							Vector3(x * (0.05 + f * 0.09), 0.22 + f * 0.04, 0.01 + f * 0.05), Vector3(0, 0, -x * (25 + f * 18)),
 							Vector3(0.14, 0.95 - f * 0.18, 0.5))
 

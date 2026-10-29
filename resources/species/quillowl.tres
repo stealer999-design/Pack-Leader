@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="CreatureSpecies" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/creature_species.gd" id="1_species"]
+[ext_resource type="Resource" path="res://resources/abilities/quill_storm.tres" id="2_ability"]
+
+[resource]
+script = ExtResource("1_species")
+display_name = "Quillowl"
+color = Color(0.45, 0.50, 0.62, 1)
+size = 1.4
+body_type = "bird"
+feature = "horn"
+max_health = 102.0
+damage = 13.2
+move_speed = 5.8
+attack_range = 1.0
+attack_cooldown = 1.2
+aggressive = true
+aggro_range = 9.0
+spawn_weight = 0.0
+catch_rate = 0.3
+xp_reward = 22
+ability = ExtResource("2_ability")

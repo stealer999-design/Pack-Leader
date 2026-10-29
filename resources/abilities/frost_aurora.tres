@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="HealAuraAbility" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/abilities/heal_aura_ability.gd" id="1_ability"]
+
+[resource]
+script = ExtResource("1_ability")
+display_name = "Frost Aurora"
+description = "Heals every nearby pet and player for 45% of their maximum health."
+cooldown = 9.0
+radius = 8.0
+heal_fraction = 0.45
