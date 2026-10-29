@@ -11,6 +11,7 @@ var _dialog_closed_frame := -1
 var skill_window: SkillWindow
 var mini_map: MiniMap
 var bat_shop_panel: PanelContainer
+var breeder_window: BreederWindow
 var _bat_shop_info: Label
 var _bat_buy_button: Button
 var _stable_party_signature := ""
@@ -57,6 +58,10 @@ func _ready() -> void:
 	skill_window.add_theme_stylebox_override("panel", stable_panel.get_theme_stylebox("panel"))
 	add_child(skill_window)
 	_build_bat_shop_panel()
+	breeder_window = BreederWindow.new()
+	breeder_window.theme = shop_panel.theme
+	breeder_window.add_theme_stylebox_override("panel", shop_panel.get_theme_stylebox("panel"))
+	add_child(breeder_window)
 	mini_map = MiniMap.new()
 	add_child(mini_map)
 	move_child(mini_map, 0)  # under the windows
@@ -66,6 +71,7 @@ func bind(player: Player) -> void:
 	_player = player
 	skill_window.player = player
 	mini_map.player = player
+	breeder_window.player = player
 	name_label.text = player.display_name
 	name_label.modulate = player.color.lightened(0.3)
 	player.health.changed.connect(_on_health_changed)
@@ -86,17 +92,24 @@ func _process(delta: float) -> void:
 	var near_bat_shop := _player.world.is_near_bat_shop(_player.global_position)
 	if bat_shop_panel.visible and not near_bat_shop:
 		bat_shop_panel.hide()
-	interact_label.visible = (near_stable or near_shop or near_bat_shop) and not is_window_open()
+	var near_breeder := _player.world.is_near_breeder(_player.global_position)
+	if breeder_window.visible and not near_breeder:
+		breeder_window.hide()
+	interact_label.visible = (near_stable or near_shop or near_bat_shop or near_breeder) and not is_window_open()
 	if near_stable:
 		interact_label.text = "[F]  Open stable"
 	elif near_shop:
 		interact_label.text = "[F]  Visit the lemonade stand"
-	else:
+	elif near_bat_shop:
 		interact_label.text = "[F]  Visit the bat shop"
+	else:
+		interact_label.text = "[F]  Visit the breeder"
 	if shop_panel.visible:
 		_update_shop()
 	if bat_shop_panel.visible:
 		_update_bat_shop()
+	if breeder_window.visible:
+		breeder_window.refresh()
 	_update_hover()
 	_update_objective()
 	_update_coins()
@@ -144,7 +157,8 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func is_window_open() -> bool:
-	return stable_panel.visible or shop_panel.visible or skill_window.visible or bat_shop_panel.visible
+	return stable_panel.visible or shop_panel.visible or skill_window.visible or bat_shop_panel.visible \
+			or breeder_window.visible
 
 
 func close_windows() -> void:
@@ -152,6 +166,7 @@ func close_windows() -> void:
 	shop_panel.hide()
 	skill_window.hide()
 	bat_shop_panel.hide()
+	breeder_window.hide()
 
 
 ## The skills screen (K) can open anywhere; it replaces any other open window.
@@ -161,6 +176,10 @@ func toggle_skills() -> void:
 		return
 	close_windows()
 	skill_window.open()
+
+
+func open_breeder() -> void:
+	breeder_window.open()
 
 
 func open_bat_shop() -> void:

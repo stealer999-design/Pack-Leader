@@ -97,6 +97,47 @@ const SKILLS := [
 		["Spore Hide", "armor", 0.04], ["Fungal Bulk", "health", 0.05], ["Spore Mist", "pack_armor", 0.02],
 		["Rot Resistance", "health", 0.075], ["Mycelium Link", "pack_health", 0.025], ["Bloom of Decay", "pack_armor", 0.03],
 	],
+	# Hybrids (from the breeder): a little stronger per rank than wild pets.
+	[  # 17 Magmashell (tank)
+		["Lava Shell", "armor", 0.05], ["Ember Heart", "health", 0.06], ["Molten Hide", "armor", 0.05],
+		["Hearth Ward", "pack_armor", 0.03], ["Volcanic Bulk", "health", 0.09], ["Magma Fortress", "armor", 0.06],
+	],
+	[  # 18 Thundershell (tank)
+		["Charged Shell", "armor", 0.05], ["Capacitor", "health", 0.06], ["Arc Plating", "armor", 0.05],
+		["Storm Ward", "pack_armor", 0.03], ["Living Battery", "health", 0.09], ["Thunder Fortress", "armor", 0.06],
+	],
+	[  # 19 Stonehorn (bruiser)
+		["Granite Horn", "damage", 0.06], ["Bedrock", "health", 0.06], ["Stone Skin", "armor", 0.05],
+		["Mountain Call", "pack_health", 0.03], ["Boulder Body", "health", 0.09], ["Avalanche Horn", "damage", 0.09],
+	],
+	[  # 20 Mossbloom (healer)
+		["Deep Moss", "health", 0.06], ["Grove Song", "pack_health", 0.03], ["Bark Petals", "armor", 0.04],
+		["Canopy", "pack_armor", 0.025], ["Old Growth", "health", 0.09], ["Heart of the Grove", "pack_health", 0.05],
+	],
+	[  # 21 Blitzfox (striker)
+		["Lightning Claws", "damage", 0.06], ["Quick Spark", "health", 0.05], ["Flashfire", "damage", 0.06],
+		["Rally Spark", "pack_damage", 0.03], ["Blitz", "damage", 0.09], ["Storm Blaze", "pack_damage", 0.03],
+	],
+	[  # 22 Cinderhorn (bruiser)
+		["Burning Horn", "damage", 0.06], ["Coal Hide", "armor", 0.05], ["Smoulder", "damage", 0.06],
+		["War Drum", "pack_damage", 0.03], ["Furnace Heart", "health", 0.09], ["Meteor Horn", "damage", 0.09],
+	],
+	[  # 23 Sunpetal (healer)
+		["Sunlit Petals", "health", 0.06], ["Warm Glow", "pack_health", 0.03], ["Ember Bark", "armor", 0.04],
+		["Solar Bloom", "pack_damage", 0.025], ["Rebirth", "health", 0.09], ["Phoenix Choir", "pack_health", 0.05],
+	],
+	[  # 24 Stormhorn (striker)
+		["Thunder Horn", "damage", 0.06], ["Storm Hide", "armor", 0.04], ["Overload", "damage", 0.06],
+		["Rolling Thunder", "pack_damage", 0.03], ["Tempest", "damage", 0.09], ["Sky Breaker", "damage", 0.09],
+	],
+	[  # 25 Sparkblossom (support)
+		["Static Petals", "armor", 0.05], ["Bright Bloom", "health", 0.06], ["Spark Ward", "pack_armor", 0.03],
+		["Charged Pollen", "pack_damage", 0.03], ["Lightning Rod", "armor", 0.06], ["Storm Garden", "pack_armor", 0.04],
+	],
+	[  # 26 Duskbloom (bruiser)
+		["Night Horn", "damage", 0.06], ["Shadow Petals", "armor", 0.05], ["Gloom Bulk", "health", 0.06],
+		["Twilight Veil", "pack_armor", 0.03], ["Nightfall", "damage", 0.09], ["Eclipse", "pack_health", 0.04],
+	],
 ]
 
 ## Armor from all sources is capped, so nothing becomes unkillable.

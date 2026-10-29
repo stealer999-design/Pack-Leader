@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="GuardAbility" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/abilities/guard_ability.gd" id="1_ability"]
+
+[resource]
+script = ExtResource("1_ability")
+display_name = "Molten Guard"
+description = "Taunts nearby enemies and takes 60% less damage for 5s."
+cooldown = 10.0
+radius = 8.0
+duration = 5.0
+damage_reduction = 0.6

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SlamAbility" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/abilities/slam_ability.gd" id="1_ability"]
+
+[resource]
+script = ExtResource("1_ability")
+display_name = "Quake"
+description = "Shakes the ground, damaging and stunning enemies around it for 2.5s."
+cooldown = 9.0
+radius = 5.0
+damage_multiplier = 2.0
+stun_duration = 2.5
+knockback = 8.0

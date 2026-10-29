@@ -20,6 +20,17 @@ const PATHS := [
 	"res://resources/species/mirelurk.tres",
 	"res://resources/species/marsh_wisp.tres",
 	"res://resources/species/sporecap.tres",
+	# Hybrids: only from the breeder (see BreedingDB), never wild.
+	"res://resources/species/magmashell.tres",
+	"res://resources/species/thundershell.tres",
+	"res://resources/species/stonehorn.tres",
+	"res://resources/species/mossbloom.tres",
+	"res://resources/species/blitzfox.tres",
+	"res://resources/species/cinderhorn.tres",
+	"res://resources/species/sunpetal.tres",
+	"res://resources/species/stormhorn.tres",
+	"res://resources/species/sparkblossom.tres",
+	"res://resources/species/duskbloom.tres",
 ]
 
 static var _all: Array[CreatureSpecies] = []

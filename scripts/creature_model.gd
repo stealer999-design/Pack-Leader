@@ -27,6 +27,8 @@ static func build(body: MeshInstance3D, body_type: String, main: StandardMateria
 		"pupil": _mat(Color(0.08, 0.08, 0.1)),
 		"nose": _mat(Color(0.9, 0.5, 0.55)),
 		"beak": _mat(Color(1.0, 0.68, 0.15)),
+		"gold": _mat(Color(1.0, 0.82, 0.3)),
+		"white": _mat(Color(0.97, 0.96, 0.92)),
 	}
 	match body_type:
 		"bird":
@@ -52,6 +54,21 @@ static func build(body: MeshInstance3D, body_type: String, main: StandardMateria
 				var spine := _part(body, _cylinder(0.0, 0.018, 0.14), m.light, Vector3(0, -0.02, 0.1) + dir * Vector3(0.28, 0.25, 0.4))
 				spine.basis = Basis.looking_at(dir, Vector3.FORWARD if absf(dir.y) > 0.99 else Vector3.UP) \
 						* Basis(Vector3.RIGHT, -PI / 2)  # the cone's tip (+Y) points along dir
+		# Hybrid cats from the breeder.
+		"horn":  # a gold horn on the forehead
+			_part(body, _cylinder(0.0, 0.07, 0.32), m.gold, Vector3(0, 0.5, -0.4), Vector3(-30, 0, 0))
+			_part(body, _cylinder(0.0, 0.03, 0.12), m.gold, Vector3(0, 0.36, -0.5), Vector3(-60, 0, 0))
+		"mane":  # a fluffy ring around the head
+			for i in 10:
+				var angle := TAU * i / 10.0
+				var at := Vector3(cos(angle) * 0.27, 0.2 + sin(angle) * 0.25, -0.2)
+				_part(body, _sphere(0.11), m.accent, at, Vector3.ZERO, Vector3(1, 1, 0.8))
+		"wings":  # a pair of feathered wings, raised up and out from the back
+			for x in [-1.0, 1.0]:
+				for f in 3:  # three feathers per wing, fanning outwards
+					_part(body, _sphere(0.3), m.white if f == 0 else m.light,
+							Vector3(x * (0.2 + f * 0.09), 0.42 + f * 0.04, 0.16 + f * 0.05), Vector3(0, 0, -x * (25 + f * 18)),
+							Vector3(0.14, 0.95 - f * 0.18, 0.5))
 
 
 static func _cat(b: Node3D, m: Dictionary) -> void:

@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="HealTargetAbility" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/abilities/heal_target_ability.gd" id="1_ability"]
+
+[resource]
+script = ExtResource("1_ability")
+display_name = "Phoenix Bloom"
+description = "Heals the most injured ally nearby (a pet or a player, including you) for 70% of their maximum health."
+cooldown = 8.0
+radius = 10.0
+heal_fraction = 0.7

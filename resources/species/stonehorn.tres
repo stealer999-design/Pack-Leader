@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="CreatureSpecies" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/creature_species.gd" id="1_species"]
+[ext_resource type="Resource" path="res://resources/abilities/quake.tres" id="2_ability"]
+
+[resource]
+script = ExtResource("1_species")
+display_name = "Stonehorn"
+color = Color(0.48, 0.48, 0.58, 1)
+size = 1.7
+body_type = "cat"
+feature = "horn"
+max_health = 168.0
+damage = 19.2
+move_speed = 3.2
+attack_range = 1.2
+attack_cooldown = 1.5
+aggressive = true
+aggro_range = 9.0
+spawn_weight = 0.0
+catch_rate = 0.3
+xp_reward = 28
+ability = ExtResource("2_ability")

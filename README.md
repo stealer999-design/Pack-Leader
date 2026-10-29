@@ -128,6 +128,27 @@ played in the browser".
   there. At the Bat Shop (F) you can upgrade your Wooden Bat (12 damage) to a
   **Spiked Bat** (22 damage) for 60 coins. Every bat still stops creatures at 1 HP. Your bat is saved.
   The lemonade stand now sits on the stretch of path just before the village.
+- **Breeder (village):** press F at the pink stall with the hay pen. Pick two
+  different cats (from your party or stable, each level 5+) and pay 50 coins:
+  they have a **hybrid** baby, a new species that only comes from breeding.
+  Each of the 10 cat pairings makes its own hybrid, stronger than either parent
+  (20% more health and attack than the better one), bigger, with a horn, mane
+  or wings and a powered-up ability. The parents stay with you; the baby
+  (level 1) joins your party, or the first free hay bed. Hybrids can't be bred
+  again.
+
+  | Parents | Hybrid | Ability |
+  |---|---|---|
+  | Mossback + Emberfox | Magmashell | Molten Guard: taunts, takes 60% less damage for 5s |
+  | Mossback + Voltwing | Thundershell | Storm Shell: reflects 85% of damage for 5s |
+  | Mossback + Gloomhorn | Stonehorn | Quake: bigger slam, stuns 2.5s |
+  | Mossback + Bloomling | Mossbloom | Grove Aurora: heals everyone nearby 40% |
+  | Emberfox + Voltwing | Blitzfox | Blitz Pounce: leap for 3.5x damage |
+  | Emberfox + Gloomhorn | Cinderhorn | Meteor Slam: heavy slam, stuns 1.5s |
+  | Emberfox + Bloomling | Sunpetal | Phoenix Bloom: heals the most hurt ally 70% |
+  | Voltwing + Gloomhorn | Stormhorn | Thunder Chain: lightning jumps 5 times |
+  | Voltwing + Bloomling | Sparkblossom | Static Ward: shields everyone 40% for 7s |
+  | Gloomhorn + Bloomling | Duskbloom | Dusk Veil: enemies deal 50% less for 7s |
 - **Checkpoint:** downed players get back up after a few seconds at the start
   camp, or at the **lemonade stand** once they have reached it (come near it
   or get past it) this level. A grey flag beside the stand rises and turns
@@ -228,6 +249,7 @@ The host is the authoritative server and also plays.
 | `scenes/creature.tscn` + `scripts/creature.gd` | One scene for wild creatures *and* pets: wild AI, pet AI, taming, levelling |
 | `scripts/pet_skills.gd` | Every species's six skills, skill points and ranks, and how they add up |
 | `scripts/level_generator.gd` (village) + `World._build_village` | The village side path, square, houses and bat shop |
+| `scripts/breeding_db.gd`, `scripts/breeder_window.gd` | Which pairs breed into which hybrid, the rules, and the breeder's window |
 | `scripts/person_model.gd` | The tamer's body, bat, walk cycle and bat swing, built from simple meshes |
 | `scripts/mini_map.gd` | The mini map (and the large map, M), drawn from the level layout |
 | `scripts/skill_window.gd`, `scripts/skill_icons.gd` | The skills screen (K) and its skill icons, drawn in code |

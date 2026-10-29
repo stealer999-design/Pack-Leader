@@ -203,6 +203,8 @@ func _physics_process(delta: float) -> void:
 			world.hud.open_shop()
 		elif world.is_near_bat_shop(global_position):
 			world.hud.open_bat_shop()
+		elif world.is_near_breeder(global_position):
+			world.hud.open_breeder()
 	if world.hud.is_window_open():
 		return  # mouse is busy with the stable or shop window
 
@@ -371,6 +373,57 @@ func bat_damage() -> float:
 ## The next bat up, or {} if this tamer already has the best one.
 func next_bat() -> Dictionary:
 	return BATS[bat_tier + 1] if bat_tier + 1 < BATS.size() else {}
+
+
+## The pet data ({species, level, ...}) at a party slot or hay bed, or {}.
+func pet_at(kind: String, index: int) -> Dictionary:
+	if not _valid_place(kind, index):
+		return {}
+	if kind == "bed":
+		return stable[index]
+	var pet := world.get_party_pet(peer_id, index)
+	return pet.to_data() if pet else {}
+
+
+## Breeds two of this tamer's cats (each a party slot or a hay bed) at the
+## village breeder. The parents stay; the hybrid joins the party, or a bed.
+@rpc("any_peer", "call_local", "reliable")
+func request_breed(a_kind: String, a_index: int, b_kind: String, b_index: int) -> void:
+	if not _sent_by_owner() or downed:
+		return
+	if not world.is_near_breeder(global_position):
+		world.tell(peer_id, "You need to be at the breeder in the village.", Color(1, 0.8, 0.5))
+		return
+	if a_kind == b_kind and a_index == b_index:
+		return
+	var a := pet_at(a_kind, a_index)
+	var b := pet_at(b_kind, b_index)
+	var reason := BreedingDB.cannot_breed_reason(a, b)
+	if reason != "":
+		world.tell(peer_id, reason, Color(1, 0.8, 0.5))
+		return
+	if coins < BreedingDB.PRICE:
+		world.tell(peer_id, "Breeding costs %d coins (you have %d)." % [BreedingDB.PRICE, coins], Color(1, 0.8, 0.5))
+		return
+	var slot := world.free_party_slot(peer_id)
+	var bed := _first_empty_bed()
+	if slot < 0 and bed < 0:
+		world.tell(peer_id, "There's no room for a new pet: free a party slot or a hay bed first.", Color(1, 0.8, 0.5))
+		return
+	coins -= BreedingDB.PRICE
+	var hybrid := BreedingDB.hybrid_of(a.species, b.species)
+	var baby := {"species": hybrid, "level": 1, "xp": 0, "skills": PetSkills.empty_ranks()}
+	var where := "joined your party"
+	if slot >= 0:
+		world.spawn_pet(peer_id, baby, global_position, slot)
+	else:
+		stable[bed] = baby
+		_push_stable()
+		where = "is waiting in the stable"
+	world.announce.rpc("%s's %s and %s had a %s!" % [display_name, SpeciesDB.get_species(a.species).display_name,
+			SpeciesDB.get_species(b.species).display_name, SpeciesDB.get_species(hybrid).display_name], Color(1.0, 0.7, 0.85))
+	world.tell(peer_id, "Your new %s %s." % [SpeciesDB.get_species(hybrid).display_name, where], Color(1.0, 0.7, 0.85))
+	world.play_burst.rpc(global_position, Color(1.0, 0.6, 0.8), 2.2)
 
 
 @rpc("any_peer", "call_local", "reliable")

@@ -279,6 +279,14 @@ func shop_position() -> Vector3:
 	return level_root.to_global(layout.shop_point) if not layout.is_empty() else Vector3.INF
 
 
+func breeder_position() -> Vector3:
+	return level_root.to_global(layout.village.breeder_point) if not layout.is_empty() else Vector3.INF
+
+
+func is_near_breeder(point: Vector3) -> bool:
+	return not layout.is_empty() and _flat_distance(point, breeder_position()) <= shop_range
+
+
 func bat_shop_position() -> Vector3:
 	return level_root.to_global(layout.village.bat_shop_point) if not layout.is_empty() else Vector3.INF
 
@@ -741,6 +749,27 @@ func _build_village(level_biome: Dictionary, wall_mat: Material) -> void:
 				spike.position = Vector3(0.0, 0.25 - i * 0.07, 0.0) + Vector3.FORWARD.rotated(Vector3.UP, i * 1.6) * 0.07
 				spike.rotation = Vector3(PI / 2.0, i * 1.6, 0.0)
 				bat.add_child(spike)
+
+	# The breeder: a pink stall facing into the square, with a hay pen beside it.
+	var breeder := _build_stall("Breeder", v.breeder_point, PI, Color(0.95, 0.55, 0.7), "Breeder\nCats", Color(1.0, 0.7, 0.85))
+	var fence_mat := _material(Color(0.55, 0.38, 0.22))
+	var pen := Node3D.new()
+	pen.position = Vector3(3.6, 0.0, 0.4)  # in the stall's frame: beside it
+	breeder.add_child(pen)
+	for x in [-1.3, 1.3]:
+		_add_mesh(pen, Vector3(x, 0.45, 0.0), Vector3(0.1, 0.9, 2.6), fence_mat)
+	for z in [-1.3, 1.3]:
+		_add_mesh(pen, Vector3(0.0, 0.45, z), Vector3(2.6, 0.1, 0.1), fence_mat)
+		_add_mesh(pen, Vector3(0.0, 0.75, z), Vector3(2.6, 0.1, 0.1), fence_mat)
+	_add_mesh(pen, Vector3(0.0, 0.12, 0.0), Vector3(2.4, 0.24, 2.4), _material(Color(0.86, 0.71, 0.36)))  # hay
+	var heart := Label3D.new()
+	heart.text = "<3"
+	heart.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	heart.font_size = 40
+	heart.outline_size = 10
+	heart.modulate = Color(1.0, 0.5, 0.65)
+	heart.position = Vector3(0.0, 1.4, 0.0)
+	pen.add_child(heart)
 
 	var sign := Label3D.new()
 	sign.text = "Village"

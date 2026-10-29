@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="CreatureSpecies" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/creature_species.gd" id="1_species"]
+[ext_resource type="Resource" path="res://resources/abilities/meteor_slam.tres" id="2_ability"]
+
+[resource]
+script = ExtResource("1_species")
+display_name = "Cinderhorn"
+color = Color(0.60, 0.16, 0.14, 1)
+size = 1.7
+body_type = "cat"
+feature = "horn"
+max_health = 168.0
+damage = 19.2
+move_speed = 5.0
+attack_range = 1.2
+attack_cooldown = 1.25
+aggressive = true
+aggro_range = 9.0
+spawn_weight = 0.0
+catch_rate = 0.3
+xp_reward = 30
+ability = ExtResource("2_ability")

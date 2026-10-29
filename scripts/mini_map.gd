@@ -62,7 +62,7 @@ func _apply_mode() -> void:
 		offset_right = -30
 		offset_top = 230
 		offset_bottom = -100
-		_legend.text = "You (arrow)  ·  your pets: green  ·  wild: red  ·  boss: big red  ·  stand: yellow  ·  bat shop: red  ·  stable: brown  ·  portal: purple       [M] close"
+		_legend.text = "You (arrow)  ·  your pets: green  ·  wild: red  ·  boss: big red  ·  stand: yellow  ·  bat shop: red  ·  breeder: pink  ·  stable: brown  ·  portal: purple       [M] close"
 	else:
 		set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
 		offset_left = -20 - COMPACT_SIZE.x
@@ -161,6 +161,9 @@ func _draw_map() -> void:
 		_canvas.draw_circle(bat_at, 6.5, Color(0.2, 0.05, 0.05))
 		_canvas.draw_circle(bat_at, 5.0, Color(0.95, 0.35, 0.3))
 		_canvas.draw_line(bat_at + Vector2(-3, 3), bat_at + Vector2(3, -3), Color(0.4, 0.25, 0.12), 2.5)  # a bat
+		var breeder_at := _to_canvas(_to_map(layout.village.breeder_point))
+		_canvas.draw_circle(breeder_at, 6.5, Color(0.25, 0.05, 0.12))
+		_canvas.draw_circle(breeder_at, 5.0, Color(1.0, 0.55, 0.75))
 	var portal_at := _to_canvas(_to_map(layout.exit_point))
 	_canvas.draw_arc(portal_at, 7.0, 0, TAU, 20, Color(0.75, 0.45, 1.0), 2.5)
 	if world.exit_open:
