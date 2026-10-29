@@ -200,18 +200,18 @@ func _swamp_tree() -> void:
 		var angle := TAU * i / 4.0 + 0.4
 		_cylinder(0.06, 0.12, 0.8, bark, Vector3(cos(angle) * 0.4, 0.25, sin(angle) * 0.4),
 				Vector3(rad_to_deg(sin(angle)) * 0.9, 0, -rad_to_deg(cos(angle)) * 0.9))
-	var leaves := Color(0.2, 0.32, 0.18)
-	_sphere(1.15, leaves, Vector3(0, 2.4, 0), Vector3(1.1, 0.7, 1.1))
-	_sphere(0.75, leaves.lightened(0.08), Vector3(0.55, 2.7, 0.2))
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 5
+	var tips := _crown(Vector3(0, 1.95, 0), bark, Color(0.16, 0.26, 0.14), rng, 5, 1.0)
 	var moss := _mat(Color(0.45, 0.5, 0.36))
-	for i in 9:  # hanging moss
-		var angle := TAU * i / 9.0
+	for tip in tips:  # moss hanging from the branches
+		var length := rng.randf_range(0.5, 0.9)
 		var strand := BoxMesh.new()
-		strand.size = Vector3(0.06, 0.8, 0.06)
-		_part(strand, moss, Vector3(cos(angle) * 1.0, 1.8, sin(angle) * 1.0))
+		strand.size = Vector3(0.06, length, 0.06)
+		_part(strand, moss, tip + Vector3(0, -length * 0.5 - 0.05, 0))
 
 
-## A tall, gnarled swamp tree with a wide, flat canopy and long vines
+## A tall, gnarled swamp tree with spreading, branchy limbs and long vines
 ## hanging almost to the ground.
 func _vine_tree() -> void:
 	_collide(0.5, 3.6)
@@ -222,19 +222,14 @@ func _vine_tree() -> void:
 		var angle := TAU * i / 3.0 + 0.3
 		_cylinder(0.05, 0.13, 0.8, bark, Vector3(cos(angle) * 0.35, 0.22, sin(angle) * 0.35),
 				Vector3(rad_to_deg(sin(angle)) * 1.0, 0, -rad_to_deg(cos(angle)) * 1.0))
-	var leaves := Color(0.17, 0.3, 0.17)
-	_sphere(1.3, leaves, Vector3(0.1, 3.0, 0), Vector3(1.25, 0.45, 1.15))
-	_sphere(0.8, leaves.lightened(0.08), Vector3(-0.6, 3.2, 0.4), Vector3(1.1, 0.5, 1.0))
-	_sphere(0.7, leaves.darkened(0.1), Vector3(0.75, 3.15, -0.45), Vector3(1.1, 0.5, 1.0))
-	var vine := _mat(Color(0.24, 0.42, 0.2))
-	var leaf := _mat(Color(0.3, 0.52, 0.24))
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 11
-	for i in 14:  # vines dropping from the canopy's edge
-		var angle := TAU * i / 14.0 + rng.randf_range(-0.15, 0.15)
-		var reach := rng.randf_range(0.9, 1.45)
-		var length := rng.randf_range(1.4, 2.4)
-		var top := Vector3(cos(angle) * reach, 2.85, sin(angle) * reach)
+	var tips := _crown(Vector3(0.2, 2.8, 0), bark, Color(0.14, 0.25, 0.14), rng, 6, 1.15)
+	var vine := _mat(Color(0.24, 0.42, 0.2))
+	var leaf := _mat(Color(0.3, 0.52, 0.24))
+	for tip in tips:  # vines dropping from the branches
+		var length := rng.randf_range(1.2, minf(2.4, tip.y - 0.3))
+		var top: Vector3 = tip + Vector3(0, -0.05, 0)
 		var strand := CylinderMesh.new()
 		strand.top_radius = 0.05
 		strand.bottom_radius = 0.03
@@ -274,6 +269,52 @@ func _old_stump() -> void:
 
 
 # --- Helpers ------------------------------------------------------------------------
+
+## A branchy crown from the top of a trunk: `count` limbs reaching up and out,
+## each forking into twigs with small, sparse clumps of leaves. Returns the
+## twig tips (for hanging moss and vines).
+func _crown(top: Vector3, bark: Color, leaves: Color, rng: RandomNumberGenerator, count: int, reach: float) -> Array[Vector3]:
+	var tips: Array[Vector3] = []
+	var leaf_mat := _mat(leaves)
+	var leaf_light := _mat(leaves.lightened(0.06))
+	for i in count:
+		var angle := TAU * i / count + rng.randf_range(-0.3, 0.3)
+		var out := Vector3(cos(angle), 0, sin(angle))
+		# The limb: up and out, gently curving through a mid point.
+		var mid := top + out * reach * 0.5 + Vector3.UP * rng.randf_range(0.35, 0.6)
+		var end := top + out * reach * rng.randf_range(0.9, 1.2) + Vector3.UP * rng.randf_range(0.5, 0.85)
+		_branch(top, mid, 0.13, 0.09, bark)
+		_branch(mid, end, 0.09, 0.05, bark)
+		for f in 2:  # twigs forking off the limb's end
+			var side := out.rotated(Vector3.UP, (f - 0.5) * rng.randf_range(0.9, 1.4))
+			var tip := end + side * rng.randf_range(0.35, 0.6) + Vector3.UP * rng.randf_range(-0.05, 0.25)
+			_branch(end, tip, 0.05, 0.025, bark)
+			tips.append(tip)
+			for l in 5:  # a small, loose clump of leaves at the tip
+				var clump := _sphere(0.13, leaves,
+						tip + Vector3(rng.randf_range(-0.2, 0.2), rng.randf_range(-0.08, 0.14), rng.randf_range(-0.2, 0.2)))
+				clump.material_override = leaf_mat if l % 2 else leaf_light
+				clump.scale = Vector3(1.1, 0.75, 1.0)
+		# A few leaves along the limb, too.
+		var along := _sphere(0.15, leaves, mid.lerp(end, 0.5) + Vector3.UP * 0.08)
+		along.material_override = leaf_mat
+		along.scale = Vector3(1.1, 0.5, 1.0)
+	return tips
+
+
+## A cylinder from `from` to `to`, `r_from` thick at the start tapering to `r_to`.
+func _branch(from: Vector3, to: Vector3, r_from: float, r_to: float, color: Color) -> void:
+	var dir := to - from
+	var mesh := CylinderMesh.new()
+	mesh.bottom_radius = r_from
+	mesh.top_radius = r_to
+	mesh.height = dir.length()
+	mesh.radial_segments = 6
+	mesh.rings = 1
+	var part := _part(mesh, _mat(color), (from + to) * 0.5)
+	var up := dir.normalized()
+	var x := up.cross(Vector3.FORWARD if absf(up.z) < 0.9 else Vector3.RIGHT).normalized()
+	part.basis = Basis(x, up, x.cross(up))  # the cylinder's axis (Y) along the branch
 
 ## One collision cylinder, standing on the ground.
 func _collide(radius: float, height: float) -> void:
