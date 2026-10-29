@@ -8,6 +8,7 @@ const MAX_MESSAGES := 6
 var _player: Player
 var _party_refresh := 0.0
 var _dialog_closed_frame := -1
+var skill_window: SkillWindow
 var _stable_party_signature := ""
 var _party_slots: Array[PetSlot] = []
 var _bed_slots: Array[PetSlot] = []
@@ -31,6 +32,7 @@ var _pending_release: PetSlot
 @onready var release_dialog: ConfirmationDialog = %ReleaseDialog
 @onready var coins_label: Label = %CoinsLabel
 @onready var stance_button: Button = %StanceButton
+@onready var skills_button: Button = %SkillsButton
 @onready var shop_panel: Control = %ShopPanel
 @onready var shop_info: Label = %ShopInfo
 @onready var buy_button: Button = %BuyButton
@@ -45,10 +47,16 @@ func _ready() -> void:
 	buy_button.pressed.connect(func() -> void: _player.request_buy_potion.rpc_id(1))
 	boost_button.pressed.connect(func() -> void: _player.request_buy_boost.rpc_id(1))
 	stance_button.pressed.connect(func() -> void: _player.request_toggle_stance.rpc_id(1))
+	skills_button.pressed.connect(toggle_skills)
+	skill_window = SkillWindow.new()
+	skill_window.theme = stable_panel.theme
+	skill_window.add_theme_stylebox_override("panel", stable_panel.get_theme_stylebox("panel"))
+	add_child(skill_window)
 
 
 func bind(player: Player) -> void:
 	_player = player
+	skill_window.player = player
 	name_label.text = player.display_name
 	name_label.modulate = player.color.lightened(0.3)
 	player.health.changed.connect(_on_health_changed)
@@ -98,7 +106,7 @@ func show_message(text: String, color: Color) -> void:
 
 # --- Windows ---------------------------------------------------------------------------
 
-## Escape closes the stable or shop, but a press that closes the release dialog
+## Escape closes the stable, shop or skills, but a press that closes the release dialog
 ## on top of the stable shouldn't close the stable as well.
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel") and release_dialog.visible:
@@ -113,12 +121,22 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func is_window_open() -> bool:
-	return stable_panel.visible or shop_panel.visible
+	return stable_panel.visible or shop_panel.visible or skill_window.visible
 
 
 func close_windows() -> void:
 	stable_panel.hide()
 	shop_panel.hide()
+	skill_window.hide()
+
+
+## The skills screen (K) can open anywhere; it replaces any other open window.
+func toggle_skills() -> void:
+	if skill_window.visible:
+		skill_window.hide()
+		return
+	close_windows()
+	skill_window.open()
 
 
 func open_shop() -> void:
@@ -201,7 +219,9 @@ func _refresh_stable() -> void:
 	_stable_party_signature = _party_signature()
 	for slot in Player.MAX_PARTY:
 		var pet := _player.world.get_party_pet(_player.peer_id, slot)
-		_party_slots[slot].pet = {"species": pet.species_index, "level": pet.level, "fainted": pet.fainted} if pet else {}
+		_party_slots[slot].pet = {
+			"species": pet.species_index, "level": pet.level, "fainted": pet.fainted, "skills": pet.skill_ranks,
+		} if pet else {}
 	for bed in Player.MAX_STABLE:
 		var data: Dictionary = _player.stable[bed] if bed < _player.stable.size() else {}
 		_bed_slots[bed].pet = {"species": data.species, "level": data.level} if not data.is_empty() else {}
@@ -238,7 +258,10 @@ func _on_health_changed(current: float, maximum: float) -> void:
 ## True while the mouse is over a HUD button, so clicking it doesn't also swing.
 func is_mouse_over_buttons() -> bool:
 	var mouse := stance_button.get_viewport().get_mouse_position()
-	return stance_button.is_visible_in_tree() and stance_button.get_global_rect().has_point(mouse)
+	for button in [stance_button, skills_button]:
+		if button.is_visible_in_tree() and button.get_global_rect().has_point(mouse):
+			return true
+	return false
 
 
 func _update_stance() -> void:
@@ -284,9 +307,9 @@ func _update_hover() -> void:
 				% [c.species.display_name, c.level, roundi(c.capture_chance(_player.capture_boost()) * 100.0), where]
 	elif c.owner_id == _player.peer_id:
 		hover_label.text = "Your %s  Lv%d" % [c.species.display_name, c.level]
-		var skill_names := PetSkills.learned(c.species_index, c.level).map(func(k: Dictionary) -> String: return k.name)
-		if not skill_names.is_empty():
-			hover_label.text += "   ·   " + ", ".join(skill_names)
+		var left := PetSkills.points_left(c.level, c.skill_ranks)
+		if left > 0:
+			hover_label.text += "   ·   %d skill point%s to spend  [K]" % [left, "" if left == 1 else "s"]
 	else:
 		var other = _player.world.get_tamer(c.owner_id)  # Player or Rival
 		var owner_name: String = ("Rival " + other.display_name if c.is_rival_pet() else other.display_name) if other else "?"
@@ -308,9 +331,9 @@ func _rebuild_party() -> void:
 		var entry := VBoxContainer.new()
 		entry.add_theme_constant_override("separation", 1)
 		var label := Label.new()
-		var skills := PetSkills.learned(pet.species_index, pet.level).size()
+		var points := PetSkills.points_left(pet.level, pet.skill_ranks)
 		label.text = "[%d]  %s  Lv%d%s%s" % [pet.party_slot + 1, pet.species.display_name, pet.level,
-				"  · %d skill%s" % [skills, "" if skills == 1 else "s"] if skills > 0 else "", "   (fainted)" if pet.fainted else ""]
+				"  · +%d [K]" % points if points > 0 else "", "   (fainted)" if pet.fainted else ""]
 		label.modulate = pet.species.color.lightened(0.35)
 		entry.add_child(label)
 		entry.add_child(_bar(pet.health.current, pet.health.max_health, Color(0.35, 0.9, 0.4), 14))

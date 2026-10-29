@@ -20,6 +20,8 @@ const CAST_TIMEOUT := 3.0
 
 # Set by the spawn function before entering the tree.
 var species_index := 0
+## Trained ranks of each of the species' skills (see PetSkills). Replicated.
+var skill_ranks: Array = PetSkills.empty_ranks()
 var home := Vector3.ZERO
 
 # Replicated state.
@@ -111,7 +113,7 @@ func _physics_process(delta: float) -> void:
 	_stats_timer -= delta
 	if _stats_timer <= 0.0:
 		_stats_timer = 1.0
-		_refresh_max_health()
+		refresh_max_health()
 	if fainted:
 		_tick_faint(delta)
 		return
@@ -179,11 +181,11 @@ func get_damage() -> float:
 func skill_bonus(stat: String) -> float:
 	if is_wild() or species == null:
 		return 0.0
-	var bonus := PetSkills.total(species_index, level, stat)
+	var bonus := PetSkills.total(species_index, skill_ranks, stat)
 	if world:
 		for ally in world.get_pets(owner_id):
 			if not ally.fainted:
-				bonus += PetSkills.total(ally.species_index, ally.level, "pack_" + stat)
+				bonus += PetSkills.total(ally.species_index, ally.skill_ranks, "pack_" + stat)
 	return minf(bonus, PetSkills.MAX_ARMOR) if stat == "armor" else bonus
 
 
@@ -204,7 +206,7 @@ func ability_cooldown_left() -> float:
 
 ## Data needed to recreate this pet later (used by the stable).
 func to_data() -> Dictionary:
-	return {"species": species_index, "level": level, "xp": xp}
+	return {"species": species_index, "level": level, "xp": xp, "skills": skill_ranks.duplicate()}
 
 
 # --- Server-side actions ---------------------------------------------------------
@@ -367,9 +369,8 @@ func gain_xp(amount: int) -> void:
 		_apply_level_stats()
 		health.current = health.max_health
 		world.tell(owner_id, "Your %s grew to level %d!" % [species.display_name, level], Color(0.6, 0.85, 1.0))
-		var skill := PetSkills.unlocked_at(species_index, level)
-		if not skill.is_empty():
-			world.tell(owner_id, "Your %s learned %s" % [species.display_name, PetSkills.describe(skill)],
+		if PetSkills.points_for_level(level) > PetSkills.points_for_level(level - 1):
+			world.tell(owner_id, "Your %s earned a skill point! Press K to train a skill." % species.display_name,
 					Color(1.0, 0.85, 0.4))
 
 
@@ -582,7 +583,7 @@ func _apply_level_stats() -> void:
 
 ## Pack health skills come and go as pets join, faint and wake up: keep max
 ## health current, scaling health with it so the bar stays at the same fraction.
-func _refresh_max_health() -> void:
+func refresh_max_health() -> void:
 	var old_max := health.max_health
 	_apply_level_stats()
 	if not is_equal_approx(old_max, health.max_health) and old_max > 0.0 and health.current > 0.0:

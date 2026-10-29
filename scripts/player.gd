@@ -170,6 +170,8 @@ func _physics_process(delta: float) -> void:
 			_potion_timer = potion_cooldown
 		request_potion.rpc_id(1)  # the server explains if it can't be used
 
+	if Input.is_action_just_pressed("skills"):
+		world.hud.toggle_skills()
 	if Input.is_action_just_pressed("interact"):
 		if world.hud.is_window_open():
 			world.hud.close_windows()
@@ -403,6 +405,37 @@ func request_command(creature_name: String) -> void:
 		pet.set_focus(focus)
 
 
+## Spends one of a party pet's skill points on skill `index`.
+@rpc("any_peer", "call_local", "reliable")
+func request_train_skill(slot: int, index: int) -> void:
+	if not _sent_by_owner():
+		return
+	var pet := world.get_party_pet(peer_id, slot)
+	if pet == null:
+		return
+	var reason := PetSkills.cannot_train_reason(pet.level, pet.skill_ranks, index)
+	if reason != "":
+		world.tell(peer_id, reason, Color(1, 0.6, 0.4))
+		return
+	var ranks := pet.skill_ranks.duplicate()
+	ranks[index] += 1
+	pet.skill_ranks = ranks  # a new array, so the change replicates
+	pet.refresh_max_health()
+
+
+## Gives back all of a party pet's skill points, to spend again. Free.
+@rpc("any_peer", "call_local", "reliable")
+func request_reset_skills(slot: int) -> void:
+	if not _sent_by_owner():
+		return
+	var pet := world.get_party_pet(peer_id, slot)
+	if pet == null or PetSkills.points_spent(pet.skill_ranks) == 0:
+		return
+	pet.skill_ranks = PetSkills.empty_ranks()
+	pet.refresh_max_health()
+	world.tell(peer_id, "Your %s's skill points are back to spend." % pet.species.display_name, Color(0.6, 0.85, 1.0))
+
+
 @rpc("any_peer", "call_local", "reliable")
 func request_toggle_stance() -> void:
 	if not _sent_by_owner():
@@ -470,10 +503,12 @@ static func _clean_pet(entry) -> Dictionary:
 	var species := int(entry.species)
 	if species < 0 or species >= SpeciesDB.PATHS.size():
 		return {}
+	var level := clampi(int(entry.get("level", 1)), 1, 99)
 	return {
 		"species": species,
-		"level": clampi(int(entry.get("level", 1)), 1, 99),
+		"level": level,
 		"xp": clampi(int(entry.get("xp", 0)), 0, 1_000_000),
+		"skills": PetSkills.clean_ranks(entry.get("skills", []), level),
 	}
 
 

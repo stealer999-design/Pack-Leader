@@ -226,8 +226,15 @@ func _tooltip() -> String:
 	var text := "%s  Lv%d" % [species.display_name, pet.level]
 	if species.ability:
 		text += "\n%s: %s" % [species.ability.display_name, species.ability.description]
-	text += "\n\nPassive skills:"
-	for skill in PetSkills.all_for(pet.species):
-		var learned: bool = pet.level >= skill.level
-		text += "\n  Lv%d  %s%s" % [skill.level, PetSkills.describe(skill), "" if learned else "   (locked)"]
+	var ranks: Array = pet.get("skills", PetSkills.empty_ranks())
+	var skills := PetSkills.all_for(pet.species)
+	text += "\n\nSkills:"
+	for i in skills.size():
+		if int(ranks[i]) > 0:
+			text += "\n  %s  %d/%d: %s" % [skills[i].name, ranks[i], PetSkills.MAX_RANK, PetSkills.effect_text(skills[i], ranks[i])]
+	if PetSkills.points_spent(ranks) == 0:
+		text += "  none trained yet"
+	var left := PetSkills.points_left(pet.level, ranks)
+	if left > 0:
+		text += "\n  %d skill point%s to spend (in the party, press K)" % [left, "" if left == 1 else "s"]
 	return text + "\n\nDrag to move it."

@@ -369,7 +369,7 @@ func _start_level(number: int) -> void:
 	if level_biome.boss == "rival":
 		creature_spawner.spawn({
 			"species": layout.rival_species, "level": base_level + 1,
-			"owner": RIVAL_ID, "slot": 0, "pos": boss_pos + Vector3(1.5, 0.0, 1.5),
+			"skills": PetSkills.auto_ranks(base_level + 1), "owner": RIVAL_ID, "slot": 0, "pos": boss_pos + Vector3(1.5, 0.0, 1.5),
 		})
 	announce.rpc("Level %d, %s: follow the path and defeat %s!" % [number, level_biome.name, boss_objective_name()],
 			Color(1, 0.9, 0.5))
@@ -489,7 +489,7 @@ func free_party_slot(peer_id: int) -> int:
 func spawn_pet(peer_id: int, data: Dictionary, near: Vector3, slot: int) -> Creature:
 	var offset := Vector2.from_angle(randf() * TAU) * 1.5
 	return creature_spawner.spawn({
-		"species": data.species, "level": data.level, "xp": data.xp,
+		"species": data.species, "level": data.level, "xp": data.xp, "skills": data.get("skills", []),
 		"owner": peer_id, "slot": slot, "pos": near + Vector3(offset.x, 0.0, offset.y),
 	}) as Creature
 
@@ -709,6 +709,7 @@ func _spawn_creature(data: Dictionary) -> Node:
 	creature.species_index = data.species
 	creature.level = data.level
 	creature.xp = data.get("xp", 0)
+	creature.skill_ranks = PetSkills.clean_ranks(data.get("skills", []), data.level)
 	creature.owner_id = data.get("owner", 0)
 	creature.party_slot = data.get("slot", -1)
 	creature.position = data.pos
