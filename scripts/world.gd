@@ -86,6 +86,7 @@ func _enter_tree() -> void:
 
 func _ready() -> void:
 	level_root.rotation.y = PATH_YAW
+	_texture_stable()
 	player_spawner.spawn_function = _spawn_player
 	creature_spawner.spawn_function = _spawn_creature
 	rival_spawner.spawn_function = _spawn_rival
@@ -672,6 +673,24 @@ func _build_shop() -> void:
 	flag.add_child(cloth)
 
 
+## The stable building in the scene: shared building textures and a door handle.
+## Its door faces south (towards the camera) once placed. The village's stable
+## is a copy, so it matches.
+func _texture_stable() -> void:
+	(stable.get_node("Walls") as CSGBox3D).material = BuildingTextures.wall()
+	(stable.get_node("Roof") as CSGCylinder3D).material = BuildingTextures.roof()
+	var door := stable.get_node("Door") as CSGBox3D
+	door.material = BuildingTextures.door()
+	var knob := MeshInstance3D.new()
+	var sphere := SphereMesh.new()
+	sphere.radius = 0.06
+	sphere.height = 0.12
+	sphere.material = _material(Color(0.95, 0.78, 0.35))
+	knob.mesh = sphere
+	knob.position = door.position + Vector3(0.32, 0.0, 0.06)
+	stable.add_child(knob)
+
+
 ## The village off the middle of the path: a side path up to a square with a few
 ## houses and the bat shop. A safe place: no creatures are placed there.
 func _build_village(level_biome: Dictionary, wall_mat: Material) -> void:
@@ -694,11 +713,13 @@ func _build_village(level_biome: Dictionary, wall_mat: Material) -> void:
 	_add_wall_z(plaza.end.x + 0.5, plaza.end.y + 1.0, v.z + half, wall_mat, true)
 	_add_wall_z(plaza.end.x + 0.5, v.z - half, plaza.position.y - 1.0, wall_mat, true)
 
-	# Houses: walls, a pitched roof, a door and a window.
-	var roof_mat := _material(Color(0.62, 0.25, 0.2))
-	var house_mat := _material(Color(0.92, 0.86, 0.72))
-	var door_mat := _material(Color(0.42, 0.27, 0.15))
+	# Houses: plaster walls, a shingled roof, and a plank door and a window on
+	# the south side (local +x), facing the camera.
+	var roof_mat := BuildingTextures.roof()
+	var house_mat := BuildingTextures.wall()
+	var door_mat := BuildingTextures.door()
 	var glass := _material(Color(0.55, 0.75, 0.95))
+	var frame_mat := _material(Color(0.36, 0.23, 0.13))
 	for house in v.houses:
 		var size: Vector3 = house.size
 		var body := _add_box(house.pos + Vector3.UP * size.y * 0.5, size, house_mat)
@@ -710,11 +731,10 @@ func _build_village(level_biome: Dictionary, wall_mat: Material) -> void:
 		roof.mesh = prism
 		roof.position = house.pos + Vector3.UP * (size.y + 0.8)
 		level_root.add_child(roof)
-		# Door and window on the side facing the middle of the square.
-		var facing := signf(plaza.get_center().x - house.pos.x)
-		var front_x: float = house.pos.x + facing * (size.x * 0.5 + 0.02)
-		_add_mesh(level_root, Vector3(front_x, 0.9, house.pos.z - 0.8), Vector3(0.06, 1.8, 1.0), door_mat)
-		_add_mesh(level_root, Vector3(front_x, 1.9, house.pos.z + 1.2), Vector3(0.06, 0.8, 0.9), glass)
+		var front_x: float = house.pos.x + size.x * 0.5
+		_add_door(Vector3(front_x, 0.0, house.pos.z - 0.9), door_mat, frame_mat)
+		_add_mesh(level_root, Vector3(front_x + 0.03, 1.9, house.pos.z + 1.2), Vector3(0.12, 0.95, 1.05), frame_mat)
+		_add_mesh(level_root, Vector3(front_x + 0.09, 1.9, house.pos.z + 1.2), Vector3(0.04, 0.8, 0.9), glass)  # in front of the frame
 
 	# A second stable, in the front corner of the square (a copy of the camp's).
 	var village_stable := stable.duplicate() as Node3D
@@ -784,6 +804,21 @@ func _build_village(level_biome: Dictionary, wall_mat: Material) -> void:
 	level_root.add_child(sign)
 
 
+## A plank door in a dark frame, with a brass handle, on a wall facing local +x
+## (south, towards the camera); `at` is the bottom-centre of the wall face.
+func _add_door(at: Vector3, door_mat: Material, frame_mat: Material) -> void:
+	_add_mesh(level_root, at + Vector3(0.03, 0.95, 0.0), Vector3(0.1, 1.9, 1.2), frame_mat)
+	_add_mesh(level_root, at + Vector3(0.07, 0.9, 0.0), Vector3(0.06, 1.8, 1.0), door_mat)
+	var knob := MeshInstance3D.new()
+	var sphere := SphereMesh.new()
+	sphere.radius = 0.06
+	sphere.height = 0.12
+	sphere.material = _material(Color(0.95, 0.78, 0.35))
+	knob.mesh = sphere
+	knob.position = at + Vector3(0.13, 0.9, 0.32)
+	level_root.add_child(knob)
+
+
 ## A wall along z at local `x`, from `z_from` to `z_to`.
 func _add_wall_z(x: float, z_from: float, z_to: float, mat: Material, low := false) -> void:
 	var length := absf(z_from - z_to)
@@ -811,7 +846,7 @@ func _build_stall(stall_name: String, point: Vector3, rot_y: float, stripe: Colo
 	body.add_child(shape)
 	stall.add_child(body)
 
-	var wood := _material(Color(0.62, 0.42, 0.24))
+	var wood := BuildingTextures.door()
 	var light_wood := _material(Color(0.82, 0.66, 0.42))
 	_add_mesh(stall, Vector3(0.0, 0.5, 0.0), Vector3(2.6, 1.0, 0.8), wood)
 	_add_mesh(stall, Vector3(0.0, 1.04, 0.0), Vector3(2.9, 0.08, 1.0), light_wood)
