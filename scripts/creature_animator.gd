@@ -1,0 +1,114 @@
+class_name CreatureAnimator
+extends Node
+## Animates a creature's CreatureModel on every peer, from how fast it is
+## actually moving (measured from its position, so nothing extra is synced):
+##
+## - cats and dogs: a trotting walk (diagonal legs together), a body bob, tail
+##   sway (cats, slow) or wag (dogs, fast and faster when running);
+## - birds: legs step, the body hops, the wings flap when moving and twitch at rest;
+## - lizards: legs paddle in a sprawl, the body and tail swing side to side;
+## - everyone breathes a little while standing; fainted pets stay still.
+
+var creature: Creature
+var body: Node3D
+var body_type := "cat"
+
+var _legs: Array[Node3D] = []
+var _wings: Array[Node3D] = []
+var _tail: Node3D
+var _base_y := 0.0
+var _last_position := Vector3.INF
+var _speed := 0.0
+var _phase := 0.0
+var _time := 0.0
+
+
+func setup(owner_creature: Creature, model_body: Node3D, kind: String) -> void:
+	creature = owner_creature
+	body = model_body
+	body_type = kind
+	_base_y = body.position.y
+	for i in 4:
+		var leg := body.get_node_or_null("Leg%d" % i) as Node3D
+		if leg:
+			_legs.append(leg)
+	for i in 2:
+		var wing := body.get_node_or_null("Wing%d" % i) as Node3D
+		if wing:
+			_wings.append(wing)
+	_tail = body.get_node_or_null("Tail") as Node3D
+	_time = randf() * 10.0  # so a group doesn't breathe in sync
+
+
+func _process(delta: float) -> void:
+	if not is_instance_valid(creature) or delta <= 0.0:
+		return
+	var pos := creature.global_position
+	if _last_position != Vector3.INF:
+		var moved := Vector2(pos.x - _last_position.x, pos.z - _last_position.z).length() / delta
+		_speed = lerpf(_speed, minf(moved, 20.0), 1.0 - exp(-10.0 * delta))
+	_last_position = pos
+	_time += delta
+	var settle := 1.0 - exp(-10.0 * delta)
+	if creature.fainted:
+		for pivot in _legs + _wings:
+			pivot.rotation = pivot.rotation.lerp(Vector3.ZERO, settle)
+		body.position.y = lerpf(body.position.y, _base_y, settle)
+		body.rotation.y = lerpf(body.rotation.y, 0.0, settle)
+		return
+
+	# How far into a full stride, by how fast it moves for its size.
+	var size := creature.species.size
+	var stride := clampf(_speed / (3.0 * size), 0.0, 1.0)
+	_phase += delta * (3.0 + _speed * 2.2 / size)
+	var step := sin(_phase)
+	var breathe := sin(_time * 2.2) * 0.012 * (1.0 - stride)
+	match body_type:
+		"bird":
+			_walk_bird(step, stride, breathe)
+		"lizard":
+			_walk_lizard(step, stride, breathe)
+		_:
+			_walk_four_legs(step, stride, breathe)
+
+
+func _walk_four_legs(step: float, stride: float, breathe: float) -> void:
+	for i in _legs.size():
+		var forward := step if i == 0 or i == 3 else -step  # diagonal pairs step together
+		_legs[i].rotation.x = forward * 0.7 * stride
+	body.position.y = _base_y + absf(cos(_phase)) * 0.05 * stride + breathe
+	body.rotation.y = 0.0
+	if _tail:
+		if body_type == "dog":
+			_tail.rotation.y = sin(_time * (10.0 + 8.0 * stride)) * 0.55
+		else:
+			_tail.rotation.y = sin(_time * 2.0) * 0.25 + step * 0.15 * stride
+	_flap(stride, 9.0)  # hybrid cats with wings
+
+
+func _walk_bird(step: float, stride: float, breathe: float) -> void:
+	for i in _legs.size():
+		_legs[i].rotation.x = (step if i == 0 else -step) * 0.8 * stride
+	body.position.y = _base_y + absf(step) * 0.09 * stride + breathe  # little hops
+	if _tail:
+		_tail.rotation.x = sin(_time * 3.0) * 0.08 - stride * 0.15
+	_flap(stride, 16.0)
+
+
+func _walk_lizard(step: float, stride: float, breathe: float) -> void:
+	for i in _legs.size():
+		var forward := step if i == 0 or i == 3 else -step
+		_legs[i].rotation.y = forward * 0.6 * stride  # paddle forwards and back in the sprawl
+	var sway := step * 0.18 * stride
+	body.rotation.y = sway
+	body.position.y = _base_y + breathe
+	if _tail:
+		_tail.rotation.y = -sway * 2.2 + sin(_time * 1.5) * 0.12
+
+
+## Wings: a quick flap while moving, a slow twitch at rest. Wing0 is on the left.
+func _flap(stride: float, speed: float) -> void:
+	for i in _wings.size():
+		var side := -1.0 if i == 0 else 1.0
+		var flap := sin(_time * speed) * 0.6 * stride + sin(_time * 1.7) * 0.06
+		_wings[i].rotation.z = side * (flap + 0.1 * stride)

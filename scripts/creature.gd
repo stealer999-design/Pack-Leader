@@ -606,6 +606,10 @@ static func _now() -> float:
 func _build_visuals() -> void:
 	_material.albedo_color = species.color
 	CreatureModel.build(body, species.body_type, _material, species.color, species.feature)
+	var animator := CreatureAnimator.new()
+	animator.name = "Animator"
+	add_child(animator)
+	animator.setup(self, body, species.body_type)
 	model.scale = Vector3.ONE * species.size
 	ring.scale = Vector3.ONE * species.size
 	var shape := SphereShape3D.new()

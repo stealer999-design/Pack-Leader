@@ -12,6 +12,7 @@ var skill_window: SkillWindow
 var mini_map: MiniMap
 var bat_shop_panel: PanelContainer
 var breeder_window: BreederWindow
+var pause_menu: PauseMenu
 var _bat_shop_info: Label
 var _bat_buy_button: Button
 var _stable_party_signature := ""
@@ -62,6 +63,10 @@ func _ready() -> void:
 	breeder_window.theme = shop_panel.theme
 	breeder_window.add_theme_stylebox_override("panel", shop_panel.get_theme_stylebox("panel"))
 	add_child(breeder_window)
+	pause_menu = PauseMenu.new()
+	pause_menu.theme = shop_panel.theme
+	pause_menu.get_node("Panel").add_theme_stylebox_override("panel", shop_panel.get_theme_stylebox("panel"))
+	add_child(pause_menu)
 	mini_map = MiniMap.new()
 	add_child(mini_map)
 	move_child(mini_map, 0)  # under the windows
@@ -146,6 +151,10 @@ func _input(event: InputEvent) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel") and not is_window_open() and not mini_map.expanded:
+		pause_menu.open()  # nothing else to close: the in-game menu
+		get_viewport().set_input_as_handled()
+		return
 	if event.is_action_pressed("ui_cancel") and mini_map.expanded:
 		mini_map.toggle_expanded()
 		get_viewport().set_input_as_handled()
@@ -158,7 +167,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func is_window_open() -> bool:
 	return stable_panel.visible or shop_panel.visible or skill_window.visible or bat_shop_panel.visible \
-			or breeder_window.visible
+			or breeder_window.visible or pause_menu.visible
 
 
 func close_windows() -> void:

@@ -176,7 +176,14 @@ func _start_world() -> void:
 	Network.register_host()
 
 
+## The in-game menu's "Quit to main menu": save, leave the game, back to the title screen.
+func quit_to_menu() -> void:
+	_on_connection_lost("Game saved. Pick up where you left off any time.")
+	_refresh_save_label()
+
+
 func _on_connection_lost(message: String) -> void:
+	get_tree().paused = false
 	SaveGame.save_now()
 	# Tear the world down before closing the peer, so no world node ever
 	# processes a frame with an offline (self-as-server) peer.

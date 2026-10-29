@@ -4,6 +4,9 @@ class_name CreatureModel
 ## Mirewood Bog. The parts hang off the creature's Body node, so they lunge,
 ## faint and flash with it. Heads face -Z; the Body origin sits 0.42 above the
 ## ground (before the species' size scales the whole model).
+##
+## Parts that move are hung on named pivots for CreatureAnimator: "Leg0".."Leg3"
+## (at the hip; 0/3 and 1/2 step together), "Tail" (at its base) and "Wing0/1".
 
 const GROUND := -0.42
 
@@ -65,9 +68,10 @@ static func build(body: MeshInstance3D, body_type: String, main: StandardMateria
 				_part(body, _sphere(0.11), m.accent, at, Vector3.ZERO, Vector3(1, 1, 0.8))
 		"wings":  # a pair of feathered wings, raised up and out from the back
 			for x in [-1.0, 1.0]:
+				var wing := _pivot(body, "Wing%d" % (0 if x < 0 else 1), Vector3(x * 0.15, 0.2, 0.15))
 				for f in 3:  # three feathers per wing, fanning outwards
-					_part(body, _sphere(0.3), m.white if f == 0 else m.light,
-							Vector3(x * (0.2 + f * 0.09), 0.42 + f * 0.04, 0.16 + f * 0.05), Vector3(0, 0, -x * (25 + f * 18)),
+					_part(wing, _sphere(0.3), m.white if f == 0 else m.light,
+							Vector3(x * (0.05 + f * 0.09), 0.22 + f * 0.04, 0.01 + f * 0.05), Vector3(0, 0, -x * (25 + f * 18)),
 							Vector3(0.14, 0.95 - f * 0.18, 0.5))
 
 
@@ -82,9 +86,10 @@ static func _cat(b: Node3D, m: Dictionary) -> void:
 			_part(b, _box(Vector3(0.2, 0.012, 0.012)), m.accent, Vector3(x * 0.17, 0.14 + y, -0.5), Vector3(0, x * 15, x * (y * 300 - 6)))
 	_part(b, _prism(Vector3(0.07, 0.05, 0.04)), m.nose, Vector3(0, 0.17, -0.55), Vector3(180, 0, 0))
 	_legs(b, m.main, 0.06, 0.14, -0.12, 0.26)
-	_part(b, _cylinder(0.045, 0.045, 0.36), m.main, Vector3(0, 0.02, 0.5), Vector3(-55, 0, 0))  # tail, curling up
-	_part(b, _cylinder(0.04, 0.045, 0.3), m.main, Vector3(0, 0.27, 0.6), Vector3(-10, 0, 0))
-	_part(b, _sphere(0.05), m.accent, Vector3(0, 0.42, 0.62))
+	var tail := _pivot(b, "Tail", Vector3(0, -0.08, 0.4))  # curling up
+	_part(tail, _cylinder(0.045, 0.045, 0.36), m.main, Vector3(0, 0.1, 0.1), Vector3(-55, 0, 0))
+	_part(tail, _cylinder(0.04, 0.045, 0.3), m.main, Vector3(0, 0.35, 0.2), Vector3(-10, 0, 0))
+	_part(tail, _sphere(0.05), m.accent, Vector3(0, 0.5, 0.22))
 
 
 static func _bird(b: Node3D, m: Dictionary) -> void:
@@ -96,11 +101,14 @@ static func _bird(b: Node3D, m: Dictionary) -> void:
 		_part(b, _prism(Vector3(0.05, 0.16, 0.08)), m.accent, Vector3(0, 0.55 - i * 0.03, -0.22 + i * 0.07), Vector3(-25 - i * 15, 0, 0))
 	for x in [-1.0, 1.0]:
 		_eye(b, m, Vector3(x * 0.11, 0.36, -0.36), 0.055, false)
-		_part(b, _sphere(0.28), m.accent, Vector3(x * 0.3, 0.04, 0.06), Vector3(0, 0, x * 15), Vector3(0.28, 0.65, 1.0))  # wing
-		_part(b, _cylinder(0.025, 0.025, 0.2), m.beak, Vector3(x * 0.1, -0.33, 0.0))  # leg
-		_part(b, _box(Vector3(0.1, 0.03, 0.14)), m.beak, Vector3(x * 0.1, -0.42, -0.04))  # foot
-	_part(b, _box(Vector3(0.24, 0.04, 0.3)), m.accent, Vector3(0, 0.06, 0.4), Vector3(28, 0, 0))  # tail feathers
-	_part(b, _box(Vector3(0.14, 0.04, 0.22)), m.main, Vector3(0, 0.11, 0.46), Vector3(40, 0, 0))
+		var wing := _pivot(b, "Wing%d" % (0 if x < 0 else 1), Vector3(x * 0.24, 0.2, 0.0))  # at the shoulder
+		_part(wing, _sphere(0.28), m.accent, Vector3(x * 0.06, -0.16, 0.06), Vector3(0, 0, x * 15), Vector3(0.28, 0.65, 1.0))
+		var leg := _pivot(b, "Leg%d" % (0 if x < 0 else 1), Vector3(x * 0.1, -0.23, 0.0))  # at the hip
+		_part(leg, _cylinder(0.025, 0.025, 0.2), m.beak, Vector3(0, -0.1, 0.0))
+		_part(leg, _box(Vector3(0.1, 0.03, 0.14)), m.beak, Vector3(0, -0.19, -0.04))  # foot
+	var tail := _pivot(b, "Tail", Vector3(0, 0.05, 0.3))
+	_part(tail, _box(Vector3(0.24, 0.04, 0.3)), m.accent, Vector3(0, 0.01, 0.1), Vector3(28, 0, 0))  # tail feathers
+	_part(tail, _box(Vector3(0.14, 0.04, 0.22)), m.main, Vector3(0, 0.06, 0.16), Vector3(40, 0, 0))
 
 
 static func _dog(b: Node3D, m: Dictionary) -> void:
@@ -113,8 +121,9 @@ static func _dog(b: Node3D, m: Dictionary) -> void:
 		_eye(b, m, Vector3(x * 0.1, 0.3, -0.48), 0.055, false)
 		_part(b, _box(Vector3(0.11, 0.24, 0.06)), m.accent, Vector3(x * 0.21, 0.24, -0.28), Vector3(0, 0, x * 28)).name = "FloppyEar"
 	_legs(b, m.main, 0.065, 0.15, -0.14, 0.3)
-	_part(b, _cylinder(0.025, 0.045, 0.34), m.main, Vector3(0, 0.16, 0.56), Vector3(-40, 0, 0))  # wagging tail
-	_part(b, _sphere(0.045), m.light, Vector3(0, 0.3, 0.67))
+	var tail := _pivot(b, "Tail", Vector3(0, 0.03, 0.45))  # wags
+	_part(tail, _cylinder(0.025, 0.045, 0.34), m.main, Vector3(0, 0.13, 0.11), Vector3(-40, 0, 0))
+	_part(tail, _sphere(0.045), m.light, Vector3(0, 0.27, 0.22))
 
 
 static func _lizard(b: Node3D, m: Dictionary) -> void:
@@ -125,11 +134,14 @@ static func _lizard(b: Node3D, m: Dictionary) -> void:
 		_part(b, _prism(Vector3(0.05, 0.12, 0.1)), m.accent, Vector3(0, -0.02 - absf(i - 1.5) * 0.015, -0.3 + i * 0.16))
 	for x in [-1.0, 1.0]:
 		_eye(b, m, Vector3(x * 0.13, 0.0, -0.52), 0.075, true)
-		for z in [-0.22, 0.3]:  # sprawled legs
-			_part(b, _cylinder(0.05, 0.05, 0.24), m.main, Vector3(x * 0.27, -0.3, z), Vector3(0, 0, x * 55))
-			_part(b, _sphere(0.06), m.accent, Vector3(x * 0.36, -0.39, z - 0.03), Vector3.ZERO, Vector3(1.2, 0.5, 1.4))
+		for z in [-0.22, 0.3]:  # sprawled legs, pivoting at the shoulder/hip
+			var index := (0 if z < 0.0 else 1) + (0 if x < 0 else 2)
+			var leg := _pivot(b, "Leg%d" % index, Vector3(x * 0.18, -0.22, z))
+			_part(leg, _cylinder(0.05, 0.05, 0.24), m.main, Vector3(x * 0.09, -0.08, 0), Vector3(0, 0, x * 55))
+			_part(leg, _sphere(0.06), m.accent, Vector3(x * 0.18, -0.17, -0.03), Vector3.ZERO, Vector3(1.2, 0.5, 1.4))
 		_part(b, _sphere(0.08), m.accent, Vector3(x * 0.12, -0.08, 0.12 + x * 0.12), Vector3.ZERO, Vector3(1, 0.3, 1.2))  # spots
-	_part(b, _cylinder(0.015, 0.12, 0.75), m.main, Vector3(0, -0.24, 0.72), Vector3(80, 0, 0))  # tail
+	var tail := _pivot(b, "Tail", Vector3(0, -0.24, 0.38))  # swishes side to side
+	_part(tail, _cylinder(0.015, 0.12, 0.75), m.main, Vector3(0, 0, 0.34), Vector3(80, 0, 0))
 
 
 # --- Helpers --------------------------------------------------------------------------
@@ -140,11 +152,24 @@ static func _eye(b: Node3D, m: Dictionary, at: Vector3, r: float, slit: bool) ->
 	_part(b, pupil, m.pupil, at + Vector3(0, 0, -r * 0.85))
 
 
+## Four legs, each on a pivot at the hip: Leg0 front-left, Leg1 back-left,
+## Leg2 front-right, Leg3 back-right.
 static func _legs(b: Node3D, mat: Material, r: float, x: float, front: float, back: float) -> void:
 	var height := 0.3
+	var index := 0
 	for side in [-1.0, 1.0]:
 		for z in [front, back]:
-			_part(b, _cylinder(r, r, height), mat, Vector3(side * x, GROUND + height * 0.5, z))
+			var leg := _pivot(b, "Leg%d" % index, Vector3(side * x, GROUND + height, z))
+			_part(leg, _cylinder(r, r, height), mat, Vector3(0, -height * 0.5, 0))
+			index += 1
+
+
+static func _pivot(parent: Node3D, pivot_name: String, pos: Vector3) -> Node3D:
+	var pivot := Node3D.new()
+	pivot.name = pivot_name
+	pivot.position = pos
+	parent.add_child(pivot)
+	return pivot
 
 
 static func _part(parent: Node3D, mesh: Mesh, mat: Material, pos: Vector3, rot_deg := Vector3.ZERO,

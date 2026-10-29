@@ -82,7 +82,7 @@ played in the browser".
 | F (at the stable / lemonade stand) | Open/close the stable or the shop |
 | K | Open/close the pet skills screen |
 | M | Switch the mini map between the corner and a large view of the whole level |
-| Esc | Close whatever menu is open (stable, shop, a confirmation, the Load Game list) |
+| Esc | Close whatever menu is open (stable, shop, a confirmation, the Load Game list); with nothing open, the in-game menu: resume, save, quit to the main menu (solo pauses) |
 | Space | Dash (brief invulnerability) |
 
 - **Levels:** each level is one long, wide, randomly generated path that
@@ -149,6 +149,10 @@ played in the browser".
   | Voltwing + Gloomhorn | Stormhorn | Thunder Chain: lightning jumps 5 times |
   | Voltwing + Bloomling | Sparkblossom | Static Ward: shields everyone 40% for 7s |
   | Gloomhorn + Bloomling | Duskbloom | Dusk Veil: enemies deal 50% less for 7s |
+- **Pets are animated** too, at the pace they actually move: cats and dogs
+  trot (diagonal legs together) and sway or wag their tails, birds hop and flap,
+  lizards paddle in a sprawl and swing their bodies and tails, winged hybrids
+  flap, and everyone breathes a little standing still.
 - **Checkpoint:** downed players get back up after a few seconds at the start
   camp, or at the **lemonade stand** once they have reached it (come near it
   or get past it) this level. A grey flag beside the stand rises and turns
@@ -251,6 +255,8 @@ The host is the authoritative server and also plays.
 | `scripts/level_generator.gd` (village) + `World._build_village` | The village side path, square, houses and bat shop |
 | `scripts/breeding_db.gd`, `scripts/breeder_window.gd` | Which pairs breed into which hybrid, the rules, and the breeder's window |
 | `scripts/person_model.gd` | The tamer's body, bat, walk cycle and bat swing, built from simple meshes |
+| `scripts/creature_animator.gd` | Pet animations (walk, tails, wings, breathing), driven by how fast each pet moves |
+| `scripts/pause_menu.gd` | The in-game menu on Esc: resume, save, quit to the main menu |
 | `scripts/mini_map.gd` | The mini map (and the large map, M), drawn from the level layout |
 | `scripts/skill_window.gd`, `scripts/skill_icons.gd` | The skills screen (K) and its skill icons, drawn in code |
 | `scripts/creature_model.gd` | Builds each creature's body from simple meshes: a cat, bird, dog or lizard, depending on its biome |
