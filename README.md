@@ -81,6 +81,7 @@ played in the browser".
 | Q | Drink a health potion (heals 50%) |
 | F (at the stable / lemonade stand) | Open/close the stable or the shop |
 | K | Open/close the pet skills screen |
+| Mouse wheel | Zoom the camera in and out (remembered between games) |
 | M | Switch the mini map between the corner and a large view of the whole level |
 | Esc | Close whatever menu is open (stable, shop, a confirmation, the Load Game list); with nothing open, the in-game menu: resume, save, quit to the main menu (solo pauses) |
 | Space | Dash (brief invulnerability) |
