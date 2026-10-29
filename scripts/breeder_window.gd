@@ -33,6 +33,7 @@ func _init() -> void:
 	title.add_theme_font_size_override("font_size", 26)
 	title.modulate = Color(1.0, 0.7, 0.85)
 	box.add_child(title)
+	UiIcons.title(title, "heart")
 	var greeting := Label.new()
 	greeting.text = "\"Two different pets of the same kind, level %d or higher, and I'll raise you something special.\"" \
 			% BreedingDB.MIN_PARENT_LEVEL
@@ -62,6 +63,7 @@ func _init() -> void:
 	_breed.focus_mode = Control.FOCUS_NONE
 	_breed.custom_minimum_size = Vector2(0, 40)
 	_breed.pressed.connect(_on_breed)
+	UiIcons.button(_breed, "egg")
 	box.add_child(_breed)
 
 	var list_title := Label.new()

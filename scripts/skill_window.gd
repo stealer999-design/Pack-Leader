@@ -34,6 +34,7 @@ func _init() -> void:
 	heading.add_theme_font_size_override("font_size", 26)
 	heading.modulate = Color(1, 0.85, 0.5)
 	box.add_child(heading)
+	UiIcons.title(heading, "star")
 	_tabs = HBoxContainer.new()
 	_tabs.alignment = BoxContainer.ALIGNMENT_CENTER
 	_tabs.add_theme_constant_override("separation", 8)
@@ -63,6 +64,7 @@ func _init() -> void:
 	_reset.focus_mode = Control.FOCUS_NONE
 	_reset.tooltip_text = "Get back every skill point this pet has spent, to choose again. Free."
 	_reset.pressed.connect(func() -> void: player.request_reset_skills.rpc_id(1, _slot))
+	UiIcons.button(_reset, "reset")
 	bottom.add_child(_reset)
 	var hint := Label.new()
 	hint.text = "Click a skill to spend a point on it. Pets earn a point at level 5 and every 2 levels after.   [K / Esc] close"
@@ -133,6 +135,7 @@ func _rebuild_tabs(pets: Array[Creature]) -> void:
 		tab.focus_mode = Control.FOCUS_NONE
 		tab.button_pressed = p.party_slot == _slot
 		tab.custom_minimum_size = Vector2(220, 34)
+		UiIcons.button(tab, "paw")
 		var slot := p.party_slot
 		tab.pressed.connect(func() -> void:
 			_slot = slot

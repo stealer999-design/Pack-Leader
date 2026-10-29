@@ -67,6 +67,7 @@ func _ready() -> void:
 	pause_menu.theme = shop_panel.theme
 	pause_menu.get_node("Panel").add_theme_stylebox_override("panel", shop_panel.get_theme_stylebox("panel"))
 	add_child(pause_menu)
+	_decorate()
 	mini_map = MiniMap.new()
 	add_child(mini_map)
 	move_child(mini_map, 0)  # under the windows
@@ -211,6 +212,19 @@ func _update_bat_shop() -> void:
 		_bat_buy_button.disabled = false
 
 
+## Icons on the scene's windows and buttons (the windows built in code add their own).
+func _decorate() -> void:
+	UiIcons.title(stable_panel.get_node("Margin/VBox/Title"), "stable", UiTheme.ACCENT)
+	UiIcons.title(stable_panel.get_node("Margin/VBox/Columns/PartyColumn/PartyHeader"), "paw", UiTheme.TEXT, 20)
+	UiIcons.title(stable_title, "bed", UiTheme.TEXT, 20)
+	UiIcons.title(shop_panel.get_node("Margin/VBox/Title"), "stall", Color(1.0, 0.88, 0.4))
+	UiIcons.button(buy_button, "potion")
+	UiIcons.button(boost_button, "lemon")
+	UiIcons.button(skills_button, "star")
+	UiIcons.button(release_dialog.get_ok_button(), "gate")
+	UiIcons.button(release_dialog.get_cancel_button(), "back")
+
+
 ## The bat shop window, built like the lemonade stand's.
 func _build_bat_shop_panel() -> void:
 	bat_shop_panel = PanelContainer.new()
@@ -235,6 +249,7 @@ func _build_bat_shop_panel() -> void:
 	title.add_theme_font_size_override("font_size", 26)
 	title.modulate = Color(1.0, 0.6, 0.5)
 	box.add_child(title)
+	UiIcons.title(title, "bat")
 	var greeting := Label.new()
 	greeting.text = "\"A better bat bonks harder, but don't worry: it still won't knock 'em out.\""
 	greeting.modulate = Color(1, 1, 1, 0.75)
@@ -245,6 +260,7 @@ func _build_bat_shop_panel() -> void:
 	_bat_buy_button.focus_mode = Control.FOCUS_NONE
 	_bat_buy_button.custom_minimum_size = Vector2(520, 40)
 	_bat_buy_button.pressed.connect(func() -> void: _player.request_buy_bat.rpc_id(1))
+	UiIcons.button(_bat_buy_button, "upgrade")
 	box.add_child(_bat_buy_button)
 	var hint := Label.new()
 	hint.text = "Every bat stops at 1 HP on creatures, and a creature at 1 HP is a 99% catch.   [F / Esc] close"
@@ -384,6 +400,7 @@ func _update_stance() -> void:
 	else:
 		stance_button.text = "Pets: Aggressive   [T]"
 		stance_button.self_modulate = Color(1.0, 0.7, 0.55)
+	stance_button.icon = UiIcons.texture("shield" if _player.pets_passive else "sword")
 
 
 func _update_coins() -> void:

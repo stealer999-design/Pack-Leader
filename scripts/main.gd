@@ -30,6 +30,7 @@ var _dialog_closed_frame := -1
 
 
 func _ready() -> void:
+	_decorate()
 	%NewGameButton.pressed.connect(new_game)
 	%LoadGameButton.pressed.connect(open_load_panel)
 	%BackButton.pressed.connect(close_load_panel)
@@ -80,6 +81,28 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 
+## Icons and the inner save box's lighter panel.
+func _decorate() -> void:
+	var title: Label = menu.get_node("Margin/VBox/Title")
+	title.modulate = UiTheme.ACCENT
+	UiIcons.title(title, "paw", UiTheme.ACCENT, 34)
+	menu.get_node("Margin/VBox/SaveBox").add_theme_stylebox_override("panel",
+			UiTheme.panel_style(Color(1, 1, 1, 0.035), Color(1, 1, 1, 0.1)))
+	UiIcons.button(%NewGameButton, "plus")
+	UiIcons.button(%LoadGameButton, "folder")
+	UiIcons.button(solo_button, "play")
+	UiIcons.button(host_button, "host")
+	UiIcons.button(join_button, "join")
+	UiIcons.button(%BackButton, "back")
+	var load_title: Label = load_panel.get_node("Margin/VBox/Title")
+	load_title.modulate = UiTheme.ACCENT
+	UiIcons.title(load_title, "folder")
+	UiIcons.button(delete_dialog.get_ok_button(), "trash")
+	UiIcons.button(delete_dialog.get_cancel_button(), "back")
+	name_edit.right_icon = UiIcons.texture("user")
+	address_edit.right_icon = UiIcons.texture("link")
+
+
 # --- Saves ------------------------------------------------------------------------------
 
 func new_game() -> void:
@@ -112,6 +135,7 @@ func open_load_panel() -> void:
 		row.add_child(label)
 		var load_button := Button.new()
 		load_button.text = "Playing" if i == SaveGame.slot and SaveGame.has_save(i) else "Load"
+		UiIcons.button(load_button, "play")
 		load_button.disabled = not SaveGame.has_save(i)
 		load_button.pressed.connect(func() -> void:
 			load_slot(i)
@@ -120,6 +144,7 @@ func open_load_panel() -> void:
 		row.add_child(load_button)
 		var delete_button := Button.new()
 		delete_button.text = "Delete"
+		UiIcons.button(delete_button, "trash")
 		delete_button.disabled = not SaveGame.has_save(i)
 		delete_button.pressed.connect(func() -> void:
 			_slot_to_delete = i

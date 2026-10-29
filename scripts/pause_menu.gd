@@ -37,15 +37,16 @@ func _init() -> void:
 	_title.add_theme_font_size_override("font_size", 28)
 	_title.modulate = Color(1, 0.85, 0.5)
 	box.add_child(_title)
+	UiIcons.title(_title, "pause")
 	_note = Label.new()
 	_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_note.modulate = Color(1, 1, 1, 0.7)
 	box.add_child(_note)
-	box.add_child(_button("Resume", close))
-	box.add_child(_button("Save game", _save))
-	box.add_child(_button("Quit to main menu", _quit_to_menu))
-	_quit_game = _button("Quit game", _quit_game_pressed)
+	box.add_child(_button("Resume", close, "play"))
+	box.add_child(_button("Save game", _save, "save"))
+	box.add_child(_button("Quit to main menu", _quit_to_menu, "home"))
+	_quit_game = _button("Quit game", _quit_game_pressed, "power")
 	_quit_game.visible = not OS.has_feature("web")  # a browser tab can't close itself
 	box.add_child(_quit_game)
 	var hint := Label.new()
@@ -95,9 +96,10 @@ func _slot_text() -> String:
 	return "Saving to slot %d. Your game also saves automatically." % (SaveGame.slot + 1) if SaveGame.slot >= 0 else ""
 
 
-func _button(text: String, action: Callable) -> Button:
+func _button(text: String, action: Callable, icon_name: String) -> Button:
 	var button := Button.new()
 	button.text = text
+	UiIcons.button(button, icon_name)
 	button.focus_mode = Control.FOCUS_NONE
 	button.custom_minimum_size = Vector2(0, 42)
 	button.pressed.connect(action)
