@@ -15,6 +15,9 @@ const RIVAL_ID := -1
 ## Direction the path runs in. 45° makes it run straight up the screen.
 const PATH_YAW := -PI / 4.0  ## The level runs left to right across the screen.
 const LOW_WALL_HEIGHT := 0.5
+## Obstacle scene names by biome (scenes/obstacles/<name>_<0..3>.tscn).
+const OBSTACLE_BIOMES := ["meadow", "frost", "desert", "swamp"]
+const OBSTACLES_PER_BIOME := 4
 
 @export var player_scene: PackedScene
 @export var creature_scene: PackedScene
@@ -61,6 +64,7 @@ var _zones: Array[Dictionary] = []
 ## Server: armed traps (Mud Trap) waiting for an enemy to step on them. See add_trap().
 var _traps: Array[Dictionary] = []
 var _star_mesh: ArrayMesh
+var _obstacle_scenes := {}
 var _next_trap_id := 0
 
 @onready var level_root: Node3D = $Level
@@ -591,7 +595,6 @@ func _build_level() -> void:
 	var camp_mat := GroundTextures.material("dirt", level_biome.camp)
 	var arena_mat := GroundTextures.material("flagstone", level_biome.arena)
 	var wall_mat := _material(level_biome.wall)
-	var rock_mat := _material(level_biome.rock)
 
 	var segments: Array = layout.segments
 	for i in segments.size():
@@ -617,9 +620,18 @@ func _build_level() -> void:
 	_add_box(Vector3(first.center_x, 1.0, first.z_start + 0.5), Vector3(first.width + 2.0, 2.0, 1.0), wall_mat)
 	_add_box(Vector3(last.center_x, 1.0, last.z_end - 0.5), Vector3(last.width + 2.0, 2.0, 1.0), wall_mat)
 
+	# Obstacles: copies of the biome's four premade trees and rocks, each turned
+	# and sized differently. Picked from the level seed, so every peer agrees.
+	var rng := RandomNumberGenerator.new()
+	rng.seed = level_state.x
 	for rock: Dictionary in layout.rocks:
-		var body := _add_box(rock.pos + Vector3.UP * rock.size.y * 0.5, rock.size, rock_mat)
-		body.add_to_group("obstacles")
+		var obstacle := _obstacle_scene(layout.biome, rng.randi() % OBSTACLES_PER_BIOME).instantiate() as Node3D
+		obstacle.position = rock.pos
+		obstacle.rotation.y = rng.randf() * TAU
+		var footprint: float = (rock.size.x + rock.size.z) * 0.5
+		obstacle.scale = Vector3.ONE * clampf(footprint / 2.0, 0.9, 1.5)
+		obstacle.add_to_group("obstacles")
+		level_root.add_child(obstacle)
 
 	_build_shop()
 	_build_village(level_biome, wall_mat)
@@ -671,6 +683,14 @@ func _build_shop() -> void:
 	cloth.material_override = _material(Color(0.6, 0.6, 0.6))
 	cloth.position = Vector3(0.47, 1.2, 0.0)  # low: raised when reached
 	flag.add_child(cloth)
+
+
+## The premade obstacle scenes (scripts/tools/build_obstacles.gd), loaded once.
+func _obstacle_scene(biome_index: int, variant: int) -> PackedScene:
+	var path := "res://scenes/obstacles/%s_%d.tscn" % [OBSTACLE_BIOMES[biome_index], variant]
+	if not _obstacle_scenes.has(path):
+		_obstacle_scenes[path] = load(path)
+	return _obstacle_scenes[path]
 
 
 ## The stable building in the scene: shared building textures and a door handle.
