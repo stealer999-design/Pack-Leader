@@ -6,7 +6,7 @@ class_name BreedingDB
 ##
 ## The parents stay with their owner; the hybrid arrives at level 1.
 
-const PRICE := 50
+const PRICE := 25
 const MIN_PARENT_LEVEL := 5
 
 ## "a+b" (species indices, smaller first) -> the hybrid's species index.

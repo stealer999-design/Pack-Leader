@@ -131,7 +131,7 @@ played in the browser".
   The lemonade stand now sits on the stretch of path just before the village.
 - **Breeder (village):** press F at the pink stall with the hay pen. Pick two
   different pets **of the same kind** (from your party or stable, each level
-  5+) and pay 50 coins: they have a **hybrid** baby, a new species that only
+  5+) and pay 25 coins: they have a **hybrid** baby, a new species that only
   comes from breeding. No cross-breeding: cats only breed with cats, birds
   with birds, dogs with dogs and lizards with lizards. Each of the 28 pairings
   (10 cat, 6 bird, 6 dog, 6 lizard) makes its own hybrid, stronger than

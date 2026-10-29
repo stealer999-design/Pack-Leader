@@ -56,9 +56,8 @@ func _pine() -> void:
 func _boulder() -> void:
 	_collide(1.1, 1.6)
 	var stone := Color(0.52, 0.5, 0.47)
-	_sphere(1.1, stone, Vector3(0, 0.6, 0), Vector3(1.15, 0.75, 1.0))
-	_sphere(0.5, stone.darkened(0.1), Vector3(0.95, 0.3, 0.45))
-	_sphere(0.9, Color(0.35, 0.52, 0.27), Vector3(-0.1, 1.05, 0.05), Vector3(0.85, 0.25, 0.75))  # moss
+	_rock_pile(stone)
+	_block(Vector3(1.4, 0.12, 1.15), Color(0.35, 0.52, 0.27), Vector3(-0.1, 1.24, 0.0), Vector3(4, 18, -3))  # moss
 
 
 func _berry_bush() -> void:
@@ -109,10 +108,9 @@ func _ice_crystals() -> void:
 
 func _snow_boulder() -> void:
 	_collide(1.1, 1.6)
-	var stone := Color(0.45, 0.5, 0.58)
-	_sphere(1.1, stone, Vector3(0, 0.6, 0), Vector3(1.15, 0.75, 1.0))
-	_sphere(0.55, stone.darkened(0.12), Vector3(-0.9, 0.3, 0.4))
-	_sphere(1.0, Color(0.93, 0.96, 1.0), Vector3(0, 1.0, 0), Vector3(0.95, 0.3, 0.85))  # snow cap
+	_rock_pile(Color(0.45, 0.5, 0.58))
+	_block(Vector3(1.55, 0.16, 1.3), Color(0.93, 0.96, 1.0), Vector3(-0.1, 1.26, 0.0), Vector3(4, 18, -3))  # snow cap
+	_block(Vector3(0.6, 0.1, 0.55), Color(0.93, 0.96, 1.0), Vector3(0.95, 0.72, 0.4), Vector3(-6, -20, 8))
 
 
 func _frozen_tree() -> void:
@@ -135,14 +133,36 @@ func _frozen_tree() -> void:
 func _cactus() -> void:
 	_collide(0.45, 2.8)
 	var green := Color(0.3, 0.55, 0.3)
+	var spine := _mat(Color(0.95, 0.92, 0.75))
 	_cylinder(0.3, 0.3, 2.6, green, Vector3(0, 1.3, 0))
 	_sphere(0.3, green, Vector3(0, 2.6, 0))
+	_spines(spine, Vector3(0, 0.3, 0), Vector3(0, 2.7, 0), 0.3, 9, 8)  # rings of spines up the trunk
 	for arm in [[1.0, 1.0, 0.8], [-1.0, 1.4, 0.6]]:
 		var side: float = arm[0]
 		_cylinder(0.18, 0.18, 0.5, green, Vector3(side * 0.42, arm[1], 0), Vector3(0, 0, 90))
 		_cylinder(0.18, 0.18, arm[2], green, Vector3(side * 0.65, arm[1] + arm[2] * 0.5, 0))
 		_sphere(0.18, green, Vector3(side * 0.65, arm[1] + arm[2], 0))
+		_spines(spine, Vector3(side * 0.65, arm[1], 0), Vector3(side * 0.65, arm[1] + arm[2] + 0.1, 0), 0.18, 4, 6)
 	_sphere(0.12, Color(0.95, 0.5, 0.7), Vector3(0, 2.88, 0))  # a flower on top
+
+
+## Rings of spines along a vertical cactus stem from `from` to `to`.
+func _spines(mat: Material, from: Vector3, to: Vector3, radius: float, rings: int, per_ring: int) -> void:
+	for r in rings:
+		var at := from.lerp(to, (r + 0.5) / rings)
+		for i in per_ring:
+			var angle := TAU * i / per_ring + r * 0.4
+			var out := Vector3(cos(angle), 0.25, sin(angle)).normalized()
+			var base := at + Vector3(cos(angle), 0, sin(angle)) * radius * 0.95
+			var mesh := CylinderMesh.new()
+			mesh.top_radius = 0.0
+			mesh.bottom_radius = 0.035
+			mesh.height = 0.3
+			mesh.radial_segments = 4
+			mesh.rings = 1
+			var part := _part(mesh, mat, base + out * 0.15)
+			var x := out.cross(Vector3.FORWARD if absf(out.z) < 0.9 else Vector3.RIGHT).normalized()
+			part.basis = Basis(x, out, x.cross(out))  # the point (Y) outwards
 
 
 func _sandstone_pillar() -> void:
@@ -185,9 +205,8 @@ func _palm() -> void:
 func _desert_boulders() -> void:
 	_collide(1.05, 1.5)
 	var sand := Color(0.72, 0.5, 0.32)
-	_sphere(0.95, sand, Vector3(0, 0.6, 0), Vector3(1.1, 0.8, 1.0))
-	_sphere(0.6, sand.darkened(0.08), Vector3(0.95, 0.35, -0.3), Vector3(1.0, 0.75, 1.1))
-	_sphere(0.45, sand.lightened(0.08), Vector3(-0.75, 0.25, 0.65))
+	_rock_pile(sand)
+	_block(Vector3(0.7, 0.55, 0.6), sand.lightened(0.08), Vector3(-0.85, 0.27, 0.7), Vector3(0, 35, 6))
 
 
 # --- Mirewood Bog -----------------------------------------------------------------
@@ -250,10 +269,10 @@ func _vine_tree() -> void:
 func _mossy_rock() -> void:
 	_collide(1.1, 1.6)
 	var stone := Color(0.35, 0.38, 0.33)
-	_sphere(1.1, stone, Vector3(0, 0.55, 0), Vector3(1.2, 0.7, 1.0))
-	_sphere(0.95, Color(0.3, 0.46, 0.24), Vector3(0.1, 0.95, -0.05), Vector3(0.9, 0.3, 0.8))
-	_sphere(0.45, stone.lightened(0.05), Vector3(-0.95, 0.25, 0.35))
-	_sphere(0.35, Color(0.3, 0.46, 0.24), Vector3(-0.95, 0.5, 0.35), Vector3(1, 0.4, 1))
+	_rock_pile(stone)
+	var moss := Color(0.3, 0.46, 0.24)
+	_block(Vector3(1.3, 0.12, 1.05), moss, Vector3(-0.1, 1.24, 0.0), Vector3(4, 18, -3))
+	_block(Vector3(0.5, 0.08, 0.45), moss, Vector3(0.95, 0.68, 0.4), Vector3(-6, -20, 8))
 
 
 func _old_stump() -> void:
@@ -269,6 +288,20 @@ func _old_stump() -> void:
 
 
 # --- Helpers ------------------------------------------------------------------------
+
+## A chunky rock: a big tilted block with a smaller one leaning on it and a
+## little one at its foot (squared off, not round).
+func _rock_pile(stone: Color) -> void:
+	_block(Vector3(1.8, 1.2, 1.5), stone, Vector3(0, 0.6, 0), Vector3(4, 18, -3))
+	_block(Vector3(0.9, 0.75, 0.85), stone.darkened(0.1), Vector3(0.95, 0.35, 0.4), Vector3(-6, -20, 8))
+	_block(Vector3(0.55, 0.4, 0.5), stone.lightened(0.06), Vector3(-0.6, 0.18, -0.85), Vector3(0, 40, -5))
+
+
+func _block(size: Vector3, color: Color, at: Vector3, rot_deg := Vector3.ZERO) -> MeshInstance3D:
+	var mesh := BoxMesh.new()
+	mesh.size = size
+	return _part(mesh, _mat(color), at, rot_deg)
+
 
 ## A branchy crown from the top of a trunk: `count` limbs reaching up and out,
 ## each forking into twigs with small, sparse clumps of leaves. Returns the
