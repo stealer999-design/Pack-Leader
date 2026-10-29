@@ -36,8 +36,7 @@ func _init() -> void:
 	box.add_child(title)
 	UiIcons.title(title, "heart")
 	var greeting := Label.new()
-	greeting.text = "\"Two different pets of the same kind, level %d or higher, and I'll raise you something special.\"" \
-			% BreedingDB.MIN_PARENT_LEVEL
+	greeting.text = "\"Bring me two different pets of the same kind, and I'll raise you something special.\""
 	greeting.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	greeting.add_theme_font_size_override("font_size", 14)
 	greeting.modulate = Color(1, 1, 1, 0.75)
@@ -201,9 +200,27 @@ func _update_result() -> void:
 	else:
 		_info.text = reason
 	if reason == "" and player.coins < BreedingDB.PRICE:
-		reason = "not enough coins"
+		reason = "Not enough coins"
 	_breed.disabled = reason != ""
-	_breed.text = "Breed  (%d coins)\nyou have %d" % [BreedingDB.PRICE, player.coins]
+	# A greyed-out button says why, right on it.
+	_breed.text = "Breed  (%d coins)\nyou have %d" % [BreedingDB.PRICE, player.coins] if reason == "" \
+			else _short_reason(reason, a, b)
+	_breed.tooltip_text = reason
+
+
+## The reason the button is greyed out, short enough for the button.
+func _short_reason(reason: String, a: Dictionary, b: Dictionary) -> String:
+	if a.is_empty() or b.is_empty():
+		return "Pick two pets\nbelow"
+	if reason == "Not enough coins":
+		return "Not enough coins\n(%d of %d)" % [player.coins, BreedingDB.PRICE]
+	if reason.begins_with("Pets only breed"):
+		return "Pick two of the\nsame kind"
+	if reason.begins_with("Pick two different"):
+		return "Pick two different\nspecies"
+	if reason.begins_with("Hybrids"):
+		return "Hybrids can't\nbreed"
+	return reason
 
 
 func _on_breed() -> void:

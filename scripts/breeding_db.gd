@@ -7,7 +7,7 @@ class_name BreedingDB
 ## The parents stay with their owner; the hybrid arrives at level 1.
 
 const PRICE := 25
-const MIN_PARENT_LEVEL := 5
+const MIN_PARENT_LEVEL := 1  ## Any level can breed; raise it to require older parents.
 
 ## "a+b" (species indices, smaller first) -> the hybrid's species index.
 const HYBRIDS := {
