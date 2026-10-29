@@ -81,6 +81,7 @@ played in the browser".
 | Q | Drink a health potion (heals 50%) |
 | F (at the stable / lemonade stand) | Open/close the stable or the shop |
 | K | Open/close the pet skills screen |
+| M | Switch the mini map between the corner and a large view of the whole level |
 | Esc | Close whatever menu is open (stable, shop, a confirmation, the Load Game list) |
 | Space | Dash (brief invulnerability) |
 
@@ -113,6 +114,11 @@ played in the browser".
   coins (gold crates take four hits and hold far more). Walk over coins to
   pick them up; coins belong to whoever collects them and carry over between
   levels.
+- **Mini map:** bottom right, showing the path around you the way the camera
+  sees it: rocks, crates, the stable (brown), the lemonade stand (yellow), the
+  portal (purple, filled when open), the boss (big red), wild creatures (red),
+  your pets (green), other players and their pets (in their colours) and you
+  (an arrow). Press M for the whole level, large; M or Esc to shrink it.
 - **Checkpoint:** downed players get back up after a few seconds at the start
   camp, or at the **lemonade stand** once they have reached it (come near it
   or get past it) this level. A grey flag beside the stand rises and turns
@@ -208,6 +214,7 @@ The host is the authoritative server and also plays.
 | `scenes/player.tscn` + `scripts/player.gd` | Movement, aim, and server-validated attack/capture/command requests |
 | `scenes/creature.tscn` + `scripts/creature.gd` | One scene for wild creatures *and* pets: wild AI, pet AI, taming, levelling |
 | `scripts/pet_skills.gd` | Every species's six skills, skill points and ranks, and how they add up |
+| `scripts/mini_map.gd` | The mini map (and the large map, M), drawn from the level layout |
 | `scripts/skill_window.gd`, `scripts/skill_icons.gd` | The skills screen (K) and its skill icons, drawn in code |
 | `scripts/creature_model.gd` | Builds each creature's body from simple meshes: a cat, bird, dog or lizard, depending on its biome |
 | `scripts/creature_species.gd`, `resources/species/*.tres`, `scripts/species_db.gd` | Species data. Add a `.tres` and list it in `SpeciesDB` to add a species |

@@ -172,6 +172,8 @@ func _physics_process(delta: float) -> void:
 			_potion_timer = potion_cooldown
 		request_potion.rpc_id(1)  # the server explains if it can't be used
 
+	if Input.is_action_just_pressed("map"):
+		world.hud.mini_map.toggle_expanded()
 	if Input.is_action_just_pressed("skills"):
 		world.hud.toggle_skills()
 	if Input.is_action_just_pressed("interact"):

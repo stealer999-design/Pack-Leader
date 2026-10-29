@@ -9,6 +9,7 @@ var _player: Player
 var _party_refresh := 0.0
 var _dialog_closed_frame := -1
 var skill_window: SkillWindow
+var mini_map: MiniMap
 var _stable_party_signature := ""
 var _party_slots: Array[PetSlot] = []
 var _bed_slots: Array[PetSlot] = []
@@ -52,11 +53,15 @@ func _ready() -> void:
 	skill_window.theme = stable_panel.theme
 	skill_window.add_theme_stylebox_override("panel", stable_panel.get_theme_stylebox("panel"))
 	add_child(skill_window)
+	mini_map = MiniMap.new()
+	add_child(mini_map)
+	move_child(mini_map, 0)  # under the windows
 
 
 func bind(player: Player) -> void:
 	_player = player
 	skill_window.player = player
+	mini_map.player = player
 	name_label.text = player.display_name
 	name_label.modulate = player.color.lightened(0.3)
 	player.health.changed.connect(_on_health_changed)
@@ -114,6 +119,10 @@ func _input(event: InputEvent) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel") and mini_map.expanded:
+		mini_map.toggle_expanded()
+		get_viewport().set_input_as_handled()
+		return
 	if event.is_action_pressed("ui_cancel") and is_window_open() \
 			and Engine.get_process_frames() != _dialog_closed_frame:
 		close_windows()
