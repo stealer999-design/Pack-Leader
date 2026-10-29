@@ -15,9 +15,9 @@ func _init() -> void:
 	DirAccess.make_dir_recursive_absolute(OUT)
 	var designs := {
 		"meadow": [_oak, _pine, _boulder, _berry_bush],
-		"frost": [_snowy_pine, _ice_crystals, _snow_boulder, _frozen_tree],
+		"frost": [_frosted_spruce, _ice_crystals, _snow_boulder, _frozen_tree],
 		"desert": [_cactus, _sandstone_pillar, _palm, _desert_boulders],
-		"swamp": [_swamp_tree, _giant_mushroom, _mossy_rock, _old_stump],
+		"swamp": [_swamp_tree, _vine_tree, _mossy_rock, _old_stump],
 	}
 	for biome in designs:
 		for i in designs[biome].size():
@@ -75,14 +75,16 @@ func _berry_bush() -> void:
 
 # --- Frostfang Peaks ---------------------------------------------------------------
 
-func _snowy_pine() -> void:
+## A spruce frozen solid: every tier white with snow and ice, no green left.
+func _frosted_spruce() -> void:
 	_collide(0.55, 3.4)
-	_trunk(0.2, 1.0, Color(0.36, 0.26, 0.2))
-	var needles := Color(0.15, 0.32, 0.28)
-	var snow := Color(0.93, 0.96, 1.0)
+	_trunk(0.2, 1.0, Color(0.5, 0.48, 0.5))
+	var frost := Color(0.82, 0.88, 0.96)
+	var snow := Color(0.95, 0.97, 1.0)
 	for tier in [[1.25, 1.4, 1.4], [0.95, 1.2, 2.2], [0.62, 1.0, 2.9]]:
-		_cone(tier[0], tier[1], needles, Vector3(0, tier[2], 0))
+		_cone(tier[0], tier[1], frost, Vector3(0, tier[2], 0))
 		_cone(tier[0] * 0.7, tier[1] * 0.5, snow, Vector3(0, tier[2] + tier[1] * 0.28, 0))
+	_sphere(0.85, snow, Vector3(0, 0.05, 0), Vector3(1.0, 0.2, 1.0))  # snow around the base
 
 
 func _ice_crystals() -> void:
@@ -209,15 +211,45 @@ func _swamp_tree() -> void:
 		_part(strand, moss, Vector3(cos(angle) * 1.0, 1.8, sin(angle) * 1.0))
 
 
-func _giant_mushroom() -> void:
-	_collide(0.45, 2.4)
-	_cylinder(0.24, 0.32, 1.6, Color(0.86, 0.82, 0.7), Vector3(0, 0.8, 0))
-	var cap := Color(0.58, 0.22, 0.42)
-	_sphere(1.1, cap, Vector3(0, 1.75, 0), Vector3(1.2, 0.5, 1.2))
-	for i in 7:
-		var angle := TAU * i / 7.0
-		_sphere(0.12, Color(0.95, 0.92, 0.85), Vector3(cos(angle) * 0.75, 2.0, sin(angle) * 0.75), Vector3(1, 0.5, 1))
-	_sphere(0.14, Color(0.95, 0.92, 0.85), Vector3(0, 2.28, 0), Vector3(1, 0.5, 1))
+## A tall, gnarled swamp tree with a wide, flat canopy and long vines
+## hanging almost to the ground.
+func _vine_tree() -> void:
+	_collide(0.5, 3.6)
+	var bark := Color(0.25, 0.22, 0.17)
+	_cylinder(0.22, 0.34, 1.6, bark, Vector3(0, 0.8, 0), Vector3(0, 0, 4))
+	_cylinder(0.16, 0.22, 1.3, bark, Vector3(0.12, 2.2, 0), Vector3(0, 0, -8))  # a bend in the trunk
+	for i in 3:  # buttress roots
+		var angle := TAU * i / 3.0 + 0.3
+		_cylinder(0.05, 0.13, 0.8, bark, Vector3(cos(angle) * 0.35, 0.22, sin(angle) * 0.35),
+				Vector3(rad_to_deg(sin(angle)) * 1.0, 0, -rad_to_deg(cos(angle)) * 1.0))
+	var leaves := Color(0.17, 0.3, 0.17)
+	_sphere(1.3, leaves, Vector3(0.1, 3.0, 0), Vector3(1.25, 0.45, 1.15))
+	_sphere(0.8, leaves.lightened(0.08), Vector3(-0.6, 3.2, 0.4), Vector3(1.1, 0.5, 1.0))
+	_sphere(0.7, leaves.darkened(0.1), Vector3(0.75, 3.15, -0.45), Vector3(1.1, 0.5, 1.0))
+	var vine := _mat(Color(0.24, 0.42, 0.2))
+	var leaf := _mat(Color(0.3, 0.52, 0.24))
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 11
+	for i in 14:  # vines dropping from the canopy's edge
+		var angle := TAU * i / 14.0 + rng.randf_range(-0.15, 0.15)
+		var reach := rng.randf_range(0.9, 1.45)
+		var length := rng.randf_range(1.4, 2.4)
+		var top := Vector3(cos(angle) * reach, 2.85, sin(angle) * reach)
+		var strand := CylinderMesh.new()
+		strand.top_radius = 0.05
+		strand.bottom_radius = 0.03
+		strand.height = length
+		strand.radial_segments = 5
+		strand.rings = 1
+		_part(strand, vine, top + Vector3.DOWN * length * 0.5)
+		for l in 3:  # leaves along the vine
+			var leaf_mesh := SphereMesh.new()
+			leaf_mesh.radius = 0.11
+			leaf_mesh.height = 0.22
+			leaf_mesh.radial_segments = 6
+			leaf_mesh.rings = 3
+			var part := _part(leaf_mesh, leaf, top + Vector3(0.05 if l % 2 else -0.05, -length * (0.25 + l * 0.27), 0))
+			part.scale = Vector3(1.0, 0.5, 1.6)
 
 
 func _mossy_rock() -> void:
@@ -238,9 +270,7 @@ func _old_stump() -> void:
 		var angle := TAU * i / 5.0
 		_cylinder(0.05, 0.14, 0.7, wood, Vector3(cos(angle) * 0.65, 0.15, sin(angle) * 0.65),
 				Vector3(rad_to_deg(sin(angle)) * 1.2, 0, -rad_to_deg(cos(angle)) * 1.2))
-	for m in [Vector3(0.5, 0.95, 0.2), Vector3(0.35, 0.92, -0.35)]:  # little mushrooms on the rim
-		_cylinder(0.03, 0.03, 0.15, Color(0.9, 0.88, 0.8), m)
-		_sphere(0.1, Color(0.85, 0.55, 0.25), m + Vector3(0, 0.1, 0), Vector3(1, 0.5, 1))
+	_sphere(0.3, Color(0.3, 0.46, 0.24), Vector3(0.3, 0.92, 0.1), Vector3(1.0, 0.3, 0.9))  # moss on the cut
 
 
 # --- Helpers ------------------------------------------------------------------------

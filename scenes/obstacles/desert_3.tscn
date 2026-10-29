@@ -36,21 +36,21 @@ rings = 6
 
 [node name="Desert_3" type="StaticBody3D"]
 
-[node name="@CollisionShape3D@92" type="CollisionShape3D" parent="."]
+[node name="@CollisionShape3D@93" type="CollisionShape3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.75, 0)
 shape = SubResource("CylinderShape3D_jvxh6")
 
-[node name="@MeshInstance3D@93" type="MeshInstance3D" parent="."]
+[node name="@MeshInstance3D@94" type="MeshInstance3D" parent="."]
 transform = Transform3D(1.1, 0, 0, 0, 0.8, 0, 0, 0, 1, 0, 0.6, 0)
 material_override = SubResource("StandardMaterial3D_uh8uq")
 mesh = SubResource("SphereMesh_4dlvy")
 
-[node name="@MeshInstance3D@94" type="MeshInstance3D" parent="."]
+[node name="@MeshInstance3D@95" type="MeshInstance3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 0.75, 0, 0, 0, 1.1, 0.95, 0.35, -0.3)
 material_override = SubResource("StandardMaterial3D_ork0k")
 mesh = SubResource("SphereMesh_u14iy")
 
-[node name="@MeshInstance3D@95" type="MeshInstance3D" parent="."]
+[node name="@MeshInstance3D@96" type="MeshInstance3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.75, 0.25, 0.65)
 material_override = SubResource("StandardMaterial3D_gieh3")
 mesh = SubResource("SphereMesh_w78eg")
