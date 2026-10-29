@@ -280,6 +280,7 @@ The host is the authoritative server and also plays.
 | `scripts/creature_animator.gd` | Pet animations (walk, tails, wings, breathing), driven by how fast each pet moves |
 | `scripts/pause_menu.gd` | The in-game menu on Esc: resume, save, quit to the main menu |
 | `scripts/ui_theme.gd` → `resources/ui_theme.tres`, `scripts/ui_icons.gd` | The menus' look (dark panels, gold borders, light text) and their line icons (small SVGs drawn at runtime). Rebuild the theme file with `godot --headless --path . -s res://scripts/tools/build_ui_theme.gd` |
+| `scripts/ground_textures.gd` | The ground textures, painted in code per biome: grass, snow and ice, sand ripples, swamp mud and puddles, plus camp dirt, arena flagstones and village cobblestones |
 | `scripts/mini_map.gd` | The mini map (and the large map, M), drawn from the level layout |
 | `scripts/skill_window.gd`, `scripts/skill_icons.gd` | The skills screen (K) and its skill icons, drawn in code |
 | `scripts/creature_model.gd` | Builds each creature's body from simple meshes: a cat, bird, dog or lizard, depending on its biome |

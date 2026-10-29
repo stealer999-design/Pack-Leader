@@ -584,9 +584,11 @@ func _build_level() -> void:
 		child.queue_free()
 
 	var level_biome := biome()
-	var floor_mat := _material(layout.floor_tint)
-	var camp_mat := _material(level_biome.camp)
-	var arena_mat := _material(level_biome.arena)
+	# Textured ground, by biome: grass, snow, sand or swamp on the path, trampled
+	# dirt at the camp, stone slabs in the boss arena.
+	var floor_mat := GroundTextures.material(GroundTextures.BIOME_STYLES[layout.biome], layout.floor_tint)
+	var camp_mat := GroundTextures.material("dirt", level_biome.camp)
+	var arena_mat := GroundTextures.material("flagstone", level_biome.arena)
 	var wall_mat := _material(level_biome.wall)
 	var rock_mat := _material(level_biome.rock)
 
@@ -677,10 +679,10 @@ func _build_village(level_biome: Dictionary, wall_mat: Material) -> void:
 	var plaza: Rect2 = v.plaza
 	var half := LevelGenerator.VILLAGE_PATH_WIDTH * 0.5
 	var path_len: float = v.wall_x - v.path_end_x
-	var cobbles := _material(Color(level_biome.camp).lerp(Color(0.62, 0.58, 0.52), 0.6))
+	var cobbles := GroundTextures.material("cobble", Color(level_biome.camp).lerp(Color(0.5, 0.47, 0.43), 0.6))
 	# Floors: the side path (reaching into the doorway) and the square.
 	_add_box(Vector3(v.path_end_x + path_len * 0.5 + 0.5, -0.5, v.z), Vector3(path_len + 1.0, 1.0, half * 2.0),
-			_material(layout.floor_tint))
+			GroundTextures.material(GroundTextures.BIOME_STYLES[layout.biome], layout.floor_tint))
 	_add_box(Vector3(plaza.get_center().x, -0.5, plaza.get_center().y), Vector3(plaza.size.x, 1.0, plaza.size.y), cobbles)
 	# Side path walls.
 	for side in [-1.0, 1.0]:

@@ -163,7 +163,7 @@ offset_right = 900.0
 offset_bottom = -20.0
 grow_vertical = 0
 modulate = Color(1, 1, 1, 0.8)
-text = "WASD move  ·  LMB attack / smash crates  ·  E capture  ·  1 2 3 pet abilities  ·  RMB send pets  ·  T pet stance  ·  Q potion  ·  F stable / shop  ·  K skills  ·  M map  ·  Wheel zoom  ·  Esc close / menu  ·  Space dash"
+text = "WASD move  ·  LMB bat  ·  E capture  ·  1 2 3 abilities  ·  RMB send pets  ·  T stance  ·  Q potion  ·  F use  ·  K skills  ·  M map  ·  Wheel zoom  ·  Esc menu  ·  Space dash"
 
 [node name="DownedLabel" type="Label" parent="."]
 unique_name_in_owner = true
