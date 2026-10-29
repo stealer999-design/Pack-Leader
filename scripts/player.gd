@@ -7,7 +7,7 @@ extends CharacterBody3D
 signal stable_changed
 
 const MAX_PARTY := 3
-const MAX_STABLE := 12
+const MAX_STABLE := 20
 const RIVAL_COMMAND := "@rival"
 ## Potions a player can carry. Everyone starts each level with a full set.
 const MAX_POTIONS := 2

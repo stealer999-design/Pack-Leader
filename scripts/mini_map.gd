@@ -150,10 +150,9 @@ func _draw_map() -> void:
 		_draw_rect_map(Rect2(center - half, half * 2.0), Color(biome.rock).darkened(0.35))
 
 	# Landmarks.
-	var stable_at := _to_canvas(_to_map(layout.stable_point))
-	_canvas.draw_rect(Rect2(stable_at - Vector2(6, 3), Vector2(12, 9)), Color(0.6, 0.38, 0.2))
-	_canvas.draw_colored_polygon(PackedVector2Array([stable_at + Vector2(-8, -3), stable_at + Vector2(8, -3),
-			stable_at + Vector2(0, -10)]), Color(0.85, 0.3, 0.25))
+	_draw_stable(_to_canvas(_to_map(layout.stable_point)))
+	if layout.has("village"):
+		_draw_stable(_to_canvas(_to_map(layout.village.stable_point)))
 	var shop_at := _to_canvas(_to_map(layout.shop_point))
 	_canvas.draw_circle(shop_at, 6.5, Color(0.2, 0.15, 0.05))
 	_canvas.draw_circle(shop_at, 5.0, Color(1.0, 0.88, 0.2))
@@ -217,6 +216,13 @@ func _draw_self(world: World) -> void:
 	for point in arrow:
 		inner.append(at + (point - at) * 0.72)
 	_canvas.draw_colored_polygon(inner, player.color.lightened(0.25))
+
+
+## A little barn: brown with a red roof.
+func _draw_stable(at: Vector2) -> void:
+	_canvas.draw_rect(Rect2(at - Vector2(6, 3), Vector2(12, 9)), Color(0.6, 0.38, 0.2))
+	_canvas.draw_colored_polygon(PackedVector2Array([at + Vector2(-8, -3), at + Vector2(8, -3), at + Vector2(0, -10)]),
+			Color(0.85, 0.3, 0.25))
 
 
 func _segment_rect(seg: Dictionary) -> Rect2:

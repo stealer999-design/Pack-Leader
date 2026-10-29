@@ -267,8 +267,12 @@ func creature_near(point: Vector3, tolerance := 0.8) -> Creature:
 	return best
 
 
+## At the camp's stable, or the village's (both open the same stable).
 func is_near_stable(point: Vector3) -> bool:
-	return _flat_distance(point, stable.global_position) <= stable_range
+	if _flat_distance(point, stable.global_position) <= stable_range:
+		return true
+	var village_stable := level_root.get_node_or_null("VillageStable") as Node3D
+	return village_stable != null and _flat_distance(point, village_stable.global_position) <= stable_range
 
 
 func shop_position() -> Vector3:
@@ -701,6 +705,13 @@ func _build_village(level_biome: Dictionary, wall_mat: Material) -> void:
 		var front_x: float = house.pos.x + facing * (size.x * 0.5 + 0.02)
 		_add_mesh(level_root, Vector3(front_x, 0.9, house.pos.z - 0.8), Vector3(0.06, 1.8, 1.0), door_mat)
 		_add_mesh(level_root, Vector3(front_x, 1.9, house.pos.z + 1.2), Vector3(0.06, 0.8, 0.9), glass)
+
+	# A second stable, in the front corner of the square (a copy of the camp's).
+	var village_stable := stable.duplicate() as Node3D
+	village_stable.name = "VillageStable"
+	level_root.add_child(village_stable)
+	village_stable.position = v.stable_point
+	village_stable.rotation = Vector3(0.0, PI / 2.0, 0.0)  # like the camp's, relative to the level
 
 	# The bat shop: a stall at the back of the square, facing the way in.
 	var shop := _build_stall("BatShop", v.bat_shop_point, -PI / 2.0, Color(0.75, 0.2, 0.2), "Bat Shop\nUpgrades",

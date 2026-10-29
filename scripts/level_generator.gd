@@ -32,7 +32,7 @@ const RIVAL_NAMES := ["Kael", "Mira", "Dax", "Vesper", "Rook", "Sable", "Juno", 
 ##   crate_spots: [{ pos: Vector3, gold: bool }]
 ##   shop_point: Vector3, shop_side: float (-1 = the far wall, as seen by the camera)
 ##   village: { segment: int, z: float, wall_x: float, path_end_x: float,
-##              plaza: Rect2 (x, z), bat_shop_point: Vector3, houses: [{ pos: Vector3, size: Vector3 }] }
+##              plaza: Rect2 (x, z), bat_shop_point, stable_point: Vector3, houses: [{ pos: Vector3, size: Vector3 }] }
 ##   start_point, stable_point, rival_point, exit_point: Vector3
 ##   total_length: float, rival_name: String, rival_species: int, floor_tint: Color,
 ##   biome: int (index into BiomeDB.BIOMES)
@@ -139,6 +139,8 @@ static func _village(seg: Dictionary, index: int) -> Dictionary:
 		"plaza": plaza,
 		# Against the far side of the square, facing the way in.
 		"bat_shop_point": Vector3(plaza.position.x + 4.0, 0.0, z),
+		# In the front corner of the square, opposite the third house.
+		"stable_point": Vector3(plaza.end.x - 5.0, 0.0, plaza.end.y - 4.5),
 		"houses": [
 			{"pos": Vector3(plaza.position.x + 5.0, 0.0, plaza.position.y + 5.0), "size": Vector3(6.0, 3.2, 5.0)},
 			{"pos": Vector3(plaza.position.x + 5.0, 0.0, plaza.end.y - 5.0), "size": Vector3(6.0, 3.6, 5.0)},

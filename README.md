@@ -34,7 +34,7 @@ furthest level reached. Each player's save lives on **their own computer**
 Windows; in the browser it's stored by the browser), so you can bring your
 tamer and pets into a friend's game. When you join, your save is sent to the
 host, which checks it (real species, sensible levels, at most 3 party pets
-and 12 beds) before restoring it. The host's save decides which level the
+and 20 beds) before restoring it. The host's save decides which level the
 game starts on.
 
 ## Building a Windows .exe
@@ -123,10 +123,10 @@ played in the browser".
   colour varies by player). They walk with swinging arms and legs; attacking
   swings the bat, and every hit pops a ring of spinning stars.
 - **Village:** halfway along every level, a side path leads up the screen
-  (through a doorway in the far wall) to a small village square: a few houses
-  and the **Bat Shop**. No wild creatures are placed there. At the Bat Shop (F)
-  you can upgrade your Wooden Bat (12 damage) to a **Spiked Bat** (22 damage)
-  for 60 coins. Every bat still stops creatures at 1 HP. Your bat is saved.
+  (through a doorway in the far wall) to a small village square: a few houses,
+  a second **stable** and the **Bat Shop**. No wild creatures are placed
+  there. At the Bat Shop (F) you can upgrade your Wooden Bat (12 damage) to a
+  **Spiked Bat** (22 damage) for 60 coins. Every bat still stops creatures at 1 HP. Your bat is saved.
   The lemonade stand now sits on the stretch of path just before the village.
 - **Checkpoint:** downed players get back up after a few seconds at the start
   camp, or at the **lemonade stand** once they have reached it (come near it
@@ -183,9 +183,10 @@ played in the browser".
   health, strikers like the Emberfox and Snowl on damage, supports like the
   Bloomling and Cactipup on pack skills. Armor is capped at 60%. Rivals' pets
   come trained. Unspent points show as "+N" in the party panel.
-- **Stable:** there is one stable, at the start of every level. Press F there
-  to open it: your party sits on three cushions (numbered by their ability
-  key) and up to **12 pets sleep in hay beds**. Everything is drag and drop:
+- **Stable:** every level has two stables, one at the start camp and one in
+  the village; both open the same stable. Press F at either to open it: your
+  party sits on three cushions (numbered by their ability key) and up to
+  **20 pets sleep in hay beds**. Everything is drag and drop:
   drag a pet from a bed onto the party to bring it along, from the party onto a
   bed to rest it, onto an occupied place to swap, between beds to rearrange,
   or between party slots to change which key (1/2/3) uses its ability. Drop a

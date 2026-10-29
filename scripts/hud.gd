@@ -280,7 +280,7 @@ func _build_stable_slots() -> void:
 		party_slots_box.add_child(party_slot)
 		_party_slots.append(party_slot)
 	for bed in Player.MAX_STABLE:
-		var bed_slot := _new_slot("bed", bed, Vector2(118, 104))
+		var bed_slot := _new_slot("bed", bed, Vector2(110, 92))
 		bed_grid.add_child(bed_slot)
 		_bed_slots.append(bed_slot)
 	release_gate.dropped.connect(_on_slot_dropped)
