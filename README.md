@@ -133,9 +133,10 @@ played in the browser".
   5+) and pay 50 coins: they have a **hybrid** baby, a new species that only
   comes from breeding. No cross-breeding: cats only breed with cats, birds
   with birds, dogs with dogs and lizards with lizards. Each of the 28 pairings
-  (10 cat, 6 bird, 6 dog, 6 lizard) makes its own hybrid, stronger than either parent
-  (20% more health and attack than the better one), bigger, with a horn, mane
-  or wings and a powered-up ability. The parents stay with you; the baby
+  (10 cat, 6 bird, 6 dog, 6 lizard) makes its own hybrid, stronger than
+  either parent (20% more health and attack than the better one), bigger,
+  with a horn, mane (a frill or ruff), crown or wings (leathery on lizards)
+  and a powered-up ability. The parents stay with you; the baby
   (level 1) joins your party, or the first free hay bed. Hybrids can't be bred
   again.
 
