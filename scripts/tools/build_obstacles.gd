@@ -133,7 +133,7 @@ func _frozen_tree() -> void:
 func _cactus() -> void:
 	_collide(0.45, 2.8)
 	var green := Color(0.3, 0.55, 0.3)
-	var spine := _mat(Color(0.95, 0.92, 0.75))
+	var spine := _mat(Color(0.07, 0.06, 0.05))  # black spines
 	_cylinder(0.3, 0.3, 2.6, green, Vector3(0, 1.3, 0))
 	_sphere(0.3, green, Vector3(0, 2.6, 0))
 	_spines(spine, Vector3(0, 0.3, 0), Vector3(0, 2.7, 0), 0.3, 9, 8)  # rings of spines up the trunk
