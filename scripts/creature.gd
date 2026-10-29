@@ -410,7 +410,7 @@ func _pet_ai(delta: float) -> Vector3:
 	if master_player is Player and master_player.pets_passive:
 		target = null
 		focus = null
-		return _steer_to(master_player.global_position + _follow_offset(), species.move_speed * 1.3)
+		return _steer_to(master_player.global_position + _follow_offset(), _follow_speed(master_player))
 
 	if focus and not _is_valid_target(focus):
 		focus = null
@@ -422,9 +422,16 @@ func _pet_ai(delta: float) -> Vector3:
 	if target:
 		return _chase_and_attack(target)
 
-	var follow_point := master_player.global_position + _follow_offset()
-	var speed := species.move_speed * (1.6 if _flat_distance(follow_point) > 6.0 else 1.0)
-	return _steer_to(follow_point, speed)
+	return _steer_to(master_player.global_position + _follow_offset(), _follow_speed(master_player))
+
+
+## Pets amble near their owner but run to catch up when left behind, at least
+## as fast as the owner moves, so they keep up with a running tamer.
+func _follow_speed(master_player: Node3D) -> float:
+	if _flat_distance(master_player.global_position + _follow_offset()) <= 3.0:
+		return species.move_speed
+	var owner_speed: float = master_player.get("move_speed") if master_player.get("move_speed") != null else 0.0
+	return maxf(species.move_speed * 1.6, owner_speed * 1.1)
 
 
 ## The rival's pet stays by the rival until the fight starts, then attacks the

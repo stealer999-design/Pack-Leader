@@ -25,7 +25,7 @@ const RIVAL_NAMES := ["Kael", "Mira", "Dax", "Vesper", "Rook", "Sable", "Juno", 
 ##   rocks: [{ pos: Vector3, size: Vector3 }]
 ##   creature_spots: [{ pos: Vector3, depth: float }]   depth = 0..1 along the path
 ##   crate_spots: [{ pos: Vector3, gold: bool }]
-##   shop_point: Vector3, shop_side: float (-1 = left wall, 1 = right wall)
+##   shop_point: Vector3, shop_side: float (-1 = the far wall, as seen by the camera)
 ##   start_point, stable_point, rival_point, exit_point: Vector3
 ##   total_length: float, rival_name: String, rival_species: int, floor_tint: Color,
 ##   biome: int (index into BiomeDB.BIOMES)
@@ -60,7 +60,9 @@ static func generate(level_seed: int, level_number: int) -> Dictionary:
 	# The lemonade stand: against a wall of the middle path segment, with a
 	# clear, safe area around it.
 	var shop_seg: Dictionary = segments[1 + path_count / 2]
-	var shop_side := -1.0 if rng.randf() < 0.5 else 1.0
+	# Always on the far wall (local -x), so the stand faces the camera; the near
+	# wall is drawn low and the stand would be seen from behind there.
+	var shop_side := -1.0
 	var shop_point := Vector3(shop_seg.center_x + shop_side * (shop_seg.width * 0.5 - 3.0), 0.0,
 			(shop_seg.z_start + shop_seg.z_end) * 0.5)
 	var away_from_shop := func(item: Dictionary) -> bool:

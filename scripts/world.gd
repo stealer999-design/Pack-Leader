@@ -13,7 +13,8 @@ signal level_changed
 ## owner_id used for the rival's pet.
 const RIVAL_ID := -1
 ## Direction the path runs in. 45° makes it run straight up the screen.
-const PATH_YAW := PI / 4.0
+const PATH_YAW := -PI / 4.0  ## The level runs left to right across the screen.
+const LOW_WALL_HEIGHT := 0.5
 
 @export var player_scene: PackedScene
 @export var creature_scene: PackedScene
@@ -537,7 +538,7 @@ func _build_level() -> void:
 		_add_box(Vector3(seg.center_x, -0.5, mid_z), Vector3(seg.width, 1.0, length + 0.5), mat)
 		for side in [-1.0, 1.0]:
 			_add_box(Vector3(seg.center_x + side * (seg.width * 0.5 + 0.5), 1.0, mid_z),
-					Vector3(1.0, 2.0, length), wall_mat)
+					Vector3(1.0, 2.0, length), wall_mat, side > 0.0)
 		if i > 0:
 			_add_join_walls(segments[i - 1], seg, wall_mat)
 	var first: Dictionary = segments[0]
@@ -658,10 +659,13 @@ func _add_join_walls(prev: Dictionary, next: Dictionary, mat: Material) -> void:
 		var lo := minf(a, b) - (1.0 if side < 0.0 else 0.0)
 		var hi := maxf(a, b) + (1.0 if side > 0.0 else 0.0)
 		if hi - lo > 0.05:
-			_add_box(Vector3((lo + hi) * 0.5, 1.0, z), Vector3(hi - lo, 2.0, 1.0), mat)
+			_add_box(Vector3((lo + hi) * 0.5, 1.0, z), Vector3(hi - lo, 2.0, 1.0), mat, side > 0.0)
 
 
-func _add_box(local_pos: Vector3, size: Vector3, mat: Material) -> StaticBody3D:
+## A solid box in level space. A `low` box (the walls on the camera's side of the
+## path, local +x) is drawn only knee-high so it never hides the players behind
+## it, but still blocks movement at full height.
+func _add_box(local_pos: Vector3, size: Vector3, mat: Material, low := false) -> StaticBody3D:
 	var body := StaticBody3D.new()
 	var shape := CollisionShape3D.new()
 	var box_shape := BoxShape3D.new()
@@ -673,6 +677,9 @@ func _add_box(local_pos: Vector3, size: Vector3, mat: Material) -> StaticBody3D:
 	box_mesh.size = size
 	box_mesh.material = mat
 	mesh.mesh = box_mesh
+	if low:
+		box_mesh.size.y = LOW_WALL_HEIGHT
+		mesh.position.y = (LOW_WALL_HEIGHT - size.y) * 0.5
 	body.add_child(mesh)
 	body.position = local_pos
 	level_root.add_child(body)

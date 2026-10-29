@@ -26,12 +26,14 @@ const WORLD_SCENE := preload("res://scenes/world.tscn")
 @onready var level: Node = $Level
 
 var _slot_to_delete := -1
+var _dialog_closed_frame := -1
 
 
 func _ready() -> void:
 	%NewGameButton.pressed.connect(new_game)
 	%LoadGameButton.pressed.connect(open_load_panel)
 	%BackButton.pressed.connect(close_load_panel)
+	delete_dialog.canceled.connect(func() -> void: _dialog_closed_frame = Engine.get_process_frames())
 	delete_dialog.confirmed.connect(func() -> void:
 		SaveGame.delete_slot(_slot_to_delete)
 		if _slot_to_delete == SaveGame.slot:
@@ -68,6 +70,14 @@ func _ready() -> void:
 		join_game.call_deferred()
 	elif args.has("solo"):
 		play_solo.call_deferred()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	# A press that just closed the delete dialog shouldn't close the panel behind it too.
+	if event.is_action_pressed("ui_cancel") and load_panel.visible \
+			and Engine.get_process_frames() != _dialog_closed_frame:
+		close_load_panel()
+		get_viewport().set_input_as_handled()
 
 
 # --- Saves ------------------------------------------------------------------------------

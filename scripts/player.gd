@@ -13,8 +13,8 @@ const RIVAL_COMMAND := "@rival"
 const MAX_POTIONS := 2
 
 @export_group("Movement")
-@export var move_speed := 6.0
-@export var acceleration := 50.0
+@export var move_speed := 10.5
+@export var acceleration := 80.0
 @export var dash_speed := 20.0
 @export var dash_duration := 0.15
 @export var dash_cooldown := 0.8

@@ -80,10 +80,11 @@ played in the browser".
 | 1 / 2 / 3 | Use the ability of the pet in that party slot, aimed at the mouse |
 | Q | Drink a health potion (heals 50%) |
 | F (at the stable / lemonade stand) | Open/close the stable or the shop |
+| Esc | Close whatever menu is open (stable, shop, a confirmation, the Load Game list) |
 | Space | Dash (brief invulnerability) |
 
 - **Levels:** each level is one long, wide, randomly generated path that
-  always runs up the screen, winding left and right, with rocks and packs of
+  always runs from left to right across the screen, winding up and down, with rocks and packs of
   wild creatures that get tougher the further you go. It starts at a camp with
   the stable and ends in a boss arena. Defeat the boss and a portal opens at
   the far end; step in and everyone moves on to the next, harder level, and

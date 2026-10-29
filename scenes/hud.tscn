@@ -153,7 +153,7 @@ offset_right = 900.0
 offset_bottom = -20.0
 grow_vertical = 0
 modulate = Color(1, 1, 1, 0.8)
-text = "WASD move  ·  LMB attack / smash crates  ·  E capture  ·  1 2 3 pet abilities  ·  RMB send pets  ·  T pet stance  ·  Q potion  ·  F stable / shop  ·  Space dash"
+text = "WASD move  ·  LMB attack / smash crates  ·  E capture  ·  1 2 3 pet abilities  ·  RMB send pets  ·  T pet stance  ·  Q potion  ·  F stable / shop  ·  Esc close  ·  Space dash"
 
 [node name="DownedLabel" type="Label" parent="."]
 unique_name_in_owner = true
@@ -282,7 +282,7 @@ kind = "release"
 layout_mode = 2
 size_flags_horizontal = 3
 modulate = Color(1, 1, 1, 0.7)
-text = "Drag pets between the hay beds and your party. Drop one on another to swap them. Pets in the stable are fully healed.  [F] close"
+text = "Drag pets between the hay beds and your party. Drop one on another to swap them. Pets in the stable are fully healed.  [F / Esc] close"
 autowrap_mode = 3
 
 [node name="ReleaseDialog" type="ConfirmationDialog" parent="."]
@@ -351,5 +351,5 @@ text = "Lucky Lemonade"
 [node name="Hint" type="Label" parent="ShopPanel/Margin/VBox"]
 layout_mode = 2
 modulate = Color(1, 1, 1, 0.6)
-text = "[F] close"
+text = "[F / Esc] close"
 horizontal_alignment = 1

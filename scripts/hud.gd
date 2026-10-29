@@ -7,6 +7,7 @@ const MAX_MESSAGES := 6
 
 var _player: Player
 var _party_refresh := 0.0
+var _dialog_closed_frame := -1
 var _stable_party_signature := ""
 var _party_slots: Array[PetSlot] = []
 var _bed_slots: Array[PetSlot] = []
@@ -96,6 +97,20 @@ func show_message(text: String, color: Color) -> void:
 
 
 # --- Windows ---------------------------------------------------------------------------
+
+## Escape closes the stable or shop, but a press that closes the release dialog
+## on top of the stable shouldn't close the stable as well.
+func _input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel") and release_dialog.visible:
+		_dialog_closed_frame = Engine.get_process_frames()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel") and is_window_open() \
+			and Engine.get_process_frames() != _dialog_closed_frame:
+		close_windows()
+		get_viewport().set_input_as_handled()
+
 
 func is_window_open() -> bool:
 	return stable_panel.visible or shop_panel.visible
