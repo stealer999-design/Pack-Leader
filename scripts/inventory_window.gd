@@ -5,7 +5,8 @@ extends PanelContainer
 ## drag an item onto its gear slot to wear it (swapping with what's there),
 ## drag worn gear into the bag to take it off, drag within the bag to tidy it,
 ## or onto the bin to throw it away. Click an item to see it; double-click is a
-## shortcut to wear / take off. The server does the moving (Player.request_*).
+## shortcut to wear / take off. To clear out lots of junk at once, press Select
+## (or right-click an item): click bag items to mark them, then Throw away. The server does the moving (Player.request_*).
 
 const EQUIP_SIZE := Vector2(64, 64)
 const BAG_SIZE := Vector2(54, 54)
@@ -20,7 +21,14 @@ var _bag_title: Label
 var _details: Label
 var _bin: ItemSlot
 var _discard_dialog: ConfirmationDialog
-var _discard_index := -1
+var _discard_indices: Array[int] = []
+var _hint: Label
+## Select mode: clicking bag items marks them to throw away together.
+var _selecting := false
+var _marked := {}  ## bag index -> true
+var _select_button: Button
+var _all_button: Button
+var _throw_button: Button
 var _selected: ItemSlot
 
 
@@ -91,6 +99,7 @@ func _init() -> void:
 		item_slot.bag_index = i
 		item_slot.custom_minimum_size = BAG_SIZE
 		item_slot.clicked.connect(_on_slot_clicked)
+		item_slot.marked_toggled.connect(_on_slot_marked)
 		item_slot.dropped.connect(_on_dropped)
 		bag_grid.add_child(item_slot)
 		_bag_slots.append(item_slot)
@@ -104,6 +113,16 @@ func _init() -> void:
 	_details.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_details.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	bottom.add_child(_details)
+	_select_button = _small_button("Select", "close", "Mark items to throw away together (or right-click an item)")
+	_select_button.toggle_mode = true
+	_select_button.toggled.connect(_set_selecting)
+	bottom.add_child(_select_button)
+	_all_button = _small_button("All", "plus", "Mark everything in the bag (click items to unmark them)")
+	_all_button.pressed.connect(_mark_all)
+	bottom.add_child(_all_button)
+	_throw_button = _small_button("Throw away", "trash", "Throw away every marked item")
+	_throw_button.pressed.connect(_throw_marked)
+	bottom.add_child(_throw_button)
 	_bin = ItemSlot.new()
 	_bin.is_bin = true
 	_bin.custom_minimum_size = Vector2(64, 54)
@@ -111,7 +130,8 @@ func _init() -> void:
 	_bin.tooltip_text = "Drop an item here to throw it away."
 	bottom.add_child(_bin)
 	var hint := Label.new()
-	hint.text = "Drag items onto your gear to wear them, into the bag to take them off, or onto the bin to throw them away. Click to see an item.   [I / Esc] close"
+	_hint = hint
+	hint.custom_minimum_size = Vector2(0, 36)
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	hint.add_theme_font_size_override("font_size", 12)
 	hint.modulate = UiTheme.TEXT_DIM
@@ -120,9 +140,12 @@ func _init() -> void:
 	_discard_dialog.title = "Throw away?"
 	_discard_dialog.ok_button_text = "Throw away"
 	_discard_dialog.confirmed.connect(func() -> void:
-		if _discard_index >= 0:
-			player.request_discard.rpc_id(1, _discard_index)
-		_discard_index = -1)
+		if _discard_indices.size() == 1:
+			player.request_discard.rpc_id(1, _discard_indices[0])
+		elif _discard_indices.size() > 1:
+			player.request_discard_many.rpc_id(1, _discard_indices)
+			_set_selecting(false)
+		_discard_indices.clear())
 	add_child(_discard_dialog)
 	UiIcons.button(_discard_dialog.get_ok_button(), "trash")
 	UiIcons.button(_discard_dialog.get_cancel_button(), "back")
@@ -135,6 +158,7 @@ func bind(new_player: Player) -> void:
 
 func open() -> void:
 	_selected = null
+	_set_selecting(false)
 	show()
 	refresh()
 
@@ -155,6 +179,13 @@ func refresh() -> void:
 	_armor.text = "Tamer:  %d%% armor · %d health · +%d%% speed\nPets:  +%d%% damage · +%d%% health" % [
 			player.armor_percent(), roundi(player.health.max_health), ItemDB.total(gear, "speed"),
 			ItemDB.total(gear, "pet_damage"), ItemDB.total(gear, "pet_health")]
+	for index in _marked.keys():
+		if player.bag[index].is_empty():
+			_marked.erase(index)
+	for item_slot in _bag_slots:
+		item_slot.marked = _marked.has(item_slot.bag_index)
+		item_slot.no_drag = _selecting
+	_update_select_controls()
 	if _selected and _selected.item.is_empty():
 		_selected = null
 	for item_slot in _bag_slots + _equip_slots.values():
@@ -169,6 +200,10 @@ func _weapon() -> Dictionary:
 
 
 func _on_slot_clicked(item_slot: ItemSlot, double: bool) -> void:
+	if _selecting:
+		if item_slot.bag_index >= 0 and not item_slot.item.is_empty():
+			_toggle_mark(item_slot.bag_index)
+		return
 	_selected = item_slot if not item_slot.item.is_empty() else null
 	if double and _selected and _selected.item.get("type", "") != "bat":
 		# A shortcut: wear it / take it off.
@@ -185,7 +220,7 @@ func _on_dropped(from: ItemSlot, to: ItemSlot) -> void:
 	_selected = null
 	if to.is_bin:
 		if from.bag_index >= 0:
-			_discard_index = from.bag_index
+			_discard_indices.assign([from.bag_index])
 			_discard_dialog.dialog_text = "Throw away the %s?\nIt's gone for good." % ItemDB.display_name(from.item)
 			_discard_dialog.popup_centered()
 		else:
@@ -199,7 +234,79 @@ func _on_dropped(from: ItemSlot, to: ItemSlot) -> void:
 		player.request_unequip.rpc_id(1, from.equip_slot, to.bag_index)
 
 
+## Right-click: mark an item to throw away (starting select mode).
+func _on_slot_marked(item_slot: ItemSlot) -> void:
+	if item_slot.bag_index < 0 or item_slot.item.is_empty():
+		return
+	if not _selecting:
+		_set_selecting(true)
+	_toggle_mark(item_slot.bag_index)
+
+
+func _toggle_mark(index: int) -> void:
+	if _marked.has(index):
+		_marked.erase(index)
+	else:
+		_marked[index] = true
+	refresh()
+
+
+func _set_selecting(on: bool) -> void:
+	_selecting = on
+	_marked.clear()
+	_select_button.set_pressed_no_signal(on)
+	_selected = null
+	if is_instance_valid(player):
+		refresh()
+	else:
+		_update_select_controls()
+
+
+func _mark_all() -> void:
+	for i in player.bag.size():
+		if not player.bag[i].is_empty():
+			_marked[i] = true
+	refresh()
+
+
+func _throw_marked() -> void:
+	if _marked.is_empty():
+		return
+	_discard_indices.assign(_marked.keys())
+	_discard_indices.sort()
+	var names := _discard_indices.map(func(i: int) -> String: return ItemDB.display_name(player.bag[i]))
+	var listed := ", ".join(names.slice(0, 6)) + (", and %d more" % (names.size() - 6) if names.size() > 6 else "")
+	_discard_dialog.dialog_text = "Throw away %d item%s?\n%s\nThey're gone for good." % [names.size(),
+			"" if names.size() == 1 else "s", listed]
+	_discard_dialog.popup_centered()
+
+
+func _update_select_controls() -> void:
+	_all_button.visible = _selecting
+	_throw_button.visible = _selecting
+	_throw_button.disabled = _marked.is_empty()
+	_throw_button.text = "Throw away (%d)" % _marked.size()
+	_select_button.text = "Done" if _selecting else "Select"
+	_hint.text = "Click bag items to mark them (click again to unmark), then Throw away. Right-click also marks.   [Done] back   [I / Esc] close" \
+			if _selecting else \
+			"Drag items onto your gear to wear them, into the bag to take them off, or onto the bin to throw them away. Click to see an item; right-click or Select to throw away several.   [I / Esc] close"
+
+
+func _small_button(text: String, icon: String, tip: String) -> Button:
+	var button := Button.new()
+	button.text = text
+	button.tooltip_text = tip
+	button.focus_mode = Control.FOCUS_NONE
+	button.custom_minimum_size = Vector2(0, 40)
+	button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	UiIcons.button(button, icon)
+	return button
+
+
 func _update_details() -> void:
+	if _selecting:
+		_details.text = "%d marked" % _marked.size()
+		return
 	if _selected == null:
 		_details.text = "Click an item to see what it does."
 		return
@@ -227,10 +334,17 @@ class ItemSlot:
 
 	signal clicked(slot: ItemSlot, double: bool)
 	signal dropped(from: ItemSlot, to: ItemSlot)
+	signal marked_toggled(slot: ItemSlot)  ## Right-clicked.
 
 	var equip_slot := ""
 	var bag_index := -1
 	var is_bin := false  ## The throw-away bin.
+	var no_drag := false  ## In select mode clicks mark items instead.
+	var marked := false:  ## Marked to throw away.
+		set(v):
+			if v != marked:
+				marked = v
+				queue_redraw()
 	var _drop_hover := false
 	var item := {}:
 		set(v):
@@ -249,9 +363,12 @@ class ItemSlot:
 	func _gui_input(event: InputEvent) -> void:
 		if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 			clicked.emit(self, event.double_click)
+		elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
+			marked_toggled.emit(self)
+			accept_event()
 
 	func _get_drag_data(_at: Vector2) -> Variant:
-		if is_bin or item.is_empty() or item.type == "bat":
+		if is_bin or no_drag or item.is_empty() or item.type == "bat":
 			return null
 		var preview := ItemSlot.new()
 		preview.item = item
@@ -338,6 +455,15 @@ class ItemSlot:
 					Color(0, 0, 0, 0.8))
 			draw_string(font, Vector2(5, size.y - 5), str(int(item.level)), HORIZONTAL_ALIGNMENT_LEFT, -1, 12,
 					ItemDB.rarity_color(item))
+		if marked:  # marked to throw away: red, with a cross in the corner
+			var mark := StyleBoxFlat.new()
+			mark.bg_color = Color(0.8, 0.15, 0.1, 0.3)
+			mark.border_color = Color(1.0, 0.4, 0.35)
+			mark.set_border_width_all(3)
+			mark.set_corner_radius_all(8)
+			draw_style_box(mark, rect)
+			var cross := int(size.x * 0.32)
+			draw_texture(UiIcons.texture("close", cross), Vector2(size.x - cross - 3, 3), Color(1.0, 0.55, 0.5))
 
 	## True while an item that could go in this gear slot is being dragged.
 	func _fits_dragged() -> bool:

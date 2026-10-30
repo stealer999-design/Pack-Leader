@@ -918,6 +918,21 @@ func request_discard(index: int) -> void:
 	_push_inventory()
 
 
+## Throws away several bag items at once (the inventory's select mode).
+@rpc("any_peer", "call_local", "reliable")
+func request_discard_many(indices: Array) -> void:
+	if not _sent_by_owner():
+		return
+	var count := 0
+	for index in indices:
+		if (index is int or index is float) and int(index) >= 0 and int(index) < bag.size() and not bag[int(index)].is_empty():
+			bag[int(index)] = {}
+			count += 1
+	if count > 0:
+		world.tell(peer_id, "You threw away %d item%s." % [count, "" if count == 1 else "s"], Color(0.8, 0.8, 0.8))
+		_push_inventory()
+
+
 func _gear_changed() -> void:
 	var looks := PackedInt32Array()
 	for slot in ["chest", "pants", "hat", "boots"]:

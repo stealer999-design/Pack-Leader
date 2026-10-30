@@ -183,7 +183,9 @@ played in the browser".
   (weapon, chest, pants, hat, boots, two rings, a necklace) and the bag. It's all drag and drop: drag an item onto its gear slot to
   wear it (swapping with what you had on; the slots it fits light up while
   you drag), drag worn gear into the bag to take it off, drag within the bag
-  to tidy it, or drop it on the bin to throw it away (it asks first). Click an
+  to tidy it, or drop it on the bin to throw it away (it asks first). To clear
+  out lots at once, press **Select** (or right-click an item), click the junk to
+  mark it (or **All**, then unmark keepers), and **Throw away** with one confirm. Click an
   item to see what it does; double-click is a shortcut. The weapon slot shows your bat (upgrade it at the Bat
   Shop). Every kind of gear comes in five levels, one per area (areas past
   level 5 drop level 5 gear), each Common, Fine or Superior:
