@@ -67,6 +67,14 @@ var _weaken_factor := 1.0
 var _leaping := false
 var _pending_cast := {}  ## { point, target, time_left } while moving into ability range.
 var _stats_timer := 0.0
+# Getting around walls and obstacles (server).
+var _avoid_side := 1.0  ## Which way to go round: 1 left, -1 right.
+var _avoid_hold := 0.0  ## Keeps the chosen side for a moment, so it doesn't dither.
+var _waypoint := Vector3.INF  ## A point on the owner's trail, when they're out of sight.
+var _waypoint_timer := 0.0
+var _progress_from := Vector3.INF
+var _progress_timer := 0.0
+const WORLD_LAYER := 1  ## Walls, obstacles, buildings.
 var _ai_cast_delay := 3.0  ## Rival pets: time until they next consider using their ability.
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 
@@ -140,6 +148,7 @@ func _physics_process(delta: float) -> void:
 		desired = _rival_pet_ai(delta)
 	else:
 		desired = _pet_ai(delta)
+	desired = _avoid_obstacles(desired, delta)
 	if _slow_timer > 0.0:
 		desired *= _slow_factor
 	velocity.x = desired.x + _knockback.x
@@ -414,7 +423,7 @@ func _pet_ai(delta: float) -> Vector3:
 	if master_player is Player and master_player.pets_passive:
 		target = null
 		focus = null
-		return _steer_to(master_player.global_position + _follow_offset(), _follow_speed(master_player))
+		return _follow(master_player, delta)
 
 	if focus and not _is_valid_target(focus):
 		focus = null
@@ -426,16 +435,104 @@ func _pet_ai(delta: float) -> Vector3:
 	if target:
 		return _chase_and_attack(target)
 
-	return _steer_to(master_player.global_position + _follow_offset(), _follow_speed(master_player))
+	return _follow(master_player, delta)
 
 
-## Pets amble near their owner but run to catch up when left behind, at least
-## as fast as the owner moves, so they keep up with a running tamer.
+## Walks to the owner. If a wall or obstacle is in the way, follows the owner's
+## trail instead (the newest point of it in plain sight), round the corner.
+func _follow(master_player: Node3D, delta: float) -> Vector3:
+	var goal := master_player.global_position + _follow_offset()
+	var speed := _follow_speed(master_player)
+	_waypoint_timer -= delta
+	if _waypoint_timer <= 0.0:
+		_waypoint_timer = 0.25
+		_waypoint = Vector3.INF
+		if master_player is Player and not _clear_line(global_position, goal):
+			var trail: Array[Vector3] = master_player.trail
+			for i in range(trail.size() - 1, -1, -1):
+				if _clear_line(global_position, trail[i]):
+					_waypoint = trail[i]
+					break
+	if _waypoint != Vector3.INF:
+		if _flat_distance(_waypoint) < 0.8:
+			_waypoint_timer = 0.0  # reached it: look for the next one now
+		return _steer_to(_waypoint, maxf(speed, _move_speed()))
+	return _steer_to(goal, speed)
+
+
+## Pets amble near their owner but run to catch up when left behind, a little
+## faster than the owner moves, so they keep up with a running tamer.
 func _follow_speed(master_player: Node3D) -> float:
 	if _flat_distance(master_player.global_position + _follow_offset()) <= 3.0:
-		return species.move_speed
+		return _move_speed() * 0.6
 	var owner_speed: float = master_player.get("move_speed") if master_player.get("move_speed") != null else 0.0
-	return maxf(species.move_speed * 1.6, owner_speed * 1.1)
+	return maxf(_move_speed() * 1.2, owner_speed * 1.15)
+
+
+## How fast this creature moves: players' pets are as fast as their tamer;
+## everything else moves at its species' speed.
+func _move_speed() -> float:
+	if is_player_pet():
+		var master_player := world.get_player(owner_id)
+		if master_player:
+			return maxf(species.move_speed, master_player.move_speed)
+	return species.move_speed
+
+
+## Server: true if nothing solid (walls, obstacles) lies between two points.
+func _clear_line(from: Vector3, to: Vector3) -> bool:
+	var space := get_world_3d().direct_space_state
+	var lift := Vector3.UP * 0.5
+	var query := PhysicsRayQueryParameters3D.create(from + lift, to + lift, WORLD_LAYER)
+	return space.intersect_ray(query).is_empty()
+
+
+## Steers `desired` around whatever is in the way: if the way ahead is blocked,
+## turns further and further (30 to 120 degrees) to one side until it's clear,
+## keeping to that side for a moment. If it still isn't making progress (wedged
+## against a corner), it tries the other side.
+func _avoid_obstacles(desired: Vector3, delta: float) -> Vector3:
+	_avoid_hold -= delta
+	var speed := desired.length()
+	if speed < 0.5:
+		_progress_from = Vector3.INF
+		return desired
+	# Stuck check: barely moved for half a second while trying to move.
+	_progress_timer -= delta
+	if _progress_from == Vector3.INF or _progress_timer <= 0.0:
+		if _progress_from != Vector3.INF and _flat_distance(_progress_from) < speed * 0.5 * 0.25:
+			_avoid_side = -_avoid_side
+			_avoid_hold = 0.8
+		_progress_from = global_position
+		_progress_timer = 0.5
+	var dir := desired / speed
+	var probe := radius() + 1.0
+	if not _blocked(dir, probe):
+		return desired
+	if _avoid_hold <= 0.0:
+		# Pick the side that turns away from the obstacle soonest.
+		_avoid_side = 1.0 if not _blocked(dir.rotated(Vector3.UP, deg_to_rad(45)), probe) else -1.0
+		_avoid_hold = 0.6
+	for angle in [30.0, 60.0, 90.0, 120.0]:
+		for side in [_avoid_side, -_avoid_side]:
+			var turned := dir.rotated(Vector3.UP, deg_to_rad(angle) * side)
+			if not _blocked(turned, probe):
+				if side != _avoid_side:
+					_avoid_side = side
+					_avoid_hold = 0.6
+				model.rotation.y = atan2(-turned.x, -turned.z)
+				return turned * speed
+	return desired  # boxed in: let move_and_slide slide along it
+
+
+## True if moving `dir` for `distance` would run into a wall or obstacle
+## (checked along the middle and both shoulders).
+func _blocked(dir: Vector3, distance: float) -> bool:
+	var side := dir.cross(Vector3.UP).normalized() * radius() * 0.8
+	for offset in [Vector3.ZERO, side, -side]:
+		if not _clear_line(global_position + offset, global_position + offset + dir * distance):
+			return true
+	return false
 
 
 ## The rival's pet stays by the rival until the fight starts, then attacks the
@@ -469,7 +566,7 @@ func _tick_pending_cast(delta: float) -> Vector3:
 		return Vector3.ZERO
 	var point: Vector3 = cast_target.global_position if cast_target else _pending_cast.point
 	if ability.cast_range > 0.0 and _flat_distance(point) > ability.cast_range:
-		return _steer_to(point, species.move_speed * 1.3)
+		return _steer_to(point, _move_speed() * 1.3)
 
 	_pending_cast = {}
 	if _flat_distance(point) > 0.1:
@@ -488,7 +585,7 @@ func _chase_and_attack(victim: Node3D) -> Vector3:
 	model.rotation.y = atan2(-to.x, -to.z)
 	var victim_radius: float = victim.radius() if victim.has_method("radius") else 0.4
 	if dist > species.attack_range * species.size + victim_radius:
-		return to / dist * species.move_speed
+		return to / dist * _move_speed()
 	if _attack_timer <= 0.0:
 		_attack_timer = species.attack_cooldown
 		_lunge.rpc()

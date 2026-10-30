@@ -107,6 +107,11 @@ var _slow_factor := 1.0
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 var _material := StandardMaterial3D.new()
 var _swing_fx: MeshInstance3D
+## Server: where this tamer has recently walked, oldest first. Every point is
+## somewhere a pet can stand, so pets cut off by a wall or rock follow it.
+var trail: Array[Vector3] = []
+const TRAIL_STEP := 0.8
+const TRAIL_LENGTH := 60
 var person: PersonModel
 
 @onready var world: World = get_tree().get_first_node_in_group("world")
@@ -144,6 +149,7 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	if multiplayer.is_server():
+		_record_trail()
 		_server_attack_timer -= delta
 		_server_capture_timer -= delta
 		_server_potion_timer -= delta
@@ -803,6 +809,14 @@ func _sync_stable(data: Array) -> void:
 
 
 # --- Local helpers -----------------------------------------------------------------
+
+func _record_trail() -> void:
+	var at := global_position
+	if trail.is_empty() or Vector2(at.x - trail[-1].x, at.z - trail[-1].z).length() >= TRAIL_STEP:
+		trail.append(at)
+		if trail.size() > TRAIL_LENGTH:
+			trail.pop_front()
+
 
 ## Converts 2D input into a world direction relative to the camera, so "up" is
 ## always up-screen regardless of the isometric yaw.
