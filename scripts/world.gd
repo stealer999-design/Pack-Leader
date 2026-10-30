@@ -521,7 +521,7 @@ func _tick_traps(delta: float) -> void:
 			trap.on_trigger.call(trap.pos)
 
 
-## Scatters coins worth `total` around `at` (from a smashed crate).
+## Scatters coins worth `total` around `at` (from a smashed vase).
 func spill_coins(at: Vector3, total: int) -> void:
 	var count := clampi(total, 1, 6)
 	for i in count:
@@ -1148,6 +1148,44 @@ func _make_star_mesh() -> ArrayMesh:
 @rpc("authority", "call_local", "unreliable")
 func play_burst(at: Vector3, color: Color, final_radius: float) -> void:
 	_ring_fx(at, color, final_radius)
+
+
+## A vase breaking: clay shards fly out, bounce on the ground and fade, with
+## a puff of dust (a ring in the vase's colour).
+@rpc("authority", "call_local", "unreliable")
+func play_shatter(at: Vector3, color: Color) -> void:
+	_ring_fx(at, color.lightened(0.2), 1.3)
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = color
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.roughness = 0.85
+	var fx := Node3D.new()
+	add_child(fx)
+	fx.global_position = at
+	var tween := fx.create_tween().set_parallel()
+	for i in 12:
+		var shard := MeshInstance3D.new()
+		var mesh := BoxMesh.new()
+		mesh.size = Vector3(randf_range(0.12, 0.26), randf_range(0.03, 0.06), randf_range(0.1, 0.22))
+		shard.mesh = mesh
+		shard.material_override = mat
+		var start := Vector3(randf_range(-0.25, 0.25), randf_range(0.2, 1.0), randf_range(-0.25, 0.25))
+		shard.position = start
+		shard.rotation = Vector3(randf() * TAU, randf() * TAU, randf() * TAU)
+		fx.add_child(shard)
+		var out := Vector3(start.x, 0, start.z).normalized() if Vector2(start.x, start.z).length() > 0.05 \
+				else Vector3.FORWARD.rotated(Vector3.UP, randf() * TAU)
+		var land := out * randf_range(0.8, 1.8) + Vector3(0, 0.04, 0)
+		var peak := start.lerp(land, 0.4) + Vector3.UP * randf_range(0.5, 1.0)
+		var time := randf_range(0.35, 0.5)
+		tween.tween_property(shard, "position", peak, time * 0.45).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tween.tween_property(shard, "position", land, time * 0.55).set_delay(time * 0.45) \
+				.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		tween.tween_property(shard, "rotation", shard.rotation + Vector3(randf_range(-6, 6), randf_range(-6, 6), 0), time)
+		tween.tween_property(shard, "rotation:x", 0.0, 0.1).set_delay(time)  # lie flat
+		tween.tween_property(shard, "rotation:z", 0.0, 0.1).set_delay(time)
+	tween.tween_property(mat, "albedo_color:a", 0.0, 0.5).set_delay(1.2)
+	tween.chain().tween_callback(fx.queue_free)
 
 
 ## Jagged lightning bolts between consecutive points, with a flash at each hit.

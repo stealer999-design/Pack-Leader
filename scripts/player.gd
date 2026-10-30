@@ -385,7 +385,7 @@ func request_buy_potion() -> void:
 		world.tell(peer_id, "You can only carry %d potions." % MAX_POTIONS, Color(1, 0.8, 0.5))
 		return
 	if coins < potion_price:
-		world.tell(peer_id, "A potion costs %d coins (you have %d). Smash crates for coins!" % [potion_price, coins],
+		world.tell(peer_id, "A potion costs %d coins (you have %d). Smash vases for coins!" % [potion_price, coins],
 				Color(1, 0.8, 0.5))
 		return
 	coins -= potion_price

@@ -72,7 +72,7 @@ played in the browser".
 | Input | Action |
 |---|---|
 | WASD | Move |
-| LMB | Swing your bat toward the mouse: weakens creatures (never below 1 HP) and smashes crates |
+| LMB | Swing your bat toward the mouse: weakens creatures (never below 1 HP) and smashes vases |
 | E | Throw a capture at the creature under the mouse |
 | RMB on a wild creature or the rival | Send your pets to attack it |
 | RMB on the ground | Pets drop their target and regroup |
@@ -112,12 +112,12 @@ played in the browser".
   - **Lucky Lemonade** (15 coins): capture chance x1.5 for 90 seconds (still
     capped at 95%). Buying another while it's active resets the timer; it
     doesn't stack. The HUD and the hover capture chance include the boost.
-- **Crates and coins:** crates along the path break in two hits and spill
-  coins (gold crates take four hits and hold far more). Walk over coins to
+- **Vases and coins:** clay vases along the path shatter in one hit and spill
+  coins (gold vases are rarer and hold far more). Walk over coins to
   pick them up; coins belong to whoever collects them and carry over between
   levels.
 - **Mini map:** bottom right, showing the path around you the way the camera
-  sees it: rocks, crates, the stable (brown), the lemonade stand (yellow), the
+  sees it: rocks, vases, the stable (brown), the lemonade stand (yellow), the
   portal (purple, filled when open), the boss (big red), wild creatures (red),
   your pets (green), other players and their pets (in their colours) and you
   (an arrow). Press M for the whole level, large; M or Esc to shrink it.
@@ -177,7 +177,7 @@ played in the browser".
   lizards paddle in a sprawl and swing their bodies and tails, winged hybrids
   flap, and everyone breathes a little standing still.
 - **Loot and inventory (I):** gear drops as glowing sacks (a beam of light in
-  the item's rarity colour, its name above it): from crates (12%, gold crates
+  the item's rarity colour, its name above it): from vases (12%, gold vases
   40%), defeated wild creatures (8%) and every boss. Walk over a sack to put
   it in your **bag** (24 places): a ring and a column of light in its rarity
   colour flash around your tamer, the item's icon and name float up over your
@@ -320,7 +320,7 @@ The host is the authoritative server and also plays.
 | `scripts/creature_species.gd`, `resources/species/*.tres`, `scripts/species_db.gd` | Species data. Add a `.tres` and list it in `SpeciesDB` to add a species |
 | `scripts/combat.gd` | Faction rule (`Combat.are_enemies`) that enforces no friendly fire |
 | `scripts/abilities/*.gd`, `resources/abilities/*.tres` | `PetAbility` base class and one subclass per ability; tune values in the `.tres` files |
-| `scenes/crate.tscn` + `scripts/crate.gd`, `scenes/coin.tscn` + `scripts/coin.gd` | Breakable crates and the coins they spill |
+| `scenes/crate.tscn` + `scripts/crate.gd`, `scenes/coin.tscn` + `scripts/coin.gd` | Breakable vases (still called crates in the code) and the coins they spill |
 | `scripts/components/health.gd` | Health with setter-driven signals (works with replication), plus poison and damage-absorbing shields |
 | `scripts/pet_slot.gd` | A drag-and-drop place in the stable window (hay bed, party cushion or release gate), drawn in code |
 | `scenes/hud.tscn` + `scripts/hud.gd` | Health, pet party, hover/capture info, message feed |

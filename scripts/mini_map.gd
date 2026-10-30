@@ -3,7 +3,7 @@ extends PanelContainer
 ## The mini map, bottom right: the path around you, oriented like the camera
 ## (the level runs left to right). Press M to switch to the whole level, large.
 ##
-## Shows the path and rocks, the stable, the lemonade stand, the portal, crates,
+## Shows the path and rocks, the stable, the lemonade stand, the portal, vases,
 ## the boss, wild creatures (red), your pets (green), other players and their
 ## pets (in their colours) and you (an arrow pointing where you aim).
 ## Everything is drawn from the level layout and the live nodes on this peer.
