@@ -5,6 +5,7 @@ extends CharacterBody3D
 ## and stable actions are requests sent to the server, which validates them.
 
 signal stable_changed
+signal inventory_changed
 
 const MAX_PARTY := 3
 const MAX_STABLE := 20
@@ -64,6 +65,16 @@ var coins := 0
 var potions := MAX_POTIONS
 ## Pet stance. Passive pets follow but never attack, so creatures survive to be captured.
 var pets_passive := false
+## Gear (see ItemDB): the bag (BAG_SIZE places, {} = empty) and what's worn,
+## by slot. The server holds the real ones and sends them to the owner.
+var bag: Array[Dictionary] = []
+var equipment := {}
+## The worn jacket's level (0 = none). Replicated, so everyone sees it.
+var jacket_level := 0:
+	set(v):
+		jacket_level = v
+		if person:
+			person.set_jacket(ItemDB.JACKETS[v - 1].color if v > 0 else Color(0, 0, 0, 0))
 ## Index into BATS. Replicated, so everyone sees the spikes.
 var bat_tier := 0:
 	set(v):
@@ -131,12 +142,17 @@ func _ready() -> void:
 	add_to_group("players")
 	for i in MAX_STABLE:
 		stable.append({})
+	for i in ItemDB.BAG_SIZE:
+		bag.append({})
+	for slot in ItemDB.SLOTS:
+		equipment[slot] = {}
 	_material.albedo_color = color
 	person = PersonModel.new()
 	person.name = "Person"
 	model.add_child(person)
 	person.build(_material, HAIR_COLORS[absi(peer_id) % HAIR_COLORS.size()])
 	person.set_spiked(bat_tier >= 1)
+	jacket_level = jacket_level  # dress the model
 	name_label.text = display_name
 	name_label.modulate = color.lightened(0.3)
 	_swing_fx = _build_swing_fx()
@@ -196,6 +212,8 @@ func _physics_process(delta: float) -> void:
 			_potion_timer = potion_cooldown
 		request_potion.rpc_id(1)  # the server explains if it can't be used
 
+	if Input.is_action_just_pressed("inventory"):
+		world.hud.toggle_inventory()
 	if Input.is_action_just_pressed("map"):
 		world.hud.mini_map.toggle_expanded()
 	if Input.is_action_just_pressed("skills"):
@@ -595,6 +613,16 @@ func request_restore(data: Dictionary) -> void:
 	coins = clampi(int(data.get("coins", 0)), 0, 999_999)
 	potions = clampi(int(data.get("potions", MAX_POTIONS)), 0, MAX_POTIONS)
 	bat_tier = clampi(int(data.get("bat", 0)), 0, BATS.size() - 1)
+	var saved_bag = data.get("bag", [])
+	if saved_bag is Array:
+		for i in mini(saved_bag.size(), bag.size()):
+			bag[i] = ItemDB.clean(saved_bag[i])
+	var saved_gear = data.get("equipment", {})
+	if saved_gear is Dictionary:
+		for slot in ItemDB.SLOTS:
+			var item := ItemDB.clean(saved_gear.get(slot, {}))
+			equipment[slot] = item if ItemDB.slot_of(item) == slot else {}
+	_gear_changed()
 	var beds = data.get("stable", [])
 	if beds is Array:
 		for i in mini(beds.size(), MAX_STABLE):
@@ -698,7 +726,7 @@ func receive_damage(amount: float, source: Node3D, _knockback := Vector3.ZERO) -
 	if source and not Combat.are_enemies(source, self):
 		return  # no friendly fire
 	_since_hit = 0.0
-	health.take_damage(amount)
+	health.take_damage(amount * (1.0 - armor_percent() / 100.0))
 	_flash.rpc()
 
 
@@ -797,6 +825,89 @@ func _respawn_at(point: Vector3) -> void:
 	if _sent_by_server():
 		global_position = point
 		velocity = Vector3.ZERO
+
+
+# --- Gear ------------------------------------------------------------------------
+
+## Percent less damage taken, from everything worn (capped).
+func armor_percent() -> int:
+	var total := 0
+	for slot in equipment:
+		total += ItemDB.armor(equipment[slot])
+	return mini(total, ItemDB.MAX_ARMOR)
+
+
+func first_empty_bag_place() -> int:
+	for i in bag.size():
+		if bag[i].is_empty():
+			return i
+	return -1
+
+
+## Server: puts a found item in the bag. False if the bag is full.
+func add_item(item: Dictionary) -> bool:
+	var place := first_empty_bag_place()
+	if place < 0:
+		return false
+	bag[place] = item
+	_push_inventory()
+	return true
+
+
+## Wears the item in bag place `index`; whatever was in that slot goes back in its place.
+@rpc("any_peer", "call_local", "reliable")
+func request_equip(index: int) -> void:
+	if not _sent_by_owner() or index < 0 or index >= bag.size() or bag[index].is_empty():
+		return
+	var item := bag[index]
+	var slot := ItemDB.slot_of(item)
+	if slot == "":
+		return
+	bag[index] = equipment[slot]
+	equipment[slot] = item
+	_gear_changed()
+
+
+@rpc("any_peer", "call_local", "reliable")
+func request_unequip(slot: String) -> void:
+	if not _sent_by_owner() or not equipment.has(slot) or equipment[slot].is_empty() or slot == "weapon":
+		return
+	var place := first_empty_bag_place()
+	if place < 0:
+		world.tell(peer_id, "Your bag is full.", Color(1, 0.8, 0.5))
+		return
+	bag[place] = equipment[slot]
+	equipment[slot] = {}
+	_gear_changed()
+
+
+@rpc("any_peer", "call_local", "reliable")
+func request_discard(index: int) -> void:
+	if not _sent_by_owner() or index < 0 or index >= bag.size() or bag[index].is_empty():
+		return
+	world.tell(peer_id, "You threw away the %s." % ItemDB.display_name(bag[index]), Color(0.8, 0.8, 0.8))
+	bag[index] = {}
+	_push_inventory()
+
+
+func _gear_changed() -> void:
+	var jacket: Dictionary = equipment.chest
+	jacket_level = int(jacket.level) if not jacket.is_empty() else 0
+	_push_inventory()
+
+
+func _push_inventory() -> void:
+	_sync_inventory.rpc_id(peer_id, bag, equipment)
+
+
+@rpc("any_peer", "call_local", "reliable")
+func _sync_inventory(new_bag: Array, new_equipment: Dictionary) -> void:
+	if not _sent_by_server():
+		return
+	if not multiplayer.is_server():  # the server already holds the real ones
+		bag.assign(new_bag)
+		equipment = new_equipment
+	inventory_changed.emit()
 
 
 @rpc("any_peer", "call_local", "reliable")

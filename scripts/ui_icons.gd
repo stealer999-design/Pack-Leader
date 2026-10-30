@@ -42,6 +42,12 @@ const SHAPES := {
 	"map": '<path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2zM9 4v14M15 6v14"/>',
 	"egg": '<path d="M12 3c4 0 7 6 7 11a7 7 0 0 1-14 0c0-5 3-11 7-11z"/>',
 	"user": '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+	"bag": '<path d="M5 8h14v12H5zM9 8V6a3 3 0 0 1 6 0v2M5 13h14M11 13v2h2v-2"/>',
+	"jacket": '<path d="M8 3l4 3 4-3 4 3-2 4v11H6V10L4 6zM12 6v15M9.5 12h1M13.5 12h1"/>',
+	"pants": '<path d="M6 3h12l1 18h-5l-2-10-2 10H5zM6 6h12"/>',
+	"hat": '<path d="M3 17h18M6 17c0-6 2-10 6-10s6 4 6 10M9 13h6"/>',
+	"ring": '<circle cx="12" cy="14" r="6"/><path d="M10 7l2-4 2 4z"/>',
+	"necklace": '<path d="M5 3c0 8 3 12 7 12s7-4 7-12"/><path d="M12 15l-2 3 2 3 2-3z"/>',
 	"link": '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
 }
 

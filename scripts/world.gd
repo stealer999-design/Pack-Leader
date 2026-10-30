@@ -78,6 +78,8 @@ var _next_trap_id := 0
 @onready var coins_root: Node3D = $Coins
 @onready var crate_spawner: MultiplayerSpawner = $CrateSpawner
 @onready var coin_spawner: MultiplayerSpawner = $CoinSpawner
+@onready var loot_root: Node3D = $Loot
+@onready var loot_spawner: MultiplayerSpawner = $LootSpawner
 @onready var stable: Node3D = $Stable
 @onready var portal: Node3D = $Portal
 @onready var camera_rig: Node3D = $CameraRig
@@ -96,6 +98,7 @@ func _ready() -> void:
 	rival_spawner.spawn_function = _spawn_rival
 	crate_spawner.spawn_function = _spawn_crate
 	coin_spawner.spawn_function = _spawn_coin
+	loot_spawner.spawn_function = _spawn_loot
 	portal.visible = exit_open
 	if level_state != Vector2i.ZERO:
 		_build_level()  # a client joining mid-game
@@ -117,6 +120,7 @@ func _physics_process(delta: float) -> void:
 	if not multiplayer.is_server():
 		return
 	_collect_coins()
+	_collect_loot()
 	_tick_zones(delta)
 	_tick_traps(delta)
 	_check_checkpoints()
@@ -400,7 +404,8 @@ func _start_level(number: int) -> void:
 	for trap in _traps:
 		end_trap.rpc(trap.id, false)
 	_traps.clear()
-	for node in rivals_root.get_children() + crates_root.get_children() + coins_root.get_children():
+	for node in rivals_root.get_children() + crates_root.get_children() + coins_root.get_children() \
+			+ loot_root.get_children():
 		node.queue_free()
 	exit_open = false
 	level_state = Vector2i(randi_range(1, 2_000_000_000), number)  # rebuilds the level here and on clients
@@ -447,6 +452,7 @@ func on_rival_defeated(rival: Rival) -> void:
 	announce.rpc("%s is defeated! A portal has opened at the end of the path." % (boss_name[0].to_upper() + boss_name.substr(1)),
 			Color(1, 0.9, 0.5))
 	play_burst.rpc(rival.global_position, rival.color, 4.0)
+	roll_loot(rival.global_position, 1.0)  # bosses always drop gear
 	for pet in _creatures_where(func(c: Creature) -> bool: return c.is_rival_pet()):
 		pet.release_to_wild()
 		announce.rpc("The rival's %s has gone wild. Capture it!" % pet.species.display_name, Color(0.6, 0.85, 1.0))
@@ -533,6 +539,36 @@ func _collect_coins() -> void:
 				p.coins += coin.value
 				coin.queue_free()
 				break
+
+
+## Server: with probability `chance`, drops a piece of gear at `at`, made for
+## this area's level (jackets for now; levels past 5 drop level 5 gear).
+func roll_loot(at: Vector3, chance: float) -> void:
+	if randf() < chance:
+		loot_spawner.spawn({"pos": clamp_to_level(at), "item": ItemDB.make_jacket(level_number)})
+
+
+func _collect_loot() -> void:
+	for loot: Loot in loot_root.get_children():
+		if loot.is_queued_for_deletion():
+			continue
+		for p in get_players():
+			if p.downed or _flat_distance(p.global_position, loot.global_position) > coin_pickup_radius:
+				continue
+			if p.add_item(loot.item):
+				tell(p.peer_id, "You found a %s!  [I] inventory" % ItemDB.display_name(loot.item), ItemDB.rarity_color(loot.item))
+				loot.queue_free()
+				break
+			elif p.get_meta("bag_full_told", -1000) < Time.get_ticks_msec() - 5000:
+				p.set_meta("bag_full_told", Time.get_ticks_msec())
+				tell(p.peer_id, "Your bag is full. Throw something away to pick this up.", Color(1, 0.8, 0.5))
+
+
+func _spawn_loot(data: Dictionary) -> Node:
+	var loot := Loot.new()
+	loot.position = data.pos
+	loot.item = data.item
+	return loot
 
 
 func award_xp(killed: Creature) -> void:

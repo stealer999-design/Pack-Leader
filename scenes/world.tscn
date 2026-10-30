@@ -144,6 +144,8 @@ text = "Next level"
 
 [node name="Coins" type="Node3D" parent="."]
 
+[node name="Loot" type="Node3D" parent="."]
+
 [node name="PlayerSpawner" type="MultiplayerSpawner" parent="."]
 spawn_path = NodePath("../Players")
 
@@ -158,6 +160,9 @@ spawn_path = NodePath("../Crates")
 
 [node name="CoinSpawner" type="MultiplayerSpawner" parent="."]
 spawn_path = NodePath("../Coins")
+
+[node name="LootSpawner" type="MultiplayerSpawner" parent="."]
+spawn_path = NodePath("../Loot")
 
 [node name="LevelSync" type="MultiplayerSynchronizer" parent="."]
 replication_config = SubResource("level_sync")

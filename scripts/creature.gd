@@ -666,6 +666,7 @@ func _tick_faint(delta: float) -> void:
 func _on_died() -> void:
 	if is_wild():
 		world.award_xp(self)
+		world.roll_loot(global_position, 0.08)
 		world.play_burst.rpc(global_position, species.color, 2.5)
 		queue_free()
 	else:

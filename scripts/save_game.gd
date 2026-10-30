@@ -145,6 +145,8 @@ func save_now(announce := false) -> void:
 		"coins": _player.coins,
 		"potions": _player.potions,
 		"bat": _player.bat_tier,
+		"bag": _player.bag.duplicate(true),
+		"equipment": _player.equipment.duplicate(true),
 		"party": party,
 		"stable": _player.stable.duplicate(true),
 	}

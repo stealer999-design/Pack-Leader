@@ -81,6 +81,7 @@ played in the browser".
 | Q | Drink a health potion (heals 50%) |
 | F (at the stable / lemonade stand) | Open/close the stable or the shop |
 | K | Open/close the pet skills screen |
+| I | Open/close your inventory (gear and bag) |
 | Mouse wheel | Zoom the camera in and out (remembered between games) |
 | M | Switch the mini map between the corner and a large view of the whole level |
 | Esc | Close whatever menu is open (stable, shop, a confirmation, the Load Game list); with nothing open, the in-game menu: resume, save, quit to the main menu (solo pauses) |
@@ -175,6 +176,17 @@ played in the browser".
   trot (diagonal legs together) and sway or wag their tails, birds hop and flap,
   lizards paddle in a sprawl and swing their bodies and tails, winged hybrids
   flap, and everyone breathes a little standing still.
+- **Loot and inventory (I):** gear drops as glowing sacks (a beam of light in
+  the item's rarity colour, its name above it): from crates (12%, gold crates
+  40%), defeated wild creatures (8%) and every boss. Walk over a sack to put
+  it in your **bag** (24 places). The inventory shows your **seven gear slots**
+  (weapon, chest, pants, hat, two rings, a necklace) and the bag: click an item
+  to see it, double-click (or Wear / Take off) to put it on or take it off,
+  or throw it away. The weapon slot shows your bat (upgrade it at the Bat
+  Shop). So far there are **jackets** for the chest, one per area level 1-5
+  (Tattered, Leather, Padded, Studded, Ranger's: 4-16% less damage taken), each
+  Common, Fine (+2%) or Superior (+4%); areas past level 5 drop level 5 gear.
+  A worn jacket shows on your tamer. Armor is capped at 60%. Gear is saved.
 - **Checkpoint:** downed players get back up after a few seconds at the start
   camp, or at the **lemonade stand** once they have reached it (come near it
   or get past it) this level. A grey flag beside the stand rises and turns
@@ -283,6 +295,7 @@ The host is the authoritative server and also plays.
 | `scripts/ground_textures.gd` | The ground textures, painted in code per biome: grass, snow and ice, sand ripples, swamp mud and puddles, plus camp dirt, arena flagstones and village cobblestones |
 | `scripts/building_textures.gd` | The buildings' shared textures, painted in code: clay shingle roofs, plaster walls, plank doors (and stall woodwork) |
 | `scenes/obstacles/*.tscn` (built by `scripts/tools/build_obstacles.gd`) | Four premade trees and rocks per biome (meadow: oak, pine, mossy boulder, berry bush; frost: frosted white spruce, ice crystals, snow boulder, frozen tree; desert: cactus, sandstone pillar, palm, boulders; swamp: willow, vine tree, mossy rock, old stump), placed turned and sized differently from the level seed. Rebuild with `godot --headless --path . -s res://scripts/tools/build_obstacles.gd` |
+| `scripts/item_db.gd`, `scripts/inventory_window.gd`, `scripts/loot.gd` | Gear (items, slots, rarities, jackets), the inventory window (I) and loot sacks on the ground |
 | `scripts/mini_map.gd` | The mini map (and the large map, M), drawn from the level layout |
 | `scripts/skill_window.gd`, `scripts/skill_icons.gd` | The skills screen (K) and its skill icons, drawn in code |
 | `scripts/creature_model.gd` | Builds each creature's body from simple meshes: a cat, bird, dog or lizard, depending on its biome |

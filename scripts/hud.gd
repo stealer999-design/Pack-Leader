@@ -13,6 +13,8 @@ var mini_map: MiniMap
 var bat_shop_panel: PanelContainer
 var breeder_window: BreederWindow
 var pause_menu: PauseMenu
+var inventory_window: InventoryWindow
+var inventory_button: Button
 var _bat_shop_info: Label
 var _bat_buy_button: Button
 var _stable_party_signature := ""
@@ -63,6 +65,16 @@ func _ready() -> void:
 	breeder_window.theme = shop_panel.theme
 	breeder_window.add_theme_stylebox_override("panel", shop_panel.get_theme_stylebox("panel"))
 	add_child(breeder_window)
+	inventory_window = InventoryWindow.new()
+	add_child(inventory_window)
+	inventory_button = Button.new()
+	inventory_button.text = "Inventory   [I]"
+	inventory_button.focus_mode = Control.FOCUS_NONE
+	inventory_button.custom_minimum_size = skills_button.custom_minimum_size
+	inventory_button.tooltip_text = "Your gear: what you're wearing and the bag of what you've found."
+	inventory_button.pressed.connect(toggle_inventory)
+	UiIcons.button(inventory_button, "bag")
+	skills_button.add_sibling(inventory_button)
 	pause_menu = PauseMenu.new()
 	pause_menu.theme = shop_panel.theme
 	pause_menu.get_node("Panel").add_theme_stylebox_override("panel", shop_panel.get_theme_stylebox("panel"))
@@ -78,6 +90,7 @@ func bind(player: Player) -> void:
 	skill_window.player = player
 	mini_map.player = player
 	breeder_window.player = player
+	inventory_window.bind(player)
 	name_label.text = player.display_name
 	name_label.modulate = player.color.lightened(0.3)
 	player.health.changed.connect(_on_health_changed)
@@ -168,7 +181,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func is_window_open() -> bool:
 	return stable_panel.visible or shop_panel.visible or skill_window.visible or bat_shop_panel.visible \
-			or breeder_window.visible or pause_menu.visible
+			or breeder_window.visible or pause_menu.visible or inventory_window.visible
 
 
 func close_windows() -> void:
@@ -177,6 +190,16 @@ func close_windows() -> void:
 	skill_window.hide()
 	bat_shop_panel.hide()
 	breeder_window.hide()
+	inventory_window.hide()
+
+
+## The inventory (I) can open anywhere; it replaces any other open window.
+func toggle_inventory() -> void:
+	if inventory_window.visible:
+		inventory_window.hide()
+		return
+	close_windows()
+	inventory_window.open()
 
 
 ## The skills screen (K) can open anywhere; it replaces any other open window.
@@ -387,7 +410,7 @@ func _on_health_changed(current: float, maximum: float) -> void:
 ## True while the mouse is over a HUD button, so clicking it doesn't also swing.
 func is_mouse_over_buttons() -> bool:
 	var mouse := stance_button.get_viewport().get_mouse_position()
-	for button in [stance_button, skills_button]:
+	for button in [stance_button, skills_button, inventory_button]:
 		if button.is_visible_in_tree() and button.get_global_rect().has_point(mouse):
 			return true
 	return false

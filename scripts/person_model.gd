@@ -23,6 +23,20 @@ var _speed := 0.0
 var _walk_phase := 0.0
 var _swinging := false
 var _spikes: Node3D
+var _jacket: Node3D
+var _jacket_mat := StandardMaterial3D.new()
+var _sleeves: Array[MeshInstance3D] = []
+
+
+## Puts on a jacket in `color` (alpha 0 = no jacket): a coat over the shirt
+## with a collar and sleeves down to the elbow.
+func set_jacket(color: Color) -> void:
+	if _jacket == null:
+		return
+	_jacket.visible = color.a > 0.0
+	for sleeve in _sleeves:
+		sleeve.visible = _jacket.visible
+	_jacket_mat.albedo_color = color
 
 
 func set_spiked(spiked: bool) -> void:
@@ -42,6 +56,13 @@ func build(body_material: StandardMaterial3D, hair_color: Color) -> void:
 		_hips.append(hip)
 	_body = _pivot(self, Vector3.ZERO)
 	shirt = _part(_body, _box(Vector3(0.56, 0.66, 0.32)), body_material, Vector3(0, 1.12, 0))
+	# A jacket over the shirt, shown when one is worn (open at the front).
+	_jacket = _pivot(_body, Vector3.ZERO)
+	_jacket.visible = false
+	_jacket_mat.roughness = 0.8
+	for x in [-0.17, 0.17]:
+		_part(_jacket, _box(Vector3(0.25, 0.7, 0.36)), _jacket_mat, Vector3(x, 1.11, 0.0))
+	_part(_jacket, _box(Vector3(0.62, 0.12, 0.38)), _jacket_mat, Vector3(0, 1.44, 0.01))  # collar
 	_part(_body, _box(Vector3(0.58, 0.1, 0.34)), _mat(Color(0.3, 0.2, 0.12)), Vector3(0, 0.82, 0))  # belt
 	# Head.
 	_part(_body, _box(Vector3(0.14, 0.1, 0.14)), skin, Vector3(0, 1.5, 0))  # neck
@@ -54,6 +75,9 @@ func build(body_material: StandardMaterial3D, hair_color: Color) -> void:
 	for x in [-0.36, 0.36]:
 		var shoulder := _pivot(_body, Vector3(x, SHOULDER_HEIGHT, 0))
 		_part(shoulder, _box(Vector3(0.16, 0.36, 0.18)), body_material, Vector3(0, -0.17, 0))
+		var sleeve := _part(shoulder, _box(Vector3(0.19, 0.3, 0.21)), _jacket_mat, Vector3(0, -0.14, 0))
+		sleeve.visible = false
+		_sleeves.append(sleeve)
 		_part(shoulder, _box(Vector3(0.13, 0.26, 0.15)), skin, Vector3(0, -0.47, 0))
 		_shoulders.append(shoulder)
 	# The bat, in the right hand, resting on the shoulder.

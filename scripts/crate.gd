@@ -41,6 +41,7 @@ func hit(damage: float) -> void:
 		_shake.rpc()
 		return
 	world.spill_coins(global_position, coin_value())
+	world.roll_loot(global_position, 0.4 if gold else 0.12)
 	world.play_burst.rpc(global_position, _material.albedo_color, 1.5)
 	queue_free()
 
