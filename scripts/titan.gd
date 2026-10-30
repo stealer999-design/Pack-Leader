@@ -77,7 +77,7 @@ func _summon_frostlings() -> void:
 	for i in summon_count:
 		var offset := Vector3.FORWARD.rotated(Vector3.UP, randf() * TAU) * 3.0
 		var frostling := world.creature_spawner.spawn({
-			"species": FROSTLING, "level": 1 + (level_number - 1) * 2,
+			"species": FROSTLING, "level": World.area_levels(level_number).x + 2,
 			"pos": world.clamp_to_level(global_position + offset),
 		}) as Creature
 		frostling.target = target

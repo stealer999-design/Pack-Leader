@@ -45,7 +45,7 @@ func _ready() -> void:
 	name_label.text = title()
 	health.changed.connect(_on_health_changed)
 	if multiplayer.is_server():
-		health.max_health = _max_health()
+		health.max_health = roundf(_max_health() * power_scale())
 		health.current = health.max_health
 		health.died.connect(_on_died)
 	_on_health_changed(health.current, health.max_health)
@@ -132,7 +132,24 @@ func poison(dps: float, duration: float) -> void:
 ## Damage this boss deals after debuffs (Spore Cloud's weaken). Bosses' special
 ## attacks should pass their damage through this too.
 func outgoing(amount: float) -> float:
-	return amount * (_weaken_factor if _weaken_timer > 0.0 else 1.0)
+	return amount * damage_scale() * (_weaken_factor if _weaken_timer > 0.0 else 1.0)
+
+
+## How much tougher this boss is than its base numbers, matched to the pets
+## players bring by now: each area's creatures are five levels higher than the
+## last (see World.area_levels), so its boss's health follows the creature
+## level multiplier at the top of the area (compared to what the base numbers
+## were tuned for).
+func power_scale() -> float:
+	var top := World.area_levels(level_number).y
+	var tuned_for := 2 * level_number + 2
+	return (1.0 + 0.15 * (top - 1)) / (1.0 + 0.15 * (tuned_for - 1))
+
+
+## Bosses hit harder too, but only half as much more, as the tamer's own health
+## doesn't grow with levels.
+func damage_scale() -> float:
+	return 1.0 + (power_scale() - 1.0) * 0.5
 
 
 ## True during a special move that controls the boss's position (no chasing).

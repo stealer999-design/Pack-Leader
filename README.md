@@ -93,15 +93,20 @@ played in the browser".
   the stable and ends in a boss arena. Defeat the boss and a portal opens at
   the far end; step in and everyone moves on to the next, harder level, and
   every pet gets bonus XP.
-- **Biomes:** levels cycle through four biomes, each with its own creatures
-  and its own boss (and creature levels keep rising each time round):
+- **Acts and biomes:** the four biomes make up **Act 1**, one area each, and
+  each area's creatures are five levels higher than the last: **Greenmeadow
+  1-5, Frostfang Peaks 6-10, Sunscorch Dunes 11-15, Mirewood Bog 16-20**
+  (weakest by the camp, strongest near the boss; the rival's pet is at the
+  top level). After the Bog Witch, Act 2 starts again in Greenmeadow at 21-25,
+  and so on. Bosses get tougher to match. The HUD shows the act, area and
+  creature levels.
 
-  | Level | Biome | Creatures | Boss |
+  | Area | Biome | Creatures | Boss |
   |---|---|---|---|
-  | 1, 5, 9… | Greenmeadow | Cats: Mossback, Emberfox, Voltwing, Gloomhorn, Bloomling (the first two creatures by the camp are always Bloomlings) | **Rival Tamer** with one pet. The pet fights and uses its ability; when the rival is beaten the pet goes wild, weakened, so you can capture it |
-  | 2, 6, 10… | Frostfang Peaks | Birds: Frostfinch, Quillpuff, Aurora Swift, Snowl | **Glacier Titan**: drops Avalanches (a red warning circle, then a slam that damages and slows) and summons capturable Frostfinches at 66% and 33% health |
-  | 3, 7, 11… | Sunscorch Dunes (desert) | Dogs: Fangjackal, Dunehound, Cactipup, Sunfennec | **Sand Wyrm**: burrows underground (it can't be hit there), tunnels under a player or pet behind a warning circle and erupts; at half health it whips up sandstorms |
-  | 4, 8, 12… | Mirewood Bog (swamp) | Lizards: Bogleon, Mirelurk, Wisp Gecko, Sporeguana | **Bog Witch**: a ranged caster whose bolts poison; she blinks away when you get close, drops toxic puddles and summons Bogleons at 60% and 30% health |
+  | Act 1 area 1 (Lv 1-5) | Greenmeadow | Cats: Mossback, Emberfox, Voltwing, Gloomhorn, Bloomling (the first two creatures by the camp are always Bloomlings) | **Rival Tamer** with one pet. The pet fights and uses its ability; when the rival is beaten the pet goes wild, weakened, so you can capture it |
+  | Act 1 area 2 (Lv 6-10) | Frostfang Peaks | Birds: Frostfinch, Quillpuff, Aurora Swift, Snowl | **Glacier Titan**: drops Avalanches (a red warning circle, then a slam that damages and slows) and summons capturable Frostfinches at 66% and 33% health |
+  | Act 1 area 3 (Lv 11-15) | Sunscorch Dunes (desert) | Dogs: Fangjackal, Dunehound, Cactipup, Sunfennec | **Sand Wyrm**: burrows underground (it can't be hit there), tunnels under a player or pet behind a warning circle and erupts; at half health it whips up sandstorms |
+  | Act 1 area 4 (Lv 16-20) | Mirewood Bog (swamp) | Lizards: Bogleon, Mirelurk, Wisp Gecko, Sporeguana | **Bog Witch**: a ranged caster whose bolts poison; she blinks away when you get close, drops toxic puddles and summons Bogleons at 60% and 30% health |
 - **Tamer health:** after 5 seconds without taking damage you regenerate 3% of
   your max health per second. You carry up to **2 potions** (Q heals 50%),
   and start every level with a full pair. Bloomlings and Aurora Swifts can heal
@@ -223,7 +228,11 @@ played in the browser".
   yourself (1/2/3) still work. Sending pets at an enemy with RMB switches them
   back to **Aggressive** (the default) and they attack; T switches too.
 - **Pets:** you can have up to 3 in your party. They automatically defend you
-  and each other, and earn XP from kills within 25 units. When a pet runs out
+  and each other, and earn XP from kills within 25 units. Levelling is paced
+  to the areas (a pet that fights its way through an area ends up around its
+  top level). A pet more than 2 levels above what it beats gets less XP: 20%
+  less per extra level, down to a tenth (it tells you once per area), so to
+  keep levelling, move on. When a pet runs out
   of health it faints and recovers after 8 seconds.
 - **Pet abilities:** every species has a signature ability with its own
   cooldown (shown in the party panel). If the target is out of range, the pet

@@ -8,6 +8,7 @@ extends CharacterBody3D
 const WILD_LAYER := 4  # physics layer 3
 const PET_LAYER := 8  # physics layer 4
 const WILD_MASK := 1 | 2 | 4 | 8
+const XP_PER_LEVEL := 70  ## xp_needed(level) = XP_PER_LEVEL * level.
 const PET_MASK := 1 | 4  # pets don't block players or each other
 ## How long a queued ability waits for the pet to get in range before giving up.
 const CAST_TIMEOUT := 3.0
@@ -203,7 +204,13 @@ func skill_bonus(stat: String) -> float:
 
 
 func xp_to_next() -> int:
-	return 20 * level
+	return xp_needed(level)
+
+
+## Experience to go from `from_level` to the next. Tuned so a pet keeps pace
+## with an area's five creature levels (see World.area_levels).
+static func xp_needed(from_level: int) -> int:
+	return XP_PER_LEVEL * from_level
 
 
 ## Chance (0..1) that a capture attempt succeeds. Zero at full health.

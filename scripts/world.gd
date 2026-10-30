@@ -37,6 +37,10 @@ const OBSTACLES_PER_BIOME := 4
 @export var exit_radius := 2.5
 ## XP every pet gets for defeating a rival (x level number).
 @export var rival_defeat_xp := 40
+## Creature levels per area (see area_levels).
+const AREA_LEVELS := 5
+## A pet this many levels above what it beats still gets full experience.
+const OVERLEVEL_GRACE := 2
 ## Players pick up coins within this distance.
 @export var coin_pickup_radius := 1.4
 
@@ -419,8 +423,10 @@ func _start_level(number: int) -> void:
 	for pet in get_all_pets():
 		pet.global_position = player_spawn_point(pet.owner_id) + pet._follow_offset()
 		pet.set_focus(null)
+		pet.remove_meta("told_overlevelled")
 
-	var base_level := 1 + (number - 1) * 2
+	var levels := area_levels(number)
+	var base_level := levels.x
 	var level_biome := biome()
 	var spots: Array = layout.creature_spots
 	for i in spots.size():
@@ -430,7 +436,8 @@ func _start_level(number: int) -> void:
 				else SpeciesDB.pick_random_index(level_biome.species)
 		creature_spawner.spawn({
 			"species": species,
-			"level": base_level + int(spot.depth * 2.5) + randi() % 2,
+			# Weakest by the camp, strongest near the boss.
+			"level": mini(base_level + int(spot.depth * 4.0) + randi() % 2, levels.y),
 			"pos": level_root.to_global(spot.pos),
 		})
 	for crate: Dictionary in layout.crate_spots:
@@ -439,11 +446,11 @@ func _start_level(number: int) -> void:
 	rival_spawner.spawn({"type": level_biome.boss, "name": layout.rival_name, "level": number, "pos": boss_pos})
 	if level_biome.boss == "rival":
 		creature_spawner.spawn({
-			"species": layout.rival_species, "level": base_level + 1,
-			"skills": PetSkills.auto_ranks(base_level + 1), "owner": RIVAL_ID, "slot": 0, "pos": boss_pos + Vector3(1.5, 0.0, 1.5),
+			"species": layout.rival_species, "level": levels.y,
+			"skills": PetSkills.auto_ranks(levels.y), "owner": RIVAL_ID, "slot": 0, "pos": boss_pos + Vector3(1.5, 0.0, 1.5),
 		})
-	announce.rpc("Level %d, %s: follow the path and defeat %s!" % [number, level_biome.name, boss_objective_name()],
-			Color(1, 0.9, 0.5))
+	announce.rpc("%s, %s (creatures level %d-%d): follow the path and defeat %s!" % [area_title(number),
+			level_biome.name, levels.x, levels.y, boss_objective_name()], Color(1, 0.9, 0.5))
 	announce.rpc("A lemonade stand halfway along the path sells potions.", Color(1, 0.85, 0.35))
 
 
@@ -458,7 +465,8 @@ func on_rival_defeated(rival: Rival) -> void:
 		announce.rpc("The rival's %s has gone wild. Capture it!" % pet.species.display_name, Color(0.6, 0.85, 1.0))
 	for pet in get_all_pets():
 		if not pet.fainted:
-			pet.gain_xp(rival_defeat_xp * level_number)
+			# About a level's worth for a pet at the top of the area.
+			_give_xp(pet, roundi(rival_defeat_xp * area_levels(level_number).y / 2.0), area_levels(level_number).y)
 	exit_open = true
 
 
@@ -576,7 +584,38 @@ func award_xp(killed: Creature) -> void:
 	var amount := killed.species.xp_reward * killed.level
 	for pet in get_all_pets():
 		if not pet.fainted and pet.global_position.distance_to(killed.global_position) <= xp_share_range:
-			pet.gain_xp(amount)
+			_give_xp(pet, amount, killed.level)
+
+
+## Creature levels in each area: five per area, rising through the act
+## (Greenmeadow 1-5, Frostfang Peaks 6-10, Sunscorch Dunes 11-15, Mirewood
+## Bog 16-20), and on into the next act. Returns (lowest, highest).
+static func area_levels(number: int) -> Vector2i:
+	var low := 1 + (maxi(number, 1) - 1) * AREA_LEVELS
+	return Vector2i(low, low + AREA_LEVELS - 1)
+
+
+## "Act 1 · Area 2": each act is one pass through the biomes.
+static func area_title(number: int) -> String:
+	var n := maxi(number, 1) - 1
+	return "Act %d  ·  Area %d" % [n / BiomeDB.BIOMES.size() + 1, n % BiomeDB.BIOMES.size() + 1]
+
+
+## How much of its XP a pet gets for beating something of `foe_level`: all of
+## it up to OVERLEVEL_GRACE levels above, then 20% less per extra level, down to
+## a tenth (so taking a strong pet back to an easy area levels it slowly).
+static func xp_factor(pet_level: int, foe_level: int) -> float:
+	var over := pet_level - foe_level - OVERLEVEL_GRACE
+	return clampf(1.0 - 0.2 * over, 0.1, 1.0) if over > 0 else 1.0
+
+
+func _give_xp(pet: Creature, amount: int, foe_level: int) -> void:
+	var factor := xp_factor(pet.level, foe_level)
+	if factor < 1.0 and not pet.has_meta("told_overlevelled"):
+		pet.set_meta("told_overlevelled", true)  # once per pet per area
+		tell(pet.owner_id, "Your %s (level %d) is over-levelled here: it earns less experience. Head deeper for more." \
+				% [pet.species.display_name, pet.level], Color(0.85, 0.85, 0.7))
+	pet.gain_xp(maxi(1, roundi(amount * factor)) if amount > 0 else 0)
 
 
 ## First free party slot for a player, or -1 if the party is full.

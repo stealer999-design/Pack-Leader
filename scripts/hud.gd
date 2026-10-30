@@ -469,7 +469,8 @@ func _update_objective() -> void:
 	var world := _player.world
 	if world.layout.is_empty():
 		return
-	level_label.text = "Level %d  ·  %s" % [world.level_number, world.biome().name]
+	var levels := World.area_levels(world.level_number)
+	level_label.text = "%s  ·  %s  (Lv %d-%d)" % [World.area_title(world.level_number), world.biome().name, levels.x, levels.y]
 	progress_bar.value = world.level_progress(_player.global_position) * 100.0
 	var rival := world.get_rival()
 	if world.exit_open:

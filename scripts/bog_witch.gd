@@ -98,7 +98,7 @@ func _summon_toads() -> void:
 	for i in summon_count:
 		var offset := Vector3.FORWARD.rotated(Vector3.UP, randf() * TAU) * 2.5
 		var toad := world.creature_spawner.spawn({
-			"species": BOGLEON, "level": 1 + (level_number - 1) * 2,
+			"species": BOGLEON, "level": World.area_levels(level_number).x + 2,
 			"pos": world.clamp_to_level(global_position + offset),
 		}) as Creature
 		toad.target = target
