@@ -1,7 +1,7 @@
 class_name InventoryWindow
 extends PanelContainer
-## The inventory (I): what the tamer wears in its seven slots (weapon, chest,
-## pants, hat, two rings, a necklace) and the bag. Everything is drag and drop:
+## The inventory (I): what the tamer wears in its eight slots (weapon, chest,
+## pants, hat, boots, two rings, a necklace) and the bag. Everything is drag and drop:
 ## drag an item onto its gear slot to wear it (swapping with what's there),
 ## drag worn gear into the bag to take it off, drag within the bag to tidy it,
 ## or onto the bin to throw it away. Click an item to see it; double-click is a
@@ -47,7 +47,7 @@ func _init() -> void:
 	var columns := HBoxContainer.new()
 	columns.add_theme_constant_override("separation", 24)
 	box.add_child(columns)
-	# Worn gear: hat & necklace, chest & ring, pants & ring, weapon.
+	# Worn gear: hat & necklace, chest & ring, pants & ring, boots & weapon.
 	var worn := VBoxContainer.new()
 	columns.add_child(worn)
 	worn.add_child(_heading("Equipped"))
@@ -56,7 +56,7 @@ func _init() -> void:
 	grid.add_theme_constant_override("h_separation", 10)
 	grid.add_theme_constant_override("v_separation", 4)
 	worn.add_child(grid)
-	for slot in ["hat", "necklace", "chest", "ring1", "pants", "ring2", "weapon"]:
+	for slot in ["hat", "necklace", "chest", "ring1", "pants", "ring2", "boots", "weapon"]:
 		var cell := VBoxContainer.new()
 		cell.add_theme_constant_override("separation", 0)
 		var item_slot := ItemSlot.new()
@@ -151,7 +151,10 @@ func refresh() -> void:
 		if not item_slot.item.is_empty():
 			used += 1
 	_bag_title.text = "Bag   %d / %d" % [used, ItemDB.BAG_SIZE]
-	_armor.text = "Armor: take %d%% less damage" % player.armor_percent()
+	var gear := player.equipment
+	_armor.text = "Tamer:  %d%% armor · %d health · +%d%% speed\nPets:  +%d%% damage · +%d%% health" % [
+			player.armor_percent(), roundi(player.health.max_health), ItemDB.total(gear, "speed"),
+			ItemDB.total(gear, "pet_damage"), ItemDB.total(gear, "pet_health")]
 	if _selected and _selected.item.is_empty():
 		_selected = null
 	for item_slot in _bag_slots + _equip_slots.values():
@@ -206,9 +209,9 @@ func _update_details() -> void:
 		return
 	_details.text = ItemDB.describe(item)
 	if _selected.bag_index >= 0:
-		var worn: Dictionary = player.equipment.get(ItemDB.slot_of(item), {})
+		var worn: Dictionary = player.equipment.get(ItemDB.default_slot(item), {})
 		if not worn.is_empty():
-			_details.text += "\n(wearing: %s, %d%%)" % [ItemDB.display_name(worn), ItemDB.armor(worn)]
+			_details.text += "\n(wearing: %s, %s)" % [ItemDB.display_name(worn), ItemDB.effect(worn)]
 
 
 func _heading(text: String) -> Label:
@@ -325,7 +328,7 @@ class ItemSlot:
 			icon_name = "bat"
 			tint = Color(0.85, 0.65, 0.42)
 		else:
-			icon_name = ItemDB.SLOT_ICONS[ItemDB.slot_of(item)]
+			icon_name = ItemDB.SLOT_ICONS[ItemDB.default_slot(item)]
 			tint = ItemDB.item_color(item).lightened(0.45)
 		var texture := UiIcons.texture(icon_name, icon_size)
 		draw_texture(texture, (size - Vector2(icon_size, icon_size)) * 0.5, tint)

@@ -9,6 +9,7 @@ extends Node3D
 const SKIN := Color(0.96, 0.78, 0.62)
 const HIP_HEIGHT := 0.8
 const SHOULDER_HEIGHT := 1.42
+const PANTS := Color(0.22, 0.25, 0.35)  ## Trousers when no pants are worn.
 const REST_ARM := 0.35  ## The bat arm's angle at rest: a little forward, bat pointing ahead and down.
 
 ## The shirt. Its material is the player's own, so hit flashes and slows tint it.
@@ -26,6 +27,26 @@ var _spikes: Node3D
 var _jacket: Node3D
 var _jacket_mat := StandardMaterial3D.new()
 var _sleeves: Array[MeshInstance3D] = []
+var _pants_mat: StandardMaterial3D
+var _boots: Array[Node3D] = []
+var _boots_mat := StandardMaterial3D.new()
+var _head: Node3D
+var _hat: Node3D
+
+
+## Dresses the tamer: `outfit` holds the level (0 = none) of the worn jacket,
+## pants, hat and boots (see ItemDB.KINDS for their colours).
+func set_outfit(outfit: PackedInt32Array) -> void:
+	if _jacket == null or outfit.size() < 4:
+		return
+	set_jacket(_color("jacket", outfit[0]))
+	var pants := _color("pants", outfit[1])
+	_pants_mat.albedo_color = pants if pants.a > 0.0 else PANTS
+	_set_hat(outfit[2])
+	var boots := _color("boots", outfit[3])
+	for boot in _boots:
+		boot.visible = boots.a > 0.0
+	_boots_mat.albedo_color = boots
 
 
 ## Puts on a jacket in `color` (alpha 0 = no jacket): a coat over the shirt
@@ -39,13 +60,53 @@ func set_jacket(color: Color) -> void:
 	_jacket_mat.albedo_color = color
 
 
+func _color(type: String, level: int) -> Color:
+	return ItemDB.KINDS[type].colors[level - 1] if level > 0 else Color(0, 0, 0, 0)
+
+
+## A hat per level: straw hat, leather cap, wool hat with a bobble, iron helm,
+## ranger's hat.
+func _set_hat(level: int) -> void:
+	if _hat:
+		_hat.queue_free()
+		_hat = null
+	if level <= 0:
+		return
+	_hat = _pivot(_head, Vector3.ZERO)
+	var mat := _mat(ItemDB.KINDS.hat.colors[level - 1])
+	match level:
+		1:  # straw hat: a wide flat brim
+			_part(_hat, _cylinder(0.46, 0.46, 0.03), mat, Vector3(0, 0.2, 0))
+			_part(_hat, _cylinder(0.22, 0.25, 0.18), mat, Vector3(0, 0.3, 0))
+			_part(_hat, _cylinder(0.255, 0.255, 0.05), _mat(Color(0.6, 0.25, 0.2)), Vector3(0, 0.24, 0))  # band
+		2:  # leather cap with a peak
+			_part(_hat, _sphere(0.3), mat, Vector3(0, 0.1, 0.02), Vector3.ZERO, Vector3(1, 0.7, 1))
+			_part(_hat, _box(Vector3(0.36, 0.03, 0.22)), mat, Vector3(0, 0.07, -0.3))
+		3:  # wool hat with a bobble
+			_part(_hat, _sphere(0.31), mat, Vector3(0, 0.12, 0.02), Vector3.ZERO, Vector3(1, 0.85, 1))
+			_part(_hat, _cylinder(0.31, 0.31, 0.08), _mat(Color(0.92, 0.9, 0.85)), Vector3(0, 0.02, 0.02))
+			_part(_hat, _sphere(0.09), _mat(Color(0.92, 0.9, 0.85)), Vector3(0, 0.4, 0.02))
+		4:  # iron helm with a nose guard
+			mat.metallic = 0.7
+			mat.roughness = 0.35
+			_part(_hat, _sphere(0.32), mat, Vector3(0, 0.06, 0.01), Vector3.ZERO, Vector3(1, 0.9, 1))
+			_part(_hat, _cylinder(0.33, 0.33, 0.06), mat, Vector3(0, -0.02, 0.01))
+			_part(_hat, _box(Vector3(0.05, 0.16, 0.04)), mat, Vector3(0, -0.08, -0.32))
+		_:  # ranger's hat: a medium brim, a tall crown and a feather
+			_part(_hat, _cylinder(0.4, 0.4, 0.03), mat, Vector3(0, 0.2, 0), Vector3(-6, 0, 0))
+			_part(_hat, _cylinder(0.2, 0.25, 0.24), mat, Vector3(0, 0.33, 0))
+			_part(_hat, _box(Vector3(0.03, 0.3, 0.07)), _mat(Color(0.85, 0.2, 0.15)), Vector3(0.25, 0.4, 0.05), Vector3(0, 0, -25))
+
+
 func set_spiked(spiked: bool) -> void:
 	if _spikes:
 		_spikes.visible = spiked
 
 
 func build(body_material: StandardMaterial3D, hair_color: Color) -> void:
-	var pants := _mat(Color(0.22, 0.25, 0.35))
+	var pants := _mat(PANTS)
+	_pants_mat = pants
+	_boots_mat.roughness = 0.85
 	var shoe := _mat(Color(0.18, 0.13, 0.1))
 	var skin := _mat(SKIN)
 	var hair := _mat(hair_color)
@@ -53,6 +114,12 @@ func build(body_material: StandardMaterial3D, hair_color: Color) -> void:
 		var hip := _pivot(self, Vector3(x, HIP_HEIGHT, 0))
 		_part(hip, _box(Vector3(0.2, 0.7, 0.22)), pants, Vector3(0, -0.38, 0))
 		_part(hip, _box(Vector3(0.22, 0.12, 0.32)), shoe, Vector3(0, -0.74, -0.05))
+		# Boots, shown when worn: a taller boot over the shoe and lower leg.
+		var boot := _pivot(hip, Vector3.ZERO)
+		boot.visible = false
+		_part(boot, _box(Vector3(0.25, 0.32, 0.27)), _boots_mat, Vector3(0, -0.6, 0))
+		_part(boot, _box(Vector3(0.25, 0.14, 0.36)), _boots_mat, Vector3(0, -0.73, -0.05))
+		_boots.append(boot)
 		_hips.append(hip)
 	_body = _pivot(self, Vector3.ZERO)
 	shirt = _part(_body, _box(Vector3(0.56, 0.66, 0.32)), body_material, Vector3(0, 1.12, 0))
@@ -67,6 +134,7 @@ func build(body_material: StandardMaterial3D, hair_color: Color) -> void:
 	# Head.
 	_part(_body, _box(Vector3(0.14, 0.1, 0.14)), skin, Vector3(0, 1.5, 0))  # neck
 	_part(_body, _sphere(0.27), skin, Vector3(0, 1.78, 0))
+	_head = _pivot(_body, Vector3(0, 1.86, 0))  # hats go on here
 	_part(_body, _sphere(0.29), hair, Vector3(0, 1.86, 0.05), Vector3(1, 0.75, 1))
 	for x in [-0.1, 0.1]:
 		_part(_body, _sphere(0.045), _mat(Color(0.1, 0.1, 0.12)), Vector3(x, 1.8, -0.25))

@@ -195,6 +195,10 @@ func skill_bonus(stat: String) -> float:
 		for ally in world.get_pets(owner_id):
 			if not ally.fainted:
 				bonus += PetSkills.total(ally.species_index, ally.skill_ranks, "pack_" + stat)
+		# The tamer's rings and necklace.
+		var tamer := world.get_player(owner_id)
+		if tamer:
+			bonus += ItemDB.total(tamer.equipment, "pet_" + stat) / 100.0
 	return minf(bonus, PetSkills.MAX_ARMOR) if stat == "armor" else bonus
 
 
@@ -465,7 +469,7 @@ func _follow(master_player: Node3D, delta: float) -> Vector3:
 func _follow_speed(master_player: Node3D) -> float:
 	if _flat_distance(master_player.global_position + _follow_offset()) <= 3.0:
 		return _move_speed() * 0.6
-	var owner_speed: float = master_player.get("move_speed") if master_player.get("move_speed") != null else 0.0
+	var owner_speed: float = (master_player as Player).speed() if master_player is Player else 0.0
 	return maxf(_move_speed() * 1.2, owner_speed * 1.15)
 
 
@@ -475,7 +479,7 @@ func _move_speed() -> float:
 	if is_player_pet():
 		var master_player := world.get_player(owner_id)
 		if master_player:
-			return maxf(species.move_speed, master_player.move_speed)
+			return maxf(species.move_speed, master_player.speed())
 	return species.move_speed
 
 

@@ -179,16 +179,27 @@ played in the browser".
 - **Loot and inventory (I):** gear drops as glowing sacks (a beam of light in
   the item's rarity colour, its name above it): from crates (12%, gold crates
   40%), defeated wild creatures (8%) and every boss. Walk over a sack to put
-  it in your **bag** (24 places). The inventory shows your **seven gear slots**
-  (weapon, chest, pants, hat, two rings, a necklace) and the bag. It's all drag and drop: drag an item onto its gear slot to
+  it in your **bag** (24 places). The inventory shows your **eight gear slots**
+  (weapon, chest, pants, hat, boots, two rings, a necklace) and the bag. It's all drag and drop: drag an item onto its gear slot to
   wear it (swapping with what you had on; the slots it fits light up while
   you drag), drag worn gear into the bag to take it off, drag within the bag
   to tidy it, or drop it on the bin to throw it away (it asks first). Click an
   item to see what it does; double-click is a shortcut. The weapon slot shows your bat (upgrade it at the Bat
-  Shop). So far there are **jackets** for the chest, one per area level 1-5
-  (Tattered, Leather, Padded, Studded, Ranger's: 4-16% less damage taken), each
-  Common, Fine (+2%) or Superior (+4%); areas past level 5 drop level 5 gear.
-  A worn jacket shows on your tamer. Armor is capped at 60%. Gear is saved.
+  Shop). Every kind of gear comes in five levels, one per area (areas past
+  level 5 drop level 5 gear), each Common, Fine or Superior:
+
+  | Gear | Helps | Levels 1-5 (Common) | Fine / Superior adds |
+  |---|---|---|---|
+  | Jacket (chest) | Tamer: less damage taken | Tattered, Leather, Padded, Studded, Ranger's: 4-16% | +2% / +4% |
+  | Pants | Tamer: less damage taken | Patched Trousers, Leather, Padded, Studded, Ranger's: 2-10% | +1% / +2% |
+  | Hat | Tamer: more max health | Straw Hat, Leather Cap, Wool Hat, Iron Helm, Ranger's Hat: +10-30 | +5 / +10 |
+  | Boots | Tamer: moves faster | Worn Sandals, Leather Boots, Fur Boots, Desert Striders, Ranger's Boots: 3-11% | +2% / +4% |
+  | Ring (x2) | Pets: more damage | Copper, Fang, Silver, Claw, Alpha Ring: 3-12% | +2% / +4% |
+  | Necklace | Pets: more max health | Bead Necklace, Tooth Necklace, Shell Pendant, Jade Amulet, Heart of the Pack: 5-18% | +3% / +6% |
+
+  The inventory adds it all up under your gear. Your jacket, pants, hat and
+  boots show on your tamer (every hat looks different). Armor is capped at
+  60%. Gear is saved.
 - **Checkpoint:** downed players get back up after a few seconds at the start
   camp, or at the **lemonade stand** once they have reached it (come near it
   or get past it) this level. A grey flag beside the stand rises and turns
@@ -297,7 +308,7 @@ The host is the authoritative server and also plays.
 | `scripts/ground_textures.gd` | The ground textures, painted in code per biome: grass, snow and ice, sand ripples, swamp mud and puddles, plus camp dirt, arena flagstones and village cobblestones |
 | `scripts/building_textures.gd` | The buildings' shared textures, painted in code: clay shingle roofs, plaster walls, plank doors (and stall woodwork) |
 | `scenes/obstacles/*.tscn` (built by `scripts/tools/build_obstacles.gd`) | Four premade trees and rocks per biome (meadow: oak, pine, mossy boulder, berry bush; frost: frosted white spruce, ice crystals, snow boulder, frozen tree; desert: cactus, sandstone pillar, palm, boulders; swamp: willow, vine tree, mossy rock, old stump), placed turned and sized differently from the level seed. Rebuild with `godot --headless --path . -s res://scripts/tools/build_obstacles.gd` |
-| `scripts/item_db.gd`, `scripts/inventory_window.gd`, `scripts/loot.gd` | Gear (items, slots, rarities, jackets), the inventory window (I) and loot sacks on the ground |
+| `scripts/item_db.gd`, `scripts/inventory_window.gd`, `scripts/loot.gd` | Gear (items, slots, rarities, every kind of gear and its stats), the inventory window (I) and loot sacks on the ground |
 | `scripts/mini_map.gd` | The mini map (and the large map, M), drawn from the level layout |
 | `scripts/skill_window.gd`, `scripts/skill_icons.gd` | The skills screen (K) and its skill icons, drawn in code |
 | `scripts/creature_model.gd` | Builds each creature's body from simple meshes: a cat, bird, dog or lizard, depending on its biome |

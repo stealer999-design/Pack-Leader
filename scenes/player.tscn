@@ -40,7 +40,7 @@ properties/5/replication_mode = 2
 properties/6/path = NodePath(".:bat_tier")
 properties/6/spawn = true
 properties/6/replication_mode = 2
-properties/7/path = NodePath(".:jacket_level")
+properties/7/path = NodePath(".:outfit")
 properties/7/spawn = true
 properties/7/replication_mode = 2
 

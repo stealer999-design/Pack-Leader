@@ -542,10 +542,10 @@ func _collect_coins() -> void:
 
 
 ## Server: with probability `chance`, drops a piece of gear at `at`, made for
-## this area's level (jackets for now; levels past 5 drop level 5 gear).
+## this area's level (any kind; levels past 5 drop level 5 gear).
 func roll_loot(at: Vector3, chance: float) -> void:
 	if randf() < chance:
-		loot_spawner.spawn({"pos": clamp_to_level(at), "item": ItemDB.make_jacket(level_number)})
+		loot_spawner.spawn({"pos": clamp_to_level(at), "item": ItemDB.make_item(level_number)})
 
 
 func _collect_loot() -> void:

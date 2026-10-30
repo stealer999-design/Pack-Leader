@@ -69,12 +69,13 @@ var pets_passive := false
 ## by slot. The server holds the real ones and sends them to the owner.
 var bag: Array[Dictionary] = []
 var equipment := {}
-## The worn jacket's level (0 = none). Replicated, so everyone sees it.
-var jacket_level := 0:
+## What the tamer visibly wears: the level (0 = none) of the worn jacket,
+## pants, hat and boots. Replicated, so everyone sees it.
+var outfit := PackedInt32Array([0, 0, 0, 0]):
 	set(v):
-		jacket_level = v
+		outfit = v
 		if person:
-			person.set_jacket(ItemDB.JACKETS[v - 1].color if v > 0 else Color(0, 0, 0, 0))
+			person.set_outfit(outfit)
 ## Index into BATS. Replicated, so everyone sees the spikes.
 var bat_tier := 0:
 	set(v):
@@ -124,6 +125,7 @@ var trail: Array[Vector3] = []
 const TRAIL_STEP := 0.8
 const TRAIL_LENGTH := 60
 var person: PersonModel
+var _base_max_health := 100.0  ## Max health before gear (hats).
 
 @onready var world: World = get_tree().get_first_node_in_group("world")
 @onready var health: Health = $Health
@@ -152,7 +154,8 @@ func _ready() -> void:
 	model.add_child(person)
 	person.build(_material, HAIR_COLORS[absi(peer_id) % HAIR_COLORS.size()])
 	person.set_spiked(bat_tier >= 1)
-	jacket_level = jacket_level  # dress the model
+	_base_max_health = health.max_health
+	outfit = outfit  # dress the model
 	name_label.text = display_name
 	name_label.modulate = color.lightened(0.3)
 	_swing_fx = _build_swing_fx()
@@ -198,7 +201,7 @@ func _physics_process(delta: float) -> void:
 		velocity.x = _dash_dir.x * dash_speed
 		velocity.z = _dash_dir.z * dash_speed
 	else:
-		var target_velocity := move_dir * move_speed * (_slow_factor if _slow_timer > 0.0 else 1.0)
+		var target_velocity := move_dir * speed() * (_slow_factor if _slow_timer > 0.0 else 1.0)
 		velocity.x = move_toward(velocity.x, target_velocity.x, acceleration * delta)
 		velocity.z = move_toward(velocity.z, target_velocity.z, acceleration * delta)
 	health.invulnerable = _dash_timer > 0.0  # replicated to the server
@@ -621,7 +624,7 @@ func request_restore(data: Dictionary) -> void:
 	if saved_gear is Dictionary:
 		for slot in ItemDB.SLOTS:
 			var item := ItemDB.clean(saved_gear.get(slot, {}))
-			equipment[slot] = item if ItemDB.slot_of(item) == slot else {}
+			equipment[slot] = item if ItemDB.fits(item, slot) else {}
 	_gear_changed()
 	var beds = data.get("stable", [])
 	if beds is Array:
@@ -831,10 +834,12 @@ func _respawn_at(point: Vector3) -> void:
 
 ## Percent less damage taken, from everything worn (capped).
 func armor_percent() -> int:
-	var total := 0
-	for slot in equipment:
-		total += ItemDB.armor(equipment[slot])
-	return mini(total, ItemDB.MAX_ARMOR)
+	return ItemDB.total(equipment, "armor")
+
+
+## Walking speed, with boots.
+func speed() -> float:
+	return move_speed * (1.0 + ItemDB.total(equipment, "speed") / 100.0)
 
 
 func first_empty_bag_place() -> int:
@@ -862,7 +867,9 @@ func request_equip(index: int, slot := "") -> void:
 		return
 	var item := bag[index]
 	if slot == "":
-		slot = ItemDB.slot_of(item)
+		slot = ItemDB.default_slot(item)
+		if slot == "ring1" and equipment.ring1.size() > 0 and equipment.ring2.is_empty():
+			slot = "ring2"  # a second ring goes on the other hand
 	if not equipment.has(slot) or not ItemDB.fits(item, slot):
 		return
 	bag[index] = equipment[slot]
@@ -912,8 +919,21 @@ func request_discard(index: int) -> void:
 
 
 func _gear_changed() -> void:
-	var jacket: Dictionary = equipment.chest
-	jacket_level = int(jacket.level) if not jacket.is_empty() else 0
+	var looks := PackedInt32Array()
+	for slot in ["chest", "pants", "hat", "boots"]:
+		looks.append(int(equipment[slot].level) if not equipment[slot].is_empty() else 0)
+	outfit = looks
+	# Hats: more max health (keeping the bar at the same fraction).
+	var new_max := _base_max_health + ItemDB.total(equipment, "health")
+	if not is_equal_approx(new_max, health.max_health):
+		var fraction := health.current / health.max_health if health.max_health > 0.0 else 1.0
+		health.max_health = new_max
+		if health.current > 0.0:
+			health.current = maxf(1.0, new_max * fraction)
+	# Rings and necklaces: pets' damage is read live; their max health is refreshed.
+	if world:
+		for pet in world.get_pets(peer_id):
+			pet.refresh_max_health()
 	_push_inventory()
 
 
