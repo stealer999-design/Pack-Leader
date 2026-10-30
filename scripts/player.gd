@@ -933,6 +933,116 @@ func request_discard_many(indices: Array) -> void:
 		_push_inventory()
 
 
+## Gear just picked up: a ring of light in the item's rarity colour bursts
+## out at the tamer's feet, and the item's icon and name pop up over its head,
+## float up and fade. Follows the tamer; plays on every peer.
+func play_pickup(item: Dictionary) -> void:
+	if item.is_empty():
+		return
+	var rarity := ItemDB.rarity_color(item)
+	var fx := Node3D.new()
+	add_child(fx)
+	# The ring on the ground.
+	var ring_mat := StandardMaterial3D.new()
+	ring_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	ring_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	ring_mat.albedo_color = Color(rarity, 0.9)
+	var ring := MeshInstance3D.new()
+	var torus := TorusMesh.new()
+	torus.inner_radius = 0.75
+	torus.outer_radius = 1.0
+	ring.mesh = torus
+	ring.material_override = ring_mat
+	ring.position.y = 0.08
+	ring.scale = Vector3(0.3, 0.3, 0.3)
+	fx.add_child(ring)
+	# A column of light on the tamer.
+	var beam_mat := ring_mat.duplicate() as StandardMaterial3D
+	beam_mat.albedo_color = Color(rarity.lightened(0.3), 0.55)
+	beam_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	var beam := MeshInstance3D.new()
+	var cylinder := CylinderMesh.new()
+	cylinder.top_radius = 0.55
+	cylinder.bottom_radius = 0.75
+	cylinder.height = 3.2
+	cylinder.cap_top = false
+	cylinder.cap_bottom = false
+	beam.mesh = cylinder
+	beam.material_override = beam_mat
+	beam.position.y = 1.6
+	beam.scale = Vector3(0.6, 0.2, 0.6)
+	fx.add_child(beam)
+	# The item over the head: a glowing disc in the rarity colour, its icon, its name.
+	var badge := Node3D.new()
+	badge.position.y = 3.4
+	badge.scale = Vector3.ONE * 0.2
+	fx.add_child(badge)
+	var disc := _pickup_sprite(_pickup_glow(), Color(rarity, 0.95), 0)
+	badge.add_child(disc)
+	var icon := _pickup_sprite(UiIcons.texture(ItemDB.SLOT_ICONS[ItemDB.default_slot(item)], 64),
+			ItemDB.item_color(item).lightened(0.55), 1)
+	icon.pixel_size = 0.018
+	badge.add_child(icon)
+	var label := Label3D.new()
+	label.text = ItemDB.display_name(item)
+	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	label.no_depth_test = true
+	label.render_priority = 2
+	label.outline_render_priority = 1
+	label.pixel_size = 0.009
+	label.font_size = 48
+	label.outline_size = 12
+	label.modulate = rarity.lightened(0.2)
+	label.position.y = 1.05
+	badge.add_child(label)
+	var tween := fx.create_tween().set_parallel()
+	tween.tween_property(ring, "scale", Vector3(2.6, 1.0, 2.6), 0.9).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.tween_property(ring_mat, "albedo_color:a", 0.0, 0.9).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tween.tween_property(beam, "scale", Vector3.ONE, 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(beam_mat, "albedo_color:a", 0.0, 0.6).set_delay(0.35)
+	tween.tween_property(badge, "scale", Vector3.ONE, 0.35).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(badge, "position:y", 4.2, 2.4).set_delay(0.35).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	for faded in [disc, icon, label]:
+		tween.tween_property(faded, "modulate:a", 0.0, 0.5).set_delay(2.3)
+	tween.tween_property(label, "outline_modulate:a", 0.0, 0.5).set_delay(2.3)
+	tween.chain().tween_callback(fx.queue_free)
+
+
+func _pickup_sprite(texture: Texture2D, tint: Color, priority: int) -> Sprite3D:
+	var sprite := Sprite3D.new()
+	sprite.texture = texture
+	sprite.modulate = tint
+	sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	sprite.no_depth_test = true
+	sprite.shaded = false
+	sprite.render_priority = priority
+	sprite.pixel_size = 0.016
+	return sprite
+
+
+static var _glow_texture: ImageTexture
+
+## A soft round glow (white; tinted per item), shared by every pickup.
+static func _pickup_glow() -> ImageTexture:
+	if _glow_texture == null:
+		var size := 96
+		var image := Image.create(size, size, false, Image.FORMAT_RGBA8)
+		for y in size:
+			for x in size:
+				var d := Vector2(x + 0.5 - size / 2.0, y + 0.5 - size / 2.0).length() / (size / 2.0)
+				var a := 0.0
+				if d < 0.62:
+					a = 0.85  # the disc
+				elif d < 0.7:
+					a = 1.0  # a bright rim
+				elif d < 1.0:
+					a = 0.45 * pow(1.0 - (d - 0.7) / 0.3, 2.0)  # soft glow
+				var shade := 0.35 if d < 0.62 else 1.0  # dark middle so the icon stands out
+				image.set_pixel(x, y, Color(shade, shade, shade, a))
+		_glow_texture = ImageTexture.create_from_image(image)
+	return _glow_texture
+
+
 func _gear_changed() -> void:
 	var looks := PackedInt32Array()
 	for slot in ["chest", "pants", "hat", "boots"]:

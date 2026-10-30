@@ -557,6 +557,7 @@ func _collect_loot() -> void:
 				continue
 			if p.add_item(loot.item):
 				tell(p.peer_id, "You found a %s!  [I] inventory" % ItemDB.display_name(loot.item), ItemDB.rarity_color(loot.item))
+				show_pickup.rpc(p.peer_id, loot.item)
 				loot.queue_free()
 				break
 			elif p.get_meta("bag_full_told", -1000) < Time.get_ticks_msec() - 5000:
@@ -1087,6 +1088,17 @@ func play_capture_fx(from: Vector3, to: Vector3, success: bool) -> void:
 
 ## The bat's bonk: a ring of little yellow stars that pops up and spins around
 ## the spot (above the head of whatever was hit), then fades.
+## Everyone sees gear picked up: it pops up over the tamer who got it (see
+## Player.play_pickup); that tamer's Inventory button also marks it as new.
+@rpc("authority", "call_local", "reliable")
+func show_pickup(peer_id: int, item: Dictionary) -> void:
+	var p := get_player(peer_id)
+	if p:
+		p.play_pickup(ItemDB.clean(item))
+	if peer_id == multiplayer.get_unique_id() and hud:
+		hud.note_new_gear()
+
+
 @rpc("authority", "call_local", "unreliable")
 func play_bonk(at: Vector3) -> void:
 	if _star_mesh == null:

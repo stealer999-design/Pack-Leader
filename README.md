@@ -179,7 +179,10 @@ played in the browser".
 - **Loot and inventory (I):** gear drops as glowing sacks (a beam of light in
   the item's rarity colour, its name above it): from crates (12%, gold crates
   40%), defeated wild creatures (8%) and every boss. Walk over a sack to put
-  it in your **bag** (24 places). The inventory shows your **eight gear slots**
+  it in your **bag** (24 places): a ring and a column of light in its rarity
+  colour flash around your tamer, the item's icon and name float up over your
+  head (everyone sees it), and the Inventory button shows how many new items
+  you have until you open it. The inventory shows your **eight gear slots**
   (weapon, chest, pants, hat, boots, two rings, a necklace) and the bag. It's all drag and drop: drag an item onto its gear slot to
   wear it (swapping with what you had on; the slots it fits light up while
   you drag), drag worn gear into the bag to take it off, drag within the bag

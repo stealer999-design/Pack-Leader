@@ -15,6 +15,7 @@ var breeder_window: BreederWindow
 var pause_menu: PauseMenu
 var inventory_window: InventoryWindow
 var inventory_button: Button
+var _new_gear := 0  ## Gear picked up since the inventory was last opened.
 var _bat_shop_info: Label
 var _bat_buy_button: Button
 var _stable_party_signature := ""
@@ -200,6 +201,35 @@ func toggle_inventory() -> void:
 		return
 	close_windows()
 	inventory_window.open()
+	_new_gear = 0
+	_update_inventory_button()
+
+
+## Gear just picked up: the Inventory button says how many new items there
+## are (until the inventory is opened) and flashes.
+func note_new_gear() -> void:
+	_new_gear += 1
+	_update_inventory_button()
+	if inventory_window.visible:
+		_new_gear = 0
+		_update_inventory_button()
+		return
+	inventory_button.pivot_offset = inventory_button.size / 2.0
+	var tween := inventory_button.create_tween()
+	for i in 2:
+		tween.tween_property(inventory_button, "scale", Vector2(1.08, 1.08), 0.12)
+		tween.tween_property(inventory_button, "scale", Vector2.ONE, 0.15)
+
+
+func _update_inventory_button() -> void:
+	if _new_gear > 0:
+		inventory_button.text = "Inventory   [I]   %d new" % _new_gear
+		inventory_button.add_theme_color_override("font_color", UiTheme.ACCENT)
+		inventory_button.add_theme_color_override("icon_normal_color", UiTheme.ACCENT)
+	else:
+		inventory_button.text = "Inventory   [I]"
+		inventory_button.remove_theme_color_override("font_color")
+		inventory_button.remove_theme_color_override("icon_normal_color")
 
 
 ## The skills screen (K) can open anywhere; it replaces any other open window.
