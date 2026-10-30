@@ -854,31 +854,52 @@ func add_item(item: Dictionary) -> bool:
 	return true
 
 
-## Wears the item in bag place `index`; whatever was in that slot goes back in its place.
+## Wears the item in bag place `index` (in `slot`, or its usual slot); whatever
+## was worn there goes back into that bag place.
 @rpc("any_peer", "call_local", "reliable")
-func request_equip(index: int) -> void:
+func request_equip(index: int, slot := "") -> void:
 	if not _sent_by_owner() or index < 0 or index >= bag.size() or bag[index].is_empty():
 		return
 	var item := bag[index]
-	var slot := ItemDB.slot_of(item)
 	if slot == "":
+		slot = ItemDB.slot_of(item)
+	if not equipment.has(slot) or not ItemDB.fits(item, slot):
 		return
 	bag[index] = equipment[slot]
 	equipment[slot] = item
 	_gear_changed()
 
 
+## Takes off what's worn in `slot`, into bag place `index` (or the first free
+## place). If that place holds something that fits the slot, they swap.
 @rpc("any_peer", "call_local", "reliable")
-func request_unequip(slot: String) -> void:
+func request_unequip(slot: String, index := -1) -> void:
 	if not _sent_by_owner() or not equipment.has(slot) or equipment[slot].is_empty() or slot == "weapon":
 		return
-	var place := first_empty_bag_place()
-	if place < 0:
+	if index >= 0 and index < bag.size() and not bag[index].is_empty():
+		if ItemDB.fits(bag[index], slot):
+			request_equip(index, slot)  # a swap
+			return
+		index = -1  # something else is there: use a free place instead
+	if index < 0 or index >= bag.size():
+		index = first_empty_bag_place()
+	if index < 0:
 		world.tell(peer_id, "Your bag is full.", Color(1, 0.8, 0.5))
 		return
-	bag[place] = equipment[slot]
+	bag[index] = equipment[slot]
 	equipment[slot] = {}
 	_gear_changed()
+
+
+## Moves an item to another bag place (swapping with whatever is there).
+@rpc("any_peer", "call_local", "reliable")
+func request_move_in_bag(from: int, to: int) -> void:
+	if not _sent_by_owner() or from < 0 or to < 0 or from >= bag.size() or to >= bag.size() or from == to:
+		return
+	var item := bag[from]
+	bag[from] = bag[to]
+	bag[to] = item
+	_push_inventory()
 
 
 @rpc("any_peer", "call_local", "reliable")

@@ -180,9 +180,11 @@ played in the browser".
   the item's rarity colour, its name above it): from crates (12%, gold crates
   40%), defeated wild creatures (8%) and every boss. Walk over a sack to put
   it in your **bag** (24 places). The inventory shows your **seven gear slots**
-  (weapon, chest, pants, hat, two rings, a necklace) and the bag: click an item
-  to see it, double-click (or Wear / Take off) to put it on or take it off,
-  or throw it away. The weapon slot shows your bat (upgrade it at the Bat
+  (weapon, chest, pants, hat, two rings, a necklace) and the bag. It's all drag and drop: drag an item onto its gear slot to
+  wear it (swapping with what you had on; the slots it fits light up while
+  you drag), drag worn gear into the bag to take it off, drag within the bag
+  to tidy it, or drop it on the bin to throw it away (it asks first). Click an
+  item to see what it does; double-click is a shortcut. The weapon slot shows your bat (upgrade it at the Bat
   Shop). So far there are **jackets** for the chest, one per area level 1-5
   (Tattered, Leather, Padded, Studded, Ranger's: 4-16% less damage taken), each
   Common, Fine (+2%) or Superior (+4%); areas past level 5 drop level 5 gear.

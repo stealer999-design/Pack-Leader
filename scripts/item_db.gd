@@ -63,6 +63,14 @@ static func slot_of(item: Dictionary) -> String:
 	return ""
 
 
+## True if `item` can be worn in equipment `slot` (rings go in either ring slot).
+static func fits(item: Dictionary, slot: String) -> bool:
+	var own := slot_of(item)
+	if own == "":
+		return false
+	return own == slot or (own == "ring" and slot in ["ring1", "ring2"])
+
+
 static func display_name(item: Dictionary) -> String:
 	if item.is_empty():
 		return ""

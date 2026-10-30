@@ -160,7 +160,7 @@ func show_message(text: String, color: Color) -> void:
 ## Escape closes the stable, shop or skills, but a press that closes the release dialog
 ## on top of the stable shouldn't close the stable as well.
 func _input(event: InputEvent) -> void:
-	if event.is_action_pressed("ui_cancel") and release_dialog.visible:
+	if event.is_action_pressed("ui_cancel") and (release_dialog.visible or inventory_window._discard_dialog.visible):
 		_dialog_closed_frame = Engine.get_process_frames()
 
 
