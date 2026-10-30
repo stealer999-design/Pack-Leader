@@ -439,7 +439,8 @@ func request_breed(a_kind: String, a_index: int, b_kind: String, b_index: int) -
 		return
 	coins -= BreedingDB.PRICE
 	var hybrid := BreedingDB.hybrid_of(a.species, b.species)
-	var baby := {"species": hybrid, "level": 1, "xp": 0, "skills": PetSkills.empty_ranks()}
+	var baby := {"species": hybrid, "level": BreedingDB.baby_level(int(a.level), int(b.level)), "xp": 0,
+			"skills": PetSkills.empty_ranks()}
 	var where := "joined your party"
 	if slot >= 0:
 		world.spawn_pet(peer_id, baby, global_position, slot)
@@ -449,7 +450,8 @@ func request_breed(a_kind: String, a_index: int, b_kind: String, b_index: int) -
 		where = "is waiting in the stable"
 	world.announce.rpc("%s's %s and %s had a %s!" % [display_name, SpeciesDB.get_species(a.species).display_name,
 			SpeciesDB.get_species(b.species).display_name, SpeciesDB.get_species(hybrid).display_name], Color(1.0, 0.7, 0.85))
-	world.tell(peer_id, "Your new %s %s." % [SpeciesDB.get_species(hybrid).display_name, where], Color(1.0, 0.7, 0.85))
+	world.tell(peer_id, "Your new level %d %s %s." % [baby.level, SpeciesDB.get_species(hybrid).display_name, where],
+			Color(1.0, 0.7, 0.85))
 	world.play_burst.rpc(global_position, Color(1.0, 0.6, 0.8), 2.2)
 
 

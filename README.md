@@ -144,7 +144,8 @@ played in the browser".
   either parent (20% more health and attack than the better one), bigger,
   with a horn, mane (a frill or ruff), crown or wings (leathery on lizards)
   and a powered-up ability. The parents stay with you; the baby
-  (level 1) joins your party, or the first free hay bed. Hybrids can't be bred
+  (born at 75% of its parents' average level, rounded down: two level 10
+  parents have a level 7 baby) joins your party, or the first free hay bed. Hybrids can't be bred
   again.
 
   | Parents | Hybrid | Ability |

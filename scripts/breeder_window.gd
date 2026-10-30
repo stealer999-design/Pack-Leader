@@ -86,8 +86,8 @@ func _init() -> void:
 	scroll.add_child(_grid)
 
 	var hint := Label.new()
-	hint.text = "Breeding costs %d coins. The parents stay with you; the baby (level 1) joins your party, or the stable.   [F / Esc] close" \
-			% BreedingDB.PRICE
+	hint.text = "Breeding costs %d coins. The parents stay with you; the baby (at %d%% of their level) joins your party, or the stable.   [F / Esc] close" \
+			% [BreedingDB.PRICE, roundi(BreedingDB.BABY_LEVEL_SHARE * 100)]
 	hint.modulate = Color(1, 1, 1, 0.6)
 	hint.add_theme_font_size_override("font_size", 12)
 	box.add_child(hint)
@@ -189,12 +189,15 @@ func _update_result() -> void:
 	var a := _parents[0].pet
 	var b := _parents[1].pet
 	var hybrid := BreedingDB.hybrid_of(a.species, b.species) if not a.is_empty() and not b.is_empty() else -1
-	_result.pet = {"species": hybrid, "level": 1} if hybrid >= 0 else {}
+	var baby_level := BreedingDB.baby_level(int(a.level), int(b.level)) if hybrid >= 0 else 1
+	_result.pet = {"species": hybrid, "level": baby_level} if hybrid >= 0 else {}
 	var reason := BreedingDB.cannot_breed_reason(a, b)
 	if hybrid >= 0:
 		var species := SpeciesDB.get_species(hybrid)
-		_info.text = "%s:  %d health, %s attack at level 1.   %s: %s" % [species.display_name, roundi(species.max_health),
-				str(species.damage), species.ability.display_name, species.ability.description]
+		var grown := 1.0 + 0.15 * (baby_level - 1)  # as Creature._level_multiplier
+		_info.text = "%s, born at level %d:  %d health, %s attack.   %s: %s" % [species.display_name, baby_level,
+				roundi(species.max_health * grown), str(snappedf(species.damage * grown, 0.1)),
+				species.ability.display_name, species.ability.description]
 		if reason != "":
 			_info.text += "\n" + reason
 	else:

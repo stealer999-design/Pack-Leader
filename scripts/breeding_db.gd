@@ -4,10 +4,19 @@ class_name BreedingDB
 ## across kinds) into a hybrid: a new, stronger species with a powered-up
 ## ability. Each pair of species has its own hybrid.
 ##
-## The parents stay with their owner; the hybrid arrives at level 1.
+## The parents stay with their owner; the hybrid arrives at 75% of the
+## parents' level (see baby_level).
 
 const PRICE := 25
 const MIN_PARENT_LEVEL := 1  ## Any level can breed; raise it to require older parents.
+## The baby's level, as a share of its parents' (average) level, rounded down.
+const BABY_LEVEL_SHARE := 0.75
+
+
+## The level a hybrid is born at: 75% of its parents' average level, rounded
+## down (two level 10 parents have a level 7 baby), and at least 1.
+static func baby_level(a_level: int, b_level: int) -> int:
+	return maxi(1, floori((a_level + b_level) / 2.0 * BABY_LEVEL_SHARE))
 
 ## "a+b" (species indices, smaller first) -> the hybrid's species index.
 const HYBRIDS := {
