@@ -178,12 +178,12 @@ played in the browser".
   | Quillpuff + Aurora Swift | Prismpuff | Prism Armor: reflects 85% of damage for 6s |
   | Quillpuff + Snowl | Quillowl | Quill Storm: heavy damage all around, slows 3s |
   | Aurora Swift + Snowl | Dawnowl | Dawn Song: heals everyone nearby 50% |
-  | Fangjackal + Dunehound | Duneripper | Toxic Sandstorm: a big damaging storm for 6s |
-  | Fangjackal + Cactipup | Thornjackal | Thorn Fang: hard bite, poisons for 6s |
-  | Fangjackal + Sunfennec | Solarjackal | Solar Flare: half of nearby enemies' attacks miss for 5s |
-  | Dunehound + Cactipup | Cactihound | Cactus Wall: shields everyone 45% for 7s |
-  | Dunehound + Sunfennec | Sunhound | Heat Haze: scorching damage zone for 6s |
-  | Cactipup + Sunfennec | Bloomfennec | Desert Bloom: heals everyone nearby 40% |
+  | Fangjackal + Dunehound | Duneripper | Consecration: holy ground for 6s, burns enemies and heals allies 6%/s |
+  | Fangjackal + Cactipup | Thornjackal | Judgement: smites and taunts a target, heals itself and the most hurt ally |
+  | Fangjackal + Sunfennec | Solarjackal | Holy Light: damages and blinds nearby enemies, heals allies 25% |
+  | Dunehound + Cactipup | Cactihound | Bulwark: taunts, takes 60% less damage, shields allies 35% |
+  | Dunehound + Sunfennec | Sunhound | Sunlit Sanctuary: a wide circle for 7s, heals allies 10%/s, scorches enemies |
+  | Cactipup + Sunfennec | Bloomfennec | Blessing of the Dunes: heals everyone nearby 40% (itself 60%) |
   | Bogleon + Mirelurk | Swampdrake | Mud Lash: yanks a target in for 2.5x damage |
   | Bogleon + Wisp Gecko | Glowleon | Soul Lash: 2.8x damage, heals it and you 70% of it |
   | Bogleon + Sporeguana | Toxileon | Toxic Haze: enemies deal 50% less for 7s |
@@ -282,7 +282,12 @@ played in the browser".
   away (wild cats shoot at you too), and their ability is a spell, cast with a
   glowing magic circle. The spells are fireballs, meteors, a magma orb, a
   lightning bolt and rockfalls, plus healing, shielding and cursing spells.
-  Birds, dogs and lizards still fight up close (their classes are coming).
+  **Dogs are Paladins**: melee tanks that heal. They have 35% more health and
+  take 15% less damage, every bite heals the most injured ally nearby (a pet
+  or player, itself included) for 30% of the damage, and wild enemies go for
+  a paladin first. Their abilities heal and protect, in golden light: holy
+  bites, sanctuaries, taunts with guard, shields and heals.
+  Birds and lizards still fight up close (their classes are coming).
 - **Pet abilities:** every species has a signature ability with its own
   cooldown (shown in the party panel). If the target is out of range, the pet
   runs into range first and then casts.
@@ -298,10 +303,10 @@ played in the browser".
   | Quillpuff | Frost Armor | For 5s, reflects 60% of the damage it takes back at the attacker |
   | Aurora Swift | Healing Aurora | Heals every nearby pet *and player* for 35% of their max health |
   | Snowl | Shadow Step | Teleports behind a target and strikes it for 3x damage |
-  | Fangjackal | Venom Fang | Bites a target and poisons it (damage over 5s) |
-  | Dunehound | Sandstorm | A sandstorm at the target that damages enemies inside it for 5s |
-  | Cactipup | Spine Shield | Shields nearby pets *and players*, absorbing damage equal to 30% of their max health for 6s |
-  | Sunfennec | Sun Flare | Damages nearby enemies and makes half their attacks miss for 4s |
+  | Fangjackal | Holy Bite | Bites a target for 1.8x damage; the most injured ally nearby heals twice the damage dealt |
+  | Dunehound | Sanctuary | Blesses the ground for 6s: allies inside heal 8% of their max health a second |
+  | Cactipup | Guardian's Vow | Taunts nearby enemies onto itself, takes 50% less damage for 5s, heals itself 25% |
+  | Sunfennec | Lay on Paws | Heals the most injured ally 45% and shields every ally nearby for 15% |
   | Bogleon | Tongue Lash | Yanks a target next to the Bogleon and hits it for 1.5x damage (bosses are too heavy to pull) |
   | Mirelurk | Mud Trap | Hides a mud trap where it stands (up to 3, for 30s). The first enemy to step on it springs it: enemies nearby are damaged and rooted (can't move) for 2.5s |
   | Wisp Gecko | Life Drain | Hits a target for 2x and heals the gecko *and you* for 60% of the damage |

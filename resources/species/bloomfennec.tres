@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="CreatureSpecies" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/creature_species.gd" id="1_species"]
-[ext_resource type="Resource" path="res://resources/abilities/desert_bloom.tres" id="2_ability"]
+[ext_resource type="Resource" path="res://resources/abilities/blessing_of_the_dunes.tres" id="2_ability"]
 
 [resource]
 script = ExtResource("1_species")

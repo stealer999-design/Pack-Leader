@@ -268,6 +268,8 @@ func _tooltip() -> String:
 	var text := "%s  Lv%d" % [species.display_name, pet.level]
 	if species.pet_class() == "wizard":
 		text += "  ·  Wizard (ranged magic attacks; its ability is a spell)"
+	elif species.is_paladin():
+		text += "  ·  Paladin (a melee tank: +35% health, 15% less damage, its hits heal the most hurt ally, enemies go for it first; its ability heals or protects)"
 	if species.ability:
 		text += "\n%s: %s" % [species.ability.display_name, species.ability.description]
 	var ranks: Array = pet.get("skills", PetSkills.empty_ranks())

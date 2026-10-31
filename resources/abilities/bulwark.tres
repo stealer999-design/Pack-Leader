@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="PaladinAbility" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/abilities/paladin_ability.gd" id="1_ability"]
+
+[resource]
+script = ExtResource("1_ability")
+display_name = "Bulwark"
+description = "Taunts nearby enemies, takes 60% less damage for 6s, and shields every ally nearby for 35% of their max health."
+cooldown = 12.0
+cast_range = 0.0
+needs_target = false
+radius = 7.0
+taunt = true
+guard_duration = 6.0
+guard_reduction = 0.6
+shield_fraction = 0.35
+shield_duration = 6.0

@@ -481,10 +481,10 @@ func on_rival_defeated(rival: Rival) -> void:
 ## `source` inside it (`dps` per second); `poison_dps` also poisons them.
 ## The zone ends early if its source is removed.
 func add_zone(source: Node3D, at: Vector3, radius: float, duration: float, dps: float, color: Color,
-		poison_dps := 0.0) -> void:
+		poison_dps := 0.0, heal_fraction := 0.0) -> void:
 	_zones.append({
 		"source": source, "pos": at, "radius": radius, "time_left": duration,
-		"dps": dps, "poison_dps": poison_dps, "tick": 0.0,
+		"dps": dps, "poison_dps": poison_dps, "heal": heal_fraction, "tick": 0.0,
 	})
 	play_zone.rpc(at, radius, duration, color)
 
@@ -499,6 +499,11 @@ func _tick_zones(delta: float) -> void:
 		if zone.tick > 0.0:
 			continue
 		zone.tick = 0.5
+		if zone.heal > 0.0:  # a holy zone also heals its source's side (fraction of max health per second)
+			for ally in allies_near(zone.source, zone.pos, zone.radius):
+				ally.health.heal(ally.health.max_health * zone.heal * 0.5)
+		if zone.dps <= 0.0 and zone.poison_dps <= 0.0:
+			continue
 		for enemy in enemies_near(zone.source, zone.pos, zone.radius):
 			enemy.receive_damage(zone.dps * 0.5, zone.source)
 			if zone.poison_dps > 0.0 and enemy.has_method("poison"):

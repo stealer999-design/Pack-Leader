@@ -12,8 +12,15 @@ extends Resource
 @export_enum("none", "big_ears", "spines", "horn", "mane", "wings", "crown") var feature := "none"
 
 ## Each kind of body fights its own way. Cats are wizards: their attacks are
-## magic bolts fired from range, and their abilities are spells.
-const CLASS_BY_BODY := {"cat": "wizard"}
+## magic bolts fired from range, and their abilities are spells. Dogs are
+## paladins: melee tanks with more health and less damage taken, whose hits
+## heal the most injured ally nearby, who draw wild enemies' attention, and
+## whose abilities heal and protect.
+const CLASS_BY_BODY := {"cat": "wizard", "dog": "paladin"}
+const PALADIN_HEALTH := 1.35  ## Max health multiplier.
+const PALADIN_DAMAGE_TAKEN := 0.85  ## Damage taken multiplier.
+const PALADIN_HEAL_ON_HIT := 0.3  ## Share of each hit's damage healed onto the most injured ally.
+const PALADIN_HEAL_RANGE := 8.0
 ## How far a ranged class attacks from (world units, whatever its size).
 const RANGED_ATTACK_RANGE := 6.5
 
@@ -44,10 +51,14 @@ const RANGED_ATTACK_RANGE := 6.5
 @export var ability: PetAbility
 
 
-## The species' class ("wizard", or "" for plain melee fighters).
+## The species' class ("wizard", "paladin", or "" for plain melee fighters).
 func pet_class() -> String:
 	return CLASS_BY_BODY.get(body_type, "")
 
 
 func is_ranged() -> bool:
 	return pet_class() == "wizard"
+
+
+func is_paladin() -> bool:
+	return pet_class() == "paladin"

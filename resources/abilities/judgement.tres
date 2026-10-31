@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="PaladinAbility" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/abilities/paladin_ability.gd" id="1_ability"]
+
+[resource]
+script = ExtResource("1_ability")
+display_name = "Judgement"
+description = "Smites a target for 2.5x damage and taunts it, heals itself for 20% and the most injured ally by the damage dealt."
+cooldown = 8.0
+cast_range = 3.0
+needs_target = true
+radius = 8.0
+smite_multiplier = 2.5
+taunt = true
+heal_self = 0.2
+heal_from_smite = 1.0

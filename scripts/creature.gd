@@ -260,6 +260,8 @@ func receive_damage(amount: float, source: Node3D, knockback := Vector3.ZERO) ->
 	if source and not Combat.are_enemies(source, self):
 		return  # no friendly fire
 	amount *= 1.0 - skill_bonus("armor")
+	if species.is_paladin():
+		amount *= CreatureSpecies.PALADIN_DAMAGE_TAKEN
 	if _guard_timer > 0.0:
 		amount *= 1.0 - _guard_reduction
 		knockback = Vector3.ZERO
@@ -629,7 +631,25 @@ func _chase_and_attack(victim: Node3D) -> Vector3:
 			_fire_bolt(victim)
 		else:
 			victim.receive_damage(get_damage(), self, to / dist * 3.0)
+			if species.is_paladin():
+				_holy_strike(get_damage())
 	return Vector3.ZERO
+
+
+## Paladins: every hit heals the most injured ally nearby (pets and players
+## on its side, itself included) for a share of the damage.
+func _holy_strike(damage: float) -> void:
+	var best: Node3D = null
+	var best_fraction := 0.999
+	for ally in world.allies_near(self, global_position, CreatureSpecies.PALADIN_HEAL_RANGE):
+		if ally.health.fraction() < best_fraction:
+			best = ally
+			best_fraction = ally.health.fraction()
+	if best == null:
+		return
+	best.health.heal(damage * CreatureSpecies.PALADIN_HEAL_ON_HIT)
+	if best != self:
+		world.play_beam.rpc(global_position + Vector3.UP * 0.5, best.global_position + Vector3.UP * 0.7, Color(1.0, 0.88, 0.45))
 
 
 ## Wizards: a magic bolt in the species' colour flies at the victim and hits
@@ -669,7 +689,12 @@ func _nearest_hostile(max_range: float) -> Node3D:
 	candidates.append_array(world.get_all_pets())
 	for c in candidates:
 		var d := _flat_distance(c.global_position)
-		if d < best_dist and _is_valid_target(c):
+		if d >= max_range or not _is_valid_target(c):
+			continue
+		# Paladins draw attention: they count as half as far away.
+		if c is Creature and (c as Creature).species.is_paladin():
+			d *= 0.5
+		if d < best_dist:
 			best = c
 			best_dist = d
 	return best
@@ -737,7 +762,8 @@ func _on_died() -> void:
 
 
 func _apply_level_stats() -> void:
-	health.max_health = roundf(species.max_health * _level_multiplier() * (1.0 + skill_bonus("health")))
+	var sturdy := CreatureSpecies.PALADIN_HEALTH if species.is_paladin() else 1.0
+	health.max_health = roundf(species.max_health * _level_multiplier() * (1.0 + skill_bonus("health")) * sturdy)
 
 
 ## Pack health skills come and go as pets join, faint and wake up: keep max
