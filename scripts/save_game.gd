@@ -165,4 +165,4 @@ func _current_party_signature() -> String:
 	if not is_instance_valid(_world):
 		return ""
 	return ",".join(_world.get_pets(_player.peer_id).map(
-			func(p: Creature) -> String: return "%d:%d:%d:%s" % [p.species_index, p.party_slot, p.level, p.skill_ranks]))
+			func(p: Creature) -> String: return "%d:%d:%d:%s:%s" % [p.species_index, p.party_slot, p.level, p.skill_ranks, p.collar]))

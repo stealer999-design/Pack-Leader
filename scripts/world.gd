@@ -632,7 +632,7 @@ func spawn_pet(peer_id: int, data: Dictionary, near: Vector3, slot: int) -> Crea
 	var offset := Vector2.from_angle(randf() * TAU) * 1.5
 	return creature_spawner.spawn({
 		"species": data.species, "level": data.level, "xp": data.xp, "skills": data.get("skills", []),
-		"owner": peer_id, "slot": slot, "pos": near + Vector3(offset.x, 0.0, offset.y),
+		"collar": data.get("collar", {}), "owner": peer_id, "slot": slot, "pos": near + Vector3(offset.x, 0.0, offset.y),
 	}) as Creature
 
 
@@ -1056,6 +1056,8 @@ func _spawn_creature(data: Dictionary) -> Node:
 	creature.level = data.level
 	creature.xp = data.get("xp", 0)
 	creature.skill_ranks = PetSkills.clean_ranks(data.get("skills", []), data.level)
+	var collar := ItemDB.clean(data.get("collar", {}))
+	creature.collar = collar if ItemDB.is_collar(collar) else {}
 	creature.owner_id = data.get("owner", 0)
 	creature.party_slot = data.get("slot", -1)
 	creature.position = data.pos

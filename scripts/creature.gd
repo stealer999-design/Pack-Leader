@@ -23,6 +23,14 @@ const CAST_TIMEOUT := 3.0
 var species_index := 0
 ## Trained ranks of each of the species' skills (see PetSkills). Replicated.
 var skill_ranks: Array = PetSkills.empty_ranks()
+## The pet's collar (ItemDB; {} = none): its only gear slot. Buffs this pet
+## alone. Set by the server and replicated, so everyone sees it on the pet.
+var collar := {}:
+	set(v):
+		collar = v
+		if is_node_ready():
+			_show_collar()
+var _collar_model: Node3D
 var home := Vector3.ZERO
 
 # Replicated state.
@@ -196,6 +204,8 @@ func skill_bonus(stat: String) -> float:
 		for ally in world.get_pets(owner_id):
 			if not ally.fainted:
 				bonus += PetSkills.total(ally.species_index, ally.skill_ranks, "pack_" + stat)
+		if ItemDB.stat_of(collar) == "collar_" + stat:
+			bonus += ItemDB.amount(collar) / 100.0
 		# The tamer's rings and necklace.
 		var tamer := world.get_player(owner_id)
 		if tamer:
@@ -229,7 +239,10 @@ func ability_cooldown_left() -> float:
 
 ## Data needed to recreate this pet later (used by the stable).
 func to_data() -> Dictionary:
-	return {"species": species_index, "level": level, "xp": xp, "skills": skill_ranks.duplicate()}
+	var data := {"species": species_index, "level": level, "xp": xp, "skills": skill_ranks.duplicate()}
+	if not collar.is_empty():
+		data.collar = collar.duplicate()
+	return data
 
 
 # --- Server-side actions ---------------------------------------------------------
@@ -702,6 +715,15 @@ func refresh_max_health() -> void:
 		health.current = health.current * health.max_health / old_max
 
 
+## Puts the collar on the model (or takes it off).
+func _show_collar() -> void:
+	if _collar_model:
+		_collar_model.queue_free()
+		_collar_model = null
+	if not collar.is_empty() and body:
+		_collar_model = CreatureModel.add_collar(body, species.body_type, ItemDB.item_color(collar))
+
+
 func _level_multiplier() -> float:
 	return 1.0 + 0.15 * (level - 1)
 
@@ -715,6 +737,7 @@ static func _now() -> float:
 func _build_visuals() -> void:
 	_material.albedo_color = species.color
 	CreatureModel.build(body, species.body_type, _material, species.color, species.feature)
+	_show_collar()
 	var animator := CreatureAnimator.new()
 	animator.name = "Animator"
 	add_child(animator)

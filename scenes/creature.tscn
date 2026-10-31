@@ -57,6 +57,9 @@ properties/8/replication_mode = 2
 properties/9/path = NodePath(".:skill_ranks")
 properties/9/spawn = true
 properties/9/replication_mode = 2
+properties/10/path = NodePath(".:collar")
+properties/10/spawn = true
+properties/10/replication_mode = 2
 
 [node name="Creature" type="CharacterBody3D"]
 collision_layer = 4

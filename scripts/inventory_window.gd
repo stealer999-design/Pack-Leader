@@ -6,7 +6,10 @@ extends PanelContainer
 ## drag worn gear into the bag to take it off, drag within the bag to tidy it,
 ## or onto the bin to throw it away. Click an item to see it; double-click is a
 ## shortcut to wear / take off. To clear out lots of junk at once, press Select
-## (or right-click an item): click bag items to mark them, then Throw away. The server does the moving (Player.request_*).
+## (or right-click an item): click bag items to mark them, then Throw away.
+## The Pets tab shows the party pets instead of the tamer's gear: each pet has
+## one slot, for a collar (drag collars from the bag onto it). The server does
+## the moving (Player.request_*).
 
 const EQUIP_SIZE := Vector2(64, 64)
 const BAG_SIZE := Vector2(54, 54)
@@ -30,6 +33,13 @@ var _select_button: Button
 var _all_button: Button
 var _throw_button: Button
 var _selected: ItemSlot
+var _tamer_column: VBoxContainer
+var _pets_column: VBoxContainer
+var _tamer_tab: Button
+var _pets_tab: Button
+## One row per party slot: {portrait: PetSlot, collar: ItemSlot, label: Label}.
+var _pet_rows: Array[Dictionary] = []
+var _pets_signature := ""
 
 
 func _init() -> void:
@@ -51,12 +61,28 @@ func _init() -> void:
 	title.modulate = UiTheme.ACCENT
 	box.add_child(title)
 	UiIcons.title(title, "bag")
+	# Tabs: the tamer's gear, or the pets' collars (the bag is shared).
+	var tabs := HBoxContainer.new()
+	tabs.alignment = BoxContainer.ALIGNMENT_CENTER
+	tabs.add_theme_constant_override("separation", 8)
+	box.add_child(tabs)
+	var group := ButtonGroup.new()
+	_tamer_tab = _small_button("Tamer", "user", "What your tamer wears")
+	_pets_tab = _small_button("Pets", "paw", "Your party pets' collars")
+	for tab in [_tamer_tab, _pets_tab]:
+		tab.toggle_mode = true
+		tab.button_group = group
+		tab.custom_minimum_size.x = 120
+		tabs.add_child(tab)
+	_tamer_tab.button_pressed = true
+	_tamer_tab.toggled.connect(func(on: bool) -> void: _show_tab(not on))
 
 	var columns := HBoxContainer.new()
 	columns.add_theme_constant_override("separation", 24)
 	box.add_child(columns)
 	# Worn gear: hat & necklace, chest & ring, pants & ring, boots & weapon.
 	var worn := VBoxContainer.new()
+	_tamer_column = worn
 	columns.add_child(worn)
 	worn.add_child(_heading("Equipped"))
 	var grid := GridContainer.new()
@@ -84,6 +110,35 @@ func _init() -> void:
 	_armor = Label.new()
 	_armor.add_theme_font_size_override("font_size", 14)
 	worn.add_child(_armor)
+	# The pets' collars (the Pets tab), in the same place.
+	_pets_column = VBoxContainer.new()
+	_pets_column.visible = false
+	_pets_column.add_theme_constant_override("separation", 6)
+	columns.add_child(_pets_column)
+	_pets_column.add_child(_heading("Party pets: one collar each"))
+	for i in Player.MAX_PARTY:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		_pets_column.add_child(row)
+		var portrait := PetSlot.new()
+		portrait.kind = "result"
+		portrait.custom_minimum_size = Vector2(100, 84)
+		row.add_child(portrait)
+		var collar := ItemSlot.new()
+		collar.equip_slot = "collar"
+		collar.pet_slot = i
+		collar.custom_minimum_size = EQUIP_SIZE
+		collar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		collar.clicked.connect(_on_slot_clicked)
+		collar.dropped.connect(_on_dropped)
+		row.add_child(collar)
+		var label := Label.new()
+		label.custom_minimum_size = Vector2(170, 0)
+		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		label.add_theme_font_size_override("font_size", 13)
+		row.add_child(label)
+		_pet_rows.append({"portrait": portrait, "collar": collar, "label": label})
 	# The bag.
 	var bag_box := VBoxContainer.new()
 	columns.add_child(bag_box)
@@ -188,9 +243,52 @@ func refresh() -> void:
 	_update_select_controls()
 	if _selected and _selected.item.is_empty():
 		_selected = null
-	for item_slot in _bag_slots + _equip_slots.values():
+	_refresh_pets()
+	for item_slot in _bag_slots + _equip_slots.values() + _pet_rows.map(func(r: Dictionary) -> ItemSlot: return r.collar):
 		item_slot.selected = item_slot == _selected
 	_update_details()
+
+
+func _process(_delta: float) -> void:
+	# Pets come and go (and level up, faint, change collars) without a signal here.
+	if visible and _pets_column.visible and _pets_data() != _pets_signature:
+		refresh()
+
+
+## Party pets as data, by party slot ({} for an empty slot).
+func _pets_data() -> String:
+	var out := []
+	for i in Player.MAX_PARTY:
+		var pet := player.world.get_party_pet(player.peer_id, i) if is_instance_valid(player) else null
+		out.append([pet.species_index, pet.level, pet.fainted, pet.collar] if pet else [])
+	return str(out)
+
+
+func _refresh_pets() -> void:
+	_pets_signature = _pets_data()
+	for i in _pet_rows.size():
+		var row: Dictionary = _pet_rows[i]
+		var pet := player.world.get_party_pet(player.peer_id, i)
+		row.portrait.pet = {"species": pet.species_index, "level": pet.level, "fainted": pet.fainted} if pet else {}
+		row.collar.locked = pet == null
+		row.collar.item = pet.collar if pet else {}
+		if pet == null:
+			row.label.text = "Empty party slot"
+			row.label.modulate = UiTheme.TEXT_DIM
+		elif pet.collar.is_empty():
+			row.label.text = "No collar.\nDrag one here from the bag."
+			row.label.modulate = UiTheme.TEXT_DIM
+		else:
+			row.label.text = "%s\n%s" % [ItemDB.display_name(pet.collar), ItemDB.effect(pet.collar)]
+			row.label.modulate = ItemDB.rarity_color(pet.collar).lightened(0.3)
+
+
+func _show_tab(pets: bool) -> void:
+	_tamer_column.visible = not pets
+	_pets_column.visible = pets
+	_selected = null
+	if is_instance_valid(player):
+		refresh()
 
 
 ## The bat, shown in the weapon slot (it can't be taken off; upgrade it at the Bat Shop).
@@ -207,8 +305,14 @@ func _on_slot_clicked(item_slot: ItemSlot, double: bool) -> void:
 	_selected = item_slot if not item_slot.item.is_empty() else null
 	if double and _selected and _selected.item.get("type", "") != "bat":
 		# A shortcut: wear it / take it off.
-		if _selected.bag_index >= 0:
+		if _selected.bag_index >= 0 and ItemDB.is_collar(_selected.item):
+			var pet_slot := _collar_target()
+			if pet_slot >= 0:
+				player.request_equip_collar.rpc_id(1, _selected.bag_index, pet_slot)
+		elif _selected.bag_index >= 0:
 			player.request_equip.rpc_id(1, _selected.bag_index)
+		elif _selected.pet_slot >= 0:
+			player.request_unequip_collar.rpc_id(1, _selected.pet_slot)
 		else:
 			player.request_unequip.rpc_id(1, _selected.equip_slot)
 		_selected = null
@@ -223,15 +327,33 @@ func _on_dropped(from: ItemSlot, to: ItemSlot) -> void:
 			_discard_indices.assign([from.bag_index])
 			_discard_dialog.dialog_text = "Throw away the %s?\nIt's gone for good." % ItemDB.display_name(from.item)
 			_discard_dialog.popup_centered()
+		elif from.pet_slot >= 0:
+			player.request_unequip_collar.rpc_id(1, from.pet_slot)  # take it off first; then it can go
 		else:
 			player.request_unequip.rpc_id(1, from.equip_slot)  # take it off first; then it can go
 		return
 	if from.bag_index >= 0 and to.bag_index >= 0:
 		player.request_move_in_bag.rpc_id(1, from.bag_index, to.bag_index)
+	elif from.bag_index >= 0 and to.pet_slot >= 0:
+		player.request_equip_collar.rpc_id(1, from.bag_index, to.pet_slot)
+	elif from.pet_slot >= 0 and to.bag_index >= 0:
+		player.request_unequip_collar.rpc_id(1, from.pet_slot, to.bag_index)
 	elif from.bag_index >= 0:
 		player.request_equip.rpc_id(1, from.bag_index, to.equip_slot)
 	elif to.bag_index >= 0:
 		player.request_unequip.rpc_id(1, from.equip_slot, to.bag_index)
+
+
+## The party pet a double-clicked collar goes on: the first without one, else the first pet.
+func _collar_target() -> int:
+	var first := -1
+	for i in Player.MAX_PARTY:
+		var pet := player.world.get_party_pet(player.peer_id, i)
+		if pet and pet.collar.is_empty():
+			return i
+		if pet and first < 0:
+			first = i
+	return first
 
 
 ## Right-click: mark an item to throw away (starting select mode).
@@ -289,7 +411,7 @@ func _update_select_controls() -> void:
 	_select_button.text = "Done" if _selecting else "Select"
 	_hint.text = "Click bag items to mark them (click again to unmark), then Throw away. Right-click also marks.   [Done] back   [I / Esc] close" \
 			if _selecting else \
-			"Drag items onto your gear to wear them, into the bag to take them off, or onto the bin to throw them away. Click to see an item; right-click or Select to throw away several.   [I / Esc] close"
+			"Drag items onto your gear to wear them, into the bag to take them off, or onto the bin to throw them away. Collars go on pets in the Pets tab. Click to see an item; right-click or Select to throw away several.   [I / Esc] close"
 
 
 func _small_button(text: String, icon: String, tip: String) -> Button:
@@ -315,7 +437,9 @@ func _update_details() -> void:
 		_details.text = "%s\nHits for %d. Upgrade it at the Bat Shop in the village." % [item.name, roundi(item.damage)]
 		return
 	_details.text = ItemDB.describe(item)
-	if _selected.bag_index >= 0:
+	if _selected.bag_index >= 0 and ItemDB.is_collar(item) and not _pets_column.visible:
+		_details.text += "\n(Open the Pets tab to put it on a pet.)"
+	elif _selected.bag_index >= 0:
 		var worn: Dictionary = player.equipment.get(ItemDB.default_slot(item), {})
 		if not worn.is_empty():
 			_details.text += "\n(wearing: %s, %s)" % [ItemDB.display_name(worn), ItemDB.effect(worn)]
@@ -339,6 +463,12 @@ class ItemSlot:
 	var equip_slot := ""
 	var bag_index := -1
 	var is_bin := false  ## The throw-away bin.
+	var pet_slot := -1  ## For a pet's collar slot: the party slot of that pet.
+	var locked := false:  ## A collar slot with no pet in that party slot.
+		set(v):
+			if v != locked:
+				locked = v
+				queue_redraw()
 	var no_drag := false  ## In select mode clicks mark items instead.
 	var marked := false:  ## Marked to throw away.
 		set(v):
@@ -389,6 +519,8 @@ class ItemSlot:
 			elif bag_index >= 0:
 				# Into the bag: anything from the bag; worn gear unless a misfit is in the way.
 				ok = from.bag_index >= 0 or item.is_empty() or ItemDB.fits(item, from.equip_slot)
+			elif pet_slot >= 0:
+				ok = not locked and from.bag_index >= 0 and ItemDB.is_collar(from.item)
 			elif equip_slot != "" and equip_slot != "weapon":
 				ok = ItemDB.fits(from.item, equip_slot)
 		if ok != _drop_hover:
@@ -440,7 +572,7 @@ class ItemSlot:
 			if equip_slot == "":
 				return
 			icon_name = ItemDB.SLOT_ICONS[equip_slot]
-			tint = Color(1, 1, 1, 0.18)  # an empty slot shows what goes in it
+			tint = Color(1, 1, 1, 0.07 if locked else 0.18)  # an empty slot shows what goes in it
 		elif item.type == "bat":
 			icon_name = "bat"
 			tint = Color(0.85, 0.65, 0.42)
@@ -471,7 +603,8 @@ class ItemSlot:
 			return false
 		var data = get_viewport().gui_get_drag_data()
 		return data is Dictionary and data.has("item_slot") and data.item_slot != self \
-				and ItemDB.fits(data.item_slot.item, equip_slot)
+				and ItemDB.fits(data.item_slot.item, equip_slot) and not locked \
+				and (pet_slot < 0 or data.item_slot.bag_index >= 0)
 
 	func _tooltip() -> String:
 		if is_bin:

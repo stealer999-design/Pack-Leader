@@ -658,12 +658,16 @@ static func _clean_pet(entry) -> Dictionary:
 	if species < 0 or species >= SpeciesDB.PATHS.size():
 		return {}
 	var level := clampi(int(entry.get("level", 1)), 1, 99)
-	return {
+	var pet := {
 		"species": species,
 		"level": level,
 		"xp": clampi(int(entry.get("xp", 0)), 0, 1_000_000),
 		"skills": PetSkills.clean_ranks(entry.get("skills", []), level),
 	}
+	var collar := ItemDB.clean(entry.get("collar", {}))
+	if ItemDB.is_collar(collar):
+		pet.collar = collar
+	return pet
 
 
 ## Drag and drop in the stable window. `kind` is "party" (index = party slot)
@@ -708,19 +712,28 @@ func request_stable_release(kind: String, index: int) -> void:
 	if not _can_use_stable() or not _valid_place(kind, index):
 		return
 	var species_index := -1
+	var collar := {}
 	if kind == "bed" and not stable[index].is_empty():
 		species_index = stable[index].species
+		collar = stable[index].get("collar", {})
 		stable[index] = {}
 	elif kind == "party":
 		var pet := world.get_party_pet(peer_id, index)
 		if pet:
 			species_index = pet.species_index
+			collar = pet.collar
 			pet.queue_free()
 	if species_index < 0:
 		return
 	_push_stable()
 	world.tell(peer_id, "You released your %s back into the wild." % SpeciesDB.get_species(species_index).display_name,
 			Color(0.8, 0.8, 0.8))
+	if not collar.is_empty():  # the collar comes off first and stays with you
+		if add_item(collar):
+			world.tell(peer_id, "Its %s went into your bag." % ItemDB.display_name(collar), Color(0.8, 0.8, 0.8))
+		else:
+			world.loot_spawner.spawn({"pos": world.clamp_to_level(global_position), "item": collar})
+			world.tell(peer_id, "Your bag is full: its %s is on the ground." % ItemDB.display_name(collar), Color(1, 0.8, 0.5))
 
 
 # --- Server-side -----------------------------------------------------------------
@@ -917,6 +930,47 @@ func request_discard(index: int) -> void:
 		return
 	world.tell(peer_id, "You threw away the %s." % ItemDB.display_name(bag[index]), Color(0.8, 0.8, 0.8))
 	bag[index] = {}
+	_push_inventory()
+
+
+## Puts the collar in bag place `index` on the party pet in `party_slot`; the
+## collar it wore (if any) goes back into that bag place.
+@rpc("any_peer", "call_local", "reliable")
+func request_equip_collar(index: int, party_slot: int) -> void:
+	if not _sent_by_owner() or index < 0 or index >= bag.size() or not ItemDB.is_collar(bag[index]):
+		return
+	var pet := world.get_party_pet(peer_id, party_slot)
+	if pet == null:
+		return
+	var item := bag[index]
+	bag[index] = pet.collar
+	pet.collar = item
+	pet.refresh_max_health()
+	_push_inventory()
+
+
+## Takes the collar off the party pet in `party_slot`, into bag place `index`
+## (or the first free place). If that place holds another collar, they swap.
+@rpc("any_peer", "call_local", "reliable")
+func request_unequip_collar(party_slot: int, index := -1) -> void:
+	if not _sent_by_owner():
+		return
+	var pet := world.get_party_pet(peer_id, party_slot)
+	if pet == null or pet.collar.is_empty():
+		return
+	if index >= 0 and index < bag.size() and not bag[index].is_empty():
+		if ItemDB.is_collar(bag[index]):
+			request_equip_collar(index, party_slot)  # a swap
+			return
+		index = -1
+	if index < 0 or index >= bag.size():
+		index = first_empty_bag_place()
+	if index < 0:
+		world.tell(peer_id, "Your bag is full.", Color(1, 0.8, 0.5))
+		return
+	bag[index] = pet.collar
+	pet.collar = {}
+	pet.refresh_max_health()
 	_push_inventory()
 
 

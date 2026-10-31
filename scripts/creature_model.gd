@@ -16,6 +16,13 @@ const HEAD := {"cat": Vector3(0, 0.2, -0.3), "dog": Vector3(0, 0.24, -0.3), "bir
 const BACK := {"cat": Vector3(0, 0.2, 0.15), "dog": Vector3(0, 0.22, 0.12), "bird": Vector3(0, 0.25, 0.05),
 		"lizard": Vector3(0, -0.02, 0.0)}
 
+## Where a collar sits on each body: position (just under the head, where it
+## meets the body), tilt (degrees about X) and radius.
+const NECK := {
+	"cat": [Vector3(0, 0.03, -0.26), -15.0, 0.2], "dog": [Vector3(0, 0.08, -0.26), -15.0, 0.19],
+	"bird": [Vector3(0, 0.17, -0.17), -10.0, 0.17], "lizard": [Vector3(0, -0.11, -0.3), -80.0, 0.17],
+}
+
 ## Meshes and materials are shared between every creature that uses the same one.
 static var _cache := {}
 
@@ -266,3 +273,29 @@ static func _new_cylinder(top: float, bottom: float, height: float) -> CylinderM
 	mesh.radial_segments = 10
 	mesh.rings = 1
 	return mesh
+
+
+## A collar in `color` around the neck, with a little gold tag hanging at the front.
+static func add_collar(body: Node3D, body_type: String, color: Color) -> Node3D:
+	var neck: Array = NECK.get(body_type, NECK.cat)
+	var collar := Node3D.new()
+	collar.name = "Collar"
+	collar.position = neck[0]
+	collar.rotation_degrees.x = neck[1]
+	body.add_child(collar)
+	var torus := TorusMesh.new()
+	torus.inner_radius = neck[2] - 0.035
+	torus.outer_radius = neck[2] + 0.04  # chunky, so it reads from the game camera
+	torus.rings = 24
+	torus.ring_segments = 8
+	var band := MeshInstance3D.new()
+	band.mesh = torus
+	band.material_override = _mat(color)
+	collar.add_child(band)
+	var tag := MeshInstance3D.new()
+	tag.mesh = _sphere(0.06)
+	tag.material_override = _mat(Color(1.0, 0.82, 0.3))
+	tag.position = Vector3(0, 0, -neck[2] - 0.05)  # at the front of the neck
+	tag.scale = Vector3(1, 1, 0.5)
+	collar.add_child(tag)
+	return collar

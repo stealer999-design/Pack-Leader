@@ -6,18 +6,22 @@ class_name ItemDB
 ## Every kind of gear comes in levels 1-5 (one per area). Jackets, pants, hats
 ## and boots help the tamer; rings and necklaces buff the tamer's pets. The
 ## weapon slot shows the tamer's bat (from the Bat Shop; see Player.BATS).
+##
+## Collars are pet gear: each party pet wears one (Creature.collar, its only
+## slot), which buffs that pet alone. Spiked collars add damage, padded ones
+## health, studded ones armor.
 
 const BAG_SIZE := 24
 ## Equipment slots, in display order.
 const SLOTS := ["weapon", "chest", "pants", "hat", "boots", "ring1", "ring2", "necklace"]
 const SLOT_NAMES := {
 	"weapon": "Weapon", "chest": "Chest", "pants": "Pants", "hat": "Hat", "boots": "Boots",
-	"ring1": "Ring", "ring2": "Ring", "necklace": "Necklace",
+	"ring1": "Ring", "ring2": "Ring", "necklace": "Necklace", "collar": "Collar",
 }
 ## Icon (UiIcons) shown in each empty slot.
 const SLOT_ICONS := {
 	"weapon": "bat", "chest": "jacket", "pants": "pants", "hat": "hat", "boots": "boots",
-	"ring1": "ring", "ring2": "ring", "necklace": "necklace",
+	"ring1": "ring", "ring2": "ring", "necklace": "necklace", "collar": "collar",
 }
 
 const RARITIES := [
@@ -35,6 +39,9 @@ const STATS := {
 	"speed": "Tamer: move %d%% faster",
 	"pet_damage": "Pets: deal %d%% more damage",
 	"pet_health": "Pets: +%d%% max health",
+	"collar_damage": "This pet: deal %d%% more damage",
+	"collar_health": "This pet: +%d%% max health",
+	"collar_armor": "This pet: take %d%% less damage",
 }
 
 ## Every kind of item: its slot, the stat it gives, how much at levels 1-5,
@@ -76,9 +83,28 @@ const KINDS := {
 		"colors": [Color(0.7, 0.55, 0.4), Color(0.95, 0.92, 0.8), Color(0.95, 0.75, 0.7),
 				Color(0.35, 0.8, 0.5), Color(1.0, 0.45, 0.55)],
 	},
+	"spiked_collar": {
+		"slot": "collar", "stat": "collar_damage", "values": [5, 8, 11, 14, 18], "rarity_step": 2,
+		"names": ["Thorn Collar", "Spiked Collar", "Fang Collar", "Razor Collar", "Alpha Collar"],
+		"colors": [Color(0.45, 0.6, 0.3), Color(0.5, 0.3, 0.2), Color(0.92, 0.88, 0.75),
+				Color(0.65, 0.68, 0.74), Color(0.85, 0.25, 0.2)],
+	},
+	"padded_collar": {
+		"slot": "collar", "stat": "collar_health", "values": [6, 10, 14, 18, 22], "rarity_step": 3,
+		"names": ["Cloth Collar", "Padded Collar", "Fleece Collar", "Quilted Collar", "Guardian Collar"],
+		"colors": [Color(0.7, 0.62, 0.5), Color(0.35, 0.5, 0.75), Color(0.9, 0.88, 0.82),
+				Color(0.6, 0.35, 0.65), Color(0.3, 0.7, 0.45)],
+	},
+	"studded_collar": {
+		"slot": "collar", "stat": "collar_armor", "values": [4, 6, 8, 10, 12], "rarity_step": 2,
+		"names": ["Leather Collar", "Studded Collar", "Iron Collar", "Steel Collar", "Warden Collar"],
+		"colors": [Color(0.5, 0.33, 0.2), Color(0.3, 0.22, 0.16), Color(0.45, 0.45, 0.5),
+				Color(0.72, 0.75, 0.8), Color(0.3, 0.4, 0.7)],
+	},
 }
 ## How often each kind drops, relative to the others (rings fill two slots).
-const DROP_WEIGHTS := {"jacket": 1.0, "pants": 1.0, "hat": 1.0, "boots": 1.0, "ring": 1.4, "necklace": 0.9}
+const DROP_WEIGHTS := {"jacket": 1.0, "pants": 1.0, "hat": 1.0, "boots": 1.0, "ring": 1.4, "necklace": 0.9,
+		"spiked_collar": 0.5, "padded_collar": 0.5, "studded_collar": 0.5}
 const MAX_LEVEL := 5
 ## Armor from all gear is capped, so the tamer is never unhittable.
 const MAX_ARMOR := 60
@@ -113,7 +139,8 @@ static func _roll_rarity(rng: RandomNumberGenerator) -> int:
 	return 0
 
 
-## The slot an item goes in ("ring" for rings, which fit either ring slot; "" if it can't be worn).
+## The slot an item goes in ("ring" for rings, which fit either ring slot;
+## "collar" for collars, worn by pets; "" if it can't be worn).
 static func slot_of(item: Dictionary) -> String:
 	var kind: Dictionary = KINDS.get(item.get("type", ""), {})
 	return kind.get("slot", "")
@@ -182,8 +209,13 @@ static func effect(item: Dictionary) -> String:
 static func describe(item: Dictionary) -> String:
 	if item.is_empty():
 		return ""
+	var kind: String = "pet collar" if is_collar(item) else SLOT_NAMES[default_slot(item)].to_lower()
 	return "\n".join(["%s  (level %d)" % [display_name(item), int(item.level)],
-			"%s %s" % [RARITIES[int(item.rarity)].name, SLOT_NAMES[default_slot(item)].to_lower()], effect(item)])
+			"%s %s" % [RARITIES[int(item.rarity)].name, kind], effect(item)])
+
+
+static func is_collar(item: Dictionary) -> bool:
+	return slot_of(item) == "collar"
 
 
 ## An item from a save or a client, made safe: a known type and sensible
