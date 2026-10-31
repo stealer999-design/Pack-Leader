@@ -97,8 +97,11 @@ played in the browser".
   each area's creatures are five levels higher than the last: **Greenmeadow
   1-5, Frostfang Peaks 6-10, Sunscorch Dunes 11-15, Mirewood Bog 16-20**
   (weakest by the camp, strongest near the boss; the rival's pet is at the
-  top level). After the Bog Witch, Act 2 starts again in Greenmeadow at 21-25,
-  and so on. Bosses get tougher to match. The HUD shows the act, area and
+  top level). After the Bog Witch comes **Act 2: Hollowmere Graveyard**
+  (21-25), haunted by **skeletons and zombies**. They are monsters, not
+  creatures: they can't be captured, and your bat finishes them off (no 1 HP
+  limit). Bring your pets from Act 1. After the Grave Lord the acts loop: Act 3
+  is Greenmeadow again at 26-30, and so on. Bosses get tougher to match. The HUD shows the act, area and
   creature levels.
 
   Every boss has its own model: the rival is a tamer in a wide-brimmed hat and
@@ -113,6 +116,7 @@ played in the browser".
   | Act 1 area 2 (Lv 6-10) | Frostfang Peaks | Birds: Frostfinch, Quillpuff, Aurora Swift, Snowl | **Glacier Titan**: drops Avalanches (a red warning circle, then a slam that damages and slows) and summons capturable Frostfinches at 66% and 33% health |
   | Act 1 area 3 (Lv 11-15) | Sunscorch Dunes (desert) | Dogs: Fangjackal, Dunehound, Cactipup, Sunfennec | **Sand Wyrm**: burrows underground (it can't be hit there), tunnels under a player or pet behind a warning circle and erupts; at half health it whips up sandstorms |
   | Act 1 area 4 (Lv 16-20) | Mirewood Bog (swamp) | Lizards: Bogleon, Mirelurk, Wisp Gecko, Sporeguana | **Bog Witch**: a ranged caster whose bolts poison; she blinks away when you get close, drops toxic puddles and summons Bogleons at 60% and 30% health |
+  | Act 2 area 1 (Lv 21-25) | Hollowmere Graveyard | Monsters: Skeletons (quick, with rusty swords) and Zombies (slow, tough, hit hard); can't be captured | **Grave Lord**: a giant skeleton king with a greatsword. Grasping Hands burst from the ground under a player or pet (a red warning circle, then damage and a hold), and it raises skeletons and a zombie at 66% and 33% health |
 - **Tamer health:** after 5 seconds without taking damage you regenerate 3% of
   your max health per second. You carry up to **2 potions** (Q heals 50%),
   and start every level with a full pair. Bloomlings and Aurora Swifts can heal
@@ -139,7 +143,9 @@ played in the browser".
   (through a doorway in the far wall) to a small village square: a few houses,
   a second **stable** and the **Bat Shop**. No wild creatures are placed
   there. At the Bat Shop (F) you can upgrade your Wooden Bat (12 damage) to a
-  **Spiked Bat** (22 damage) for 60 coins. Every bat still stops creatures at 1 HP. Your bat is saved.
+  **Spiked Bat** (22 damage) for 60 coins, and once you reach Act 2, to the
+  **Chain Bat** (36 damage, wrapped in a heavy chain) for 150 coins. Every bat
+  still stops creatures at 1 HP (monsters it kills). Your bat is saved.
   The lemonade stand now sits on the stretch of path just before the village.
 - **Breeder (village):** press F at the pink stall with the hay pen. Pick two
   different pets **of the same kind** (from your party or stable, any level)

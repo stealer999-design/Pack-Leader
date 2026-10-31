@@ -18,6 +18,7 @@ func _init() -> void:
 		"frost": [_frosted_spruce, _ice_crystals, _snow_boulder, _frozen_tree],
 		"desert": [_cactus, _sandstone_pillar, _palm, _desert_boulders],
 		"swamp": [_swamp_tree, _vine_tree, _mossy_rock, _old_stump],
+		"graveyard": [_headstones, _dead_tree, _crypt, _grave_cross],
 	}
 	for biome in designs:
 		for i in designs[biome].size():
@@ -285,6 +286,90 @@ func _old_stump() -> void:
 		_cylinder(0.05, 0.14, 0.7, wood, Vector3(cos(angle) * 0.65, 0.15, sin(angle) * 0.65),
 				Vector3(rad_to_deg(sin(angle)) * 1.2, 0, -rad_to_deg(cos(angle)) * 1.2))
 	_sphere(0.3, Color(0.3, 0.46, 0.24), Vector3(0.3, 0.92, 0.1), Vector3(1.0, 0.3, 0.9))  # moss on the cut
+
+
+# --- Hollowmere Graveyard -----------------------------------------------------------
+
+## Three weathered headstones leaning in the grass: a rounded one, a cross
+## and a slab, each with a little mound of grave earth.
+func _headstones() -> void:
+	_collide(1.1, 1.3)
+	var stone := Color(0.5, 0.5, 0.52)
+	var earth := Color(0.22, 0.18, 0.15)
+	# Rounded headstone.
+	_block(Vector3(0.62, 0.8, 0.16), stone, Vector3(-0.45, 0.4, 0.1), Vector3(-6, 10, 3))
+	_cylinder(0.31, 0.31, 0.16, stone, Vector3(-0.47, 0.8, 0.08), Vector3(90 - 6, 10, 0))
+	_block(Vector3(0.36, 0.05, 0.02), stone.darkened(0.35), Vector3(-0.45, 0.62, 0.0), Vector3(-6, 10, 3))  # inscription
+	_sphere(0.45, earth, Vector3(-0.45, 0.0, -0.45), Vector3(1.0, 0.25, 1.4))
+	# Stone cross.
+	_block(Vector3(0.16, 1.1, 0.14), stone.darkened(0.08), Vector3(0.55, 0.55, -0.15), Vector3(4, -20, -8))
+	_block(Vector3(0.6, 0.16, 0.14), stone.darkened(0.08), Vector3(0.6, 0.82, -0.15), Vector3(4, -20, -8))
+	_sphere(0.4, earth, Vector3(0.45, 0.0, -0.65), Vector3(1.0, 0.22, 1.3))
+	# A low cracked slab with moss.
+	_block(Vector3(0.5, 0.5, 0.14), stone.lightened(0.05), Vector3(0.05, 0.25, 0.75), Vector3(-14, 35, 0))
+	_block(Vector3(0.3, 0.06, 0.15), Color(0.3, 0.4, 0.26), Vector3(0.05, 0.5, 0.76), Vector3(-14, 35, 0))
+
+
+## A dead, twisted tree: black bare branches reaching out, no leaves.
+func _dead_tree() -> void:
+	_collide(0.5, 3.0)
+	var bark := Color(0.15, 0.13, 0.12)
+	_cylinder(0.22, 0.38, 1.8, bark, Vector3(0, 0.9, 0), Vector3(0, 0, 4))
+	for i in 4:  # roots
+		var angle := TAU * i / 4.0 + 0.4
+		_branch(Vector3(0, 0.3, 0), Vector3(cos(angle) * 0.75, 0.0, sin(angle) * 0.75), 0.14, 0.05, bark)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 13
+	var tips: Array[Vector3] = [Vector3(0.12, 1.75, 0)]
+	for depth in 3:
+		var next: Array[Vector3] = []
+		for from in tips:
+			for k in 2:
+				var angle := rng.randf() * TAU
+				var reach := 0.75 - depth * 0.15
+				var to := from + Vector3(cos(angle) * reach, rng.randf_range(0.25, 0.6) - depth * 0.08, sin(angle) * reach)
+				_branch(from, to, 0.13 - depth * 0.035, 0.07 - depth * 0.02, bark)
+				next.append(to)
+		tips = next
+
+
+## A small stone crypt: steps, pillars either side of an iron door, a pitched
+## roof and a cross on top.
+func _crypt() -> void:
+	_collide(1.25, 2.4)
+	var stone := Color(0.46, 0.46, 0.5)
+	var dark := Color(0.12, 0.12, 0.14)
+	_block(Vector3(2.2, 0.2, 2.0), stone.darkened(0.15), Vector3(0, 0.1, 0))  # base
+	_block(Vector3(1.8, 1.5, 1.6), stone, Vector3(0, 0.95, 0.05))
+	_block(Vector3(0.7, 1.05, 0.06), dark, Vector3(0, 0.72, -0.77))  # iron door
+	_block(Vector3(0.05, 1.0, 0.07), Color(0.3, 0.3, 0.32), Vector3(0, 0.72, -0.8))  # door split
+	for x in [-0.6, 0.6]:
+		_cylinder(0.11, 0.13, 1.5, stone.lightened(0.08), Vector3(x, 0.95, -0.82))
+	_block(Vector3(1.0, 0.1, 0.4), stone.darkened(0.1), Vector3(0, 0.05, -1.05))  # step
+	for side in [-1.0, 1.0]:  # the pitched roof: two slabs meeting at a ridge
+		_block(Vector3(1.15, 0.14, 1.9), stone.darkened(0.2), Vector3(side * 0.47, 1.98, 0.05), Vector3(0, 0, -side * 32))
+	_block(Vector3(0.1, 0.55, 0.1), stone.lightened(0.1), Vector3(0, 2.55, -0.7))  # cross
+	_block(Vector3(0.36, 0.1, 0.1), stone.lightened(0.1), Vector3(0, 2.65, -0.7))
+
+
+## A tall stone cross on a stepped plinth, over a long grave mound with a
+## wilted wreath.
+func _grave_cross() -> void:
+	_collide(0.9, 2.4)
+	var stone := Color(0.55, 0.54, 0.52)
+	_block(Vector3(0.9, 0.25, 0.9), stone.darkened(0.1), Vector3(0, 0.12, 0))
+	_block(Vector3(0.6, 0.3, 0.6), stone, Vector3(0, 0.38, 0))
+	_block(Vector3(0.22, 1.9, 0.2), stone.lightened(0.05), Vector3(0, 1.45, 0))
+	_block(Vector3(0.9, 0.22, 0.2), stone.lightened(0.05), Vector3(0, 1.9, 0))
+	var ring := TorusMesh.new()  # the ring of a Celtic cross
+	ring.inner_radius = 0.24
+	ring.outer_radius = 0.31
+	_part(ring, _mat(stone), Vector3(0, 1.9, 0), Vector3(90, 0, 0))
+	_sphere(0.55, Color(0.21, 0.17, 0.14), Vector3(0, 0.0, 0.9), Vector3(0.9, 0.3, 1.5))  # mound
+	var wreath := TorusMesh.new()
+	wreath.inner_radius = 0.12
+	wreath.outer_radius = 0.2
+	_part(wreath, _mat(Color(0.3, 0.32, 0.18)), Vector3(0.1, 0.17, 0.75), Vector3(-10, 0, 8))
 
 
 # --- Helpers ------------------------------------------------------------------------

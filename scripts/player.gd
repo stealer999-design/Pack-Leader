@@ -17,6 +17,8 @@ const MAX_POTIONS := 2
 const BATS := [
 	{"name": "Wooden Bat", "damage": 12.0, "price": 0},
 	{"name": "Spiked Bat", "damage": 22.0, "price": 60},
+	# Sold once the players reach Act 2 (area 5, the graveyard).
+	{"name": "Chain Bat", "damage": 36.0, "price": 150, "min_area": 5},
 ]
 const HAIR_COLORS: Array[Color] = [Color(0.3, 0.18, 0.1), Color(0.12, 0.1, 0.08), Color(0.85, 0.65, 0.3),
 		Color(0.6, 0.25, 0.12), Color(0.45, 0.32, 0.2)]
@@ -81,7 +83,7 @@ var bat_tier := 0:
 	set(v):
 		bat_tier = v
 		if person:
-			person.set_spiked(bat_tier >= 1)
+			person.set_bat_tier(bat_tier)
 ## Server: reached this level's checkpoint (the lemonade stand), so respawns there.
 var checkpoint := false
 var downed := false:
@@ -153,7 +155,7 @@ func _ready() -> void:
 	person.name = "Person"
 	model.add_child(person)
 	person.build(_material, HAIR_COLORS[absi(peer_id) % HAIR_COLORS.size()])
-	person.set_spiked(bat_tier >= 1)
+	person.set_bat_tier(bat_tier)
 	_base_max_health = health.max_health
 	outfit = outfit  # dress the model
 	name_label.text = display_name
@@ -342,9 +344,10 @@ func request_attack(aim: Vector3) -> void:
 		to.y = 0.0
 		if aim.angle_to(to.normalized()) <= half_arc:
 			var damage := bat_damage()
-			if enemy is Creature:
+			if enemy is Creature and not enemy.is_monster():
 				# The bat only weakens creatures: it never takes them below 1 HP,
 				# so they're left ready to capture (a 99% chance at 1 HP).
+				# Monsters (the undead) can't be captured, so the bat kills them.
 				damage = maxf(minf(damage, enemy.health.current - 1.0), 0.0)
 			enemy.receive_damage(damage, self, to.normalized() * knockback)
 			world.play_bonk.rpc(enemy.global_position + Vector3.UP * (enemy.radius() * 2.0 + 0.4))
@@ -466,12 +469,15 @@ func request_buy_bat() -> void:
 	if bat.is_empty():
 		world.tell(peer_id, "You already have the best bat in the shop.", Color(1, 0.8, 0.5))
 		return
+	if world.level_number < int(bat.get("min_area", 1)):
+		world.tell(peer_id, "The %s is sold once you reach Act 2." % bat.name, Color(1, 0.8, 0.5))
+		return
 	if coins < bat.price:
 		world.tell(peer_id, "The %s costs %d coins (you have %d)." % [bat.name, bat.price, coins], Color(1, 0.8, 0.5))
 		return
 	coins -= bat.price
 	bat_tier += 1
-	world.tell(peer_id, "You got the %s! It hits for %d (it still stops at 1 HP on creatures)."
+	world.tell(peer_id, "You got the %s! It hits for %d (it still stops at 1 HP on creatures you can tame)."
 			% [bat.name, roundi(bat.damage)], Color(1.0, 0.85, 0.4))
 	world.play_burst.rpc(global_position, Color(0.85, 0.85, 0.9), 1.8)
 
@@ -502,6 +508,10 @@ func request_capture(creature_name: String) -> void:
 		world.tell(peer_id, "That pet belongs to the rival. Defeat the rival first!", Color(1, 0.8, 0.5))
 		return
 	if c == null or not c.is_wild() or not c.is_targetable():
+		return
+	if c.is_monster():
+		world.tell(peer_id, "The %s is a monster: it can't be tamed. Finish it with your bat!" % c.species.display_name,
+				Color(1, 0.8, 0.5))
 		return
 	if c.global_position.distance_to(global_position) > capture_range + c.radius():
 		world.tell(peer_id, "Too far away to capture.", Color(1, 0.8, 0.5))
@@ -655,8 +665,8 @@ static func _clean_pet(entry) -> Dictionary:
 	if not entry is Dictionary or not entry.has("species"):
 		return {}
 	var species := int(entry.species)
-	if species < 0 or species >= SpeciesDB.PATHS.size():
-		return {}
+	if species < 0 or species >= SpeciesDB.PATHS.size() or SpeciesDB.get_species(species).monster:
+		return {}  # not a species (or a monster, which can't be a pet)
 	var level := clampi(int(entry.get("level", 1)), 1, 99)
 	var pet := {
 		"species": species,

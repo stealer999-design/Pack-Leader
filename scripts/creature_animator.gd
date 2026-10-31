@@ -7,6 +7,8 @@ extends Node
 ##   sway (cats, slow) or wag (dogs, fast and faster when running);
 ## - birds: legs step, the body hops, the wings flap when moving and twitch at rest;
 ## - lizards: legs paddle in a sprawl, the body and tail swing side to side;
+## - skeletons stride with swinging arms; zombies shamble, lurching side to
+##   side with their arms held out in front;
 ## - everyone breathes a little while standing; fainted pets stay still.
 
 var creature: Creature
@@ -15,6 +17,7 @@ var body_type := "cat"
 
 var _legs: Array[Node3D] = []
 var _wings: Array[Node3D] = []
+var _arms: Array[Node3D] = []
 var _tail: Node3D
 var _base_y := 0.0
 var _last_position := Vector3.INF
@@ -36,6 +39,11 @@ func setup(owner_creature: Creature, model_body: Node3D, kind: String) -> void:
 		var wing := body.get_node_or_null("Wing%d" % i) as Node3D
 		if wing:
 			_wings.append(wing)
+	for i in 2:
+		var arm := body.get_node_or_null("Arm%d" % i) as Node3D
+		if arm:
+			arm.rotation.x = arm.get_meta("rest", 0.0)
+			_arms.append(arm)
 	_tail = body.get_node_or_null("Tail") as Node3D
 	_time = randf() * 10.0  # so a group doesn't breathe in sync
 
@@ -68,6 +76,8 @@ func _process(delta: float) -> void:
 			_walk_bird(step, stride, breathe)
 		"lizard":
 			_walk_lizard(step, stride, breathe)
+		"skeleton", "zombie":
+			_walk_upright(step, stride, breathe)
 		_:
 			_walk_four_legs(step, stride, breathe)
 
@@ -104,6 +114,20 @@ func _walk_lizard(step: float, stride: float, breathe: float) -> void:
 	body.position.y = _base_y + breathe
 	if _tail:
 		_tail.rotation.y = -sway * 2.2 + sin(_time * 1.5) * 0.12
+
+
+func _walk_upright(step: float, stride: float, breathe: float) -> void:
+	var zombie := body_type == "zombie"
+	for i in _legs.size():
+		_legs[i].rotation.x = (step if i == 0 else -step) * (0.45 if zombie else 0.6) * stride
+	for i in _arms.size():
+		var rest: float = _arms[i].get_meta("rest", 0.0)
+		if zombie:  # held out, bobbing a little out of step
+			_arms[i].rotation.x = rest + sin(_time * 2.0 + i * 1.7) * 0.08 + step * 0.05 * stride
+		else:  # swinging opposite the legs
+			_arms[i].rotation.x = rest + (-step if i == 0 else step) * 0.5 * stride
+	body.position.y = _base_y + absf(step) * 0.04 * stride + breathe
+	body.rotation.z = step * 0.12 * stride if zombie else 0.0  # the lurch
 
 
 ## Wings: a quick flap while moving, a slow twitch at rest. Wing0 is on the left.

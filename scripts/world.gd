@@ -16,7 +16,7 @@ const RIVAL_ID := -1
 const PATH_YAW := -PI / 4.0  ## The level runs left to right across the screen.
 const LOW_WALL_HEIGHT := 0.5
 ## Obstacle scene names by biome (scenes/obstacles/<name>_<0..3>.tscn).
-const OBSTACLE_BIOMES := ["meadow", "frost", "desert", "swamp"]
+const OBSTACLE_BIOMES := ["meadow", "frost", "desert", "swamp", "graveyard"]
 const OBSTACLES_PER_BIOME := 4
 
 @export var player_scene: PackedScene
@@ -25,6 +25,7 @@ const OBSTACLES_PER_BIOME := 4
 @export var titan_scene: PackedScene
 @export var wyrm_scene: PackedScene
 @export var witch_scene: PackedScene
+@export var lord_scene: PackedScene
 @export var crate_scene: PackedScene
 @export var coin_scene: PackedScene
 ## Pets within this distance of a kill share the XP.
@@ -595,10 +596,10 @@ static func area_levels(number: int) -> Vector2i:
 	return Vector2i(low, low + AREA_LEVELS - 1)
 
 
-## "Act 1 · Area 2": each act is one pass through the biomes.
+## "Act 1 · Area 2" (see BiomeDB.ACTS).
 static func area_title(number: int) -> String:
-	var n := maxi(number, 1) - 1
-	return "Act %d  ·  Area %d" % [n / BiomeDB.BIOMES.size() + 1, n % BiomeDB.BIOMES.size() + 1]
+	var where := BiomeDB.act_of(number)
+	return "Act %d  ·  Area %d" % [where.act, where.area]
 
 
 ## How much of its XP a pet gets for beating something of `foe_level`: all of
@@ -1083,7 +1084,7 @@ func _spawn_coin(data: Dictionary) -> Node:
 
 func _spawn_rival(data: Dictionary) -> Node:
 	var scene: PackedScene = {
-		"titan": titan_scene, "wyrm": wyrm_scene, "witch": witch_scene,
+		"titan": titan_scene, "wyrm": wyrm_scene, "witch": witch_scene, "lord": lord_scene,
 	}.get(data.get("type", "rival"), rival_scene)
 	var rival: Rival = scene.instantiate()
 	rival.display_name = data.name

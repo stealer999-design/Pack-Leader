@@ -24,6 +24,7 @@ var _speed := 0.0
 var _walk_phase := 0.0
 var _swinging := false
 var _spikes: Node3D
+var _chain: Node3D
 var _jacket: Node3D
 var _jacket_mat := StandardMaterial3D.new()
 var _sleeves: Array[MeshInstance3D] = []
@@ -103,6 +104,13 @@ func set_spiked(spiked: bool) -> void:
 		_spikes.visible = spiked
 
 
+## Shows the bat for a tier of Player.BATS: plain wood, spiked, or wrapped in chain.
+func set_bat_tier(tier: int) -> void:
+	set_spiked(tier == 1)
+	if _chain:
+		_chain.visible = tier >= 2
+
+
 func build(body_material: StandardMaterial3D, hair_color: Color) -> void:
 	var pants := _mat(PANTS)
 	_pants_mat = pants
@@ -170,6 +178,33 @@ func build(body_material: StandardMaterial3D, hair_color: Color) -> void:
 		var out := Vector3(cos(angle), sin(angle), 0.0)
 		var spike := _part(_spikes, _cylinder(0.0, 0.05, 0.22), steel, Vector3(0, 0, along) + out * 0.13)
 		spike.basis = Basis.looking_at(out, Vector3.FORWARD) * Basis(Vector3.RIGHT, -PI / 2.0)  # tip outwards
+	# The Chain Bat: a heavy chain wound three times around the barrel, its
+	# links alternating flat and edge-on, with a loose end and a padlock.
+	_chain = _pivot(bat, Vector3.ZERO)
+	_chain.visible = false
+	var iron := _mat(Color(0.66, 0.67, 0.72))
+	iron.metallic = 0.8
+	iron.roughness = 0.4
+	var link := TorusMesh.new()
+	link.inner_radius = 0.026
+	link.outer_radius = 0.048
+	link.rings = 10
+	link.ring_segments = 6
+	var links := 22
+	for i in links:
+		var t := float(i) / (links - 1)
+		var z := lerpf(-0.28, -0.76, t)
+		var barrel := 0.045 + 0.045 * clampf((-z - 0.145) / 0.65, 0.0, 1.0)
+		var angle := t * TAU * 3.0
+		var out := Vector3(cos(angle), sin(angle), 0.0)
+		var part := _part(_chain, link, iron, Vector3(0, 0, z) + out * (barrel + 0.025))
+		var along := Vector3(-sin(angle), cos(angle), -0.16).normalized()  # around the barrel
+		part.basis = Basis.looking_at(along, out) * Basis(Vector3.FORWARD, PI / 2.0 if i % 2 else 0.0) \
+				* Basis(Vector3.RIGHT, PI / 2.0)
+	for i in 4:  # the loose end, trailing back along the barrel
+		var part := _part(_chain, link, iron, Vector3(0.13, 0.02, -0.25 + i * 0.06))
+		part.rotation = Vector3(0, PI / 2.0 if i % 2 else 0.0, PI / 2.0)
+	_part(_chain, _box(Vector3(0.07, 0.08, 0.04)), _mat(Color(0.65, 0.55, 0.3)), Vector3(0.13, 0.0, 0.0))  # padlock
 	_rest_bat()
 
 

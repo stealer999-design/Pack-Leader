@@ -257,6 +257,9 @@ func _update_bat_shop() -> void:
 	if next.is_empty():
 		_bat_buy_button.text = "You have the best bat in the shop"
 		_bat_buy_button.disabled = true
+	elif _player.world.level_number < int(next.get("min_area", 1)):
+		_bat_buy_button.text = "%s: hits for %d   (%d coins, sold from Act 2)" % [next.name, roundi(next.damage), next.price]
+		_bat_buy_button.disabled = true
 	elif _player.coins < next.price:
 		_bat_buy_button.text = "%s: hits for %d   (%d coins, not enough)" % [next.name, roundi(next.damage), next.price]
 		_bat_buy_button.disabled = true
@@ -485,6 +488,9 @@ func _update_hover() -> void:
 	var c := _player.hovered_creature
 	if c == null or not is_instance_valid(c):
 		hover_label.text = ""
+	elif c.is_wild() and c.is_monster():
+		hover_label.text = "%s  Lv%d   —   a monster: it can't be captured. Bat it or send pets  [RMB]" \
+				% [c.species.display_name, c.level]
 	elif c.is_wild():
 		var where := "  (party full: goes to stable)" if _player.party_is_full() else ""
 		hover_label.text = "Wild %s  Lv%d   —   capture chance %d%%  [E]%s   ·   send pets  [RMB]" \
@@ -508,7 +514,10 @@ func _rebuild_party() -> void:
 		child.queue_free()
 	if pets.is_empty():
 		var hint := Label.new()
-		hint.text = "Weaken a wild creature,\nthen press E to capture it."
+		var undead: bool = _player.world.biome().species.all(
+				func(i: int) -> bool: return SpeciesDB.get_species(i).monster)
+		hint.text = "The undead can't be tamed:\nbring pets from the stable." if undead \
+				else "Weaken a wild creature,\nthen press E to capture it."
 		hint.modulate = Color(1, 1, 1, 0.6)
 		party_list.add_child(hint)
 	for pet in pets:

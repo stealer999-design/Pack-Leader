@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="CreatureSpecies" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/creature_species.gd" id="1_species"]
+
+[resource]
+script = ExtResource("1_species")
+display_name = "Skeleton"
+color = Color(0.76, 0.73, 0.64, 1)
+size = 1.0
+body_type = "skeleton"
+max_health = 40.0
+damage = 7.0
+move_speed = 5.0
+attack_range = 1.2
+attack_cooldown = 0.9
+aggressive = true
+aggro_range = 10.0
+spawn_weight = 3.0
+monster = true
+catch_rate = 0.0
+xp_reward = 24

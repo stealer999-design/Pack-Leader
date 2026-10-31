@@ -49,6 +49,9 @@ const PATHS := [
 	"res://resources/species/wraithlurk.tres",
 	"res://resources/species/mossdrake.tres",
 	"res://resources/species/sporewisp.tres",
+	# Graveyard monsters (Act 2): never pets.
+	"res://resources/species/skeleton.tres",
+	"res://resources/species/zombie.tres",
 ]
 
 static var _all: Array[CreatureSpecies] = []

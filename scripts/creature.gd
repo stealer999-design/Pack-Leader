@@ -173,6 +173,11 @@ func is_wild() -> bool:
 	return owner_id == 0
 
 
+## The graveyard's undead: wild foes that can't be captured.
+func is_monster() -> bool:
+	return species.monster
+
+
 func is_player_pet() -> bool:
 	return owner_id > 0
 
@@ -227,6 +232,8 @@ static func xp_needed(from_level: int) -> int:
 ## `boost` multiplies it (Lucky Lemonade); it never goes above 95%, except that a
 ## creature bonked down to 1 HP (the tamer's bat stops there) is a 99% catch.
 func capture_chance(boost := 1.0) -> float:
+	if is_monster():
+		return 0.0
 	if health.current <= 1.0:
 		return 0.99
 	var missing := 1.0 - health.fraction()
@@ -748,7 +755,7 @@ func _build_visuals() -> void:
 	shape.radius = radius()
 	collision.shape = shape
 	collision.position.y = radius()
-	overhead.position.y = 0.9 * species.size + 0.5
+	overhead.position.y = (1.75 if CreatureModel.is_humanoid(species.body_type) else 0.9) * species.size + 0.5
 
 
 func _apply_ownership() -> void:

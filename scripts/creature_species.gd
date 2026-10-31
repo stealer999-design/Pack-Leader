@@ -7,7 +7,7 @@ extends Resource
 @export var color := Color.WHITE
 @export var size := 1.0
 ## The body the creature is built with (see CreatureModel). Each biome has its own.
-@export_enum("cat", "bird", "dog", "lizard") var body_type := "cat"
+@export_enum("cat", "bird", "dog", "lizard", "skeleton", "zombie") var body_type := "cat"
 ## An extra body detail for this species (see CreatureModel).
 @export_enum("none", "big_ears", "spines", "horn", "mane", "wings", "crown") var feature := "none"
 
@@ -23,6 +23,10 @@ extends Resource
 @export var aggressive := true
 @export var aggro_range := 9.0
 @export var spawn_weight := 1.0
+
+## Monsters (the undead of the graveyard) are not creatures you can tame: they
+## can't be captured, and the tamer's bat can finish them off.
+@export var monster := false
 
 @export_group("Taming")
 ## 0..1. Higher = easier to capture. Capture chance also scales with missing health.

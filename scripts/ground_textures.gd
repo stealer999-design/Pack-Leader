@@ -16,7 +16,7 @@ const SIZE := 256
 const TILE_UNITS := 8.0  ## World units one tile covers.
 
 ## Biome index (BiomeDB) -> the path's style.
-const BIOME_STYLES := ["grass", "snow", "sand", "swamp"]
+const BIOME_STYLES := ["grass", "snow", "sand", "swamp", "graveyard"]
 
 static var _cache := {}
 
@@ -47,6 +47,8 @@ static func _paint(style: String, color: Color) -> Image:
 			_sand(canvas, color)
 		"swamp":
 			_swamp(canvas, color)
+		"graveyard":
+			_graveyard(canvas, color)
 		"flagstone":
 			_stones(canvas, color, 4, 0.0, 3)
 		"cobble":
@@ -118,6 +120,36 @@ static func _swamp(c: Canvas, color: Color) -> void:
 			c.stroke(c.rng.randf() * SIZE, c.rng.randf() * SIZE, c.rng.randf_range(-0.3, 0.3), c.rng.randf_range(3, 6), tone)
 		else:
 			c.dot(c.rng.randf() * SIZE, c.rng.randf() * SIZE, 0.9, tone)
+
+
+## Dead, grey-green grass worn through to dark grave soil, strewn with dry
+## leaves, twigs and the odd fragment of bone.
+static func _graveyard(c: Canvas, color: Color) -> void:
+	var grass := color.lerp(Color(0.32, 0.33, 0.27), 0.5)
+	c.fill_noise(grass.darkened(0.2), grass.lightened(0.05), 0.02, 3)
+	var soil := Color(0.2, 0.17, 0.15)
+	c.blend_noise(soil, 0.012, 0.6)  # bare earth
+	c.blend_noise(soil.darkened(0.25), 0.012, 0.68)
+	for i in 1100:  # dead grass
+		var tone := Color.from_hsv(c.rng.randf_range(0.12, 0.2), 0.25, c.rng.randf_range(0.28, 0.45))
+		c.stroke(c.rng.randf() * SIZE, c.rng.randf() * SIZE, c.rng.randf_range(-0.35, 0.35), c.rng.randf_range(2, 5), tone)
+	for i in 160:  # fallen leaves
+		var leaf := Color.from_hsv(c.rng.randf_range(0.04, 0.1), 0.55, c.rng.randf_range(0.3, 0.5))
+		c.dot(c.rng.randf() * SIZE, c.rng.randf() * SIZE, c.rng.randf_range(0.9, 1.6), leaf)
+	for i in 30:  # twigs
+		var x := c.rng.randf() * SIZE
+		var y := c.rng.randf() * SIZE
+		var angle := c.rng.randf() * TAU
+		var length := c.rng.randf_range(4, 9)
+		c.line(x, y, x + cos(angle) * length, y + sin(angle) * length, Color(0.16, 0.12, 0.1), 0.6)
+	for i in 22:  # bits of bone
+		var x := c.rng.randf() * SIZE
+		var y := c.rng.randf() * SIZE
+		var angle := c.rng.randf() * TAU
+		var bone := Color(0.82, 0.8, 0.72)
+		c.line(x, y, x + cos(angle) * 4.0, y + sin(angle) * 4.0, bone, 0.7)
+		c.dot(x, y, 1.0, bone)
+		c.dot(x + cos(angle) * 4.0, y + sin(angle) * 4.0, 1.0, bone)
 
 
 static func _dirt(c: Canvas, color: Color) -> void:

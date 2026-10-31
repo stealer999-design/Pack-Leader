@@ -1,6 +1,8 @@
 class_name BiomeDB
 ## The biomes levels cycle through. Level 1 uses the first biome, level 2 the
 ## second, and so on, wrapping around (with creature levels still rising).
+## They are grouped into acts (ACTS): Act 1 is the first four biomes, Act 2 the
+## Graveyard; after that the cycle starts again, as Act 3, 4, ...
 ##
 ## species: indices into SpeciesDB that live in this biome.
 ## starter_species: if set, the first two creatures near the camp are always this one.
@@ -44,7 +46,18 @@ const BIOMES := [
 		"camp": Color(0.32, 0.29, 0.22), "arena": Color(0.24, 0.27, 0.2),
 		"wall": Color(0.26, 0.32, 0.22), "rock": Color(0.36, 0.3, 0.24),
 	},
+	{
+		"name": "Hollowmere Graveyard",
+		"species": [45, 46],  # skeletons and zombies: monsters, not pets
+		"boss": "lord",
+		"boss_name": "the Grave Lord",
+		"floor_hue": Vector2(0.18, 0.26), "floor_sat": 0.16, "floor_val": 0.3,
+		"camp": Color(0.3, 0.29, 0.3), "arena": Color(0.26, 0.25, 0.3),
+		"wall": Color(0.3, 0.3, 0.34), "rock": Color(0.42, 0.42, 0.45),
+	},
 ]
+## Which biomes make up each act (indices into BIOMES, in order).
+const ACTS := [[0, 1, 2, 3], [4]]
 
 
 static func index_for_level(level_number: int) -> int:
@@ -53,3 +66,15 @@ static func index_for_level(level_number: int) -> int:
 
 static func for_level(level_number: int) -> Dictionary:
 	return BIOMES[index_for_level(level_number)]
+
+
+## Where area `level_number` falls: {act: 1, 2, ... (rising each time the
+## cycle repeats), area: its place in that act (1-based)}.
+static func act_of(level_number: int) -> Dictionary:
+	var n := maxi(level_number, 1) - 1
+	var cycle := n / BIOMES.size()
+	var index := n % BIOMES.size()
+	for a in ACTS.size():
+		if index in ACTS[a]:
+			return {"act": cycle * ACTS.size() + a + 1, "area": ACTS[a].find(index) + 1}
+	return {"act": 1, "area": 1}

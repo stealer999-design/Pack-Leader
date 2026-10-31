@@ -53,6 +53,10 @@ static func build(body: MeshInstance3D, body_type: String, main: StandardMateria
 			_dog(body, m)
 		"lizard":
 			_lizard(body, m)
+		"skeleton":
+			_skeleton(body, m)
+		"zombie":
+			_zombie(body, m)
 		_:
 			_cat(body, m)
 	match feature:
@@ -99,6 +103,80 @@ static func build(body: MeshInstance3D, body_type: String, main: StandardMateria
 					_part(wing, _sphere(0.3 * span), front_mat if f == 0 else back_mat,
 							Vector3(x * (0.05 + f * 0.09), 0.22 + f * 0.04, 0.01 + f * 0.05), Vector3(0, 0, -x * (25 + f * 18)),
 							Vector3(0.14, 0.95 - f * 0.18, 0.5))
+
+
+## Walking on two legs (the graveyard's monsters): taller, with arms.
+static func is_humanoid(body_type: String) -> bool:
+	return body_type == "skeleton" or body_type == "zombie"
+
+
+## A skeleton: bones in the species colour, a ribcage, a grinning skull with
+## red points of light in its eye sockets, and a rusty sword. Arm0/Arm1 swing.
+static func _skeleton(b: Node3D, m: Dictionary) -> void:
+	var socket := _mat(Color(0.08, 0.06, 0.06))
+	var ember := _mat(Color(1.0, 0.25, 0.15), true)
+	var rust := _mat(Color(0.5, 0.36, 0.26))
+	for x in [-0.12, 0.12]:
+		var hip := _pivot(b, "Leg%d" % (0 if x < 0 else 1), Vector3(x, 0.38, 0))
+		_part(hip, _cylinder(0.04, 0.045, 0.38), m.main, Vector3(0, -0.2, 0))  # thigh bone
+		_part(hip, _sphere(0.06), m.main, Vector3(0, -0.4, 0))  # knee
+		_part(hip, _cylinder(0.035, 0.04, 0.36), m.main, Vector3(0, -0.6, 0))  # shin
+		_part(hip, _box(Vector3(0.11, 0.05, 0.2)), m.main, Vector3(0, -0.78, -0.05))  # foot
+	_part(b, _box(Vector3(0.32, 0.12, 0.16)), m.main, Vector3(0, 0.42, 0))  # pelvis
+	_part(b, _cylinder(0.035, 0.035, 0.6), m.main, Vector3(0, 0.72, 0.03))  # spine
+	for i in 4:  # ribs, smaller towards the bottom
+		var rib := TorusMesh.new()
+		rib.inner_radius = 0.13 + i * -0.015
+		rib.outer_radius = rib.inner_radius + 0.035
+		_part(b, rib, m.main, Vector3(0, 0.95 - i * 0.09, 0), Vector3.ZERO, Vector3(1.15, 1, 0.8))
+	_part(b, _box(Vector3(0.05, 0.3, 0.04)), m.main, Vector3(0, 0.83, -0.12))  # breastbone
+	_part(b, _box(Vector3(0.5, 0.06, 0.08)), m.main, Vector3(0, 1.02, 0))  # collarbones
+	_part(b, _cylinder(0.03, 0.03, 0.1), m.main, Vector3(0, 1.08, 0))  # neck
+	_part(b, _sphere(0.16), m.main, Vector3(0, 1.24, 0), Vector3.ZERO, Vector3(0.95, 1, 1.05))  # skull
+	_part(b, _box(Vector3(0.17, 0.07, 0.13)), m.main, Vector3(0, 1.1, -0.06))  # jaw
+	for x in [-0.06, 0.06]:
+		_part(b, _sphere(0.045), socket, Vector3(x, 1.26, -0.13))
+		_part(b, _sphere(0.017), ember, Vector3(x, 1.26, -0.17))
+	_part(b, _box(Vector3(0.03, 0.04, 0.02)), socket, Vector3(0, 1.19, -0.16))  # nose hole
+	for x in [-0.26, 0.26]:
+		var shoulder := _pivot(b, "Arm%d" % (0 if x < 0 else 1), Vector3(x, 1.0, 0))
+		_part(shoulder, _sphere(0.05), m.main, Vector3.ZERO)
+		_part(shoulder, _cylinder(0.03, 0.035, 0.3), m.main, Vector3(0, -0.17, 0))
+		_part(shoulder, _cylinder(0.025, 0.03, 0.28), m.main, Vector3(0, -0.47, 0))
+		_part(shoulder, _box(Vector3(0.07, 0.09, 0.05)), m.main, Vector3(0, -0.64, 0))  # hand
+		if x > 0:  # a rusty sword in the right hand, pointing forward
+			_part(shoulder, _box(Vector3(0.04, 0.06, 0.62)), rust, Vector3(0, -0.66, -0.34))
+			_part(shoulder, _box(Vector3(0.2, 0.03, 0.04)), rust, Vector3(0, -0.66, -0.04))  # guard
+
+
+## A zombie: green-grey skin in the species colour, a torn shirt and trousers,
+## a lolling head with dim yellow eyes, and both arms reaching forward.
+static func _zombie(b: Node3D, m: Dictionary) -> void:
+	var shirt := _mat(Color(0.42, 0.36, 0.3))
+	var trousers := _mat(Color(0.24, 0.24, 0.3))
+	var dark := _mat(Color(0.12, 0.1, 0.08))
+	var eye := _mat(Color(0.95, 0.9, 0.35), true)
+	for x in [-0.13, 0.13]:
+		var hip := _pivot(b, "Leg%d" % (0 if x < 0 else 1), Vector3(x, 0.38, 0))
+		_part(hip, _box(Vector3(0.17, 0.72, 0.19)), trousers, Vector3(0, -0.38, 0))
+		_part(hip, _box(Vector3(0.18, 0.1, 0.27)), m.main, Vector3(0, -0.76, -0.05))  # bare foot
+	_part(b, _box(Vector3(0.44, 0.58, 0.26)), shirt, Vector3(0, 0.72, 0))  # torso
+	_part(b, _box(Vector3(0.2, 0.22, 0.27)), m.main, Vector3(0.1, 0.62, -0.005), Vector3(0, 0, 12))  # a rip showing skin
+	_part(b, _box(Vector3(0.46, 0.08, 0.28)), dark, Vector3(0, 0.44, 0))  # belt
+	var head := _pivot(b, "Head", Vector3(0, 1.08, -0.02))
+	head.rotation_degrees = Vector3(12, 0, 14)  # lolling to one side
+	_part(head, _box(Vector3(0.12, 0.1, 0.12)), m.main, Vector3(0, 0.02, 0))  # neck
+	_part(head, _box(Vector3(0.3, 0.32, 0.3)), m.main, Vector3(0, 0.2, 0))
+	_part(head, _box(Vector3(0.32, 0.08, 0.32)), dark, Vector3(0, 0.37, 0.02))  # patchy hair
+	for x in [-0.07, 0.07]:
+		_part(head, _box(Vector3(0.07, 0.05, 0.02)), eye, Vector3(x, 0.23, -0.155))
+	_part(head, _box(Vector3(0.14, 0.04, 0.02)), dark, Vector3(0.02, 0.1, -0.155), Vector3(0, 0, -8))  # slack mouth
+	for x in [-0.29, 0.29]:
+		var shoulder := _pivot(b, "Arm%d" % (0 if x < 0 else 1), Vector3(x, 0.95, 0))
+		shoulder.set_meta("rest", 1.35)  # reaching forward
+		_part(shoulder, _box(Vector3(0.14, 0.32, 0.15)), shirt, Vector3(0, -0.15, 0))  # sleeve
+		_part(shoulder, _box(Vector3(0.11, 0.3, 0.12)), m.main, Vector3(0, -0.44, 0))  # forearm
+		_part(shoulder, _box(Vector3(0.12, 0.1, 0.13)), m.main, Vector3(0, -0.63, 0))  # hand
 
 
 static func _cat(b: Node3D, m: Dictionary) -> void:

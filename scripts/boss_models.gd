@@ -235,3 +235,69 @@ static func _cylinder(top: float, bottom: float, height: float) -> CylinderMesh:
 	mesh.height = height
 	mesh.radial_segments = 12
 	return mesh
+
+
+## The Grave Lord: a giant skeleton king in a tattered cloak and a rusted
+## crown, eyes burning green, dragging a huge notched greatsword.
+static func grave_lord(model: Node3D, main: StandardMaterial3D) -> Dictionary:
+	var cloak := _mat(Color(0.14, 0.12, 0.18))
+	var gold := _mat(Color(0.7, 0.55, 0.25))
+	gold.metallic = 0.6
+	gold.roughness = 0.4
+	var socket := _mat(Color(0.05, 0.05, 0.06))
+	var ghost := _mat(Color(0.45, 1.0, 0.5), true)
+	var steel := _mat(Color(0.48, 0.47, 0.5))
+	steel.metallic = 0.5
+	var legs: Array = []
+	for x in [-0.32, 0.32]:
+		var hip := _pivot(model, Vector3(x, 1.4, 0))
+		_part(hip, _cylinder(0.09, 0.1, 0.7), main, Vector3(0, -0.36, 0))  # thigh
+		_part(hip, _sphere(0.13), main, Vector3(0, -0.72, 0))  # knee
+		_part(hip, _cylinder(0.08, 0.09, 0.62), main, Vector3(0, -1.05, 0))  # shin
+		_part(hip, _box(Vector3(0.24, 0.1, 0.42)), main, Vector3(0, -1.36, -0.1))  # foot
+		legs.append(hip)
+	var body := _pivot(model, Vector3.ZERO)
+	_part(body, _box(Vector3(0.85, 0.26, 0.4)), main, Vector3(0, 1.45, 0))  # pelvis
+	_part(body, _cylinder(0.08, 0.08, 1.2), main, Vector3(0, 2.05, 0.08))  # spine
+	for i in 5:  # a great ribcage
+		var rib := TorusMesh.new()
+		rib.inner_radius = 0.42 - i * 0.04
+		rib.outer_radius = rib.inner_radius + 0.08
+		_part(body, rib, main, Vector3(0, 2.65 - i * 0.2, 0), Vector3.ZERO, Vector3(1.15, 1.0, 0.8))
+	_part(body, _box(Vector3(0.12, 0.8, 0.1)), main, Vector3(0, 2.3, -0.36))  # breastbone
+	_part(body, _box(Vector3(1.5, 0.14, 0.2)), main, Vector3(0, 2.85, 0))  # collarbones
+	# The cloak: hangs from the shoulders down the back, torn at the hem.
+	_part(body, _box(Vector3(1.6, 0.2, 0.5)), cloak, Vector3(0, 2.92, 0.12))  # mantle
+	_part(body, _box(Vector3(1.4, 2.2, 0.08)), cloak, Vector3(0, 1.8, 0.45), Vector3(6, 0, 0))
+	for i in 5:
+		_part(body, _cylinder(0.0, 0.15, 0.4), cloak, Vector3(-0.56 + i * 0.28, 0.55, 0.57), Vector3(186, 0, 0))
+	# The skull and its crown.
+	var head := _pivot(body, Vector3(0, 3.25, -0.05))
+	_part(head, _sphere(0.38), main, Vector3(0, 0.05, 0), Vector3.ZERO, Vector3(0.95, 1, 1.05))
+	_part(head, _box(Vector3(0.4, 0.16, 0.3)), main, Vector3(0, -0.27, -0.12))  # jaw
+	for x in [-0.14, 0.14]:
+		_part(head, _sphere(0.1), socket, Vector3(x, 0.08, -0.3))
+		_part(head, _sphere(0.045), ghost, Vector3(x, 0.08, -0.38))
+	_part(head, _box(Vector3(0.06, 0.09, 0.04)), socket, Vector3(0, -0.07, -0.37))  # nose hole
+	_part(head, _cylinder(0.36, 0.38, 0.14), gold, Vector3(0, 0.38, 0))
+	for i in 6:
+		var a := TAU * i / 6.0
+		_part(head, _cylinder(0.0, 0.07, 0.24), gold, Vector3(cos(a) * 0.32, 0.55, sin(a) * 0.32))
+	_part(head, _sphere(0.06), ghost, Vector3(0, 0.4, -0.37))  # the crown's gem
+	# Arms: bony, with the greatsword in the right hand.
+	var arms: Array = []
+	for side in [-1.0, 1.0]:
+		var shoulder := _pivot(body, Vector3(side * 0.82, 2.8, 0))
+		_part(shoulder, _sphere(0.15), main, Vector3.ZERO)
+		_part(shoulder, _cylinder(0.07, 0.08, 0.7), main, Vector3(0, -0.38, 0))
+		_part(shoulder, _sphere(0.1), main, Vector3(0, -0.74, 0))
+		_part(shoulder, _cylinder(0.06, 0.07, 0.62), main, Vector3(0, -1.06, 0))
+		_part(shoulder, _box(Vector3(0.18, 0.2, 0.12)), main, Vector3(0, -1.42, 0))  # hand
+		arms.append(shoulder)
+	var sword := _pivot(arms[1], Vector3(0, -1.42, 0))
+	_part(sword, _box(Vector3(0.12, 0.08, 1.9)), steel, Vector3(0, 0, -1.05))  # blade, pointing forward
+	_part(sword, _box(Vector3(0.6, 0.1, 0.12)), gold, Vector3(0, 0, -0.1))  # cross-guard
+	_part(sword, _box(Vector3(0.1, 0.1, 0.35)), cloak, Vector3(0, 0, 0.12))  # grip
+	arms[0].rotation_degrees.x = 20
+	arms[1].rotation_degrees.x = 30
+	return {"legs": legs, "arms": arms, "bob": [body, 0.0, 0.05, 1.3]}
