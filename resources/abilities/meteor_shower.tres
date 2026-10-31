@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="SpellBlastAbility" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/abilities/spell_blast_ability.gd" id="1_ability"]
+
+[resource]
+script = ExtResource("1_ability")
+display_name = "Meteor Shower"
+description = "Rains three blazing meteors around the target, each stunning what it hits for 1.5s."
+cooldown = 12.0
+cast_range = 10.0
+damage_multiplier = 2.2
+radius = 2.8
+style = "meteor"
+color = Color(1, 0.45, 0.2, 1)
+stun_duration = 1.5
+count = 3
+spread = 3.0

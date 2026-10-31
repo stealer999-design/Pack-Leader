@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SpellBlastAbility" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/abilities/spell_blast_ability.gd" id="1_ability"]
+
+[resource]
+script = ExtResource("1_ability")
+display_name = "Magma Orb"
+description = "Lobs a ball of magma that bursts and leaves a pool of fire burning for 4s."
+cooldown = 8.0
+cast_range = 10.0
+damage_multiplier = 2.0
+radius = 3.0
+style = "orb"
+color = Color(1, 0.35, 0.1, 1)
+burn_duration = 4.0
+burn_dps_multiplier = 0.6

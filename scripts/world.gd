@@ -1288,6 +1288,108 @@ func _bolt_segment(a: Vector3, b: Vector3, mat: Material) -> MeshInstance3D:
 	return bolt
 
 
+## A wizard's magic bolt: a glowing orb with a fading trail that flies from
+## `from` to `to` in `travel` seconds and bursts on arrival.
+@rpc("authority", "call_local", "unreliable")
+func play_bolt(from: Vector3, to: Vector3, color: Color, travel: float) -> void:
+	var fx := Node3D.new()
+	add_child(fx)
+	fx.global_position = from
+	var core := MeshInstance3D.new()
+	var orb := SphereMesh.new()
+	orb.radius = 0.16
+	orb.height = 0.32
+	core.mesh = orb
+	core.material_override = _fx_material(Color(1, 1, 1, 0.95))
+	fx.add_child(core)
+	var glow := MeshInstance3D.new()
+	var halo := SphereMesh.new()
+	halo.radius = 0.3
+	halo.height = 0.6
+	glow.mesh = halo
+	glow.material_override = _fx_material(Color(color, 0.55))
+	fx.add_child(glow)
+	var tween := fx.create_tween()
+	tween.tween_property(fx, "global_position", to, travel)
+	tween.tween_callback(func() -> void:
+		_ring_fx(to - Vector3.UP * 0.55, color, 0.9)
+		fx.queue_free())
+
+
+## A wizard casting: a glowing circle of light under the caster with a ring
+## of sparks rising out of it.
+@rpc("authority", "call_local", "unreliable")
+func play_cast(at: Vector3, color: Color) -> void:
+	var fx := Node3D.new()
+	add_child(fx)
+	fx.global_position = at + Vector3.UP * 0.06
+	var mat := _fx_material(Color(color, 0.85))
+	for r in [1.1, 0.75]:
+		var ring := MeshInstance3D.new()
+		var torus := TorusMesh.new()
+		torus.inner_radius = r - 0.07
+		torus.outer_radius = r
+		ring.mesh = torus
+		ring.material_override = mat
+		fx.add_child(ring)
+	for i in 6:  # rune marks between the rings
+		var mark := MeshInstance3D.new()
+		var box := BoxMesh.new()
+		box.size = Vector3(0.08, 0.02, 0.26)
+		mark.mesh = box
+		mark.material_override = mat
+		var a := TAU * i / 6.0
+		mark.position = Vector3(cos(a), 0, sin(a)) * 0.92
+		mark.rotation.y = -a
+		fx.add_child(mark)
+	var sparks := Node3D.new()
+	fx.add_child(sparks)
+	for i in 8:
+		var spark := MeshInstance3D.new()
+		var dot := SphereMesh.new()
+		dot.radius = 0.07
+		dot.height = 0.14
+		spark.mesh = dot
+		spark.material_override = mat
+		var a := TAU * i / 8.0
+		spark.position = Vector3(cos(a), 0.1, sin(a)) * 0.9
+		sparks.add_child(spark)
+	fx.scale = Vector3.ONE * 0.4
+	var tween := fx.create_tween().set_parallel()
+	tween.tween_property(fx, "scale", Vector3.ONE, 0.2).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(fx, "rotation:y", PI, 0.8)
+	tween.tween_property(sparks, "position:y", 1.6, 0.8)
+	tween.tween_property(mat, "albedo_color:a", 0.0, 0.35).set_delay(0.45)
+	tween.chain().tween_callback(fx.queue_free)
+
+
+## A spell on its way (see SpellBlastAbility): an "orb" flying from `from`,
+## a "meteor" falling from the sky, or a "lightning" bolt striking down; it
+## lands at `to` after `travel` seconds.
+@rpc("authority", "call_local", "unreliable")
+func play_spell(style: String, from: Vector3, to: Vector3, color: Color, travel: float) -> void:
+	if style == "lightning":
+		play_lightning(PackedVector3Array([to + Vector3(0.6, 12.0, 0.4), to + Vector3.UP * 0.5]))
+		_ring_fx(to, color, 2.0)
+		return
+	var size := 0.55 if style == "meteor" else 0.4
+	var fx := Node3D.new()
+	add_child(fx)
+	fx.global_position = from
+	for layer in [[size, Color(1, 1, 1, 0.95)], [size * 1.8, Color(color, 0.6)], [size * 2.6, Color(color, 0.25)]]:
+		var shell := MeshInstance3D.new()
+		var orb := SphereMesh.new()
+		orb.radius = layer[0]
+		orb.height = layer[0] * 2.0
+		shell.mesh = orb
+		shell.material_override = _fx_material(layer[1])
+		fx.add_child(shell)
+	var tween := fx.create_tween()
+	tween.tween_property(fx, "global_position", to, travel).set_trans(Tween.TRANS_QUAD) \
+			.set_ease(Tween.EASE_IN if style == "meteor" else Tween.EASE_OUT)
+	tween.tween_callback(fx.queue_free)
+
+
 ## A short beam between two points (e.g. a heal).
 @rpc("authority", "call_local", "unreliable")
 func play_beam(from: Vector3, to: Vector3, color: Color) -> void:

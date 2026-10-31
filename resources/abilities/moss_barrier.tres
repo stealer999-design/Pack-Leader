@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ShieldAbility" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/abilities/shield_ability.gd" id="1_ability"]
+
+[resource]
+script = ExtResource("1_ability")
+display_name = "Moss Barrier"
+description = "Wraps every nearby pet and player in a mossy barrier that absorbs damage equal to 30% of their max health for 6s."
+cooldown = 12.0
+radius = 8.0
+shield_fraction = 0.3
+duration = 6.0

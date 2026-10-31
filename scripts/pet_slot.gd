@@ -266,6 +266,8 @@ func _tooltip() -> String:
 		return "Empty. Drag a pet here." if kind != "release" else "Drop a pet here to release it into the wild."
 	var species := SpeciesDB.get_species(pet.species)
 	var text := "%s  Lv%d" % [species.display_name, pet.level]
+	if species.pet_class() == "wizard":
+		text += "  ·  Wizard (ranged magic attacks; its ability is a spell)"
 	if species.ability:
 		text += "\n%s: %s" % [species.ability.display_name, species.ability.description]
 	var ranks: Array = pet.get("skills", PetSkills.empty_ranks())

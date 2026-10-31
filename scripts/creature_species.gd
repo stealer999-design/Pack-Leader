@@ -11,6 +11,12 @@ extends Resource
 ## An extra body detail for this species (see CreatureModel).
 @export_enum("none", "big_ears", "spines", "horn", "mane", "wings", "crown") var feature := "none"
 
+## Each kind of body fights its own way. Cats are wizards: their attacks are
+## magic bolts fired from range, and their abilities are spells.
+const CLASS_BY_BODY := {"cat": "wizard"}
+## How far a ranged class attacks from (world units, whatever its size).
+const RANGED_ATTACK_RANGE := 6.5
+
 @export_group("Stats (level 1)")
 @export var max_health := 50.0
 @export var damage := 6.0
@@ -36,3 +42,12 @@ extends Resource
 @export_group("Pet")
 ## Triggered by the owner with the ability key for this pet's party slot.
 @export var ability: PetAbility
+
+
+## The species' class ("wizard", or "" for plain melee fighters).
+func pet_class() -> String:
+	return CLASS_BY_BODY.get(body_type, "")
+
+
+func is_ranged() -> bool:
+	return pet_class() == "wizard"

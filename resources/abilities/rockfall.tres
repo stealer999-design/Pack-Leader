@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SpellBlastAbility" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/abilities/spell_blast_ability.gd" id="1_ability"]
+
+[resource]
+script = ExtResource("1_ability")
+display_name = "Rockfall"
+description = "Drops a boulder from the sky, crushing enemies where it lands and stunning them for 2.5s."
+cooldown = 10.0
+cast_range = 10.0
+damage_multiplier = 2.6
+radius = 3.5
+style = "meteor"
+color = Color(0.6, 0.48, 0.35, 1)
+stun_duration = 2.5

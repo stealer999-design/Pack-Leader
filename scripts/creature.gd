@@ -8,6 +8,7 @@ extends CharacterBody3D
 const WILD_LAYER := 4  # physics layer 3
 const PET_LAYER := 8  # physics layer 4
 const WILD_MASK := 1 | 2 | 4 | 8
+const BOLT_SPEED := 20.0  ## Wizards' magic bolts, units per second.
 const XP_PER_LEVEL := 70  ## xp_needed(level) = XP_PER_LEVEL * level.
 const PET_MASK := 1 | 4  # pets don't block players or each other
 ## How long a queued ability waits for the pet to get in range before giving up.
@@ -602,6 +603,8 @@ func _tick_pending_cast(delta: float) -> Vector3:
 	if _flat_distance(point) > 0.1:
 		model.rotation.y = atan2(-(point.x - global_position.x), -(point.z - global_position.z))
 	_ability_used.rpc(ability.cooldown)
+	if species.pet_class() == "wizard":
+		world.play_cast.rpc(global_position, species.color.lightened(0.3))
 	ability.execute(self, point, cast_target)
 	return Vector3.ZERO
 
@@ -614,15 +617,38 @@ func _chase_and_attack(victim: Node3D) -> Vector3:
 		return Vector3.ZERO
 	model.rotation.y = atan2(-to.x, -to.z)
 	var victim_radius: float = victim.radius() if victim.has_method("radius") else 0.4
-	if dist > species.attack_range * species.size + victim_radius:
+	var reach := CreatureSpecies.RANGED_ATTACK_RANGE if species.is_ranged() else species.attack_range * species.size
+	if dist > reach + victim_radius:
 		return to / dist * _move_speed()
 	if _attack_timer <= 0.0:
 		_attack_timer = species.attack_cooldown
 		_lunge.rpc()
 		if _blind_timer > 0.0 and randf() < 0.5:
 			return Vector3.ZERO  # blinded: the attack misses
-		victim.receive_damage(get_damage(), self, to / dist * 3.0)
+		if species.is_ranged():
+			_fire_bolt(victim)
+		else:
+			victim.receive_damage(get_damage(), self, to / dist * 3.0)
 	return Vector3.ZERO
+
+
+## Wizards: a magic bolt in the species' colour flies at the victim and hits
+## when it arrives (if the victim is still there to be hit).
+func _fire_bolt(victim: Node3D) -> void:
+	var from := global_position + Vector3.UP * (0.55 * species.size)
+	var to := victim.global_position + Vector3.UP * 0.6
+	var travel := from.distance_to(to) / BOLT_SPEED
+	world.play_bolt.rpc(from, to, species.color.lightened(0.25), travel)
+	get_tree().create_timer(travel).timeout.connect(_bolt_landed.bind(victim.get_instance_id(), get_damage()))
+
+
+## The bolt arrives. Looked up by id: the victim may have died on the way.
+func _bolt_landed(victim_id: int, damage: float) -> void:
+	var victim := instance_from_id(victim_id) as Node3D
+	if is_instance_valid(victim) and not victim.is_queued_for_deletion() and victim.is_targetable():
+		var push := victim.global_position - global_position
+		push.y = 0.0
+		victim.receive_damage(damage, self, push.normalized() * 1.5)
 
 
 func _steer_to(point: Vector3, speed: float) -> Vector3:

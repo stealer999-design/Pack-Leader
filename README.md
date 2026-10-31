@@ -162,12 +162,12 @@ played in the browser".
 
   | Parents | Hybrid | Ability |
   |---|---|---|
-  | Mossback + Emberfox | Magmashell | Molten Guard: taunts, takes 60% less damage for 5s |
+  | Mossback + Emberfox | Magmashell | Magma Orb: a ball of magma that leaves a fire pool for 4s |
   | Mossback + Voltwing | Thundershell | Storm Shell: reflects 85% of damage for 5s |
-  | Mossback + Gloomhorn | Stonehorn | Quake: bigger slam, stuns 2.5s |
+  | Mossback + Gloomhorn | Stonehorn | Rockfall: a boulder from the sky, stuns 2.5s |
   | Mossback + Bloomling | Mossbloom | Grove Aurora: heals everyone nearby 40% |
-  | Emberfox + Voltwing | Blitzfox | Blitz Pounce: leap for 3.5x damage |
-  | Emberfox + Gloomhorn | Cinderhorn | Meteor Slam: heavy slam, stuns 1.5s |
+  | Emberfox + Voltwing | Blitzfox | Lightning Bolt: a bolt from the sky for 4x damage |
+  | Emberfox + Gloomhorn | Cinderhorn | Meteor Shower: three meteors, each stuns 1.5s |
   | Emberfox + Bloomling | Sunpetal | Phoenix Bloom: heals the most hurt ally 70% |
   | Voltwing + Gloomhorn | Stormhorn | Thunder Chain: lightning jumps 5 times |
   | Voltwing + Bloomling | Sparkblossom | Static Ward: shields everyone 40% for 7s |
@@ -277,16 +277,22 @@ played in the browser".
   less per extra level, down to a tenth (it tells you once per area), so to
   keep levelling, move on. When a pet runs out
   of health it faints and recovers after 8 seconds.
+- **Classes:** pets fight differently by kind. **Cats are Wizards**: instead
+  of biting, they fire magic bolts in their own colour from about 6.5 units
+  away (wild cats shoot at you too), and their ability is a spell, cast with a
+  glowing magic circle. The spells are fireballs, meteors, a magma orb, a
+  lightning bolt and rockfalls, plus healing, shielding and cursing spells.
+  Birds, dogs and lizards still fight up close (their classes are coming).
 - **Pet abilities:** every species has a signature ability with its own
   cooldown (shown in the party panel). If the target is out of range, the pet
   runs into range first and then casts.
 
   | Species | Ability | Effect |
   |---|---|---|
-  | Mossback | Shell Guard | Taunts nearby wild creatures onto itself, takes 50% less damage for 4s |
-  | Emberfox | Pounce | Leaps to the target point and deals 2.5x damage around the landing |
+  | Mossback | Moss Barrier | Shields nearby pets *and players*, absorbing damage equal to 30% of their max health for 6s |
+  | Emberfox | Fireball | Hurls a fireball that explodes where it lands (2.5x damage around it) |
   | Voltwing | Static Arc | Lightning that chains between up to 3 enemies (needs a target) |
-  | Gloomhorn | Earthshaker | Damages and stuns every enemy within 4 units for 2s |
+  | Gloomhorn | Meteor | A meteor falls on the target point, damaging and stunning enemies there for 2s |
   | Bloomling | Mending Bloom | Heals the most injured ally nearby (a pet or a player, including you) for 45% |
   | Frostfinch | Frost Nova | Damages every enemy around it and slows them to half speed for 3s |
   | Quillpuff | Frost Armor | For 5s, reflects 60% of the damage it takes back at the attacker |

@@ -496,7 +496,8 @@ func _update_hover() -> void:
 		hover_label.text = "Wild %s  Lv%d   —   capture chance %d%%  [E]%s   ·   send pets  [RMB]" \
 				% [c.species.display_name, c.level, roundi(c.capture_chance(_player.capture_boost()) * 100.0), where]
 	elif c.owner_id == _player.peer_id:
-		hover_label.text = "Your %s  Lv%d" % [c.species.display_name, c.level]
+		hover_label.text = "Your %s  Lv%d%s" % [c.species.display_name, c.level,
+				"  ·  Wizard" if c.species.pet_class() == "wizard" else ""]
 		var left := PetSkills.points_left(c.level, c.skill_ranks)
 		if left > 0:
 			hover_label.text += "   ·   %d skill point%s to spend  [K]" % [left, "" if left == 1 else "s"]
