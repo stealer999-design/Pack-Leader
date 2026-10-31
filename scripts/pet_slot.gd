@@ -270,6 +270,8 @@ func _tooltip() -> String:
 		text += "  ·  Wizard (ranged magic attacks; its ability is a spell)"
 	elif species.is_archer():
 		text += "  ·  Archer (shoots arrows from long range and keeps its distance; its ability is a ranged shot)"
+	elif species.is_venomancer():
+		text += "  ·  Venomancer (its bites stack venom that ticks on, whatever hits it up close is poisoned back; its ability poisons)"
 	elif species.is_paladin():
 		text += "  ·  Paladin (a melee tank: +35% health, 15% less damage, its hits heal the most hurt ally, enemies go for it first; its ability heals or protects)"
 	if species.ability:

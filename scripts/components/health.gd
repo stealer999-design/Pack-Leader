@@ -77,6 +77,14 @@ func add_poison(dps: float, duration: float) -> void:
 	_poison_timer = maxf(_poison_timer, duration)
 
 
+## Server: venom that stacks. Each dose adds `stack_dps` to the poison (up to
+## `max_dps` in all) and keeps it going for at least `duration` seconds.
+func add_venom(stack_dps: float, duration: float, max_dps: float) -> void:
+	var current := _poison_dps if _poison_timer > 0.0 else 0.0
+	_poison_dps = maxf(current, minf(current + stack_dps, max_dps))
+	_poison_timer = maxf(_poison_timer, duration)
+
+
 ## Server: absorbs up to `amount` damage for `duration` seconds.
 func add_shield(amount: float, duration: float) -> void:
 	shield = maxf(shield, amount)

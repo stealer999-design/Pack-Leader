@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="VenomAbility" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/abilities/venom_ability.gd" id="1_ability"]
+
+[resource]
+script = ExtResource("1_ability")
+display_name = "Toxic Bog"
+description = "A pool of poisonous mud at the target for 7s: everything inside is poisoned (100% of its damage a second)."
+cooldown = 9.0
+cast_range = 9.0
+needs_target = false
+damage_multiplier = 0.6
+radius = 3.5
+mode = "cloud"
+poison_dps_multiplier = 1.0
+poison_duration = 4.0
+cloud_duration = 7.0

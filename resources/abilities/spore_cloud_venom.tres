@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="VenomAbility" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/abilities/venom_ability.gd" id="1_ability"]
+
+[resource]
+script = ExtResource("1_ability")
+display_name = "Spore Cloud"
+description = "A cloud of toxic spores around it for 6s: enemies inside are poisoned, and those it hits first deal 40% less damage for 6s."
+cooldown = 10.0
+cast_range = 0.0
+needs_target = false
+damage_multiplier = 0.0
+radius = 4.5
+mode = "cloud"
+poison_dps_multiplier = 0.6
+poison_duration = 4.0
+cloud_duration = 6.0
+weaken_duration = 6.0
+weaken_factor = 0.6

@@ -505,7 +505,8 @@ func _tick_zones(delta: float) -> void:
 		if zone.dps <= 0.0 and zone.poison_dps <= 0.0:
 			continue
 		for enemy in enemies_near(zone.source, zone.pos, zone.radius):
-			enemy.receive_damage(zone.dps * 0.5, zone.source)
+			if zone.dps > 0.0:
+				enemy.receive_damage(zone.dps * 0.5, zone.source)
 			if zone.poison_dps > 0.0 and enemy.has_method("poison"):
 				enemy.poison(zone.poison_dps, 2.0)
 

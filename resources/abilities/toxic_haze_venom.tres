@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="VenomAbility" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/abilities/venom_ability.gd" id="1_ability"]
+
+[resource]
+script = ExtResource("1_ability")
+display_name = "Toxic Haze"
+description = "A toxic burst around it: every enemy within 6 units is poisoned for 7s and deals 50% less damage."
+cooldown = 10.0
+cast_range = 0.0
+needs_target = false
+damage_multiplier = 0.4
+radius = 6.0
+mode = "nova"
+poison_dps_multiplier = 0.9
+poison_duration = 7.0
+weaken_duration = 7.0
+weaken_factor = 0.5

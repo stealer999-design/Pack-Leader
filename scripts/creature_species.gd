@@ -17,8 +17,15 @@ extends Resource
 ## heal the most injured ally nearby, who draw wild enemies' attention, and
 ## whose abilities heal and protect. Birds are archers: they shoot arrows
 ## from further than anyone, hop back from enemies that get too close, and
-## their abilities are all ranged shots.
-const CLASS_BY_BODY := {"cat": "wizard", "dog": "paladin", "bird": "archer"}
+## their abilities are all ranged shots. Lizards are venomancers: their bites
+## do less up front but stack venom that ticks on, anything that hits them up
+## close is poisoned back, and their abilities all poison.
+const CLASS_BY_BODY := {"cat": "wizard", "dog": "paladin", "bird": "archer", "lizard": "venomancer"}
+const VENOM_HIT_SHARE := 0.7  ## A venomancer's bite does this share of its damage up front...
+const VENOM_STACK := 0.4  ## ...and adds this much of its damage per second as venom,
+const VENOM_DURATION := 4.0  ## lasting this long,
+const VENOM_MAX := 1.2  ## stacking up to this much of its damage per second (3 bites).
+const TOXIC_BLOOD := 0.25  ## Poison per second (share of its damage) given to what hits it up close.
 const PALADIN_HEALTH := 1.35  ## Max health multiplier.
 const PALADIN_DAMAGE_TAKEN := 0.85  ## Damage taken multiplier.
 const PALADIN_HEAL_ON_HIT := 0.3  ## Share of each hit's damage healed onto the most injured ally.
@@ -56,7 +63,7 @@ const ARCHER_KITE_DISTANCE := 2.8
 @export var ability: PetAbility
 
 
-## The species' class ("wizard", "paladin", "archer", or "" for plain melee fighters).
+## The species' class ("wizard", "paladin", "archer", "venomancer", or "" for none).
 func pet_class() -> String:
 	return CLASS_BY_BODY.get(body_type, "")
 
@@ -80,3 +87,7 @@ func attack_reach() -> float:
 
 func is_paladin() -> bool:
 	return pet_class() == "paladin"
+
+
+func is_venomancer() -> bool:
+	return pet_class() == "venomancer"

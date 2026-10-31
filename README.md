@@ -184,12 +184,12 @@ played in the browser".
   | Dunehound + Cactipup | Cactihound | Bulwark: taunts, takes 60% less damage, shields allies 35% |
   | Dunehound + Sunfennec | Sunhound | Sunlit Sanctuary: a wide circle for 7s, heals allies 10%/s, scorches enemies |
   | Cactipup + Sunfennec | Bloomfennec | Blessing of the Dunes: heals everyone nearby 40% (itself 60%) |
-  | Bogleon + Mirelurk | Swampdrake | Mud Lash: yanks a target in for 2.5x damage |
-  | Bogleon + Wisp Gecko | Glowleon | Soul Lash: 2.8x damage, heals it and you 70% of it |
-  | Bogleon + Sporeguana | Toxileon | Toxic Haze: enemies deal 50% less for 7s |
-  | Mirelurk + Wisp Gecko | Wraithlurk | Spirit Trap: up to 4 traps that root for 3.5s |
-  | Mirelurk + Sporeguana | Mossdrake | Toxic Bog: poisonous damage zone for 6s |
-  | Wisp Gecko + Sporeguana | Sporewisp | Glow Spores: heals everyone nearby 40% |
+  | Bogleon + Mirelurk | Swampdrake | Swamp Fang: yanks a target in, 2x damage and heavy poison for 7s |
+  | Bogleon + Wisp Gecko | Glowleon | Soul Rot: spits rot for 2.2x and heavy poison, heals it and you 50% of the hit |
+  | Bogleon + Sporeguana | Toxileon | Toxic Haze: poisons every enemy nearby for 7s, and they deal 50% less |
+  | Mirelurk + Wisp Gecko | Wraithlurk | Spirit Trap: up to 4 traps that root for 3.5s and poison for 6s |
+  | Mirelurk + Sporeguana | Mossdrake | Toxic Bog: a pool of poisonous mud for 7s |
+  | Wisp Gecko + Sporeguana | Sporewisp | Plague Spores: poisons every enemy within 6 units, heals everyone nearby 20% |
 - **Pets are animated** too, at the pace they actually move: cats and dogs
   trot (diagonal legs together) and sway or wag their tails, birds hop and flap,
   lizards paddle in a sprawl and swing their bodies and tails, winged hybrids
@@ -292,7 +292,11 @@ played in the browser".
   short hop, then a few seconds before the next), and every ability is a
   ranged shot: frost arrows, volleys, piercing shots, arrow rain, snipes, and
   healing arrows for the support birds.
-  Lizards still fight up close (their class is coming).
+  **Lizards are Venomancers**: their damage is poison. Each bite does 70% of
+  their damage up front and stacks venom on the target (40% of their damage a
+  second for 4s, up to three bites' worth), anything that hits them up close
+  is poisoned back (toxic blood), and every ability poisons: venom lashes and
+  spit, poison clouds and pools, plague spores, and poisoned traps.
 - **Pet abilities:** every species has a signature ability with its own
   cooldown (shown in the party panel). If the target is out of range, the pet
   runs into range first and then casts.
@@ -312,10 +316,10 @@ played in the browser".
   | Dunehound | Sanctuary | Blesses the ground for 6s: allies inside heal 8% of their max health a second |
   | Cactipup | Guardian's Vow | Taunts nearby enemies onto itself, takes 50% less damage for 5s, heals itself 25% |
   | Sunfennec | Lay on Paws | Heals the most injured ally 45% and shields every ally nearby for 15% |
-  | Bogleon | Tongue Lash | Yanks a target next to the Bogleon and hits it for 1.5x damage (bosses are too heavy to pull) |
-  | Mirelurk | Mud Trap | Hides a mud trap where it stands (up to 3, for 30s). The first enemy to step on it springs it: enemies nearby are damaged and rooted (can't move) for 2.5s |
-  | Wisp Gecko | Life Drain | Hits a target for 2x and heals the gecko *and you* for 60% of the damage |
-  | Sporeguana | Spore Cloud | Nearby enemies deal 40% less damage for 6s |
+  | Bogleon | Venom Lash | Yanks a target next to it, hits for 1.2x and poisons it for 6s (bosses are too heavy to pull) |
+  | Mirelurk | Mud Trap | Hides a mud trap where it stands (up to 3, for 30s). The first enemy to step on it springs it: enemies nearby are damaged, rooted (can't move) for 2.5s and poisoned for 5s |
+  | Wisp Gecko | Wither | Spits withering venom: 1.5x damage and poison for 6s; the gecko *and you* heal 40% of the hit |
+  | Sporeguana | Spore Cloud | A toxic cloud around it for 6s: enemies inside are poisoned and deal 40% less damage |
 - **Pet skills (K):** every pet has a skill tree of six passive skills, shown
   on the skills screen (press K or click "Pet skills") with an icon for each:
   claws for attack damage, a heart for max health, a shield for armor, and a

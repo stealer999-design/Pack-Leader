@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="VenomAbility" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/abilities/venom_ability.gd" id="1_ability"]
+
+[resource]
+script = ExtResource("1_ability")
+display_name = "Plague Spores"
+description = "Bursts with plague spores: every enemy within 6 units is poisoned for 6s, and every pet and player nearby heals 20%."
+cooldown = 10.0
+cast_range = 0.0
+needs_target = false
+damage_multiplier = 0.5
+radius = 6.0
+mode = "nova"
+poison_dps_multiplier = 0.8
+poison_duration = 6.0
+heal_allies = 0.2

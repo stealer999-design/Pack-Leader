@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="VenomAbility" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/abilities/venom_ability.gd" id="1_ability"]
+
+[resource]
+script = ExtResource("1_ability")
+display_name = "Soul Rot"
+description = "Spits rot at a target: 2.2x damage and heavy poison for 7s, and it and you heal for 50% of the hit."
+cooldown = 8.0
+cast_range = 9.0
+needs_target = true
+damage_multiplier = 2.2
+radius = 1.5
+mode = "spit"
+poison_dps_multiplier = 1.2
+poison_duration = 7.0
+heal_from_hit = 0.5

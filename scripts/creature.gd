@@ -267,6 +267,10 @@ func receive_damage(amount: float, source: Node3D, knockback := Vector3.ZERO) ->
 	amount *= 1.0 - skill_bonus("armor")
 	if species.is_paladin():
 		amount *= CreatureSpecies.PALADIN_DAMAGE_TAKEN
+	# Venomancers' toxic blood: whoever hits one up close is poisoned back.
+	if species.is_venomancer() and source and is_instance_valid(source) and source != self \
+			and _flat_distance(source.global_position) <= 3.0 + radius():
+		envenom(source, get_damage() * CreatureSpecies.TOXIC_BLOOD, 3.0, get_damage() * CreatureSpecies.TOXIC_BLOOD * 2.0)
 	if _guard_timer > 0.0:
 		amount *= 1.0 - _guard_reduction
 		knockback = Vector3.ZERO
@@ -642,11 +646,26 @@ func _chase_and_attack(victim: Node3D) -> Vector3:
 			return Vector3.ZERO  # blinded: the attack misses
 		if species.is_ranged():
 			_fire_bolt(victim)
+		elif species.is_venomancer():
+			victim.receive_damage(get_damage() * CreatureSpecies.VENOM_HIT_SHARE, self, to / dist * 3.0)
+			envenom(victim, get_damage() * CreatureSpecies.VENOM_STACK, CreatureSpecies.VENOM_DURATION,
+					get_damage() * CreatureSpecies.VENOM_MAX)
 		else:
 			victim.receive_damage(get_damage(), self, to / dist * 3.0)
 			if species.is_paladin():
 				_holy_strike(get_damage())
 	return Vector3.ZERO
+
+
+## Server: stacking venom on `victim` (a creature, player or boss), shown with
+## a green ring on creatures when it first takes hold.
+func envenom(victim: Node3D, stack_dps: float, duration: float, max_dps: float) -> void:
+	if not is_instance_valid(victim) or victim.get("health") == null or not victim.is_targetable():
+		return
+	var fresh: bool = not victim.health.is_poisoned()
+	victim.health.add_venom(stack_dps, duration, max_dps)
+	if fresh and victim is Creature:
+		victim._status_fx.rpc("poison", duration)
 
 
 ## Paladins: every hit heals the most injured ally nearby (pets and players

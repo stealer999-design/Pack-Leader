@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="VenomAbility" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/abilities/venom_ability.gd" id="1_ability"]
+
+[resource]
+script = ExtResource("1_ability")
+display_name = "Venom Lash"
+description = "Yanks a target next to the Bogleon with its tongue, hits it for 1.2x and poisons it (90% of its damage a second for 6s)."
+cooldown = 8.0
+cast_range = 8.0
+needs_target = true
+damage_multiplier = 1.2
+mode = "lash"
+poison_dps_multiplier = 0.9
+poison_duration = 6.0
