@@ -39,8 +39,10 @@ static func build(body: MeshInstance3D, body_type: String, main: StandardMateria
 		"main": main,
 		"accent": _mat(color.darkened(0.45)),
 		"light": _mat(color.lightened(0.45)),
-		"eye": _mat(Color(1, 1, 0.92), true),
-		"pupil": _mat(Color(0.08, 0.08, 0.1)),
+		"eye": _mat(Color(1, 1, 0.95)),
+		"pupil": _mat(Color(0.06, 0.05, 0.08)),
+		"iris": _mat(Color.from_hsv(fposmod(color.h + 0.5, 1.0), 0.75, 0.7)),  # the opposite hue: it pops
+		"glint": _mat(Color.WHITE, true),
 		"nose": _mat(Color(0.9, 0.5, 0.55)),
 		"beak": _mat(Color(1.0, 0.68, 0.15)),
 		"gold": _mat(Color(1.0, 0.82, 0.3)),
@@ -250,10 +252,18 @@ static func _lizard(b: Node3D, m: Dictionary) -> void:
 
 # --- Helpers --------------------------------------------------------------------------
 
+## An anime eye: a narrowed white with a coloured iris, a sharp pupil (a slit
+## for `slit` eyes), a glint of light, and a heavy brow angled down towards the
+## nose for a fierce look.
 static func _eye(b: Node3D, m: Dictionary, at: Vector3, r: float, slit: bool) -> void:
-	_part(b, _sphere(r), m.eye, at)
-	var pupil: Mesh = _box(Vector3(r * 0.4, r * 1.3, r * 0.3)) if slit else _sphere(r * 0.5)
-	_part(b, pupil, m.pupil, at + Vector3(0, 0, -r * 0.85))
+	var side := signf(at.x) if absf(at.x) > 0.001 else 1.0
+	_part(b, _sphere(r), m.eye, at, Vector3(0, 0, side * 12), Vector3(1.15, 0.9, 0.9))
+	_part(b, _sphere(r * 0.62), m.iris, at + Vector3(-side * r * 0.1, -r * 0.05, -r * 0.55), Vector3.ZERO, Vector3(0.85, 1.05, 0.6))
+	var pupil: Mesh = _box(Vector3(r * 0.22, r * 0.95, r * 0.2)) if slit else _sphere(r * 0.3)
+	_part(b, pupil, m.pupil, at + Vector3(-side * r * 0.1, -r * 0.05, -r * 0.85))
+	_part(b, _sphere(r * 0.16), m.glint, at + Vector3(-side * r * 0.35, r * 0.2, -r * 0.92))
+	_part(b, _box(Vector3(r * 2.2, r * 0.32, r * 0.6)), m.pupil, at + Vector3(side * r * 0.15, r * 1.12, -r * 0.4),
+			Vector3(0, 0, side * 22))  # brow, low at the nose end
 
 
 ## Four legs, each on a pivot at the hip: Leg0 front-left, Leg1 back-left,

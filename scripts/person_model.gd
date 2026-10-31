@@ -32,6 +32,8 @@ var _pants_mat: StandardMaterial3D
 var _boots: Array[Node3D] = []
 var _boots_mat := StandardMaterial3D.new()
 var _head: Node3D
+## The spiky hair and headband (hidden under a hat).
+var hair_spikes: Node3D
 var _hat: Node3D
 
 
@@ -71,6 +73,8 @@ func _set_hat(level: int) -> void:
 	if _hat:
 		_hat.queue_free()
 		_hat = null
+	if hair_spikes:
+		hair_spikes.visible = level <= 0  # a hat flattens the spikes and covers the headband
 	if level <= 0:
 		return
 	_hat = _pivot(_head, Vector3.ZERO)
@@ -97,6 +101,7 @@ func _set_hat(level: int) -> void:
 			_part(_hat, _cylinder(0.4, 0.4, 0.03), mat, Vector3(0, 0.2, 0), Vector3(-6, 0, 0))
 			_part(_hat, _cylinder(0.2, 0.25, 0.24), mat, Vector3(0, 0.33, 0))
 			_part(_hat, _box(Vector3(0.03, 0.3, 0.07)), _mat(Color(0.85, 0.2, 0.15)), Vector3(0.25, 0.4, 0.05), Vector3(0, 0, -25))
+	AnimeLook.apply(_hat, 0.03)
 
 
 func set_spiked(spiked: bool) -> void:
@@ -143,10 +148,7 @@ func build(body_material: StandardMaterial3D, hair_color: Color) -> void:
 	_part(_body, _box(Vector3(0.14, 0.1, 0.14)), skin, Vector3(0, 1.5, 0))  # neck
 	_part(_body, _sphere(0.27), skin, Vector3(0, 1.78, 0))
 	_head = _pivot(_body, Vector3(0, 1.86, 0))  # hats go on here
-	_part(_body, _sphere(0.29), hair, Vector3(0, 1.86, 0.05), Vector3(1, 0.75, 1))
-	for x in [-0.1, 0.1]:
-		_part(_body, _sphere(0.045), _mat(Color(0.1, 0.1, 0.12)), Vector3(x, 1.8, -0.25))
-	_part(_body, _box(Vector3(0.1, 0.03, 0.03)), _mat(Color(0.75, 0.35, 0.35)), Vector3(0, 1.68, -0.26))  # smile
+	_build_face(hair_color)
 	# Arms: sleeve in the shirt colour, then a hand.
 	for x in [-0.36, 0.36]:
 		var shoulder := _pivot(_body, Vector3(x, SHOULDER_HEIGHT, 0))
@@ -206,6 +208,54 @@ func build(body_material: StandardMaterial3D, hair_color: Color) -> void:
 		part.rotation = Vector3(0, PI / 2.0 if i % 2 else 0.0, PI / 2.0)
 	_part(_chain, _box(Vector3(0.07, 0.08, 0.04)), _mat(Color(0.65, 0.55, 0.3)), Vector3(0.13, 0.0, 0.0))  # padlock
 	_rest_bat()
+	AnimeLook.apply(self, 0.03)
+
+
+## The anime face: sharp eyes with a glint, angled brows, a small mouth, and
+## spiky hair swept up and back with bangs over the forehead, held by a
+## headband with a steel plate.
+func _build_face(hair_color: Color) -> void:
+	var hair := _mat(hair_color)
+	var ink := _mat(Color(0.08, 0.07, 0.1))
+	var white := _mat(Color(0.98, 0.98, 0.96))
+	var iris := _mat(Color(0.2, 0.32, 0.6))
+	var glint := _mat(Color.WHITE)
+	glint.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	for side in [-1.0, 1.0]:
+		var x: float = side * 0.1
+		_part(_body, _box(Vector3(0.11, 0.07, 0.02)), white, Vector3(x, 1.8, -0.256), Vector3(0, 0, side * 8))
+		_part(_body, _box(Vector3(0.055, 0.072, 0.02)), iris, Vector3(x - side * 0.008, 1.797, -0.263))
+		_part(_body, _box(Vector3(0.028, 0.05, 0.02)), ink, Vector3(x - side * 0.008, 1.797, -0.27))  # pupil
+		_part(_body, _box(Vector3(0.018, 0.018, 0.01)), glint, Vector3(x - side * 0.02, 1.812, -0.279))
+		_part(_body, _box(Vector3(0.13, 0.028, 0.03)), ink, Vector3(x, 1.872, -0.25), Vector3(0, 0, side * 16))  # brow
+	_part(_body, _box(Vector3(0.07, 0.014, 0.02)), ink, Vector3(0, 1.66, -0.262))  # mouth
+	_part(_body, _sphere(0.29), hair, Vector3(0, 1.88, 0.04), Vector3(1, 0.72, 1))  # hair, close to the head
+	hair_spikes = _pivot(_body, Vector3(0, 1.95, 0.05))
+	var spikes := [
+		[Vector3(0, 1, 0.25), 0.42, 0.11], [Vector3(-0.45, 0.85, 0.3), 0.4, 0.1], [Vector3(0.45, 0.85, 0.3), 0.4, 0.1],
+		[Vector3(-0.8, 0.45, 0.2), 0.32, 0.09], [Vector3(0.8, 0.45, 0.2), 0.32, 0.09], [Vector3(0, 0.75, 0.75), 0.4, 0.11],
+		[Vector3(-0.45, 0.35, 0.85), 0.34, 0.1], [Vector3(0.45, 0.35, 0.85), 0.34, 0.1], [Vector3(0, 0.1, 1), 0.3, 0.1],
+	]
+	for spike in spikes:
+		_spike(hair_spikes, spike[0].normalized() * 0.16, spike[0], spike[1], spike[2], hair)
+	for x in [-0.13, 0.0, 0.13]:  # bangs falling over the forehead
+		_spike(hair_spikes, Vector3(x, 0.02, -0.2), Vector3(x * 1.5, -0.8, -0.55), 0.24, 0.07, hair)
+	var cloth := _mat(Color(0.12, 0.14, 0.26))
+	_part(hair_spikes, _cylinder(0.3, 0.3, 0.07), cloth, Vector3(0, -0.07, -0.04))  # headband
+	var steel := _mat(Color(0.72, 0.74, 0.8))
+	steel.metallic = 0.7
+	steel.roughness = 0.3
+	_part(hair_spikes, _box(Vector3(0.22, 0.08, 0.03)), steel, Vector3(0, -0.07, -0.335))
+	_part(hair_spikes, _box(Vector3(0.1, 0.012, 0.01)), ink, Vector3(0, -0.07, -0.352))  # its engraving
+	for side in [-1.0, 1.0]:  # the headband's tails, flying out behind
+		_part(hair_spikes, _box(Vector3(0.05, 0.03, 0.3)), cloth, Vector3(side * 0.08, -0.1, 0.38), Vector3(-25, side * 12, 0))
+
+
+## A cone of hair from `base`, pointing along `dir`.
+func _spike(parent: Node3D, base: Vector3, dir: Vector3, length: float, radius: float, mat: Material) -> void:
+	var d := dir.normalized()
+	var part := _part(parent, _cylinder(0.0, radius, length), mat, base + d * length * 0.5)
+	part.basis = Basis(Quaternion(Vector3.UP, d))
 
 
 func _process(delta: float) -> void:

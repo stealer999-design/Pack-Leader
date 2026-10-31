@@ -50,6 +50,8 @@ func _ready() -> void:
 	add_to_group("rivals")
 	_material.albedo_color = color
 	_parts = _build_model()
+	if not _parts.has("person"):  # the rival tamer's person already has the look
+		AnimeLook.apply(model, 0.06)
 	for node: Node3D in _parts.get("sway", []):
 		_rest[node] = node.position
 	name_label.text = title()

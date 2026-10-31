@@ -157,82 +157,150 @@ func _draw_gate() -> void:
 func _draw_pet(center: Vector2, r: float, sleeping: bool) -> void:
 	var species := SpeciesDB.get_species(pet.species)
 	var body := species.color.darkened(0.5) if pet.get("fainted", false) else species.color
-	var accent := body.darkened(0.45)
-	var light := body.lightened(0.45)
 	var kind := species.body_type
+	draw_circle(center + Vector2(0, r * 0.18), r * 1.08, Color(0, 0, 0, 0.25))  # shadow
+	# Anime style: every shape is drawn first in ink, a little bigger (the
+	# outline), then in colour, with a cel shadow on the lower right.
+	_ink = r * 0.09
+	_pet_shapes(center, r, body, species, kind)
+	_ink = 0.0
+	_pet_shapes(center, r, body, species, kind)
 	var eye_y := -0.05
 	var eye_x := 0.35
-	draw_circle(center + Vector2(0, r * 0.18), r * 1.05, Color(0, 0, 0, 0.25))  # shadow
-	# Hybrid features behind the body: a mane (or frill, or ruff) and wings.
-	if species.feature == "mane":
-		for i in 12:
-			draw_circle(center + Vector2.from_angle(TAU * i / 12.0) * r * 0.95, r * 0.3, accent)
-	if species.feature == "wings":
-		for side in [-1.0, 1.0]:
-			_ellipse(center + Vector2(side * r * 1.15, -r * 0.2), Vector2(r * 0.32, r * 0.6), light)
 	match kind:
-		"bird":
-			for i in 3:  # crest
-				_triangle(center + Vector2((i - 1) * r * 0.22, -r * 0.85), r * 0.14, r * 0.4, accent)
-			for side in [-1.0, 1.0]:  # wings
-				_ellipse(center + Vector2(side * r * 0.95, r * 0.15), Vector2(r * 0.3, r * 0.55), accent)
-			draw_circle(center, r, body)
-			_ellipse(center + Vector2(0, r * 0.45), Vector2(r * 0.6, r * 0.45), light)  # breast
 		"dog":
-			if species.feature == "big_ears":
-				for side in [-1.0, 1.0]:
-					_triangle(center + Vector2(side * r * 0.55, -r * 0.6), r * 0.32, r * 0.95, body)
-			draw_circle(center, r, body)
-			if species.feature != "big_ears":
-				for side in [-1.0, 1.0]:  # floppy ears
-					_ellipse(center + Vector2(side * r * 0.85, -r * 0.1), Vector2(r * 0.25, r * 0.5), accent)
-			_ellipse(center + Vector2(0, r * 0.38), Vector2(r * 0.42, r * 0.3), light)  # snout
-			draw_circle(center + Vector2(0, r * 0.25), r * 0.12, Color(0.1, 0.1, 0.1))  # nose
 			eye_y = -0.25
 		"lizard":
-			for i in 5:  # spikes
-				_triangle(center + Vector2((i - 2) * r * 0.3, -r * 0.55), r * 0.12, r * 0.3, accent)
-			_ellipse(center, Vector2(r * 1.2, r * 0.7), body)
-			draw_line(center + Vector2(-r * 0.5, r * 0.3), center + Vector2(r * 0.5, r * 0.3), accent, 2.0)  # grin
 			eye_y = -0.45
 			eye_x = 0.55
-			for side in [-1.0, 1.0]:  # bulging eye sockets
-				draw_circle(center + Vector2(side * r * eye_x, r * eye_y), r * 0.26, body)
-		_:  # cat
-			for side in [-1.0, 1.0]:
-				var ear := PackedVector2Array([
-					center + Vector2(side * r * 0.75, -r * 0.45), center + Vector2(side * r * 0.25, -r * 0.8),
-					center + Vector2(side * r * 0.55, -r * 1.35),
-				])
-				draw_colored_polygon(ear, body)
-			draw_circle(center, r, body)
-			for side in [-1.0, 1.0]:  # whiskers
-				for dy in [0.2, 0.35]:
-					draw_line(center + Vector2(side * r * 0.35, r * dy), center + Vector2(side * r * 1.15, r * (dy * 1.4 - 0.05)),
-							Color(0.1, 0.1, 0.1, 0.6), 1.0)
-			_triangle(center + Vector2(0, r * 0.25), r * 0.1, -r * 0.12, Color(0.9, 0.5, 0.55))  # nose
-	if kind != "lizard":
-		draw_circle(center + Vector2(-r * 0.3, -r * 0.35), r * 0.3, body.lightened(0.35))  # shine
 	for side in [-1.0, 1.0]:
 		var eye := center + Vector2(side * r * eye_x, r * eye_y)
 		if sleeping:
-			draw_arc(eye, r * 0.14, 0.2, PI - 0.2, 8, Color(0.1, 0.1, 0.1), 2.0)
+			draw_arc(eye, r * 0.14, 0.2, PI - 0.2, 8, INK, 2.0)
 		else:
-			draw_circle(eye, r * 0.15, Color.WHITE)
-			draw_circle(eye + Vector2(0, r * 0.03), r * 0.07, Color(0.1, 0.1, 0.1))
+			_anime_eye(eye, r * 0.17, side, body)
 	# ...and in front: a horn or a crown.
 	var gold := Color(1.0, 0.82, 0.3)
-	if species.feature == "horn":
-		_triangle(center + Vector2(0, -r * 0.7), r * 0.14, r * 0.6, gold)
+	for pass_ink in [r * 0.07, 0.0]:
+		_ink = pass_ink
+		if species.feature == "horn":
+			_tri(center + Vector2(0, -r * 0.7), r * 0.14, r * 0.6, gold)
+		if species.feature == "crown":
+			for i in 3:
+				_tri(center + Vector2((i - 1) * r * 0.28, -r * 0.82), r * 0.12, r * 0.38, gold)
+		if kind == "bird":  # beak, drawn over the face
+			_tri(center + Vector2(0, r * 0.12), r * 0.18, -r * 0.3, Color(1.0, 0.68, 0.15))
+	_ink = 0.0
 	if species.feature == "crown":
-		for i in 3:
-			_triangle(center + Vector2((i - 1) * r * 0.28, -r * 0.82), r * 0.12, r * 0.38, gold)
 		draw_rect(Rect2(center + Vector2(-r * 0.45, -r * 0.9), Vector2(r * 0.9, r * 0.14)), gold)
-	if kind == "bird":  # beak, drawn over the face
-		_triangle(center + Vector2(0, r * 0.12), r * 0.18, -r * 0.3, Color(1.0, 0.68, 0.15))
 	if sleeping:
 		_draw_text_at("z", center + Vector2(r * 0.9, -r * 0.9), 14, Color(1, 1, 1, 0.85))
 		_draw_text_at("z", center + Vector2(r * 1.25, -r * 1.35), 11, Color(1, 1, 1, 0.6))
+
+
+const INK := Color(0.05, 0.04, 0.07)
+var _ink := 0.0  ## While > 0, shapes are drawn as their ink outline this much bigger.
+
+
+## The pet's body shapes (called twice: once in ink, once in colour).
+func _pet_shapes(center: Vector2, r: float, body: Color, species: CreatureSpecies, kind: String) -> void:
+	var accent := body.darkened(0.45)
+	var light := body.lightened(0.45)
+	if species.feature == "mane":
+		for i in 12:
+			_circ(center + Vector2.from_angle(TAU * i / 12.0) * r * 0.95, r * 0.3, accent)
+	if species.feature == "wings":
+		for side in [-1.0, 1.0]:
+			_ell(center + Vector2(side * r * 1.15, -r * 0.2), Vector2(r * 0.32, r * 0.6), light)
+	match kind:
+		"bird":
+			for i in 3:  # a swept-back crest
+				_tri(center + Vector2((i - 1) * r * 0.22, -r * 0.85), r * 0.14, r * 0.45, accent)
+			for side in [-1.0, 1.0]:  # wings
+				_ell(center + Vector2(side * r * 0.95, r * 0.15), Vector2(r * 0.3, r * 0.55), accent)
+			_cel_circle(center, r, body)
+			_ell(center + Vector2(0, r * 0.45), Vector2(r * 0.6, r * 0.45), light)  # breast
+		"dog":
+			if species.feature == "big_ears":
+				for side in [-1.0, 1.0]:
+					_tri(center + Vector2(side * r * 0.55, -r * 0.6), r * 0.32, r * 0.95, body)
+			else:
+				for side in [-1.0, 1.0]:  # pointed ears, folded at the tip
+					_tri(center + Vector2(side * r * 0.6, -r * 0.55), r * 0.26, r * 0.7, accent)
+			_cel_circle(center, r, body)
+			_ell(center + Vector2(0, r * 0.38), Vector2(r * 0.42, r * 0.3), light)  # muzzle
+			_circ(center + Vector2(0, r * 0.25), r * 0.12, INK)  # nose
+		"lizard":
+			for i in 5:  # spikes
+				_tri(center + Vector2((i - 2) * r * 0.3, -r * 0.55), r * 0.12, r * 0.38, accent)
+			_ell(center, Vector2(r * 1.2, r * 0.7), body)
+			if _ink <= 0.0:
+				_ell(center + Vector2(r * 0.15, r * 0.2), Vector2(r * 0.95, r * 0.4), body.darkened(0.2))  # cel shadow
+				draw_line(center + Vector2(-r * 0.55, r * 0.3), center + Vector2(r * 0.55, r * 0.22), INK, 2.0)  # grin
+			for side in [-1.0, 1.0]:  # bulging eye sockets
+				_circ(center + Vector2(side * r * 0.55, -r * 0.45), r * 0.26, body)
+		_:  # cat
+			for side in [-1.0, 1.0]:
+				_poly(PackedVector2Array([
+					center + Vector2(side * r * 0.8, -r * 0.4), center + Vector2(side * r * 0.2, -r * 0.82),
+					center + Vector2(side * r * 0.62, -r * 1.45),
+				]), body)
+			_cel_circle(center, r, body)
+			if _ink <= 0.0:
+				for side in [-1.0, 1.0]:  # whiskers
+					for dy in [0.2, 0.35]:
+						draw_line(center + Vector2(side * r * 0.35, r * dy), center + Vector2(side * r * 1.15, r * (dy * 1.4 - 0.05)),
+								Color(INK, 0.7), 1.0)
+				_triangle(center + Vector2(0, r * 0.25), r * 0.1, -r * 0.12, Color(0.9, 0.5, 0.55))  # nose
+
+
+## A round body with a cel shadow on its lower right (an outline when inking).
+func _cel_circle(center: Vector2, r: float, body: Color) -> void:
+	if _ink > 0.0:
+		_circ(center, r, body)
+		return
+	draw_circle(center, r, body.darkened(0.22))
+	draw_circle(center + Vector2(-r * 0.12, -r * 0.12), r * 0.86, body)
+
+
+## A sharp anime eye: an almond of white, a tall iris in the opposite hue, a
+## dark pupil, a glint, and a heavy brow slanting down to the nose.
+func _anime_eye(at: Vector2, e: float, side: float, body: Color) -> void:
+	var almond := PackedVector2Array([
+		at + Vector2(-side * e * 1.1, e * 0.25), at + Vector2(-side * e * 0.3, -e * 0.55),
+		at + Vector2(side * e * 1.05, -e * 0.45), at + Vector2(side * e * 0.5, e * 0.6),
+	])
+	draw_colored_polygon(almond, Color(0.98, 0.98, 0.95))
+	draw_polyline(almond + PackedVector2Array([almond[0]]), INK, maxf(e * 0.25, 1.5))
+	var iris := Color.from_hsv(fposmod(body.h + 0.5, 1.0), 0.75, 0.75)
+	_ellipse(at + Vector2(-side * e * 0.1, 0), Vector2(e * 0.42, e * 0.55), iris)
+	_ellipse(at + Vector2(-side * e * 0.1, 0), Vector2(e * 0.18, e * 0.45), INK)
+	draw_circle(at + Vector2(-side * e * 0.35, -e * 0.25), e * 0.16, Color.WHITE)
+	draw_line(at + Vector2(-side * e * 1.2, -e * 1.25), at + Vector2(side * e * 1.1, -e * 0.75), INK, maxf(e * 0.45, 2.0))
+
+
+func _circ(c: Vector2, rad: float, color: Color) -> void:
+	draw_circle(c, rad + _ink, INK if _ink > 0.0 else color)
+
+
+func _ell(c: Vector2, radii: Vector2, color: Color) -> void:
+	_ellipse(c, radii + Vector2(_ink, _ink), INK if _ink > 0.0 else color)
+
+
+func _tri(base: Vector2, half: float, height: float, color: Color) -> void:
+	if _ink > 0.0:
+		var g := _ink
+		_triangle(base + Vector2(0, g * 0.5), half + g * 1.3, height + signf(height) * g * 2.2, INK)
+	else:
+		_triangle(base, half, height, color)
+
+
+func _poly(points: PackedVector2Array, color: Color) -> void:
+	if _ink > 0.0:
+		draw_colored_polygon(points, INK)
+		draw_polyline(points + PackedVector2Array([points[0]]), INK, _ink * 2.0)
+	else:
+		draw_colored_polygon(points, color)
 
 
 ## A triangle standing on a base of half-width `half` centred at `base`, `height` tall

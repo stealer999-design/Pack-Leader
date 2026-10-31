@@ -817,6 +817,7 @@ func _show_collar() -> void:
 		_collar_model = null
 	if not collar.is_empty() and body:
 		_collar_model = CreatureModel.add_collar(body, species.body_type, ItemDB.item_color(collar))
+		AnimeLook.apply(_collar_model, 0.035)
 
 
 func _level_multiplier() -> float:
@@ -832,6 +833,7 @@ static func _now() -> float:
 func _build_visuals() -> void:
 	_material.albedo_color = species.color
 	CreatureModel.build(body, species.body_type, _material, species.color, species.feature)
+	AnimeLook.apply(body, 0.035)
 	_show_collar()
 	var animator := CreatureAnimator.new()
 	animator.name = "Animator"

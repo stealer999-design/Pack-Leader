@@ -1,6 +1,7 @@
 class_name UiIcons
-## Line icons for the menus: small SVG drawings (24x24, white strokes) turned
-## into textures at runtime and cached. Buttons tint them with the theme's icon
+## Line icons for the menus: small SVG drawings (24x24, light strokes over a
+## bold black ink outline, sharp corners: an anime look) turned into textures
+## at runtime and cached. Buttons tint them with the theme's icon
 ## colours (light on the dark panels); title icons are tinted per window.
 ##
 ##   UiIcons.texture("save")                 a texture for Button.icon / TextureRect
@@ -60,11 +61,14 @@ static var _cache := {}
 static func texture(icon_name: String, size := SIZE) -> Texture2D:
 	var key := "%s@%d" % [icon_name, size]
 	if not _cache.has(key):
-		var svg: String = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" ' \
-				+ 'fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' \
-				+ SHAPES.get(icon_name, SHAPES.star) + '</svg>'
+		# Anime style: a bold black ink stroke under a sharp-cornered light one.
+		var shape: String = SHAPES.get(icon_name, SHAPES.star)
+		var svg: String = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="-1 -1 26 26" width="26" height="26" ' \
+				+ 'fill="none" stroke-linecap="square" stroke-linejoin="miter" stroke-miterlimit="6">' \
+				+ '<g stroke="#000" stroke-width="4.6">' + shape.replace('fill="#fff"', 'fill="#000"') + '</g>' \
+				+ '<g stroke="#fff" stroke-width="2.3">' + shape + '</g></svg>'
 		var image := Image.new()
-		image.load_svg_from_string(svg, size / 24.0)
+		image.load_svg_from_string(svg, size / 26.0)
 		_cache[key] = ImageTexture.create_from_image(image)
 	return _cache[key]
 

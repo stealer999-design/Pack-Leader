@@ -277,6 +277,12 @@ played in the browser".
   less per extra level, down to a tenth (it tells you once per area), so to
   keep levelling, move on. When a pet runs out
   of health it faints and recovers after 8 seconds.
+- **Look:** characters are drawn in an anime style: cel shading (hard light
+  and shadow bands with a rim of light) and black ink outlines on the tamer,
+  pets, monsters and bosses (`scripts/anime_look.gd`). The tamer has spiky
+  hair and a headband; pets have sharp eyes with slit pupils, a glint and
+  fierce brows. Pet portraits and menu icons are inked to match. Levels and
+  buildings keep their look for now.
 - **Classes:** pets fight differently by kind. **Cats are Wizards**: instead
   of biting, they fire magic bolts in their own colour from about 6.5 units
   away (wild cats shoot at you too), and their ability is a spell, cast with a
