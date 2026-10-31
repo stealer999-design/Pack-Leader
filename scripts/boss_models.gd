@@ -18,7 +18,6 @@ static func rival(model: Node3D, main: StandardMaterial3D, color: Color) -> Dict
 	model.add_child(person)
 	person.build(main, Color(0.12, 0.1, 0.1))
 	person.scale = Vector3.ONE * 1.08
-	person.hair_spikes.visible = false  # under the hat
 	var dark := _mat(color.darkened(0.55))
 	var hat := _pivot(person._head, Vector3.ZERO)
 	_part(hat, _cylinder(0.5, 0.5, 0.04), dark, Vector3(0, 0.18, 0))

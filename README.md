@@ -279,8 +279,11 @@ played in the browser".
   of health it faints and recovers after 8 seconds.
 - **Look:** characters are drawn in an anime style: cel shading (hard light
   and shadow bands with a rim of light) and black ink outlines on the tamer,
-  pets, monsters and bosses (`scripts/anime_look.gd`). The tamer has spiky
-  hair and a headband; pets have sharp eyes with slit pupils, a glint and
+  pets, monsters and bosses (`scripts/anime_look.gd`). The tamer (and the
+  rival tamer) has anime eyes and jointed limbs: knees and elbows, with a
+  human walk (bending knees, swinging arms, a body that dips, twists and
+  leans) and a batter's swing (wind-up, body turn, follow-through). Pets have
+  sharp eyes with slit pupils, a glint and
   fierce brows. Pet portraits and menu icons are inked to match. Levels and
   buildings keep their look for now.
 - **Classes:** pets fight differently by kind. **Cats are Wizards**: instead

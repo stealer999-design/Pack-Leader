@@ -7,16 +7,20 @@ extends Node3D
 ## too without any extra syncing. swing() plays the bat swing.
 
 const SKIN := Color(0.96, 0.78, 0.62)
-const HIP_HEIGHT := 0.8
+const HIP_HEIGHT := 0.82
 const SHOULDER_HEIGHT := 1.42
 const PANTS := Color(0.22, 0.25, 0.35)  ## Trousers when no pants are worn.
-const REST_ARM := 0.35  ## The bat arm's angle at rest: a little forward, bat pointing ahead and down.
+const REST_ARM := 0.2  ## The bat arm at rest: the upper arm a little forward...
+const REST_ELBOW := 0.9  ## ...and the elbow bent, so the bat is held out in front, pointing down.
 
 ## The shirt. Its material is the player's own, so hit flashes and slows tint it.
 var shirt: MeshInstance3D
 
 var _hips: Array[Node3D] = []  ## Left, right leg pivots.
+var _knees: Array[Node3D] = []
 var _shoulders: Array[Node3D] = []  ## Left, right arm pivots.
+var _elbows: Array[Node3D] = []
+var _time := 0.0
 var _bat_arm: Node3D
 var _body: Node3D  ## Everything above the legs; bobs while walking.
 var _last_position := Vector3.INF
@@ -32,8 +36,6 @@ var _pants_mat: StandardMaterial3D
 var _boots: Array[Node3D] = []
 var _boots_mat := StandardMaterial3D.new()
 var _head: Node3D
-## The spiky hair and headband (hidden under a hat).
-var hair_spikes: Node3D
 var _hat: Node3D
 
 
@@ -73,8 +75,6 @@ func _set_hat(level: int) -> void:
 	if _hat:
 		_hat.queue_free()
 		_hat = null
-	if hair_spikes:
-		hair_spikes.visible = level <= 0  # a hat flattens the spikes and covers the headband
 	if level <= 0:
 		return
 	_hat = _pivot(_head, Vector3.ZERO)
@@ -124,16 +124,21 @@ func build(body_material: StandardMaterial3D, hair_color: Color) -> void:
 	var skin := _mat(SKIN)
 	var hair := _mat(hair_color)
 	for x in [-0.14, 0.14]:
+		# Thigh from the hip, then a knee joint and the shin and shoe below it.
 		var hip := _pivot(self, Vector3(x, HIP_HEIGHT, 0))
-		_part(hip, _box(Vector3(0.2, 0.7, 0.22)), pants, Vector3(0, -0.38, 0))
-		_part(hip, _box(Vector3(0.22, 0.12, 0.32)), shoe, Vector3(0, -0.74, -0.05))
-		# Boots, shown when worn: a taller boot over the shoe and lower leg.
-		var boot := _pivot(hip, Vector3.ZERO)
+		_part(hip, _box(Vector3(0.2, 0.44, 0.22)), pants, Vector3(0, -0.21, 0))
+		var knee := _pivot(hip, Vector3(0, -0.42, 0))
+		_part(knee, _sphere(0.1), pants, Vector3.ZERO)
+		_part(knee, _box(Vector3(0.18, 0.38, 0.2)), pants, Vector3(0, -0.19, 0))
+		_part(knee, _box(Vector3(0.21, 0.11, 0.31)), shoe, Vector3(0, -0.36, -0.05))
+		# Boots, shown when worn: a taller boot over the shoe and shin.
+		var boot := _pivot(knee, Vector3.ZERO)
 		boot.visible = false
-		_part(boot, _box(Vector3(0.25, 0.32, 0.27)), _boots_mat, Vector3(0, -0.6, 0))
-		_part(boot, _box(Vector3(0.25, 0.14, 0.36)), _boots_mat, Vector3(0, -0.73, -0.05))
+		_part(boot, _box(Vector3(0.23, 0.26, 0.24)), _boots_mat, Vector3(0, -0.2, 0))
+		_part(boot, _box(Vector3(0.24, 0.13, 0.35)), _boots_mat, Vector3(0, -0.34, -0.05))
 		_boots.append(boot)
 		_hips.append(hip)
+		_knees.append(knee)
 	_body = _pivot(self, Vector3.ZERO)
 	shirt = _part(_body, _box(Vector3(0.56, 0.66, 0.32)), body_material, Vector3(0, 1.12, 0))
 	# A jacket over the shirt, shown when one is worn (open at the front).
@@ -149,19 +154,24 @@ func build(body_material: StandardMaterial3D, hair_color: Color) -> void:
 	_part(_body, _sphere(0.27), skin, Vector3(0, 1.78, 0))
 	_head = _pivot(_body, Vector3(0, 1.86, 0))  # hats go on here
 	_build_face(hair_color)
-	# Arms: sleeve in the shirt colour, then a hand.
+	# Arms: an upper arm in the shirt colour (a jacket sleeve over it when worn),
+	# then an elbow joint, a bare forearm and a hand.
 	for x in [-0.36, 0.36]:
 		var shoulder := _pivot(_body, Vector3(x, SHOULDER_HEIGHT, 0))
-		_part(shoulder, _box(Vector3(0.16, 0.36, 0.18)), body_material, Vector3(0, -0.17, 0))
-		var sleeve := _part(shoulder, _box(Vector3(0.19, 0.3, 0.21)), _jacket_mat, Vector3(0, -0.14, 0))
+		_part(shoulder, _sphere(0.1), body_material, Vector3.ZERO)
+		_part(shoulder, _box(Vector3(0.15, 0.32, 0.17)), body_material, Vector3(0, -0.15, 0))
+		var sleeve := _part(shoulder, _box(Vector3(0.18, 0.28, 0.2)), _jacket_mat, Vector3(0, -0.13, 0))
 		sleeve.visible = false
 		_sleeves.append(sleeve)
-		_part(shoulder, _box(Vector3(0.13, 0.26, 0.15)), skin, Vector3(0, -0.47, 0))
+		var elbow := _pivot(shoulder, Vector3(0, -0.31, 0))
+		_part(elbow, _sphere(0.07), skin, Vector3.ZERO)
+		_part(elbow, _box(Vector3(0.12, 0.25, 0.14)), skin, Vector3(0, -0.13, 0))
+		_part(elbow, _box(Vector3(0.13, 0.11, 0.15)), skin, Vector3(0, -0.3, 0))  # hand
 		_shoulders.append(shoulder)
-	# The bat, in the right hand, resting on the shoulder.
+		_elbows.append(elbow)
+	# The bat, gripped in the right hand.
 	_bat_arm = _shoulders[1]
-	# Held like a real grip: angled 45 degrees forward from the arm.
-	var bat := _pivot(_bat_arm, Vector3(0, -0.58, 0))
+	var bat := _pivot(_elbows[1], Vector3(0, -0.3, 0))
 	bat.name = "Bat"
 	bat.rotation.x = -PI / 4.0
 	var wood := _mat(Color(0.62, 0.4, 0.22))
@@ -211,9 +221,8 @@ func build(body_material: StandardMaterial3D, hair_color: Color) -> void:
 	AnimeLook.apply(self, 0.03)
 
 
-## The anime face: sharp eyes with a glint, angled brows, a small mouth, and
-## spiky hair swept up and back with bangs over the forehead, held by a
-## headband with a steel plate.
+## The anime face: sharp eyes with a glint, angled brows and a small mouth,
+## under a cap of hair.
 func _build_face(hair_color: Color) -> void:
 	var hair := _mat(hair_color)
 	var ink := _mat(Color(0.08, 0.07, 0.1))
@@ -227,35 +236,9 @@ func _build_face(hair_color: Color) -> void:
 		_part(_body, _box(Vector3(0.055, 0.072, 0.02)), iris, Vector3(x - side * 0.008, 1.797, -0.263))
 		_part(_body, _box(Vector3(0.028, 0.05, 0.02)), ink, Vector3(x - side * 0.008, 1.797, -0.27))  # pupil
 		_part(_body, _box(Vector3(0.018, 0.018, 0.01)), glint, Vector3(x - side * 0.02, 1.812, -0.279))
-		_part(_body, _box(Vector3(0.13, 0.028, 0.03)), ink, Vector3(x, 1.872, -0.25), Vector3(0, 0, side * 16))  # brow
+		_part(_body, _box(Vector3(0.12, 0.026, 0.03)), ink, Vector3(x, 1.862, -0.255), Vector3(0, 0, side * 14))  # brow
 	_part(_body, _box(Vector3(0.07, 0.014, 0.02)), ink, Vector3(0, 1.66, -0.262))  # mouth
-	_part(_body, _sphere(0.29), hair, Vector3(0, 1.88, 0.04), Vector3(1, 0.72, 1))  # hair, close to the head
-	hair_spikes = _pivot(_body, Vector3(0, 1.95, 0.05))
-	var spikes := [
-		[Vector3(0, 1, 0.25), 0.42, 0.11], [Vector3(-0.45, 0.85, 0.3), 0.4, 0.1], [Vector3(0.45, 0.85, 0.3), 0.4, 0.1],
-		[Vector3(-0.8, 0.45, 0.2), 0.32, 0.09], [Vector3(0.8, 0.45, 0.2), 0.32, 0.09], [Vector3(0, 0.75, 0.75), 0.4, 0.11],
-		[Vector3(-0.45, 0.35, 0.85), 0.34, 0.1], [Vector3(0.45, 0.35, 0.85), 0.34, 0.1], [Vector3(0, 0.1, 1), 0.3, 0.1],
-	]
-	for spike in spikes:
-		_spike(hair_spikes, spike[0].normalized() * 0.16, spike[0], spike[1], spike[2], hair)
-	for x in [-0.13, 0.0, 0.13]:  # bangs falling over the forehead
-		_spike(hair_spikes, Vector3(x, 0.02, -0.2), Vector3(x * 1.5, -0.8, -0.55), 0.24, 0.07, hair)
-	var cloth := _mat(Color(0.12, 0.14, 0.26))
-	_part(hair_spikes, _cylinder(0.3, 0.3, 0.07), cloth, Vector3(0, -0.07, -0.04))  # headband
-	var steel := _mat(Color(0.72, 0.74, 0.8))
-	steel.metallic = 0.7
-	steel.roughness = 0.3
-	_part(hair_spikes, _box(Vector3(0.22, 0.08, 0.03)), steel, Vector3(0, -0.07, -0.335))
-	_part(hair_spikes, _box(Vector3(0.1, 0.012, 0.01)), ink, Vector3(0, -0.07, -0.352))  # its engraving
-	for side in [-1.0, 1.0]:  # the headband's tails, flying out behind
-		_part(hair_spikes, _box(Vector3(0.05, 0.03, 0.3)), cloth, Vector3(side * 0.08, -0.1, 0.38), Vector3(-25, side * 12, 0))
-
-
-## A cone of hair from `base`, pointing along `dir`.
-func _spike(parent: Node3D, base: Vector3, dir: Vector3, length: float, radius: float, mat: Material) -> void:
-	var d := dir.normalized()
-	var part := _part(parent, _cylinder(0.0, radius, length), mat, base + d * length * 0.5)
-	part.basis = Basis(Quaternion(Vector3.UP, d))
+	_part(_body, _sphere(0.29), hair, Vector3(0, 1.86, 0.05), Vector3(1, 0.75, 1))  # hair
 
 
 func _process(delta: float) -> void:
@@ -263,39 +246,70 @@ func _process(delta: float) -> void:
 	var pos := global_position
 	if _last_position != Vector3.INF and delta > 0.0:
 		var moved := Vector2(pos.x - _last_position.x, pos.z - _last_position.z).length() / delta
-		_speed = lerpf(_speed, moved, 1.0 - exp(-12.0 * delta))
+		_speed = lerpf(_speed, moved, 1.0 - exp(-10.0 * delta))
 	_last_position = pos
-	var stride := clampf(_speed / 6.0, 0.0, 1.0)
-	_walk_phase += delta * (4.0 + _speed * 1.1) * (1.0 if stride > 0.05 else 0.0)
-	var swing := sin(_walk_phase) * 0.75 * stride
-	_hips[0].rotation.x = swing
-	_hips[1].rotation.x = -swing
-	_shoulders[0].rotation.x = -swing * 0.8
+	_time += delta
+	var stride := clampf(_speed / 7.0, 0.0, 1.0)
+	if stride > 0.03:
+		_walk_phase += delta * (5.0 + _speed * 0.75)
+	var p := _walk_phase
+	var blend := 1.0 - exp(-14.0 * delta)
+	# Legs: the thigh swings from the hip; the knee bends most as the leg
+	# swings through and stays a little soft when the foot is planted.
+	for i in 2:
+		var phase := p + PI * i
+		var forward := cos(phase)  # > 0 while this leg swings forward
+		_hips[i].rotation.x = lerpf(_hips[i].rotation.x, sin(phase) * 0.5 * stride, blend)
+		var bend := -(0.08 + 0.75 * maxf(forward, 0.0)) * stride
+		_knees[i].rotation.x = lerpf(_knees[i].rotation.x, bend, blend)
+	# Body: dips as each foot lands, twists against the legs, leans into the
+	# run; standing still it breathes and shifts its weight.
+	var bob := (cos(2.0 * p) * 0.5 - 0.5) * 0.06 * stride
+	var breathe := sin(_time * 2.0) * 0.012 * (1.0 - stride)
+	_body.position.y = lerpf(_body.position.y, bob + breathe, blend)
 	if not _swinging:
-		_bat_arm.rotation.x = lerpf(_bat_arm.rotation.x, REST_ARM + swing * 0.3, 1.0 - exp(-15.0 * delta))
-	_body.position.y = absf(sin(_walk_phase)) * 0.06 * stride
-	if stride <= 0.05:  # settle back to standing
-		_walk_phase = 0.0
-		for pivot in _hips:
-			pivot.rotation.x = lerpf(pivot.rotation.x, 0.0, 1.0 - exp(-12.0 * delta))
+		_body.rotation.y = lerpf(_body.rotation.y, sin(p) * 0.14 * stride, blend)
+	_body.rotation.x = lerpf(_body.rotation.x, -0.1 * stride, blend)
+	_body.rotation.z = lerpf(_body.rotation.z, sin(_time * 0.9) * 0.02 * (1.0 - stride), blend)
+	# Arms swing against the legs with the elbows bent; the bat arm keeps its grip.
+	var free_arm := -sin(p) * 0.55 * stride
+	_shoulders[0].rotation.x = lerpf(_shoulders[0].rotation.x, free_arm + 0.05, blend)
+	_shoulders[0].rotation.z = lerpf(_shoulders[0].rotation.z, -0.08, blend)
+	_elbows[0].rotation.x = lerpf(_elbows[0].rotation.x, 0.3 + (0.35 + 0.4 * maxf(free_arm, 0.0)) * stride, blend)
+	if not _swinging:
+		_bat_arm.rotation = _bat_arm.rotation.lerp(Vector3(REST_ARM - free_arm * 0.35, 0.0, 0.1), blend)
+		_elbows[1].rotation = _elbows[1].rotation.lerp(Vector3(REST_ELBOW, 0.0, 0.0), blend)
+	if stride <= 0.03:
+		_walk_phase = lerpf(_walk_phase, roundf(_walk_phase / PI) * PI, blend)  # settle with both feet down
 
 
-## The bat swing: wind up over the right shoulder, sweep it flat across the
-## front, follow through to the left, then back to rest.
-func swing(duration := 0.28) -> void:
+## The bat swing, like a batter: wind up with the bat cocked back over the
+## right shoulder and the body turned away, step into it and whip the body
+## round so the bat sweeps flat across the front, follow through to the left
+## with the arm extending, then recover to the grip.
+func swing(duration := 0.32) -> void:
 	_swinging = true
 	var tween := create_tween()
-	tween.tween_property(_bat_arm, "rotation", Vector3(2.4, -0.7, 0.0), duration * 0.3) \
-			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tween.tween_property(_bat_arm, "rotation", Vector3(0.85, 0.3, 0.0), duration * 0.2) \
-			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	tween.tween_property(_bat_arm, "rotation", Vector3(0.85, 1.4, 0.0), duration * 0.2)
-	tween.tween_property(_bat_arm, "rotation", Vector3(REST_ARM, 0.0, 0.0), duration * 0.3)
+	_pose(tween, duration * 0.3, Vector3(2.5, -0.5, 0.3), 1.3, 0.55, Vector3(0.2, 0, -0.25), Tween.EASE_OUT)  # wind up
+	_pose(tween, duration * 0.18, Vector3(1.45, 0.35, 0.15), 0.25, -0.45, Vector3(1.0, 0, -0.1), Tween.EASE_IN)  # strike
+	_pose(tween, duration * 0.2, Vector3(1.1, 1.3, 0.1), 0.5, -0.75, Vector3(0.6, 0, 0.0), Tween.EASE_OUT)  # follow through
+	_pose(tween, duration * 0.32, Vector3(REST_ARM, 0.0, 0.1), REST_ELBOW, 0.0, Vector3(0.05, 0, -0.08), Tween.EASE_IN_OUT)
 	tween.tween_callback(func() -> void: _swinging = false)
 
 
+## One step of the swing: bat arm (shoulder rotation, elbow bend), body turn,
+## and the free arm, all moving together.
+func _pose(tween: Tween, time: float, shoulder: Vector3, elbow: float, turn: float, free_arm: Vector3,
+		ease: Tween.EaseType) -> void:
+	tween.tween_property(_bat_arm, "rotation", shoulder, time).set_trans(Tween.TRANS_QUAD).set_ease(ease)
+	tween.parallel().tween_property(_elbows[1], "rotation:x", elbow, time).set_trans(Tween.TRANS_QUAD).set_ease(ease)
+	tween.parallel().tween_property(_body, "rotation:y", turn, time).set_trans(Tween.TRANS_QUAD).set_ease(ease)
+	tween.parallel().tween_property(_shoulders[0], "rotation", free_arm, time).set_trans(Tween.TRANS_QUAD).set_ease(ease)
+
+
 func _rest_bat() -> void:
-	_bat_arm.rotation = Vector3(REST_ARM, 0.0, 0.0)
+	_bat_arm.rotation = Vector3(REST_ARM, 0.0, 0.1)
+	_elbows[1].rotation = Vector3(REST_ELBOW, 0.0, 0.0)
 
 
 # --- Mesh helpers -------------------------------------------------------------------
