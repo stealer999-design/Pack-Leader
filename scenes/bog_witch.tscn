@@ -87,32 +87,6 @@ shape = SubResource("shape")
 
 [node name="Model" type="Node3D" parent="."]
 
-[node name="Body" type="MeshInstance3D" parent="Model"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.95, 0)
-mesh = SubResource("body_mesh")
-
-[node name="Hat" type="MeshInstance3D" parent="Model"]
-transform = Transform3D(0.98, -0.17, 0, 0.17, 0.98, 0, 0, 0, 1, 0.05, 2.35, 0)
-mesh = SubResource("hat_mesh")
-
-[node name="Brim" type="MeshInstance3D" parent="Model"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.88, 0)
-mesh = SubResource("brim_mesh")
-
-[node name="Staff" type="MeshInstance3D" parent="Model"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.6, 1.1, -0.1)
-mesh = SubResource("staff_mesh")
-
-[node name="Orb" type="MeshInstance3D" parent="Model"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.6, 2.3, -0.1)
-mesh = SubResource("orb_mesh")
-
-[node name="OrbLight" type="OmniLight3D" parent="Model"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.6, 2.3, -0.1)
-light_color = Color(0.5, 1, 0.35, 1)
-light_energy = 1.5
-omni_range = 4.0
-
 [node name="Overhead" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.2, 0)
 

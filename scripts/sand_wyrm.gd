@@ -27,6 +27,10 @@ func _init() -> void:
 	color = Color(0.6, 0.4, 0.2)
 
 
+func _build_model() -> Dictionary:
+	return BossModels.wyrm(model, _material)
+
+
 func title() -> String:
 	return "Sand Wyrm"
 

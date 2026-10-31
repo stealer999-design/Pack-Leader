@@ -101,6 +101,12 @@ played in the browser".
   and so on. Bosses get tougher to match. The HUD shows the act, area and
   creature levels.
 
+  Every boss has its own model: the rival is a tamer in a wide-brimmed hat and
+  cape who swings a bat, the Glacier Titan a hulking ice golem with crystal
+  shoulders and huge fists, the Sand Wyrm an armoured worm rearing out of a
+  sand mound with a toothy maw and snapping mandibles, and the Bog Witch a
+  hunched, floating witch with a crooked hat and a glowing staff.
+
   | Area | Biome | Creatures | Boss |
   |---|---|---|---|
   | Act 1 area 1 (Lv 1-5) | Greenmeadow | Cats: Mossback, Emberfox, Voltwing, Gloomhorn, Bloomling (the first two creatures by the camp are always Bloomlings) | **Rival Tamer** with one pet. The pet fights and uses its ability; when the rival is beaten the pet goes wild, weakened, so you can capture it |
@@ -317,6 +323,7 @@ The host is the authoritative server and also plays.
 | `scenes/main.tscn` + `scripts/main.gd` | Menu + `LevelSpawner` that replicates the world to joining clients |
 | `scenes/world.tscn` + `scripts/world.gd` | Level flow (start → rival → portal → next level), level geometry, spawners, XP sharing, FX |
 | `scripts/level_generator.gd` | Deterministic layout of a level from a seed: path segments, rocks, creature spots, boss, exit |
+| `scripts/boss_models.gd` | The bosses' models (rival tamer, Glacier Titan, Sand Wyrm, Bog Witch) and what animates |
 | `scripts/biome_db.gd` | The biomes levels cycle through: their creatures, boss and colours |
 | `scenes/rival.tscn` + `scripts/rival.gd` | The AI rival tamer boss (and the base class for every boss) |
 | `scenes/titan.tscn` + `scripts/titan.gd` | The Glacier Titan boss: Avalanche and Frostfinch summons |

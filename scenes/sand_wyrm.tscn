@@ -93,38 +93,6 @@ shape = SubResource("shape")
 
 [node name="Model" type="Node3D" parent="."]
 
-[node name="Body" type="MeshInstance3D" parent="Model"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, 0)
-mesh = SubResource("head_mesh")
-
-[node name="Segment1" type="MeshInstance3D" parent="Model"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.85, 1.35)
-mesh = SubResource("seg1")
-
-[node name="Segment2" type="MeshInstance3D" parent="Model"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 2.45)
-mesh = SubResource("seg2")
-
-[node name="Segment3" type="MeshInstance3D" parent="Model"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.55, 3.35)
-mesh = SubResource("seg3")
-
-[node name="MandibleL" type="MeshInstance3D" parent="Model"]
-transform = Transform3D(0.94, 0, 0.34, 0, 1, 0, -0.34, 0, 0.94, -0.45, 0.75, -0.9)
-mesh = SubResource("mandible_mesh")
-
-[node name="MandibleR" type="MeshInstance3D" parent="Model"]
-transform = Transform3D(0.94, 0, -0.34, 0, 1, 0, 0.34, 0, 0.94, 0.45, 0.75, -0.9)
-mesh = SubResource("mandible_mesh")
-
-[node name="EyeL" type="MeshInstance3D" parent="Model"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.38, 1.55, -0.78)
-mesh = SubResource("eye_mesh")
-
-[node name="EyeR" type="MeshInstance3D" parent="Model"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.38, 1.55, -0.78)
-mesh = SubResource("eye_mesh")
-
 [node name="Overhead" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.3, 0)
 

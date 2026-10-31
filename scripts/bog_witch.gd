@@ -24,6 +24,10 @@ func _init() -> void:
 	color = Color(0.45, 0.3, 0.55)
 
 
+func _build_model() -> Dictionary:
+	return BossModels.witch(model, _material)
+
+
 func title() -> String:
 	return "Bog Witch"
 

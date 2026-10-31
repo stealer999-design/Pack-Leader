@@ -72,26 +72,6 @@ shape = SubResource("shape")
 
 [node name="Model" type="Node3D" parent="."]
 
-[node name="Body" type="MeshInstance3D" parent="Model"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 0)
-mesh = SubResource("body_mesh")
-
-[node name="SpikeL" type="MeshInstance3D" parent="Model"]
-transform = Transform3D(0.94, -0.34, 0, 0.34, 0.94, 0, 0, 0, 1, -0.85, 2.9, 0)
-mesh = SubResource("spike_mesh")
-
-[node name="SpikeR" type="MeshInstance3D" parent="Model"]
-transform = Transform3D(0.94, 0.34, 0, -0.34, 0.94, 0, 0, 0, 1, 0.85, 2.9, 0)
-mesh = SubResource("spike_mesh")
-
-[node name="SpikeTop" type="MeshInstance3D" parent="Model"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.6, 0.1)
-mesh = SubResource("spike_mesh")
-
-[node name="Eyes" type="MeshInstance3D" parent="Model"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, -0.95)
-mesh = SubResource("eye_mesh")
-
 [node name="Overhead" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.7, 0)
 

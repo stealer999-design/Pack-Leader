@@ -19,7 +19,11 @@ var _summon_thresholds: Array[float] = [0.66, 0.33]
 
 
 func _init() -> void:
-	color = Color(0.55, 0.75, 0.95)
+	color = Color(0.42, 0.6, 0.82)
+
+
+func _build_model() -> Dictionary:
+	return BossModels.titan(model, _material)
 
 
 func title() -> String:

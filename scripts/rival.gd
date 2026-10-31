@@ -29,6 +29,14 @@ var _weaken_timer := 0.0
 var _weaken_factor := 1.0
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 var _material := StandardMaterial3D.new()
+## The model's animated parts (see BossModels).
+var _parts := {}
+var _last_position := Vector3.INF
+var _speed := 0.0
+var _time := 0.0
+var _phase := 0.0
+var _rest := {}  ## node -> its rest position, for swaying parts
+var _attacking := false
 
 @onready var world: World = get_tree().get_first_node_in_group("world")
 @onready var health: Health = $Health
@@ -41,7 +49,9 @@ var _material := StandardMaterial3D.new()
 func _ready() -> void:
 	add_to_group("rivals")
 	_material.albedo_color = color
-	$Model/Body.material_override = _material
+	_parts = _build_model()
+	for node: Node3D in _parts.get("sway", []):
+		_rest[node] = node.position
 	name_label.text = title()
 	health.changed.connect(_on_health_changed)
 	if multiplayer.is_server():
@@ -55,7 +65,8 @@ func _ready() -> void:
 			c._apply_ownership()
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	_animate(delta)
 	var cam := get_viewport().get_camera_3d()
 	if cam:
 		overhead.global_basis = cam.global_basis
@@ -259,6 +270,60 @@ func _flash() -> void:
 
 @rpc("authority", "call_local", "unreliable")
 func _swing() -> void:
+	if _parts.has("person"):
+		_parts.person.swing()  # the rival swings a bat like the players
+		return
 	var tween := create_tween()
-	tween.tween_property(model, "scale", Vector3(1.15, 0.9, 1.15), 0.06)
+	tween.tween_property(model, "scale", Vector3(1.08, 0.94, 1.08), 0.06)
 	tween.tween_property(model, "scale", Vector3.ONE, 0.12)
+	# Arms slam forward; jaws gape and snap shut.
+	_attacking = true
+	var strike := create_tween().set_parallel()
+	for arm: Node3D in _parts.get("arms", []):
+		var rest := arm.rotation.x
+		strike.tween_property(arm, "rotation:x", rest + 1.9, 0.12).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		strike.tween_property(arm, "rotation:x", rest, 0.25).set_delay(0.18)
+	for jaw: Node3D in _parts.get("jaws", []):
+		var open: Vector3 = jaw.get_meta("open", Vector3.ZERO)
+		strike.tween_property(jaw, "rotation:x", open.x * 2.5, 0.1)
+		strike.tween_property(jaw, "rotation:x", 0.25, 0.08).set_delay(0.12)
+		strike.tween_property(jaw, "rotation:x", 0.0, 0.2).set_delay(0.25)
+	strike.chain().tween_callback(func() -> void: _attacking = false)
+
+
+## Builds the boss's body into Model; returns its animated parts (BossModels).
+## The rival tamer is a person; other bosses override this.
+func _build_model() -> Dictionary:
+	return BossModels.rival(model, _material, color)
+
+
+## Walking legs and arms (paced by how fast it actually moves, so clients
+## animate too), breathing or floating, weaving bodies and idle jaws.
+func _animate(delta: float) -> void:
+	var pos := global_position
+	if _last_position != Vector3.INF and delta > 0.0:
+		var moved := Vector2(pos.x - _last_position.x, pos.z - _last_position.z).length() / delta
+		_speed = lerpf(_speed, minf(moved, 20.0), 1.0 - exp(-10.0 * delta))
+	_last_position = pos
+	_time += delta
+	var stride := clampf(_speed / 3.0, 0.0, 1.0)
+	_phase += delta * (2.5 + _speed * 1.2)
+	var legs: Array = _parts.get("legs", [])
+	for i in legs.size():
+		legs[i].rotation.x = lerpf(legs[i].rotation.x, sin(_phase + PI * i) * 0.55 * stride, 1.0 - exp(-12.0 * delta))
+	if not _attacking:
+		var arms: Array = _parts.get("arms", [])
+		for i in arms.size():
+			var base: float = arms[i].get_meta("rest", arms[i].rotation.x)
+			arms[i].set_meta("rest", base)
+			arms[i].rotation.x = base - sin(_phase + PI * i) * 0.4 * stride + sin(_time * 1.3 + i) * 0.04
+		for jaw: Node3D in _parts.get("jaws", []):
+			jaw.rotation.x = (sin(_time * 2.4) * 0.5 + 0.5) * jaw.get_meta("open", Vector3.ZERO).x
+	if _parts.has("bob"):
+		var bob: Array = _parts.bob
+		bob[0].position.y = bob[1] + sin(_time * bob[3]) * bob[2] + absf(sin(_phase)) * 0.06 * stride
+	var sway: Array = _parts.get("sway", [])
+	for i in sway.size():
+		var node: Node3D = sway[i]
+		var rest: Vector3 = _rest.get(node, node.position)
+		node.position = rest + Vector3(sin(_time * 1.8 - i * 0.6) * 0.1 * (i + 1) / sway.size(), 0, 0)
