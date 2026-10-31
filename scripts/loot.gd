@@ -8,6 +8,8 @@ extends Node3D
 var item := {}
 
 var _sack: Node3D
+var _pulse: StandardMaterial3D  ## A legendary item's beam, which pulses.
+var _time := 0.0
 
 
 func _ready() -> void:
@@ -39,16 +41,19 @@ func _ready() -> void:
 	var glow := StandardMaterial3D.new()
 	glow.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	glow.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	glow.albedo_color = Color(color, 0.25)
+	var legendary := ItemDB.is_legendary(item)
+	glow.albedo_color = Color(color, 0.45 if legendary else 0.25)
 	var beam := MeshInstance3D.new()
 	var shaft := CylinderMesh.new()
 	shaft.top_radius = 0.05
 	shaft.bottom_radius = 0.3
-	shaft.height = 2.4
+	shaft.height = 6.0 if legendary else 2.4  # legendary loot: a pillar of light, seen from afar
 	shaft.material = glow
 	beam.mesh = shaft
-	beam.position.y = 1.2
+	beam.position.y = shaft.height * 0.5
 	add_child(beam)
+	if legendary:
+		_pulse = glow
 	var label := Label3D.new()
 	label.text = ItemDB.display_name(item)
 	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
@@ -57,6 +62,10 @@ func _ready() -> void:
 	label.outline_size = 10
 	label.modulate = color
 	label.position.y = 1.5
+	if legendary:
+		label.text = "LEGENDARY\n" + label.text
+		label.font_size = 44
+		label.position.y = 1.9
 	add_child(label)
 	# Pop out of whatever dropped it.
 	_sack.position.y = 1.0
@@ -65,3 +74,6 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	_sack.rotate_y(delta * 1.5)
+	if _pulse:
+		_time += delta
+		_pulse.albedo_color.a = 0.3 + 0.2 * sin(_time * 4.0)

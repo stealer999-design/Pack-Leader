@@ -442,7 +442,7 @@ func _update_details() -> void:
 	elif _selected.bag_index >= 0:
 		var worn: Dictionary = player.equipment.get(ItemDB.default_slot(item), {})
 		if not worn.is_empty():
-			_details.text += "\n(wearing: %s, %s)" % [ItemDB.display_name(worn), ItemDB.effect(worn)]
+			_details.text += "\n(wearing: %s, %s)" % [ItemDB.display_name(worn), ItemDB.effect(worn, ", ")]
 
 
 func _heading(text: String) -> Label:
@@ -564,6 +564,11 @@ class ItemSlot:
 		box.border_color = UiTheme.ACCENT if selected or _drop_hover else border
 		if selected or _drop_hover:
 			box.set_border_width_all(3)
+		elif ItemDB.is_legendary(item):  # legendary: a thick orange frame and a warm glow
+			box.set_border_width_all(3)
+			box.bg_color = Color(0.24, 0.14, 0.06)
+			box.shadow_color = Color(1.0, 0.5, 0.1, 0.45)
+			box.shadow_size = 6
 		draw_style_box(box, rect)
 		var icon_size := int(minf(size.x, size.y) * 0.6)
 		var icon_name: String

@@ -2,7 +2,8 @@ class_name Crate
 extends StaticBody3D
 ## A breakable clay vase on the path (the code still calls them crates).
 ## One bat hit shatters it and spills coins. Gold vases are rarer and hold
-## more coins and a better chance of gear.
+## more coins and a better chance of gear. From Act 2, any vase may hold a
+## legendary item (World.roll_legendary).
 
 ## The vase's outline, bottom to top: (height, radius). Turned around its axis.
 const PROFILE := [
@@ -52,6 +53,7 @@ func hit(_damage: float) -> void:
 		return
 	world.spill_coins(global_position, coin_value())
 	world.roll_loot(global_position, 0.4 if gold else 0.12)
+	world.roll_legendary(global_position)
 	world.play_shatter.rpc(global_position, _material.albedo_color)
 	queue_free()
 

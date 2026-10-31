@@ -223,6 +223,25 @@ played in the browser".
   | Padded collar (pet) | That pet: more max health | Cloth, Padded, Fleece, Quilted, Guardian Collar: 6-22% | +3% / +6% |
   | Studded collar (pet) | That pet: less damage taken | Leather, Studded, Iron, Steel, Warden Collar: 4-12% | +2% / +4% |
 
+  **Legendary items** (orange): from Act 2 on, every monster killed, vase
+  smashed and boss beaten has a **5%** chance to drop one (on top of the usual
+  loot), so a graveyard run usually turns up a few. Each kind of gear has one,
+  stronger than a Superior level 5 piece and with a second bonus. A legendary
+  drop shows a tall pulsing pillar of light marked LEGENDARY, and everyone is
+  told when it drops and who picks it up:
+
+  | Legendary | Slot | Gives |
+  |---|---|---|
+  | Gravewarden's Coat | Chest | 22% armor, +25 health |
+  | Bonewoven Leggings | Pants | 14% armor, 5% speed |
+  | Crown of the Drowned | Hat | +45 health, 4% armor |
+  | Ghoststep Boots | Boots | 16% speed, 4% armor |
+  | Howard's Hook | Ring | Pets: 18% damage, 6% health |
+  | Soulbound Locket | Necklace | Pets: 25% health, 6% damage |
+  | Collar of the Restless Dead | Pet collar | That pet: 25% damage, 8% health |
+  | Gravedigger's Collar | Pet collar | That pet: 30% health, 6% armor |
+  | Bone Plate Collar | Pet collar | That pet: 16% armor, 8% damage |
+
   **Pet gear:** the inventory's **Pets** tab (next to **Tamer**) shows your
   party pets, each with one slot, for a **collar**. Drag a collar from the bag
   onto a pet to put it on (swapping with the one it wore), back into the bag

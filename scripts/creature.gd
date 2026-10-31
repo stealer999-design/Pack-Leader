@@ -209,8 +209,7 @@ func skill_bonus(stat: String) -> float:
 		for ally in world.get_pets(owner_id):
 			if not ally.fainted:
 				bonus += PetSkills.total(ally.species_index, ally.skill_ranks, "pack_" + stat)
-		if ItemDB.stat_of(collar) == "collar_" + stat:
-			bonus += ItemDB.amount(collar) / 100.0
+		bonus += ItemDB.stats(collar).get("collar_" + stat, 0) / 100.0
 		# The tamer's rings and necklace.
 		var tamer := world.get_player(owner_id)
 		if tamer:
@@ -698,6 +697,8 @@ func _on_died() -> void:
 	if is_wild():
 		world.award_xp(self)
 		world.roll_loot(global_position, 0.08)
+		if is_monster():
+			world.roll_legendary(global_position)
 		world.play_burst.rpc(global_position, species.color, 2.5)
 		queue_free()
 	else:

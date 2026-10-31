@@ -28,8 +28,12 @@ const RARITIES := [
 	{"name": "Common", "prefix": "", "color": Color(0.82, 0.82, 0.8)},
 	{"name": "Uncommon", "prefix": "Fine ", "color": Color(0.45, 0.9, 0.45)},
 	{"name": "Rare", "prefix": "Superior ", "color": Color(0.45, 0.65, 1.0)},
+	# Never rolled with the others: legendary items drop on their own (see
+	# World.roll_legendary) and are one of a kind (KINDS[...].legendary).
+	{"name": "Legendary", "prefix": "", "color": Color(1.0, 0.55, 0.12)},
 ]
-## Chance of each rarity when an item drops (common, uncommon, rare).
+const LEGENDARY := 3  ## The Legendary rarity's index.
+## Chance of each rarity when an ordinary item drops (common, uncommon, rare).
 const RARITY_WEIGHTS := [0.7, 0.23, 0.07]
 
 ## What each stat does, for descriptions ("%d" is the amount).
@@ -52,54 +56,63 @@ const KINDS := {
 		"names": ["Tattered Jacket", "Leather Jacket", "Padded Jacket", "Studded Jacket", "Ranger's Jacket"],
 		"colors": [Color(0.55, 0.45, 0.35), Color(0.45, 0.28, 0.16), Color(0.35, 0.42, 0.3),
 				Color(0.3, 0.3, 0.36), Color(0.22, 0.38, 0.28)],
+		"legendary": {"name": "Gravewarden's Coat", "value": 22, "extra": {"health": 25}},
 	},
 	"pants": {
 		"slot": "pants", "stat": "armor", "values": [2, 4, 6, 8, 10], "rarity_step": 1,
 		"names": ["Patched Trousers", "Leather Pants", "Padded Pants", "Studded Pants", "Ranger's Pants"],
 		"colors": [Color(0.45, 0.4, 0.32), Color(0.4, 0.26, 0.15), Color(0.3, 0.36, 0.26),
 				Color(0.26, 0.26, 0.32), Color(0.2, 0.32, 0.24)],
+		"legendary": {"name": "Bonewoven Leggings", "value": 14, "extra": {"speed": 5}},
 	},
 	"hat": {
 		"slot": "hat", "stat": "health", "values": [10, 15, 20, 25, 30], "rarity_step": 5,
 		"names": ["Straw Hat", "Leather Cap", "Wool Hat", "Iron Helm", "Ranger's Hat"],
 		"colors": [Color(0.85, 0.72, 0.4), Color(0.5, 0.32, 0.18), Color(0.7, 0.22, 0.2),
 				Color(0.6, 0.62, 0.66), Color(0.22, 0.4, 0.28)],
+		"legendary": {"name": "Crown of the Drowned", "value": 45, "extra": {"armor": 4}},
 	},
 	"boots": {
 		"slot": "boots", "stat": "speed", "values": [3, 5, 7, 9, 11], "rarity_step": 2,
 		"names": ["Worn Sandals", "Leather Boots", "Fur Boots", "Desert Striders", "Ranger's Boots"],
 		"colors": [Color(0.62, 0.48, 0.32), Color(0.42, 0.26, 0.14), Color(0.8, 0.78, 0.74),
 				Color(0.76, 0.6, 0.38), Color(0.24, 0.34, 0.22)],
+		"legendary": {"name": "Ghoststep Boots", "value": 16, "extra": {"armor": 4}},
 	},
 	"ring": {
 		"slot": "ring", "stat": "pet_damage", "values": [3, 5, 7, 9, 12], "rarity_step": 2,
 		"names": ["Copper Ring", "Fang Ring", "Silver Ring", "Claw Ring", "Alpha Ring"],
 		"colors": [Color(0.85, 0.5, 0.3), Color(0.95, 0.92, 0.82), Color(0.82, 0.85, 0.9),
 				Color(0.75, 0.3, 0.3), Color(1.0, 0.8, 0.3)],
+		"legendary": {"name": "Howard's Hook", "value": 18, "extra": {"pet_health": 6}},
 	},
 	"necklace": {
 		"slot": "necklace", "stat": "pet_health", "values": [5, 8, 11, 14, 18], "rarity_step": 3,
 		"names": ["Bead Necklace", "Tooth Necklace", "Shell Pendant", "Jade Amulet", "Heart of the Pack"],
 		"colors": [Color(0.7, 0.55, 0.4), Color(0.95, 0.92, 0.8), Color(0.95, 0.75, 0.7),
 				Color(0.35, 0.8, 0.5), Color(1.0, 0.45, 0.55)],
+		"legendary": {"name": "Soulbound Locket", "value": 25, "extra": {"pet_damage": 6}},
 	},
 	"spiked_collar": {
 		"slot": "collar", "stat": "collar_damage", "values": [5, 8, 11, 14, 18], "rarity_step": 2,
 		"names": ["Thorn Collar", "Spiked Collar", "Fang Collar", "Razor Collar", "Alpha Collar"],
 		"colors": [Color(0.45, 0.6, 0.3), Color(0.5, 0.3, 0.2), Color(0.92, 0.88, 0.75),
 				Color(0.65, 0.68, 0.74), Color(0.85, 0.25, 0.2)],
+		"legendary": {"name": "Collar of the Restless Dead", "value": 25, "extra": {"collar_health": 8}},
 	},
 	"padded_collar": {
 		"slot": "collar", "stat": "collar_health", "values": [6, 10, 14, 18, 22], "rarity_step": 3,
 		"names": ["Cloth Collar", "Padded Collar", "Fleece Collar", "Quilted Collar", "Guardian Collar"],
 		"colors": [Color(0.7, 0.62, 0.5), Color(0.35, 0.5, 0.75), Color(0.9, 0.88, 0.82),
 				Color(0.6, 0.35, 0.65), Color(0.3, 0.7, 0.45)],
+		"legendary": {"name": "Gravedigger's Collar", "value": 30, "extra": {"collar_armor": 6}},
 	},
 	"studded_collar": {
 		"slot": "collar", "stat": "collar_armor", "values": [4, 6, 8, 10, 12], "rarity_step": 2,
 		"names": ["Leather Collar", "Studded Collar", "Iron Collar", "Steel Collar", "Warden Collar"],
 		"colors": [Color(0.5, 0.33, 0.2), Color(0.3, 0.22, 0.16), Color(0.45, 0.45, 0.5),
 				Color(0.72, 0.75, 0.8), Color(0.3, 0.4, 0.7)],
+		"legendary": {"name": "Bone Plate Collar", "value": 16, "extra": {"collar_damage": 8}},
 	},
 }
 ## How often each kind drops, relative to the others (rings fill two slots).
@@ -123,6 +136,17 @@ static func make_item(area_level: int, rng: RandomNumberGenerator = null) -> Dic
 			type = kind
 			break
 	return make(type, area_level, _roll_rarity(rng))
+
+
+## A random legendary item: any kind, its one-of-a-kind version (always level 5).
+static func make_legendary(rng: RandomNumberGenerator = null) -> Dictionary:
+	var kinds := KINDS.keys()
+	var type: String = kinds[(rng.randi() if rng else randi()) % kinds.size()]
+	return make(type, MAX_LEVEL, LEGENDARY)
+
+
+static func is_legendary(item: Dictionary) -> bool:
+	return int(item.get("rarity", 0)) == LEGENDARY and KINDS.has(item.get("type", ""))
 
 
 static func make(type: String, level: int, rarity := 0) -> Dictionary:
@@ -163,6 +187,8 @@ static func fits(item: Dictionary, slot: String) -> bool:
 static func display_name(item: Dictionary) -> String:
 	if item.is_empty() or not KINDS.has(item.get("type", "")):
 		return ""
+	if is_legendary(item):
+		return KINDS[item.type].legendary.name
 	return RARITIES[int(item.rarity)].prefix + KINDS[item.type].names[int(item.level) - 1]
 
 
@@ -187,22 +213,40 @@ static func amount(item: Dictionary) -> int:
 	if not KINDS.has(item.get("type", "")):
 		return 0
 	var kind: Dictionary = KINDS[item.type]
+	if is_legendary(item):
+		return kind.legendary.value
 	return kind.values[int(item.level) - 1] + kind.rarity_step * int(item.rarity)
+
+
+## Everything the item gives, as {stat: amount}: its main stat, plus a
+## legendary item's extra one.
+static func stats(item: Dictionary) -> Dictionary:
+	var stat := stat_of(item)
+	if stat == "":
+		return {}
+	var out := {stat: amount(item)}
+	if is_legendary(item):
+		for extra: String in KINDS[item.type].legendary.extra:
+			out[extra] = out.get(extra, 0) + int(KINDS[item.type].legendary.extra[extra])
+	return out
 
 
 ## How much of `stat` a set of worn gear gives in total (armor is capped).
 static func total(equipment: Dictionary, stat: String) -> int:
 	var sum := 0
 	for slot in equipment:
-		if stat_of(equipment[slot]) == stat:
-			sum += amount(equipment[slot])
+		sum += int(stats(equipment[slot]).get(stat, 0))
 	return mini(sum, MAX_ARMOR) if stat == "armor" else sum
 
 
-## What the item does, in a few words ("Pets: deal 7% more damage").
-static func effect(item: Dictionary) -> String:
-	var stat := stat_of(item)
-	return STATS[stat] % amount(item) if stat != "" else ""
+## What the item does, in a few words ("Pets: deal 7% more damage"); a
+## legendary item's two effects are joined by `separator`.
+static func effect(item: Dictionary, separator := "\n") -> String:
+	var lines := []
+	var all := stats(item)
+	for stat: String in all:
+		lines.append(STATS[stat] % all[stat])
+	return separator.join(lines)
 
 
 ## A short description for tooltips and the details line.
@@ -210,6 +254,8 @@ static func describe(item: Dictionary) -> String:
 	if item.is_empty():
 		return ""
 	var kind: String = "pet collar" if is_collar(item) else SLOT_NAMES[default_slot(item)].to_lower()
+	if is_legendary(item):
+		return "\n".join([display_name(item), "Legendary %s" % kind, effect(item)])
 	return "\n".join(["%s  (level %d)" % [display_name(item), int(item.level)],
 			"%s %s" % [RARITIES[int(item.rarity)].name, kind], effect(item)])
 

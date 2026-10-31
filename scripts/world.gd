@@ -38,6 +38,10 @@ const OBSTACLES_PER_BIOME := 4
 @export var exit_radius := 2.5
 ## XP every pet gets for defeating a rival (x level number).
 @export var rival_defeat_xp := 40
+## Legendary items (see roll_legendary): the chance per monster, vase or boss,
+## and the first act they drop in.
+const LEGENDARY_CHANCE := 0.05
+const LEGENDARY_FROM_ACT := 2
 ## Creature levels per area (see area_levels).
 const AREA_LEVELS := 5
 ## A pet this many levels above what it beats still gets full experience.
@@ -424,7 +428,8 @@ func _start_level(number: int) -> void:
 	for pet in get_all_pets():
 		pet.global_position = player_spawn_point(pet.owner_id) + pet._follow_offset()
 		pet.set_focus(null)
-		pet.remove_meta("told_overlevelled")
+		if pet.has_meta("told_overlevelled"):
+			pet.remove_meta("told_overlevelled")
 
 	var levels := area_levels(number)
 	var base_level := levels.x
@@ -461,6 +466,7 @@ func on_rival_defeated(rival: Rival) -> void:
 			Color(1, 0.9, 0.5))
 	play_burst.rpc(rival.global_position, rival.color, 4.0)
 	roll_loot(rival.global_position, 1.0)  # bosses always drop gear
+	roll_legendary(rival.global_position)
 	for pet in _creatures_where(func(c: Creature) -> bool: return c.is_rival_pet()):
 		pet.release_to_wild()
 		announce.rpc("The rival's %s has gone wild. Capture it!" % pet.species.display_name, Color(0.6, 0.85, 1.0))
@@ -557,6 +563,17 @@ func roll_loot(at: Vector3, chance: float) -> void:
 		loot_spawner.spawn({"pos": clamp_to_level(at), "item": ItemDB.make_item(level_number)})
 
 
+## Server: the chance (LEGENDARY_CHANCE) of a legendary item, rolled for every
+## monster killed, vase smashed and boss beaten from Act 2 on (on top of the
+## ordinary loot roll). Everyone hears about it.
+func roll_legendary(at: Vector3) -> void:
+	if BiomeDB.act_of(level_number).act < LEGENDARY_FROM_ACT or randf() >= LEGENDARY_CHANCE:
+		return
+	var item := ItemDB.make_legendary()
+	loot_spawner.spawn({"pos": clamp_to_level(at + Vector3(randf_range(-0.6, 0.6), 0, randf_range(-0.6, 0.6))), "item": item})
+	announce.rpc("A legendary item dropped: %s!" % ItemDB.display_name(item), ItemDB.rarity_color(item))
+
+
 func _collect_loot() -> void:
 	for loot: Loot in loot_root.get_children():
 		if loot.is_queued_for_deletion():
@@ -565,7 +582,11 @@ func _collect_loot() -> void:
 			if p.downed or _flat_distance(p.global_position, loot.global_position) > coin_pickup_radius:
 				continue
 			if p.add_item(loot.item):
-				tell(p.peer_id, "You found a %s!  [I] inventory" % ItemDB.display_name(loot.item), ItemDB.rarity_color(loot.item))
+				if ItemDB.is_legendary(loot.item):
+					announce.rpc("%s found %s, a legendary item!" % [p.display_name, ItemDB.display_name(loot.item)],
+							ItemDB.rarity_color(loot.item))
+				else:
+					tell(p.peer_id, "You found a %s!  [I] inventory" % ItemDB.display_name(loot.item), ItemDB.rarity_color(loot.item))
 				show_pickup.rpc(p.peer_id, loot.item)
 				loot.queue_free()
 				break
