@@ -1321,6 +1321,47 @@ func play_bolt(from: Vector3, to: Vector3, color: Color, travel: float) -> void:
 		fx.queue_free())
 
 
+## An arrow: a shaft with a pointed head and pale fletching, flying from
+## `from` to `to` in `travel` seconds, pointing the way it flies.
+@rpc("authority", "call_local", "unreliable")
+func play_arrow(from: Vector3, to: Vector3, color: Color, travel: float) -> void:
+	if from.distance_to(to) < 0.05:
+		return
+	var arrow := Node3D.new()
+	add_child(arrow)
+	var shaft := MeshInstance3D.new()
+	var stick := BoxMesh.new()
+	stick.size = Vector3(0.05, 0.05, 0.8)
+	shaft.mesh = stick
+	shaft.material_override = _fx_material(Color(0.55, 0.4, 0.25))
+	arrow.add_child(shaft)
+	var head := MeshInstance3D.new()
+	var tip := CylinderMesh.new()
+	tip.top_radius = 0.0
+	tip.bottom_radius = 0.07
+	tip.height = 0.2
+	head.mesh = tip
+	head.material_override = _fx_material(color)
+	head.position.z = -0.48
+	head.rotation.x = -PI / 2.0  # the cylinder's tip points along -Z, the way it flies
+	arrow.add_child(head)
+	for side in [-1.0, 1.0]:
+		var feather := MeshInstance3D.new()
+		var vane := BoxMesh.new()
+		vane.size = Vector3(0.16, 0.01, 0.2)
+		feather.mesh = vane
+		feather.material_override = _fx_material(Color(color, 0.9))
+		feather.position = Vector3(side * 0.06, 0, 0.36)
+		feather.rotation.z = side * 0.4
+		arrow.add_child(feather)
+	arrow.look_at_from_position(from, to, Vector3.UP if absf((to - from).normalized().y) < 0.95 else Vector3.FORWARD)
+	var tween := arrow.create_tween()
+	tween.tween_property(arrow, "global_position", to, travel)
+	tween.tween_callback(func() -> void:
+		_ring_fx(to - Vector3.UP * 0.6, color, 0.6)
+		arrow.queue_free())
+
+
 ## A wizard casting: a glowing circle of light under the caster with a ring
 ## of sparks rising out of it.
 @rpc("authority", "call_local", "unreliable")

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ArcherShotAbility" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/abilities/archer_shot_ability.gd" id="1_ability"]
+
+[resource]
+script = ExtResource("1_ability")
+display_name = "Snipe"
+description = "A long-range shot from up to 16 units: 4.5x damage to the target, stunning it for 1s."
+cooldown = 9.0
+cast_range = 16.0
+damage_multiplier = 4.5
+mode = "shot"
+color = Color(0.6, 0.85, 1, 1)
+stun_duration = 1.0

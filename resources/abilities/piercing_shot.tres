@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ArcherShotAbility" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/abilities/archer_shot_ability.gd" id="1_ability"]
+
+[resource]
+script = ExtResource("1_ability")
+display_name = "Piercing Shot"
+description = "An arrow that flies 14 units straight through every enemy in its path, hitting each for 2.5x damage."
+cooldown = 7.0
+cast_range = 12.0
+damage_multiplier = 2.5
+mode = "pierce"
+color = Color(0.75, 0.7, 1, 1)
+shot_range = 14.0

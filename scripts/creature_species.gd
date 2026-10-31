@@ -15,14 +15,19 @@ extends Resource
 ## magic bolts fired from range, and their abilities are spells. Dogs are
 ## paladins: melee tanks with more health and less damage taken, whose hits
 ## heal the most injured ally nearby, who draw wild enemies' attention, and
-## whose abilities heal and protect.
-const CLASS_BY_BODY := {"cat": "wizard", "dog": "paladin"}
+## whose abilities heal and protect. Birds are archers: they shoot arrows
+## from further than anyone, hop back from enemies that get too close, and
+## their abilities are all ranged shots.
+const CLASS_BY_BODY := {"cat": "wizard", "dog": "paladin", "bird": "archer"}
 const PALADIN_HEALTH := 1.35  ## Max health multiplier.
 const PALADIN_DAMAGE_TAKEN := 0.85  ## Damage taken multiplier.
 const PALADIN_HEAL_ON_HIT := 0.3  ## Share of each hit's damage healed onto the most injured ally.
 const PALADIN_HEAL_RANGE := 8.0
-## How far a ranged class attacks from (world units, whatever its size).
+## How far the ranged classes attack from (world units, whatever their size).
 const RANGED_ATTACK_RANGE := 6.5
+const ARCHER_ATTACK_RANGE := 8.5
+## Archers back away from an enemy that's after them and closer than this.
+const ARCHER_KITE_DISTANCE := 2.8
 
 @export_group("Stats (level 1)")
 @export var max_health := 50.0
@@ -51,13 +56,26 @@ const RANGED_ATTACK_RANGE := 6.5
 @export var ability: PetAbility
 
 
-## The species' class ("wizard", "paladin", or "" for plain melee fighters).
+## The species' class ("wizard", "paladin", "archer", or "" for plain melee fighters).
 func pet_class() -> String:
 	return CLASS_BY_BODY.get(body_type, "")
 
 
 func is_ranged() -> bool:
-	return pet_class() == "wizard"
+	return pet_class() == "wizard" or pet_class() == "archer"
+
+
+func is_archer() -> bool:
+	return pet_class() == "archer"
+
+
+## How far its basic attack reaches (melee: by its size), before the target's own radius.
+func attack_reach() -> float:
+	if is_archer():
+		return ARCHER_ATTACK_RANGE
+	if is_ranged():
+		return RANGED_ATTACK_RANGE
+	return attack_range * size
 
 
 func is_paladin() -> bool:

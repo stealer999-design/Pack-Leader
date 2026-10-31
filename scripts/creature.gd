@@ -9,6 +9,7 @@ const WILD_LAYER := 4  # physics layer 3
 const PET_LAYER := 8  # physics layer 4
 const WILD_MASK := 1 | 2 | 4 | 8
 const BOLT_SPEED := 20.0  ## Wizards' magic bolts, units per second.
+const ARROW_SPEED := 32.0  ## Archers' arrows.
 const XP_PER_LEVEL := 70  ## xp_needed(level) = XP_PER_LEVEL * level.
 const PET_MASK := 1 | 4  # pets don't block players or each other
 ## How long a queued ability waits for the pet to get in range before giving up.
@@ -60,6 +61,8 @@ var species: CreatureSpecies
 var target: Node3D
 var focus: Node3D  ## Target the owner explicitly ordered this pet to attack.
 var _attack_timer := 0.0
+var _kite_left := 0.0  ## Archers: seconds left of a hop back from an enemy.
+var _kite_cooldown := 0.0
 var _wander_timer := 0.0
 var _wander_point := Vector3.ZERO
 var _knockback := Vector3.ZERO
@@ -138,6 +141,8 @@ func _physics_process(delta: float) -> void:
 	if _leaping:
 		return  # position is driven by the leap tween
 	_attack_timer -= delta
+	_kite_left -= delta
+	_kite_cooldown -= delta
 	_guard_timer -= delta
 	_slow_timer -= delta
 	_reflect_timer -= delta
@@ -619,9 +624,17 @@ func _chase_and_attack(victim: Node3D) -> Vector3:
 		return Vector3.ZERO
 	model.rotation.y = atan2(-to.x, -to.z)
 	var victim_radius: float = victim.radius() if victim.has_method("radius") else 0.4
-	var reach := CreatureSpecies.RANGED_ATTACK_RANGE if species.is_ranged() else species.attack_range * species.size
-	if dist > reach + victim_radius:
+	if dist > species.attack_reach() + victim_radius:
 		return to / dist * _move_speed()
+	# Archers keep their distance: they hop back from an enemy that's after them
+	# (a short hop, then a while before the next, so they can still be caught).
+	if species.is_archer() and _stun_timer <= 0.0:
+		if _kite_left <= 0.0 and _kite_cooldown <= 0.0 and victim.get("target") == self \
+				and dist < CreatureSpecies.ARCHER_KITE_DISTANCE + victim_radius:
+			_kite_left = 0.6
+			_kite_cooldown = 2.5
+		if _kite_left > 0.0:
+			return -to / dist * _move_speed()
 	if _attack_timer <= 0.0:
 		_attack_timer = species.attack_cooldown
 		_lunge.rpc()
@@ -652,13 +665,16 @@ func _holy_strike(damage: float) -> void:
 		world.play_beam.rpc(global_position + Vector3.UP * 0.5, best.global_position + Vector3.UP * 0.7, Color(1.0, 0.88, 0.45))
 
 
-## Wizards: a magic bolt in the species' colour flies at the victim and hits
-## when it arrives (if the victim is still there to be hit).
+## Wizards and archers: a magic bolt in the species' colour (or an arrow)
+## flies at the victim and hits when it arrives (if it's still there to be hit).
 func _fire_bolt(victim: Node3D) -> void:
 	var from := global_position + Vector3.UP * (0.55 * species.size)
 	var to := victim.global_position + Vector3.UP * 0.6
-	var travel := from.distance_to(to) / BOLT_SPEED
-	world.play_bolt.rpc(from, to, species.color.lightened(0.25), travel)
+	var travel := from.distance_to(to) / (ARROW_SPEED if species.is_archer() else BOLT_SPEED)
+	if species.is_archer():
+		world.play_arrow.rpc(from, to, species.color.lightened(0.4), travel)
+	else:
+		world.play_bolt.rpc(from, to, species.color.lightened(0.25), travel)
 	get_tree().create_timer(travel).timeout.connect(_bolt_landed.bind(victim.get_instance_id(), get_damage()))
 
 

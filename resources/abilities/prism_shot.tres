@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ArcherShotAbility" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/abilities/archer_shot_ability.gd" id="1_ability"]
+
+[resource]
+script = ExtResource("1_ability")
+display_name = "Prism Shot"
+description = "A dazzling arrow: 2x damage to the target, and every enemy near it is blinded (half their attacks miss) for 4s."
+cooldown = 8.0
+cast_range = 12.0
+damage_multiplier = 2.0
+mode = "shot"
+color = Color(1, 0.85, 1, 1)
+splash_radius = 2.5
+blind_duration = 4.0

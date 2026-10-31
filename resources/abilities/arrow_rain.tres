@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ArcherShotAbility" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/abilities/archer_shot_ability.gd" id="1_ability"]
+
+[resource]
+script = ExtResource("1_ability")
+display_name = "Arrow Rain"
+description = "Rains 8 arrows down over the area around the target, each hitting what it lands near for 1.2x damage."
+cooldown = 10.0
+cast_range = 12.0
+damage_multiplier = 1.2
+radius = 3.5
+mode = "rain"
+color = Color(0.95, 0.9, 0.8, 1)
+arrows = 8

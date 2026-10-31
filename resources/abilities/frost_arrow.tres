@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="ArcherShotAbility" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/abilities/archer_shot_ability.gd" id="1_ability"]
+
+[resource]
+script = ExtResource("1_ability")
+display_name = "Frost Arrow"
+description = "An icy arrow: 2x damage to the target and anything close to it, slowing them to half speed for 3s."
+cooldown = 6.0
+cast_range = 12.0
+damage_multiplier = 2.0
+mode = "shot"
+color = Color(0.6, 0.9, 1, 1)
+splash_radius = 1.8
+slow_duration = 3.0
+slow_factor = 0.5

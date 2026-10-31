@@ -172,12 +172,12 @@ played in the browser".
   | Voltwing + Gloomhorn | Stormhorn | Thunder Chain: lightning jumps 5 times |
   | Voltwing + Bloomling | Sparkblossom | Static Ward: shields everyone 40% for 7s |
   | Gloomhorn + Bloomling | Duskbloom | Dusk Veil: enemies deal 50% less for 7s |
-  | Frostfinch + Quillpuff | Glacipuff | Blizzard Nova: big frost blast, slows to 40% for 4s |
-  | Frostfinch + Aurora Swift | Shimmerwing | Frost Aurora: heals everyone nearby 45% |
-  | Frostfinch + Snowl | Rimeowl | Frost Ambush: teleports behind a target, 4x damage |
-  | Quillpuff + Aurora Swift | Prismpuff | Prism Armor: reflects 85% of damage for 6s |
-  | Quillpuff + Snowl | Quillowl | Quill Storm: heavy damage all around, slows 3s |
-  | Aurora Swift + Snowl | Dawnowl | Dawn Song: heals everyone nearby 50% |
+  | Frostfinch + Quillpuff | Glacipuff | Hail Volley: 5 frozen arrows in a fan, slowing to 40% for 3s |
+  | Frostfinch + Aurora Swift | Shimmerwing | Healing Volley: healing arrows at the 3 most hurt allies, 30% each |
+  | Frostfinch + Snowl | Rimeowl | Snipe: a 16-unit shot for 4.5x damage, stuns 1s |
+  | Quillpuff + Aurora Swift | Prismpuff | Prism Shot: 2x damage, blinds enemies around the target for 4s |
+  | Quillpuff + Snowl | Quillowl | Arrow Rain: 8 arrows rain down over an area |
+  | Aurora Swift + Snowl | Dawnowl | Dawn Arrow: heals the most hurt ally 50% and those near it 25% |
   | Fangjackal + Dunehound | Duneripper | Consecration: holy ground for 6s, burns enemies and heals allies 6%/s |
   | Fangjackal + Cactipup | Thornjackal | Judgement: smites and taunts a target, heals itself and the most hurt ally |
   | Fangjackal + Sunfennec | Solarjackal | Holy Light: damages and blinds nearby enemies, heals allies 25% |
@@ -287,7 +287,12 @@ played in the browser".
   or player, itself included) for 30% of the damage, and wild enemies go for
   a paladin first. Their abilities heal and protect, in golden light: holy
   bites, sanctuaries, taunts with guard, shields and heals.
-  Birds and lizards still fight up close (their classes are coming).
+  **Birds are Archers**: they shoot arrows from about 8.5 units (the longest
+  reach of any pet), hop back when an enemy that's after them gets close (a
+  short hop, then a few seconds before the next), and every ability is a
+  ranged shot: frost arrows, volleys, piercing shots, arrow rain, snipes, and
+  healing arrows for the support birds.
+  Lizards still fight up close (their class is coming).
 - **Pet abilities:** every species has a signature ability with its own
   cooldown (shown in the party panel). If the target is out of range, the pet
   runs into range first and then casts.
@@ -299,10 +304,10 @@ played in the browser".
   | Voltwing | Static Arc | Lightning that chains between up to 3 enemies (needs a target) |
   | Gloomhorn | Meteor | A meteor falls on the target point, damaging and stunning enemies there for 2s |
   | Bloomling | Mending Bloom | Heals the most injured ally nearby (a pet or a player, including you) for 45% |
-  | Frostfinch | Frost Nova | Damages every enemy around it and slows them to half speed for 3s |
-  | Quillpuff | Frost Armor | For 5s, reflects 60% of the damage it takes back at the attacker |
-  | Aurora Swift | Healing Aurora | Heals every nearby pet *and player* for 35% of their max health |
-  | Snowl | Shadow Step | Teleports behind a target and strikes it for 3x damage |
+  | Frostfinch | Frost Arrow | 2x damage to the target and anything close to it, slowing them to half speed for 3s |
+  | Quillpuff | Quill Volley | 5 quills in a fan towards the target, 1.2x damage each |
+  | Aurora Swift | Healing Arrow | A glowing arrow at the most injured ally in range: heals it 35% and allies near it 15% |
+  | Snowl | Piercing Shot | An arrow that flies 14 units through every enemy in its path, 2.5x damage each |
   | Fangjackal | Holy Bite | Bites a target for 1.8x damage; the most injured ally nearby heals twice the damage dealt |
   | Dunehound | Sanctuary | Blesses the ground for 6s: allies inside heal 8% of their max health a second |
   | Cactipup | Guardian's Vow | Taunts nearby enemies onto itself, takes 50% less damage for 5s, heals itself 25% |
