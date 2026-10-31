@@ -1,6 +1,6 @@
 [gd_scene load_steps=12 format=3]
 
-[ext_resource type="Script" path="res://scripts/grave_lord.gd" id="1_lord"]
+[ext_resource type="Script" path="res://scripts/zombie_fish.gd" id="1_fish"]
 [ext_resource type="Script" path="res://scripts/components/health.gd" id="2_health"]
 
 [sub_resource type="CapsuleShape3D" id="shape"]
@@ -55,11 +55,11 @@ properties/4/path = NodePath(".:engaged")
 properties/4/spawn = true
 properties/4/replication_mode = 2
 
-[node name="GraveLord" type="CharacterBody3D"]
+[node name="ZombieFish" type="CharacterBody3D"]
 collision_layer = 4
 collision_mask = 15
 platform_floor_layers = 1
-script = ExtResource("1_lord")
+script = ExtResource("1_fish")
 move_speed = 3.0
 attack_range = 1.8
 attack_cooldown = 1.6
@@ -81,7 +81,7 @@ pixel_size = 0.012
 modulate = Color(0.7, 1, 0.75, 1)
 font_size = 44
 outline_size = 12
-text = "Grave Lord"
+text = "Howard the Zombie Fish"
 
 [node name="BarBg" type="MeshInstance3D" parent="Overhead"]
 mesh = SubResource("bar_mesh")

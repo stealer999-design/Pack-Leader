@@ -100,7 +100,7 @@ played in the browser".
   top level). After the Bog Witch comes **Act 2: Hollowmere Graveyard**
   (21-25), haunted by **skeletons and zombies**. They are monsters, not
   creatures: they can't be captured, and your bat finishes them off (no 1 HP
-  limit). Bring your pets from Act 1. After the Grave Lord the acts loop: Act 3
+  limit). Bring your pets from Act 1. After Howard the Zombie Fish the acts loop: Act 3
   is Greenmeadow again at 26-30, and so on. Bosses get tougher to match. The HUD shows the act, area and
   creature levels.
 
@@ -116,7 +116,7 @@ played in the browser".
   | Act 1 area 2 (Lv 6-10) | Frostfang Peaks | Birds: Frostfinch, Quillpuff, Aurora Swift, Snowl | **Glacier Titan**: drops Avalanches (a red warning circle, then a slam that damages and slows) and summons capturable Frostfinches at 66% and 33% health |
   | Act 1 area 3 (Lv 11-15) | Sunscorch Dunes (desert) | Dogs: Fangjackal, Dunehound, Cactipup, Sunfennec | **Sand Wyrm**: burrows underground (it can't be hit there), tunnels under a player or pet behind a warning circle and erupts; at half health it whips up sandstorms |
   | Act 1 area 4 (Lv 16-20) | Mirewood Bog (swamp) | Lizards: Bogleon, Mirelurk, Wisp Gecko, Sporeguana | **Bog Witch**: a ranged caster whose bolts poison; she blinks away when you get close, drops toxic puddles and summons Bogleons at 60% and 30% health |
-  | Act 2 area 1 (Lv 21-25) | Hollowmere Graveyard | Monsters: Skeletons (quick, with rusty swords) and Zombies (slow, tough, hit hard); can't be captured | **Grave Lord**: a giant skeleton king with a greatsword. Grasping Hands burst from the ground under a player or pet (a red warning circle, then damage and a hold), and it raises skeletons and a zombie at 66% and 33% health |
+  | Act 2 area 1 (Lv 21-25) | Hollowmere Graveyard | Monsters: Skeletons (quick, with rusty swords) and Zombies (slow, tough, hit hard); can't be captured | **Howard the Zombie Fish**: a huge rotting fish on a pair of zombie legs, one eye bulging and one crossed out, ribs showing, a fishhook in his lip. He spits a Rotten Splash under a player or pet (a red warning circle, then damage and a slow), and calls up skeletons and a zombie at 66% and 33% health |
 - **Tamer health:** after 5 seconds without taking damage you regenerate 3% of
   your max health per second. You carry up to **2 potions** (Q heals 50%),
   and start every level with a full pair. Bloomlings and Aurora Swifts can heal
@@ -329,7 +329,7 @@ The host is the authoritative server and also plays.
 | `scenes/main.tscn` + `scripts/main.gd` | Menu + `LevelSpawner` that replicates the world to joining clients |
 | `scenes/world.tscn` + `scripts/world.gd` | Level flow (start → rival → portal → next level), level geometry, spawners, XP sharing, FX |
 | `scripts/level_generator.gd` | Deterministic layout of a level from a seed: path segments, rocks, creature spots, boss, exit |
-| `scripts/boss_models.gd` | The bosses' models (rival tamer, Glacier Titan, Sand Wyrm, Bog Witch) and what animates |
+| `scripts/boss_models.gd` | The bosses' models (rival tamer, Glacier Titan, Sand Wyrm, Bog Witch, Howard the Zombie Fish) and what animates |
 | `scripts/biome_db.gd` | The biomes levels cycle through: their creatures, boss and colours |
 | `scenes/rival.tscn` + `scripts/rival.gd` | The AI rival tamer boss (and the base class for every boss) |
 | `scenes/titan.tscn` + `scripts/titan.gd` | The Glacier Titan boss: Avalanche and Frostfinch summons |

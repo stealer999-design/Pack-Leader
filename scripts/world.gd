@@ -25,7 +25,7 @@ const OBSTACLES_PER_BIOME := 4
 @export var titan_scene: PackedScene
 @export var wyrm_scene: PackedScene
 @export var witch_scene: PackedScene
-@export var lord_scene: PackedScene
+@export var fish_scene: PackedScene
 @export var crate_scene: PackedScene
 @export var coin_scene: PackedScene
 ## Pets within this distance of a kill share the XP.
@@ -1084,7 +1084,7 @@ func _spawn_coin(data: Dictionary) -> Node:
 
 func _spawn_rival(data: Dictionary) -> Node:
 	var scene: PackedScene = {
-		"titan": titan_scene, "wyrm": wyrm_scene, "witch": witch_scene, "lord": lord_scene,
+		"titan": titan_scene, "wyrm": wyrm_scene, "witch": witch_scene, "fish": fish_scene,
 	}.get(data.get("type", "rival"), rival_scene)
 	var rival: Rival = scene.instantiate()
 	rival.display_name = data.name

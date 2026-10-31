@@ -1,40 +1,39 @@
-class_name GraveLord
+class_name ZombieFish
 extends Rival
-## The Grave Lord: the boss at the end of the Hollowmere Graveyard (Act 2).
-##
-## A giant skeleton king with a greatsword and no pet. It:
-## - makes Grasping Hands burst out of the ground: a red warning circle appears
-##   under a player or pet, then bony hands claw everything still inside and
-##   hold it (slowed);
-## - raises the dead at 66% and 33% health: skeletons and a zombie climb out
-##   of the earth around it.
+## Howard the Zombie Fish: the boss at the end of the Hollowmere Graveyard
+## (Act 2). A huge rotting fish lurching about on a pair of zombie legs, with
+## no pet. He:
+## - spits a Rotten Splash: a red warning circle appears under a player or pet,
+##   then a gush of foul water hits everything still inside and slows it;
+## - calls up the dead at 66% and 33% health: skeletons and a zombie climb out
+##   of the graves around him.
 
 const SKELETON := 45  ## SpeciesDB indices.
 const ZOMBIE := 46
 
-@export var hands_interval := 4.5
-@export var hands_radius := 3.2
-@export var hands_warning := 1.1
+@export var splash_interval := 4.5
+@export var splash_radius := 3.2
+@export var splash_warning := 1.1
 @export var raise_count := 3
 
-var _hands_timer := 3.0
+var _splash_timer := 3.0
 var _raise_thresholds: Array[float] = [0.66, 0.33]
 
 
 func _init() -> void:
-	color = Color(0.86, 0.84, 0.76)
+	color = Color(0.36, 0.46, 0.38)
 
 
 func _build_model() -> Dictionary:
-	return BossModels.grave_lord(model, _material)
+	return BossModels.zombie_fish(model, _material)
 
 
 func title() -> String:
-	return "Grave Lord"
+	return "Howard the Zombie Fish"
 
 
 func objective_name() -> String:
-	return "the Grave Lord"
+	return "Howard the Zombie Fish"
 
 
 func radius() -> float:
@@ -50,37 +49,37 @@ func _max_health() -> float:
 
 
 func _challenge_text() -> String:
-	return "The Grave Lord rises from its tomb!"
+	return "Howard the Zombie Fish flops out of his grave!"
 
 
 func _boss_tick(delta: float) -> void:
-	_hands_timer -= delta
-	if _hands_timer <= 0.0:
-		_hands_timer = hands_interval
-		_grasping_hands()
+	_splash_timer -= delta
+	if _splash_timer <= 0.0:
+		_splash_timer = splash_interval
+		_rotten_splash()
 	if not _raise_thresholds.is_empty() and health.fraction() <= _raise_thresholds[0]:
 		_raise_thresholds.pop_front()
 		_raise_dead()
 
 
-func _grasping_hands() -> void:
+func _rotten_splash() -> void:
 	var victims := world.enemies_near(self, home, leash_range + 6.0)
 	if victims.is_empty():
 		return
 	var spot: Vector3 = victims.pick_random().global_position
-	world.play_telegraph.rpc(spot, hands_radius, hands_warning)
-	get_tree().create_timer(hands_warning).timeout.connect(func() -> void:
+	world.play_telegraph.rpc(spot, splash_radius, splash_warning)
+	get_tree().create_timer(splash_warning).timeout.connect(func() -> void:
 		if not is_instance_valid(self) or health.is_dead():
 			return
-		for enemy in world.enemies_near(self, spot, hands_radius):
+		for enemy in world.enemies_near(self, spot, splash_radius):
 			enemy.receive_damage(outgoing(attack_damage() * 1.4), self)
 			if enemy.has_method("slow"):
 				enemy.slow(2.0, 0.35)
-		world.play_burst.rpc(spot, Color(0.55, 0.9, 0.55), hands_radius))
+		world.play_burst.rpc(spot, Color(0.45, 0.7, 0.4), splash_radius))
 
 
 func _raise_dead() -> void:
-	world.announce.rpc("The Grave Lord raises the dead!", Color(0.65, 1.0, 0.65))
+	world.announce.rpc("Howard the Zombie Fish calls up the dead!", Color(0.65, 1.0, 0.65))
 	for i in raise_count:
 		var offset := Vector3.FORWARD.rotated(Vector3.UP, TAU * i / raise_count + randf() * 0.5) * 3.5
 		var spot := world.clamp_to_level(global_position + offset)

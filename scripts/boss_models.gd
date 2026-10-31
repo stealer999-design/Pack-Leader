@@ -237,67 +237,69 @@ static func _cylinder(top: float, bottom: float, height: float) -> CylinderMesh:
 	return mesh
 
 
-## The Grave Lord: a giant skeleton king in a tattered cloak and a rusted
-## crown, eyes burning green, dragging a huge notched greatsword.
-static func grave_lord(model: Node3D, main: StandardMaterial3D) -> Dictionary:
-	var cloak := _mat(Color(0.14, 0.12, 0.18))
-	var gold := _mat(Color(0.7, 0.55, 0.25))
-	gold.metallic = 0.6
-	gold.roughness = 0.4
-	var socket := _mat(Color(0.05, 0.05, 0.06))
-	var ghost := _mat(Color(0.45, 1.0, 0.5), true)
-	var steel := _mat(Color(0.48, 0.47, 0.5))
-	steel.metallic = 0.5
+## Howard the Zombie Fish: a huge rotting fish carried on a pair of zombie
+## legs in torn trousers, little zombie arms reaching out from under his gills.
+## One bulging eye, one crossed out, ribs showing through a torn flank, a row
+## of stitches, a ragged fin down his back, and an old fishhook in his lip.
+static func zombie_fish(model: Node3D, main: StandardMaterial3D) -> Dictionary:
+	var belly := _mat(Color(0.72, 0.76, 0.62))
+	var rot := _mat(Color(0.3, 0.36, 0.28))
+	var fin := _mat(Color(0.36, 0.48, 0.42))
+	var bone := _mat(Color(0.86, 0.84, 0.74))
+	var dark := _mat(Color(0.1, 0.06, 0.07))
+	var skin := _mat(Color(0.45, 0.6, 0.38))
+	var trousers := _mat(Color(0.24, 0.24, 0.32))
+	var white := _mat(Color(0.95, 0.95, 0.88))
+	var hook := _mat(Color(0.75, 0.62, 0.3))
+	hook.metallic = 0.7
 	var legs: Array = []
-	for x in [-0.32, 0.32]:
-		var hip := _pivot(model, Vector3(x, 1.4, 0))
-		_part(hip, _cylinder(0.09, 0.1, 0.7), main, Vector3(0, -0.36, 0))  # thigh
-		_part(hip, _sphere(0.13), main, Vector3(0, -0.72, 0))  # knee
-		_part(hip, _cylinder(0.08, 0.09, 0.62), main, Vector3(0, -1.05, 0))  # shin
-		_part(hip, _box(Vector3(0.24, 0.1, 0.42)), main, Vector3(0, -1.36, -0.1))  # foot
+	for x in [-0.42, 0.42]:
+		var hip := _pivot(model, Vector3(x, 1.35, 0.15))
+		_part(hip, _box(Vector3(0.36, 1.0, 0.4)), trousers, Vector3(0, -0.5, 0))
+		_part(hip, _box(Vector3(0.3, 0.35, 0.32)), skin, Vector3(0, -1.12, 0))  # bare shin
+		_part(hip, _box(Vector3(0.34, 0.16, 0.55)), skin, Vector3(0, -1.28, -0.1))  # foot
 		legs.append(hip)
 	var body := _pivot(model, Vector3.ZERO)
-	_part(body, _box(Vector3(0.85, 0.26, 0.4)), main, Vector3(0, 1.45, 0))  # pelvis
-	_part(body, _cylinder(0.08, 0.08, 1.2), main, Vector3(0, 2.05, 0.08))  # spine
-	for i in 5:  # a great ribcage
-		var rib := TorusMesh.new()
-		rib.inner_radius = 0.42 - i * 0.04
-		rib.outer_radius = rib.inner_radius + 0.08
-		_part(body, rib, main, Vector3(0, 2.65 - i * 0.2, 0), Vector3.ZERO, Vector3(1.15, 1.0, 0.8))
-	_part(body, _box(Vector3(0.12, 0.8, 0.1)), main, Vector3(0, 2.3, -0.36))  # breastbone
-	_part(body, _box(Vector3(1.5, 0.14, 0.2)), main, Vector3(0, 2.85, 0))  # collarbones
-	# The cloak: hangs from the shoulders down the back, torn at the hem.
-	_part(body, _box(Vector3(1.6, 0.2, 0.5)), cloak, Vector3(0, 2.92, 0.12))  # mantle
-	_part(body, _box(Vector3(1.4, 2.2, 0.08)), cloak, Vector3(0, 1.8, 0.45), Vector3(6, 0, 0))
-	for i in 5:
-		_part(body, _cylinder(0.0, 0.15, 0.4), cloak, Vector3(-0.56 + i * 0.28, 0.55, 0.57), Vector3(186, 0, 0))
-	# The skull and its crown.
-	var head := _pivot(body, Vector3(0, 3.25, -0.05))
-	_part(head, _sphere(0.38), main, Vector3(0, 0.05, 0), Vector3.ZERO, Vector3(0.95, 1, 1.05))
-	_part(head, _box(Vector3(0.4, 0.16, 0.3)), main, Vector3(0, -0.27, -0.12))  # jaw
-	for x in [-0.14, 0.14]:
-		_part(head, _sphere(0.1), socket, Vector3(x, 0.08, -0.3))
-		_part(head, _sphere(0.045), ghost, Vector3(x, 0.08, -0.38))
-	_part(head, _box(Vector3(0.06, 0.09, 0.04)), socket, Vector3(0, -0.07, -0.37))  # nose hole
-	_part(head, _cylinder(0.36, 0.38, 0.14), gold, Vector3(0, 0.38, 0))
+	_part(body, _sphere(1.0), main, Vector3(0, 2.15, 0), Vector3.ZERO, Vector3(0.8, 0.85, 1.55))
+	_part(body, _sphere(0.9), belly, Vector3(0, 1.95, -0.15), Vector3.ZERO, Vector3(0.7, 0.62, 1.35))
+	_part(body, _sphere(0.4), rot, Vector3(-0.55, 2.3, 0.45), Vector3.ZERO, Vector3(0.6, 1, 1.3))  # a rotten patch
+	# The torn right flank, ribs showing.
+	_part(body, _sphere(0.45), dark, Vector3(0.6, 2.1, 0.25), Vector3.ZERO, Vector3(0.5, 1.0, 1.3))
+	for i in 4:
+		_part(body, _box(Vector3(0.06, 0.62, 0.06)), bone, Vector3(0.74, 2.1, -0.1 + i * 0.22), Vector3(0, 0, 8))
+	for i in 6:  # stitches across the left side
+		_part(body, _box(Vector3(0.04, 0.2, 0.04)), dark, Vector3(-0.78, 2.35 - i * 0.04, -0.6 + i * 0.2), Vector3(0, 0, -20))
+	_part(body, _box(Vector3(0.04, 0.04, 1.1)), dark, Vector3(-0.79, 2.25, -0.1))
+	# The head: a wide mouth with jagged teeth, a dropping lower jaw.
+	_part(body, _box(Vector3(1.0, 0.16, 0.5)), dark, Vector3(0, 2.0, -1.38))  # mouth
 	for i in 6:
-		var a := TAU * i / 6.0
-		_part(head, _cylinder(0.0, 0.07, 0.24), gold, Vector3(cos(a) * 0.32, 0.55, sin(a) * 0.32))
-	_part(head, _sphere(0.06), ghost, Vector3(0, 0.4, -0.37))  # the crown's gem
-	# Arms: bony, with the greatsword in the right hand.
+		_part(body, _cylinder(0.0, 0.06, 0.18), white, Vector3(-0.38 + i * 0.15, 1.96, -1.5), Vector3(180, 0, 0))
+	var jaw := _pivot(body, Vector3(0, 1.85, -0.9))
+	_part(jaw, _box(Vector3(0.95, 0.18, 0.7)), belly, Vector3(0, -0.05, -0.38))
+	for i in 5:
+		_part(jaw, _cylinder(0.0, 0.05, 0.16), white, Vector3(-0.3 + i * 0.15, 0.1, -0.66))
+	jaw.set_meta("open", Vector3(-0.35, 0, 0))
+	_part(body, TorusMesh.new(), hook, Vector3(0.35, 2.02, -1.55), Vector3(0, 90, 0), Vector3(0.12, 0.12, 0.12))
+	_part(body, _cylinder(0.008, 0.008, 1.2), white, Vector3(0.36, 2.6, -1.5))  # a snapped line
+	# Eyes: the left bulging, the right crossed out.
+	_part(body, _sphere(0.24), white, Vector3(-0.58, 2.45, -1.0))
+	_part(body, _sphere(0.08), dark, Vector3(-0.74, 2.47, -1.08))
+	for angle in [45, -45]:
+		_part(body, _box(Vector3(0.05, 0.32, 0.06)), dark, Vector3(0.66, 2.45, -1.0), Vector3(angle, 0, 0))
+	# Fins: a ragged one down the back, small side fins, and the tail.
+	for i in 6:
+		var h := 0.75 - absf(i - 2.0) * 0.12
+		_part(body, _cylinder(0.0, 0.1, h), fin, Vector3(0, 2.85 + h * 0.3, -0.6 + i * 0.28), Vector3(-20, 0, 0))
+	_part(body, _box(Vector3(0.05, 0.3, 1.5)), fin, Vector3(0, 2.95, -0.05))
+	var tail := _pivot(body, Vector3(0, 2.15, 1.45))
+	for side in [-1.0, 1.0]:
+		_part(tail, _box(Vector3(0.08, 0.95, 0.5)), fin, Vector3(0, side * 0.38, 0.4), Vector3(side * -35, 0, 0))
+	# Little zombie arms reaching forward from under the gills.
 	var arms: Array = []
 	for side in [-1.0, 1.0]:
-		var shoulder := _pivot(body, Vector3(side * 0.82, 2.8, 0))
-		_part(shoulder, _sphere(0.15), main, Vector3.ZERO)
-		_part(shoulder, _cylinder(0.07, 0.08, 0.7), main, Vector3(0, -0.38, 0))
-		_part(shoulder, _sphere(0.1), main, Vector3(0, -0.74, 0))
-		_part(shoulder, _cylinder(0.06, 0.07, 0.62), main, Vector3(0, -1.06, 0))
-		_part(shoulder, _box(Vector3(0.18, 0.2, 0.12)), main, Vector3(0, -1.42, 0))  # hand
+		var shoulder := _pivot(body, Vector3(side * 0.62, 1.75, -0.75))
+		_part(shoulder, _box(Vector3(0.2, 0.55, 0.2)), skin, Vector3(0, -0.27, 0))
+		_part(shoulder, _box(Vector3(0.22, 0.16, 0.24)), skin, Vector3(0, -0.6, 0))
+		shoulder.rotation.x = 1.25
 		arms.append(shoulder)
-	var sword := _pivot(arms[1], Vector3(0, -1.42, 0))
-	_part(sword, _box(Vector3(0.12, 0.08, 1.9)), steel, Vector3(0, 0, -1.05))  # blade, pointing forward
-	_part(sword, _box(Vector3(0.6, 0.1, 0.12)), gold, Vector3(0, 0, -0.1))  # cross-guard
-	_part(sword, _box(Vector3(0.1, 0.1, 0.35)), cloak, Vector3(0, 0, 0.12))  # grip
-	arms[0].rotation_degrees.x = 20
-	arms[1].rotation_degrees.x = 30
-	return {"legs": legs, "arms": arms, "bob": [body, 0.0, 0.05, 1.3]}
+	return {"legs": legs, "arms": arms, "jaws": [jaw], "sway": [tail], "bob": [body, 0.0, 0.06, 1.8]}

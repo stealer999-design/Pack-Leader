@@ -49,8 +49,8 @@ const BIOMES := [
 	{
 		"name": "Hollowmere Graveyard",
 		"species": [45, 46],  # skeletons and zombies: monsters, not pets
-		"boss": "lord",
-		"boss_name": "the Grave Lord",
+		"boss": "fish",
+		"boss_name": "Howard the Zombie Fish",
 		"floor_hue": Vector2(0.18, 0.26), "floor_sat": 0.16, "floor_val": 0.3,
 		"camp": Color(0.3, 0.29, 0.3), "arena": Color(0.26, 0.25, 0.3),
 		"wall": Color(0.3, 0.3, 0.34), "rock": Color(0.42, 0.42, 0.45),
