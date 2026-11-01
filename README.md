@@ -251,6 +251,19 @@ played in the browser".
   | Gravedigger's Collar | Pet collar | That pet: 30% health, 6% armor |
   | Bone Plate Collar | Pet collar | That pet: 16% armor, 8% damage |
 
+  **Class rings and necklaces** (tamer gear for one class of pet): a Wizard,
+  Paladin, Archer or Venomancer ring or necklace boosts **every party pet of
+  that class** with random stats rolled the same way as class collars (1-3 by
+  colour, from the class's pool, at three quarters of a collar's strength).
+  Two Wizard rings and a Wizard necklace make a party of cats hit hard; mix
+  classes to spread the boosts. The inventory adds up what they give each
+  class under your gear. They replace the old rings and necklaces in the
+  drops (old ones still work, boosting every pet a little), and half of them
+  are made for the pets of the area you're in. Names run from Spark Ring and
+  Spark Pendant (Wizard), Prayer Ring and Prayer Beads (Paladin), Fletcher's
+  Ring and Feather Pendant (Archer) and Fang Ring and Fang Pendant
+  (Venomancer) at level 1 up to the Signets and Talismans at level 5.
+
   **Class collars** (pet gear made for one class): Wizard collars for cats,
   Paladin collars for dogs, Archer collars for birds and Venomancer collars
   for lizards; only pets of that class can wear them. Each rolls **random

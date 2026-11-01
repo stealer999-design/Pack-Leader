@@ -231,9 +231,24 @@ func refresh() -> void:
 			used += 1
 	_bag_title.text = "Bag   %d / %d" % [used, ItemDB.BAG_SIZE]
 	var gear := player.equipment
-	_armor.text = "Tamer:  %d%% armor · %d health · +%d%% speed\nPets:  +%d%% damage · +%d%% health" % [
-			player.armor_percent(), roundi(player.health.max_health), ItemDB.total(gear, "speed"),
-			ItemDB.total(gear, "pet_damage"), ItemDB.total(gear, "pet_health")]
+	_armor.text = "Tamer:  %d%% armor · %d health · +%d%% speed" % [
+			player.armor_percent(), roundi(player.health.max_health), ItemDB.total(gear, "speed")]
+	var all_pets := [ItemDB.total(gear, "pet_damage"), ItemDB.total(gear, "pet_health")]
+	if all_pets[0] > 0 or all_pets[1] > 0:  # the older rings and necklaces, for every pet
+		_armor.text += "\nAll pets:  +%d%% damage · +%d%% health" % all_pets
+	# Class rings and necklaces: what they add up to for each class of pet.
+	for pet_class in ItemDB.PET_GEAR:
+		var sums := {}
+		for slot in gear:
+			var item: Dictionary = gear[slot]
+			if ItemDB.is_class_jewelry(item) and item["class"] == pet_class:
+				for stat in item.stats:
+					sums[stat] = sums.get(stat, 0) + int(item.stats[stat])
+		if not sums.is_empty():
+			var parts := []
+			for stat in sums:
+				parts.append(PetSkills.STAT_TEXT[stat] % sums[stat])
+			_armor.text += "\n%s (%s):  %s" % [ItemDB.PET_GEAR[pet_class].title, ItemDB.PET_GEAR[pet_class].pets, " · ".join(parts)]
 	for index in _marked.keys():
 		if player.bag[index].is_empty():
 			_marked.erase(index)

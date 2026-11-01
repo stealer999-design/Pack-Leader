@@ -151,8 +151,34 @@ const PET_STAT_ROLLS := {
 	"armor": [2, 4, 1.5], "heal_power": [5, 9, 3], "crit_chance": [2, 4, 1.5], "crit_damage": [8, 14, 5],
 	"attack_speed": [3, 6, 2], "dot_power": [5, 9, 3], "dot_duration": [6, 10, 3], "toxic_blood": [10, 20, 6],
 }
+## Class rings and necklaces ("class_ring", "class_necklace"): tamer gear that
+## boosts every party pet of one class, rolled like class collars (1-3 random
+## stats from the class's pool, by rarity) at three quarters of a collar's
+## strength. {type, class, level, rarity, stats}. (The older rings and
+## necklaces, which boost every pet a little, still work.)
+const CLASS_JEWELRY := {
+	"class_ring": {
+		"slot": "ring", "label": "ring",
+		"names": {
+			"wizard": ["Spark Ring", "Rune Ring", "Arcane Band", "Mystic Band", "Archmage's Signet"],
+			"paladin": ["Prayer Ring", "Silver Band", "Holy Band", "Templar's Ring", "Crusader's Signet"],
+			"archer": ["Fletcher's Ring", "Hunter's Band", "Ranger's Ring", "Hawkeye Band", "Windrunner Signet"],
+			"venomancer": ["Fang Ring", "Toxic Band", "Venom Ring", "Plague Band", "Basilisk Signet"],
+		},
+	},
+	"class_necklace": {
+		"slot": "necklace", "label": "necklace",
+		"names": {
+			"wizard": ["Spark Pendant", "Rune Pendant", "Arcane Amulet", "Mystic Amulet", "Archmage's Talisman"],
+			"paladin": ["Prayer Beads", "Silver Pendant", "Holy Amulet", "Templar's Amulet", "Crusader's Talisman"],
+			"archer": ["Feather Pendant", "Hunter's Pendant", "Ranger's Amulet", "Hawkeye Amulet", "Windrunner Talisman"],
+			"venomancer": ["Fang Pendant", "Toxic Pendant", "Venom Amulet", "Plague Amulet", "Basilisk Talisman"],
+		},
+	},
+}
+const JEWELRY_SCALE := 0.75
 ## How often each kind drops, relative to the others (rings fill two slots).
-const DROP_WEIGHTS := {"jacket": 1.0, "pants": 1.0, "hat": 1.0, "boots": 1.0, "ring": 1.4, "necklace": 0.9,
+const DROP_WEIGHTS := {"jacket": 1.0, "pants": 1.0, "hat": 1.0, "boots": 1.0, "class_ring": 1.4, "class_necklace": 0.9,
 		"pet_gear": 1.6}
 const MAX_LEVEL := 5
 ## Armor from all gear is capped, so the tamer is never unhittable.
@@ -171,14 +197,34 @@ static func make_item(area_level: int, rng: RandomNumberGenerator = null) -> Dic
 		if pick < 0.0:
 			type = kind
 			break
-	if type == "pet_gear":
-		return make_pet_gear(area_level, _roll_rarity(rng), "", rng)
+	if is_rolled_type(type):
+		return make_rolled(type, area_level, _roll_rarity(rng), "", rng)
 	return make(type, area_level, _roll_rarity(rng))
 
 
 ## A class collar: for `pet_class` (or a random class), with rarity + 1
 ## different random stats from the class's pool, scaled to its level.
 static func make_pet_gear(area_level: int, rarity: int, pet_class := "", rng: RandomNumberGenerator = null) -> Dictionary:
+	return make_rolled("pet_gear", area_level, rarity, pet_class, rng)
+
+
+## True for the class items with rolled stats: class collars, rings and necklaces.
+static func is_rolled_type(type: String) -> bool:
+	return type == "pet_gear" or CLASS_JEWELRY.has(type)
+
+
+static func is_rolled(item: Dictionary) -> bool:
+	return is_rolled_type(item.get("type", "")) and PET_GEAR.has(item.get("class", ""))
+
+
+static func is_class_jewelry(item: Dictionary) -> bool:
+	return is_rolled(item) and CLASS_JEWELRY.has(item.type)
+
+
+## A class item of `type` (pet_gear, class_ring, class_necklace) for `pet_class`
+## (or a random class): rarity + 1 different random stats from the class's
+## pool, scaled to its level (jewelry at JEWELRY_SCALE).
+static func make_rolled(type: String, area_level: int, rarity: int, pet_class := "", rng: RandomNumberGenerator = null) -> Dictionary:
 	if rng == null:
 		rng = RandomNumberGenerator.new()
 		rng.randomize()
@@ -187,12 +233,21 @@ static func make_pet_gear(area_level: int, rarity: int, pet_class := "", rng: Ra
 	var level := clampi(area_level, 1, MAX_LEVEL)
 	rarity = clampi(rarity, 0, 2)
 	var pool: Array = PET_GEAR[pet_class].pool.duplicate()
+	var scale := 1.0 if type == "pet_gear" else JEWELRY_SCALE
 	var rolled := {}
 	for i in rarity + 1:
 		var stat: String = pool.pop_at(rng.randi() % pool.size())
 		var roll: Array = PET_STAT_ROLLS[stat]
-		rolled[stat] = roundi(rng.randi_range(roll[0], roll[1]) + roll[2] * (level - 1))
-	return {"type": "pet_gear", "class": pet_class, "level": level, "rarity": rarity, "stats": rolled}
+		rolled[stat] = maxi(1, roundi((rng.randi_range(roll[0], roll[1]) + roll[2] * (level - 1)) * scale))
+	return {"type": type, "class": pet_class, "level": level, "rarity": rarity, "stats": rolled}
+
+
+## How much of a skill-tree stat a piece of the tamer's class jewelry gives a
+## pet of `pet_class` (percent; 0 for other classes or other items).
+static func class_bonus(item: Dictionary, pet_class: String, stat: String) -> float:
+	if not is_class_jewelry(item) or item["class"] != pet_class:
+		return 0.0
+	return float(item.stats.get(stat, 0))
 
 
 static func is_pet_gear(item: Dictionary) -> bool:
@@ -241,6 +296,8 @@ static func _roll_rarity(rng: RandomNumberGenerator) -> int:
 static func slot_of(item: Dictionary) -> String:
 	if is_pet_gear(item):
 		return "collar"
+	if is_class_jewelry(item):
+		return CLASS_JEWELRY[item.type].slot
 	var kind: Dictionary = KINDS.get(item.get("type", ""), {})
 	return kind.get("slot", "")
 
@@ -262,6 +319,8 @@ static func fits(item: Dictionary, slot: String) -> bool:
 static func display_name(item: Dictionary) -> String:
 	if is_pet_gear(item):
 		return RARITIES[int(item.rarity)].prefix + PET_GEAR[item["class"]].names[int(item.level) - 1]
+	if is_class_jewelry(item):
+		return RARITIES[int(item.rarity)].prefix + CLASS_JEWELRY[item.type].names[item["class"]][int(item.level) - 1]
 	if item.is_empty() or not KINDS.has(item.get("type", "")):
 		return ""
 	if is_legendary(item):
@@ -275,7 +334,7 @@ static func rarity_color(item: Dictionary) -> Color:
 
 ## The item's own colour (a jacket's cloth, a ring's metal), for icons and the tamer's model.
 static func item_color(item: Dictionary) -> Color:
-	if is_pet_gear(item):
+	if is_rolled(item):
 		return PET_GEAR[item["class"]].color
 	if not KINDS.has(item.get("type", "")):
 		return Color.WHITE
@@ -322,9 +381,10 @@ static func total(equipment: Dictionary, stat: String) -> int:
 ## legendary item's two effects are joined by `separator`.
 static func effect(item: Dictionary, separator := "\n") -> String:
 	var lines := []
-	if is_pet_gear(item):
+	if is_rolled(item):
+		var who := "This pet: " if is_pet_gear(item) else "Your %s: " % PET_GEAR[item["class"]].pets
 		for stat: String in item.stats:
-			lines.append("This pet: " + PetSkills.STAT_TEXT[stat] % int(item.stats[stat]))
+			lines.append(who + PetSkills.STAT_TEXT[stat] % int(item.stats[stat]))
 		return separator.join(lines)
 	var all := stats(item)
 	for stat: String in all:
@@ -340,6 +400,9 @@ static func describe(item: Dictionary) -> String:
 	if is_pet_gear(item):
 		var gear: Dictionary = PET_GEAR[item["class"]]
 		kind = "%s collar (for %s only)" % [gear.title, gear.pets]
+	elif is_class_jewelry(item):
+		var gear: Dictionary = PET_GEAR[item["class"]]
+		kind = "%s %s (boosts your %s)" % [gear.title, CLASS_JEWELRY[item.type].label, gear.pets]
 	if is_legendary(item):
 		return "\n".join([display_name(item), "Legendary %s" % kind, effect(item)])
 	return "\n".join(["%s  (level %d)" % [display_name(item), int(item.level)],
@@ -353,7 +416,9 @@ static func is_collar(item: Dictionary) -> bool:
 ## An item from a save or a client, made safe: a known type and sensible
 ## numbers, or {} if it isn't a real item.
 static func clean(item) -> Dictionary:
-	if item is Dictionary and str(item.get("type", "")) == "pet_gear":
+	if item is Dictionary and is_rolled_type(str(item.get("type", ""))):
+		var type := str(item.type)
+		var scale := 1.0 if type == "pet_gear" else JEWELRY_SCALE
 		var pet_class := str(item.get("class", ""))
 		if not PET_GEAR.has(pet_class) or not item.get("stats") is Dictionary:
 			return {}
@@ -363,10 +428,10 @@ static func clean(item) -> Dictionary:
 		for stat in item.stats:
 			if str(stat) in PET_GEAR[pet_class].pool and stats.size() < rarity + 1:
 				var roll: Array = PET_STAT_ROLLS[str(stat)]  # no more than the best possible roll
-				stats[str(stat)] = clampi(int(item.stats[stat]), 1, roundi(roll[1] + roll[2] * (level - 1)))
+				stats[str(stat)] = clampi(int(item.stats[stat]), 1, maxi(1, roundi((roll[1] + roll[2] * (level - 1)) * scale)))
 		if stats.is_empty():
 			return {}
-		return {"type": "pet_gear", "class": pet_class, "level": level, "rarity": rarity, "stats": stats}
+		return {"type": type, "class": pet_class, "level": level, "rarity": rarity, "stats": stats}
 	if not item is Dictionary or not KINDS.has(str(item.get("type", ""))):
 		return {}
 	return make(str(item.type), int(item.get("level", 1)), int(item.get("rarity", 0)))

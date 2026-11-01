@@ -226,6 +226,8 @@ func skill_bonus(stat: String) -> float:
 		var tamer := world.get_player(owner_id)
 		if tamer:
 			bonus += ItemDB.total(tamer.equipment, "pet_" + stat) / 100.0
+			for slot in tamer.equipment:  # class rings and necklaces for this pet's class
+				bonus += ItemDB.class_bonus(tamer.equipment[slot], species.pet_class(), stat) / 100.0
 	return minf(bonus, PetSkills.MAX_ARMOR) if stat == "armor" else bonus
 
 

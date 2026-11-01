@@ -629,15 +629,15 @@ func _collect_coins() -> void:
 
 
 ## Server: with probability `chance`, drops a piece of gear at `at`, made for
-## this area's level (any kind; levels past 5 drop level 5 gear; class collars
-## lean towards the class of the area's pets).
+## this area's level (any kind; levels past 5 drop level 5 gear; class collars, rings and
+## necklaces lean towards the class of the area's pets).
 func roll_loot(at: Vector3, chance: float) -> void:
 	if randf() < chance:
 		var item := ItemDB.make_item(level_number)
 		# Half the class collars are made for the pets of this area (birds in the peaks...).
 		var local_class := SpeciesDB.get_species(biome().species[0]).pet_class()
-		if ItemDB.is_pet_gear(item) and local_class != "" and randf() < 0.5:
-			item = ItemDB.make_pet_gear(level_number, int(item.rarity), local_class)
+		if ItemDB.is_rolled(item) and local_class != "" and randf() < 0.5:
+			item = ItemDB.make_rolled(item.type, level_number, int(item.rarity), local_class)
 		loot_spawner.spawn({"pos": clamp_to_level(at), "item": item})
 
 
