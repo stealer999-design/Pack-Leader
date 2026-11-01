@@ -1389,6 +1389,27 @@ func play_vortex(at: Vector3, radius: float, duration: float, color: Color) -> v
 	fade.tween_callback(fx.queue_free)
 
 
+## A paladin's Healing Kiss: a pink heart floats from the kisser to the one
+## it heals, then rises from them and fades.
+@rpc("authority", "call_local", "unreliable")
+func play_kiss(from: Vector3, to: Vector3) -> void:
+	var heart := Sprite3D.new()
+	heart.texture = UiIcons.texture("heart", 48)
+	heart.modulate = Color(1.0, 0.45, 0.65)
+	heart.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	heart.no_depth_test = true
+	heart.shaded = false
+	heart.pixel_size = 0.012
+	add_child(heart)
+	heart.global_position = from
+	var tween := heart.create_tween()
+	if from.distance_to(to) > 0.5:
+		tween.tween_property(heart, "global_position", to, 0.3).set_trans(Tween.TRANS_SINE)
+	tween.tween_property(heart, "global_position:y", to.y + 0.8, 0.6)
+	tween.parallel().tween_property(heart, "modulate:a", 0.0, 0.6).set_delay(0.2)
+	tween.tween_callback(heart.queue_free)
+
+
 ## A wizard casting: a glowing circle of light under the caster with a ring
 ## of sparks rising out of it.
 @rpc("authority", "call_local", "unreliable")

@@ -8,7 +8,7 @@ class_name PetSkills
 ##   damage, health, armor     the pet's attack damage, max health, damage taken
 ##   spell_power               its ability damage (and poison from abilities)
 ##   cooldown                  its ability cooldowns (shorter)
-##   heal_power                its heals and shields, including holy strikes
+##   heal_power                its heals and shields, including Healing Kisses
 ##   crit_chance, crit_damage  its critical hits (chance; extra damage on a crit)
 ##   attack_speed              its basic attacks come faster
 ##   dot_power, dot_duration   its poison and burns (stronger; last longer)

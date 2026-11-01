@@ -292,8 +292,9 @@ played in the browser".
   glowing magic circle. The spells are fireballs, meteors, a magma orb, a
   lightning bolt and rockfalls, plus healing, shielding and cursing spells.
   **Dogs are Paladins**: melee tanks that heal. They have 35% more health and
-  take 15% less damage, every bite heals the most injured ally nearby (a pet
-  or player, itself included) for 30% of the damage, and wild enemies go for
+  take 15% less damage, every bite comes with a **Healing Kiss** that heals
+  the most injured ally nearby (a pet or player, itself included) for 30% of
+  the damage, with a pink heart floating up from them, and wild enemies go for
   a paladin first. Their abilities heal and protect, in golden light: holy
   bites, sanctuaries, taunts with guard, shields and heals.
   **Birds are Archers**: they shoot arrows from about 8.5 units (the longest
@@ -348,7 +349,7 @@ played in the browser".
   | Class | Skills (in unlock order) |
   |---|---|
   | Wizard (cats) | Arcane Focus (+8% ability damage a rank), Mana Flow (abilities recharge 6% faster), Charged Bolts (+6% attack damage), Ley Lines (pack: +3% ability damage), Spell Ward (4% less damage taken), Archmage (+12% ability damage) |
-  | Paladin (dogs) | Holy Strength (+10% healing and shields), Iron Hide (4% less damage taken), Devotion (abilities recharge 6% faster), Aura of Protection (pack: 2.5% less damage taken), Vitality (+7% max health), Beacon of Light (pack: +6% healing and shields) |
+  | Paladin (dogs) | Holy Strength (+10% healing, shields and Healing Kisses), Iron Hide (4% less damage taken), Devotion (abilities recharge 6% faster), Aura of Protection (pack: 2.5% less damage taken), Vitality (+7% max health), Beacon of Light (pack: +6% healing and shields) |
   | Archer (birds) | Sharpshooter (+4% crit chance), Quick Draw (attacks 7% faster), Deadly Precision (crits +20% damage), Hunting Party (pack: +2% crit chance), Steady Aim (+6% attack damage), Volley Master (+10% ability damage) |
   | Venomancer (lizards) | Potent Venom (+8% poison damage), Thick Scales (4% less damage taken), Lingering Toxins (poison lasts 12% longer), Toxic Blood (+25% toxic blood poison), Plague Bearer (pack: +2.5% attack damage), Virulence (+12% poison damage) |
 

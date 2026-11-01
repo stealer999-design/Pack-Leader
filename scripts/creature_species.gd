@@ -14,7 +14,7 @@ extends Resource
 ## Each kind of body fights its own way. Cats are wizards: their attacks are
 ## magic bolts fired from range, and their abilities are spells. Dogs are
 ## paladins: melee tanks with more health and less damage taken, whose hits
-## heal the most injured ally nearby, who draw wild enemies' attention, and
+## come with Healing Kisses for the most injured ally nearby, who draw wild enemies' attention, and
 ## whose abilities heal and protect. Birds are archers: they shoot arrows
 ## from further than anyone, hop back from enemies that get too close, and
 ## their abilities are all ranged shots. Lizards are venomancers: their bites

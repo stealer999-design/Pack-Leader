@@ -341,7 +341,7 @@ func _tooltip() -> String:
 	elif species.is_venomancer():
 		text += "  ·  Venomancer (its bites stack venom that ticks on, whatever hits it up close is poisoned back; its ability poisons)"
 	elif species.is_paladin():
-		text += "  ·  Paladin (a melee tank: +35% health, 15% less damage, its hits heal the most hurt ally, enemies go for it first; its ability heals or protects)"
+		text += "  ·  Paladin (a melee tank: +35% health, 15% less damage, its Healing Kisses heal the most hurt ally, enemies go for it first; its ability heals or protects)"
 	if species.ability:
 		text += "\n%s: %s" % [species.ability.display_name, species.ability.description]
 	var ranks: Array = pet.get("skills", PetSkills.empty_ranks())

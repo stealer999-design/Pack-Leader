@@ -660,7 +660,7 @@ func _chase_and_attack(victim: Node3D) -> Vector3:
 		else:
 			victim.receive_damage(hit, self, to / dist * 3.0)
 			if species.is_paladin():
-				_holy_strike(hit)
+				_healing_kiss(hit)
 	return Vector3.ZERO
 
 
@@ -716,9 +716,10 @@ func envenom(victim: Node3D, stack_dps: float, duration: float, max_dps: float) 
 		victim._status_fx.rpc("poison", duration)
 
 
-## Paladins: every hit heals the most injured ally nearby (pets and players
-## on its side, itself included) for a share of the damage.
-func _holy_strike(damage: float) -> void:
+## Paladins' Healing Kisses: every hit blows a kiss that heals the most
+## injured ally nearby (pets and players on its side, itself included) for a
+## share of the damage, with a pink heart floating up from them.
+func _healing_kiss(damage: float) -> void:
 	var best: Node3D = null
 	var best_fraction := 0.999
 	for ally in world.allies_near(self, global_position, CreatureSpecies.PALADIN_HEAL_RANGE):
@@ -728,8 +729,7 @@ func _holy_strike(damage: float) -> void:
 	if best == null:
 		return
 	best.health.heal(damage * CreatureSpecies.PALADIN_HEAL_ON_HIT * heal_power())
-	if best != self:
-		world.play_beam.rpc(global_position + Vector3.UP * 0.5, best.global_position + Vector3.UP * 0.7, Color(1.0, 0.88, 0.45))
+	world.play_kiss.rpc(global_position + Vector3.UP * 0.6, best.global_position + Vector3.UP * 1.0)
 
 
 ## Wizards and archers: a magic bolt in the species' colour (or an arrow)
