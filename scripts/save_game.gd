@@ -107,13 +107,32 @@ func describe(index: int) -> String:
 
 ## The level a hosted or solo game starts on: where the player last was
 ## (which may be an earlier area they travelled back to).
+## A new game starts at the Crossroads (level 0), to choose the first area.
 func start_level() -> int:
-	return clampi(int(loaded.get("current", furthest_level())), 1, furthest_level())
+	if loaded.is_empty():
+		return BiomeDB.CROSSROADS
+	return clampi(int(loaded.get("current", furthest_level())), BiomeDB.CROSSROADS, furthest_level())
+
+
+## The order the Act 1 areas were chosen in. Saves from before the Crossroads
+## followed the old fixed order, so they get it (all four, as if chosen).
+func route() -> PackedInt32Array:
+	if loaded.is_empty():
+		return PackedInt32Array()
+	if not loaded.has("route"):
+		return PackedInt32Array(BiomeDB.ACTS[0])
+	return PackedInt32Array(loaded.route)
+
+
+## The furthest area whose boss has been beaten (older saves: the one before
+## the furthest reached).
+func cleared_level() -> int:
+	return maxi(int(loaded.get("cleared", furthest_level() - 1)), 0)
 
 
 ## The furthest area reached (the travel portal goes back to any area up to it).
 func furthest_level() -> int:
-	return maxi(int(loaded.get("level", 1)), 1)
+	return maxi(int(loaded.get("level", 0)), 0)
 
 
 # --- In game ---------------------------------------------------------------------------
@@ -142,13 +161,15 @@ func save_now(announce := false) -> void:
 		var data := pet.to_data()
 		data["slot"] = pet.party_slot
 		party.append(data)
-	var level := maxi(maxi(_world.level_number, _world.furthest_level), int(loaded.get("level", 1)))
+	var level := maxi(maxi(_world.level_number, _world.furthest_level), int(loaded.get("level", 0)))
 	loaded = {
 		"version": VERSION,
 		"name": _player.display_name,
 		"saved_at": Time.get_unix_time_from_system(),
 		"level": level,
 		"current": _world.level_number,
+		"route": Array(_world.route),
+		"cleared": maxi(_world.cleared_level, int(loaded.get("cleared", 0))),
 		"coins": _player.coins,
 		"potions": _player.potions,
 		"bat": _player.bat_tier,

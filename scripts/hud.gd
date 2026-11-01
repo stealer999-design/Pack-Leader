@@ -488,8 +488,12 @@ func _update_objective() -> void:
 	level_label.text = "%s  ·  %s  (Lv %d-%d)" % [World.area_title(world.level_number), world.biome().name, levels.x, levels.y]
 	progress_bar.value = world.level_progress(_player.global_position) * 100.0
 	var rival := world.get_rival()
-	if world.exit_open:
-		objective_label.text = "Boss defeated! Take the Next level portal, or the violet Travel portal to go back."
+	if world.is_crossroads():
+		level_label.text = "The Crossroads"
+		objective_label.text = "Walk into a portal to choose your next area. Each area you clear makes the next one stronger."
+	elif world.exit_open:
+		objective_label.text = "Boss defeated! Take the %s portal, or the violet Travel portal to go back." \
+				% ("Crossroads" if world.next_level() == BiomeDB.CROSSROADS else "Next level")
 	elif rival and rival.engaged:
 		objective_label.text = "Defeat %s!" % rival.objective_name()
 	else:
@@ -615,14 +619,18 @@ func open_travel() -> void:
 	for child in _travel_list.get_children():
 		child.queue_free()
 	var world := _player.world
-	for n in range(1, world.furthest_level + 1):
+	for n in range(BiomeDB.CROSSROADS, world.furthest_level + 1):
 		var levels := World.area_levels(n)
 		var button := Button.new()
 		button.focus_mode = Control.FOCUS_NONE
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		button.custom_minimum_size = Vector2(0, 40)
-		button.text = "%s  ·  %s   (creatures Lv %d-%d)%s" % [World.area_title(n), BiomeDB.for_level(n).name,
-				levels.x, levels.y, "   ·  you are here" if n == world.level_number else ""]
+		var here := "   ·  you are here" if n == world.level_number else ""
+		if n <= BiomeDB.CROSSROADS:
+			button.text = "The Crossroads   (choose an Act 1 area)%s" % here
+		else:
+			button.text = "%s  ·  %s   (creatures Lv %d-%d)%s" % [World.area_title(n), BiomeDB.for_level(n).name,
+					levels.x, levels.y, here]
 		UiIcons.button(button, "map")
 		button.pressed.connect(func() -> void:
 			world.request_travel.rpc_id(1, n)

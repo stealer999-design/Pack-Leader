@@ -92,8 +92,33 @@ const BIOMES := [
 const ACTS := [[0, 1, 2, 3], [4, 5, 6, 7]]
 
 
+## The Act 1 biomes, in the order the players chose them at the Crossroads
+## (World.route, synced). Act 1's areas follow this order; areas not chosen yet
+## fall back to the remaining biomes in their usual order.
+static var route: Array = []
+## Level 0 is the Crossroads, the hub where the players pick their next Act 1
+## area. It looks like Greenmeadow.
+const CROSSROADS := 0
+## What lives in each Act 1 biome, for the Crossroads signs.
+const PET_TEXT := {0: "Cats  ·  Wizards", 1: "Birds  ·  Archers", 2: "Dogs  ·  Paladins", 3: "Lizards  ·  Venomancers"}
+
+
 static func index_for_level(level_number: int) -> int:
-	return (maxi(level_number, 1) - 1) % BIOMES.size()
+	if level_number <= CROSSROADS:
+		return 0
+	var position := (level_number - 1) % BIOMES.size()
+	if position in ACTS[0]:
+		return act1_order()[ACTS[0].find(position)]
+	return position
+
+
+## The Act 1 biomes in play order: the chosen route, then the rest.
+static func act1_order() -> Array:
+	var order := route.filter(func(b) -> bool: return b in ACTS[0])
+	for b in ACTS[0]:
+		if b not in order:
+			order.append(b)
+	return order
 
 
 static func for_level(level_number: int) -> Dictionary:
@@ -103,6 +128,8 @@ static func for_level(level_number: int) -> Dictionary:
 ## Where area `level_number` falls: {act: 1, 2, ... (rising each time the
 ## cycle repeats), area: its place in that act (1-based)}.
 static func act_of(level_number: int) -> Dictionary:
+	if level_number <= CROSSROADS:
+		return {"act": 1, "area": 0}
 	var n := maxi(level_number, 1) - 1
 	var cycle := n / BIOMES.size()
 	var index := n % BIOMES.size()

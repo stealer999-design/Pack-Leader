@@ -66,7 +66,19 @@ var exit_open := false:
 
 ## Replicated: the furthest area anyone has reached in this game. The travel
 ## portal can take the party back to any area up to it.
-var furthest_level := 1
+var furthest_level := 0
+## Replicated: the Act 1 biomes in the order the players chose them at the
+## Crossroads (see BiomeDB.route). Listed before level_state in the sync config
+## so clients have it before they build a level.
+var route := PackedInt32Array():
+	set(v):
+		route = v
+		BiomeDB.route = Array(v)
+## Replicated: the furthest area whose boss has been beaten. A new Act 1 area
+## can only be opened at the Crossroads once every chosen one is cleared.
+var cleared_level := 0
+## Colours of the Crossroads portals, by biome.
+const HUB_COLORS := {0: Color(0.45, 0.9, 0.4), 1: Color(0.55, 0.85, 1.0), 2: Color(1.0, 0.75, 0.3), 3: Color(0.6, 0.8, 0.3)}
 ## The travel portal at the end of every level (next to the exit portal): it
 ## is always open, and stepping into it opens the travel window (see HUD).
 var travel_portal: Node3D
@@ -126,6 +138,8 @@ func _ready() -> void:
 	Network.player_joined.connect(_on_player_joined)
 	Network.player_left.connect(_on_player_left)
 	furthest_level = SaveGame.furthest_level()
+	route = SaveGame.route()
+	cleared_level = SaveGame.cleared_level()
 	_start_level(SaveGame.start_level())
 	for id in Network.players:
 		_on_player_joined(id, Network.players[id])
@@ -136,6 +150,10 @@ func _process(delta: float) -> void:
 		portal.rotate_y(delta * 1.5)
 	if travel_portal.visible:
 		travel_portal.rotate_y(-delta * 1.2)
+	var hub := level_root.get_node_or_null("HubPortals")
+	if hub:
+		for p: Node3D in hub.get_children():
+			p.get_node("Ring").rotate_y(delta * 1.3)
 
 
 func _physics_process(delta: float) -> void:
@@ -146,13 +164,67 @@ func _physics_process(delta: float) -> void:
 	_tick_zones(delta)
 	_tick_traps(delta)
 	_check_checkpoints()
+	if is_crossroads() and not _advancing:
+		_check_hub_portals()
 	if not exit_open or _advancing:
 		return
 	for p in get_players():
 		if not p.downed and _flat_distance(p.global_position, exit_point()) < exit_radius:
 			_advancing = true
 			announce.rpc("%s stepped through the portal..." % p.display_name, p.color.lightened(0.3))
-			get_tree().create_timer(1.0).timeout.connect(_start_level.bind(level_number + 1))
+			get_tree().create_timer(1.0).timeout.connect(_start_level.bind(next_level()))
+			return
+
+
+## True at the Crossroads (level 0), the hub where Act 1 areas are chosen.
+func is_crossroads() -> bool:
+	return level_number <= BiomeDB.CROSSROADS and level_state != Vector2i.ZERO
+
+
+## Where the exit portal leads: back to the Crossroads after an Act 1 area
+## while some Act 1 areas haven't been chosen yet, otherwise the next area.
+func next_level() -> int:
+	if level_number >= 1 and level_number >= route.size() and route.size() < BiomeDB.ACTS[0].size():
+		return BiomeDB.CROSSROADS
+	return level_number + 1
+
+
+## The Crossroads portal for an Act 1 biome: {state: "cleared" | "open" |
+## "locked", level: the area number it leads to (0 if locked)}.
+func hub_portal_state(biome_index: int) -> Dictionary:
+	var at := Array(route).find(biome_index)
+	if at >= 0:
+		return {"state": "cleared" if at + 1 <= cleared_level else "open", "level": at + 1}
+	if route.size() > maxi(cleared_level, 0):
+		return {"state": "locked", "level": 0}
+	return {"state": "new", "level": route.size() + 1}
+
+
+## Server: a player walking into a Crossroads portal takes everyone to that area.
+func _check_hub_portals() -> void:
+	var points: Array = layout.get("hub_portals", [])
+	for p in get_players():
+		if p.downed:
+			continue
+		for i in points.size():
+			if _flat_distance(p.global_position, level_root.to_global(points[i])) >= exit_radius:
+				continue
+			var biome_index: int = BiomeDB.ACTS[0][i]
+			var info := hub_portal_state(biome_index)
+			var area: String = BiomeDB.BIOMES[biome_index].name
+			if info.state == "locked":
+				if Time.get_ticks_msec() >= int(p.get_meta("hub_told", 0)) and not route.is_empty():
+					p.set_meta("hub_told", Time.get_ticks_msec() + 4000)
+					var current: String = BiomeDB.BIOMES[route[route.size() - 1]].name
+					tell(p.peer_id, "%s is sealed until you beat the boss of %s." % [area, current], Color(1.0, 0.6, 0.5))
+				continue
+			if info.state == "new":
+				var chosen := route.duplicate()
+				chosen.append(biome_index)
+				route = chosen
+			_advancing = true
+			announce.rpc("%s chose %s!" % [p.display_name, area], HUB_COLORS[biome_index])
+			get_tree().create_timer(1.0).timeout.connect(_start_level.bind(int(info.level)))
 			return
 
 
@@ -362,11 +434,10 @@ func request_travel(number: int) -> void:
 	var p := get_player(sender if sender != 0 else 1)
 	if p == null or p.downed or not is_near_travel_portal(p.global_position):
 		return
-	if number < 1 or number > furthest_level:
+	if number < BiomeDB.CROSSROADS or number > furthest_level:
 		return
 	_advancing = true
-	announce.rpc("%s opened the way to %s, %s..." % [p.display_name, area_title(number).replace("  ", " "),
-			BiomeDB.for_level(number).name], Color(0.85, 0.65, 1.0))
+	announce.rpc("%s opened the way to %s..." % [p.display_name, area_name(number)], Color(0.85, 0.65, 1.0))
 	get_tree().create_timer(1.0).timeout.connect(_start_level.bind(number))
 
 
@@ -434,7 +505,7 @@ func checkpoint_point(peer_id: int) -> Vector3:
 ## Server: players reach the checkpoint by coming near the lemonade stand, or by
 ## getting past it anywhere across the path.
 func _check_checkpoints() -> void:
-	if layout.is_empty():
+	if layout.is_empty() or is_crossroads():
 		return
 	var stand_progress := level_progress(shop_position())
 	for p in get_players():
@@ -499,6 +570,10 @@ func _start_level(number: int) -> void:
 		if pet.has_meta("told_overlevelled"):
 			pet.remove_meta("told_overlevelled")
 
+	if number <= BiomeDB.CROSSROADS:
+		announce.rpc("The Crossroads: walk into a portal to choose your next area. The creature levels rise with each area you clear, so pick the pets you want first!",
+				Color(1, 0.9, 0.5))
+		return
 	var levels := area_levels(number)
 	var base_level := levels.x
 	var level_biome := biome()
@@ -538,11 +613,14 @@ func on_rival_defeated(rival: Rival) -> void:
 	for pet in _creatures_where(func(c: Creature) -> bool: return c.is_rival_pet()):
 		pet.release_to_wild()
 		announce.rpc("The rival's %s has gone wild. Capture it!" % pet.species.display_name, Color(0.6, 0.85, 1.0))
+	cleared_level = maxi(cleared_level, level_number)
 	for pet in get_all_pets():
 		if not pet.fainted:
 			# About a level's worth for a pet at the top of the area.
 			_give_xp(pet, roundi(rival_defeat_xp * area_levels(level_number).y / 2.0), area_levels(level_number).y)
 	exit_open = true
+	if next_level() == BiomeDB.CROSSROADS:
+		announce.rpc("The portal leads back to the Crossroads: choose where to go next.", Color(1, 0.9, 0.5))
 
 
 ## Server: a damaging area on the ground. Every 0.5s it hurts the enemies of
@@ -689,9 +767,9 @@ func award_xp(killed: Creature) -> void:
 			_give_xp(pet, amount, killed.level)
 
 
-## Creature levels in each area: five per area, rising through the act
-## (Greenmeadow 1-5, Frostfang Peaks 6-10, Sunscorch Dunes 11-15, Mirewood
-## Bog 16-20), and on into the next act. Returns (lowest, highest).
+## Creature levels in each area: five per area, rising through the act (the
+## first Act 1 area chosen 1-5, the second 6-10, the third 11-15, the fourth
+## 16-20), and on into the next act. Returns (lowest, highest).
 static func area_levels(number: int) -> Vector2i:
 	var low := 1 + (maxi(number, 1) - 1) * AREA_LEVELS
 	return Vector2i(low, low + AREA_LEVELS - 1)
@@ -699,8 +777,17 @@ static func area_levels(number: int) -> Vector2i:
 
 ## "Act 1 · Area 2" (see BiomeDB.ACTS).
 static func area_title(number: int) -> String:
+	if number <= BiomeDB.CROSSROADS:
+		return "The Crossroads"
 	var where := BiomeDB.act_of(number)
 	return "Act %d  ·  Area %d" % [where.act, where.area]
+
+
+## "Act 1 · Area 2, Frostfang Peaks" or "The Crossroads", for messages.
+static func area_name(number: int) -> String:
+	if number <= BiomeDB.CROSSROADS:
+		return "the Crossroads"
+	return "%s, %s" % [area_title(number).replace("  ", " "), BiomeDB.for_level(number).name]
 
 
 ## How much of its XP a pet gets for beating something of `foe_level`: all of
@@ -804,9 +891,60 @@ func _build_level() -> void:
 	stable.global_position = level_root.to_global(layout.stable_point)
 	stable.rotation.y = PATH_YAW + PI / 2.0
 	portal.global_position = level_root.to_global(layout.exit_point)
+	(portal.get_node("Sign") as Label3D).text = "Crossroads" if next_level() == BiomeDB.CROSSROADS else "Next level"
 	travel_portal.global_position = travel_point()
 	travel_portal.visible = true
+	if is_crossroads():
+		_build_hub_portals()
 	level_changed.emit()
+
+
+## The Crossroads portals: a copy of the exit portal for each Act 1 biome, in
+## its colour, signed with its name, its pets and the creature levels it would
+## have (or "Cleared", or sealed while the current area's boss still stands).
+func _build_hub_portals() -> void:
+	var root := Node3D.new()
+	root.name = "HubPortals"
+	level_root.add_child(root)
+	var points: Array = layout.get("hub_portals", [])
+	for i in points.size():
+		var biome_index: int = BiomeDB.ACTS[0][i]
+		var info := hub_portal_state(biome_index)
+		var color: Color = HUB_COLORS.get(biome_index, Color.WHITE)
+		if info.state == "locked":
+			color = Color(0.45, 0.45, 0.5)
+		var hub_portal := portal.duplicate() as Node3D
+		hub_portal.name = "Hub%d" % i
+		hub_portal.visible = true
+		root.add_child(hub_portal)
+		hub_portal.global_position = level_root.to_global(points[i])
+		hub_portal.rotation.y = 0.0
+		var ring := _material(color)
+		ring.emission_enabled = info.state != "locked"
+		ring.emission = color * 0.8
+		ring.emission_energy_multiplier = 1.4
+		(hub_portal.get_node("Ring") as MeshInstance3D).material_override = ring
+		var core := StandardMaterial3D.new()
+		core.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		core.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		core.albedo_color = Color(color, 0.5 if info.state != "locked" else 0.2)
+		(hub_portal.get_node("Core") as MeshInstance3D).material_override = core
+		(hub_portal.get_node("Glow") as OmniLight3D).light_color = color
+		(hub_portal.get_node("Glow") as OmniLight3D).visible = info.state != "locked"
+		var biome_data: Dictionary = BiomeDB.BIOMES[biome_index]
+		var status := ""
+		match info.state:
+			"cleared":
+				status = "Cleared  ·  Lv %d-%d" % [area_levels(info.level).x, area_levels(info.level).y]
+			"open":
+				status = "Lv %d-%d" % [area_levels(info.level).x, area_levels(info.level).y]
+			"new":
+				status = "Lv %d-%d" % [area_levels(info.level).x, area_levels(info.level).y]
+			"locked":
+				status = "Sealed"
+		var label := hub_portal.get_node("Sign") as Label3D
+		label.text = "%s\n%s\n%s" % [biome_data.name, BiomeDB.PET_TEXT.get(biome_index, ""), status]
+		label.modulate = color.lightened(0.35)
 
 
 ## The lemonade stand halfway along the path: counter, striped awning, potion

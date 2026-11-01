@@ -101,11 +101,23 @@ played in the browser".
   before going on. Everyone travels together; going back never loses your
   progress (the furthest area reached stays unlocked), and saves resume in
   the area you were in.
-- **Acts and biomes:** the four biomes make up **Act 1**, one area each, and
-  each area's creatures are five levels higher than the last: **Greenmeadow
-  1-5, Frostfang Peaks 6-10, Sunscorch Dunes 11-15, Mirewood Bog 16-20**
-  (weakest by the camp, strongest near the boss; the rival's pet is at the
-  top level). After the Bog Witch comes **Act 2: Hollowmere Graveyard**
+- **The Crossroads:** a new game starts at the Crossroads, a peaceful hub
+  with the stable, village and lemonade stand, and a plaza with a walk-in
+  portal for each Act 1 area: **Greenmeadow** (cats, Wizards), **Frostfang
+  Peaks** (birds, Archers), **Sunscorch Dunes** (dogs, Paladins) and
+  **Mirewood Bog** (lizards, Venomancers). Each sign shows the creature
+  levels you'd meet there. Walk into one to go: **you choose the order**, so
+  you collect the pets you want first. The area you pick first has creatures
+  at level 1-5, the second 6-10, the third 11-15 and the fourth 16-20, and
+  its boss is scaled to match. After beating an Act 1 boss, its portal leads
+  back to the Crossroads to pick the next one. A new area stays sealed until
+  the current area's boss is beaten. Cleared areas stay open to revisit (and
+  so does the Crossroads, through the Travel portal). Once all four are
+  cleared, the portal leads on to Act 2.
+- **Acts and biomes:** the four biomes make up **Act 1**, one area each, in
+  the order you choose, and each area's creatures are five levels higher than
+  the last (weakest by the camp, strongest near the boss; the rival's pet is
+  at the top level). After the fourth Act 1 boss comes **Act 2: Hollowmere Graveyard**
   (21-25), haunted by **skeletons and zombies**. They are monsters, not
   creatures: they can't be captured, and your bat finishes them off (no 1 HP
   limit). Act 2 goes on through three more monster-only areas: **Scorchsand
@@ -124,10 +136,10 @@ played in the browser".
 
   | Area | Biome | Creatures | Boss |
   |---|---|---|---|
-  | Act 1 area 1 (Lv 1-5) | Greenmeadow | Cats: Mossback, Emberfox, Voltwing, Gloomhorn, Bloomling (the first two creatures by the camp are always Bloomlings) | **Rival Tamer** with one pet. The pet fights and uses its ability; when the rival is beaten the pet goes wild, weakened, so you can capture it |
-  | Act 1 area 2 (Lv 6-10) | Frostfang Peaks | Birds: Frostfinch, Quillpuff, Aurora Swift, Snowl | **Glacier Titan**: drops Avalanches (a red warning circle, then a slam that damages and slows) and summons capturable Frostfinches at 66% and 33% health |
-  | Act 1 area 3 (Lv 11-15) | Sunscorch Dunes (desert) | Dogs: Fangjackal, Dunehound, Cactipup, Sunfennec | **Sand Wyrm**: burrows underground (it can't be hit there), tunnels under a player or pet behind a warning circle and erupts; at half health it whips up sandstorms |
-  | Act 1 area 4 (Lv 16-20) | Mirewood Bog (swamp) | Lizards: Bogleon, Mirelurk, Wisp Gecko, Sporeguana | **Bog Witch**: a ranged caster whose bolts poison; she blinks away when you get close, drops toxic puddles and summons Bogleons at 60% and 30% health |
+  | Act 1 (your choice of order) | Greenmeadow | Cats: Mossback, Emberfox, Voltwing, Gloomhorn, Bloomling (the first two creatures by the camp are always Bloomlings) | **Rival Tamer** with one pet. The pet fights and uses its ability; when the rival is beaten the pet goes wild, weakened, so you can capture it |
+  | Act 1 | Frostfang Peaks | Birds: Frostfinch, Quillpuff, Aurora Swift, Snowl | **Glacier Titan**: drops Avalanches (a red warning circle, then a slam that damages and slows) and summons capturable Frostfinches at 66% and 33% health |
+  | Act 1 | Sunscorch Dunes (desert) | Dogs: Fangjackal, Dunehound, Cactipup, Sunfennec | **Sand Wyrm**: burrows underground (it can't be hit there), tunnels under a player or pet behind a warning circle and erupts; at half health it whips up sandstorms |
+  | Act 1 | Mirewood Bog (swamp) | Lizards: Bogleon, Mirelurk, Wisp Gecko, Sporeguana | **Bog Witch**: a ranged caster whose bolts poison; she blinks away when you get close, drops toxic puddles and summons Bogleons at 60% and 30% health |
   | Act 2 area 1 (Lv 21-25) | Hollowmere Graveyard | Monsters: Skeletons (quick, with rusty swords) and Zombies (slow, tough, hit hard); can't be captured | **Howard the Zombie Fish**: a huge rotting fish on a pair of zombie legs, one eye bulging and one crossed out, ribs showing, a fishhook in his lip. He spits a Rotten Splash under a player or pet (a red warning circle, then damage and a slow), and calls up skeletons and a zombie at 66% and 33% health |
   | Act 2 area 2 (Lv 26-30) | Scorchsand Ruins (desert) | Monsters: Mummies (slow, bandaged, tough) and Sand Scorpions (fast, pincers and a stinger) | **Sand Pharaoh**: a towering mummy king in a gold mask and striped headdress with a crook staff. Curse of the Sands (a warning circle, then damage and blindness); mummies and scorpions rise from the sand at 66% and 33% health |
   | Act 2 area 3 (Lv 31-35) | Cinderpeak Caldera (volcano) | Monsters: Fire Imps (quick, winged, throw fire from range) and Magma Golems (slow, huge, hit hard) | **Magma Colossus**: a walking mountain of black rock with lava in its cracks. Eruption (a warning circle, then damage and burning); calls fire imps and a golem out of the lava at 66% and 33% health |

@@ -57,6 +57,7 @@ const RIVAL_NAMES := ["Kael", "Mira", "Dax", "Vesper", "Rook", "Sable", "Juno", 
 ##              (in path space:) z: float, wall_x: float, path_end_x: float,
 ##              plaza: Rect2 (x, z), bat_shop_point, stable_point, breeder_point: Vector3, houses: [{ pos: Vector3, size: Vector3 }] }
 ##   start_point, stable_point, rival_point, exit_point: Vector3
+##   hub_portals: [Vector3]   the Crossroads only (level 0): one portal per Act 1 biome (BiomeDB.ACTS[0] order)
 ##   total_length: float, rival_name: String, rival_species: int, floor_tint: Color,
 ##   biome: int (index into BiomeDB.BIOMES)
 ## }
@@ -66,6 +67,9 @@ static func generate(level_seed: int, level_number: int) -> Dictionary:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = level_seed
 	var biome := BiomeDB.for_level(level_number)
+	# The Crossroads (level 0): a short, straight, peaceful walk past the
+	# lemonade stand and the village to a plaza with a portal to each Act 1 area.
+	var hub := level_number <= BiomeDB.CROSSROADS
 	var segments: Array[Dictionary] = []
 	var rocks: Array[Dictionary] = []
 	var spots: Array[Dictionary] = []
@@ -75,12 +79,15 @@ static func generate(level_seed: int, level_number: int) -> Dictionary:
 	segments.append({"z_start": z, "z_end": z - START_LENGTH, "center_x": 0.0, "width": START_WIDTH, "kind": "start"})
 	z -= START_LENGTH
 
-	var path_count := 5 + mini(level_number, 5)
+	var path_count := 2 if hub else 5 + mini(level_number, 5)
 	var center := 0.0
 	for i in path_count:
 		var width := rng.randf_range(MIN_PATH_WIDTH, MAX_PATH_WIDTH)
 		var seg := {"z_start": z, "z_end": z - SEGMENT_LENGTH, "center_x": center, "width": width, "kind": "path"}
 		segments.append(seg)
+		if hub:
+			z -= SEGMENT_LENGTH
+			continue
 		_add_rocks(rng, seg, rocks)
 		# Keep the first stretch next to the camp clear so the camp is safe.
 		_add_creature_spots(rng, seg, rocks, spots, float(i + 1) / path_count, 8.0 if i == 0 else 2.0)
@@ -113,6 +120,8 @@ static func generate(level_seed: int, level_number: int) -> Dictionary:
 	var arena := {"z_start": z, "z_end": z - ARENA_LENGTH, "center_x": arena_center, "width": ARENA_WIDTH, "kind": "arena"}
 	segments.append(arena)
 	for corner in [Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1)]:
+		if hub:
+			break
 		rocks.append({
 			"pos": Vector3(arena_center + corner.x * 14.0, 0.0, z - ARENA_LENGTH * 0.5 + corner.y * 12.0),
 			"size": Vector3(3.0, 3.5, 3.0),
@@ -144,6 +153,14 @@ static func generate(level_seed: int, level_number: int) -> Dictionary:
 			var half := half_width(bent, item_s) - 2.0
 			item.pos = map_point(bent, Vector3(clampf(item.pos.x, -half, half), 0.0, item.pos.z))
 	var shop_s: float = -shop_point.z
+	# The Crossroads portals: a row along the plaza (left to right on screen),
+	# one per Act 1 biome, before the Travel portal at the far end.
+	var hub_portals: Array[Vector3] = []
+	if hub:
+		var count: int = BiomeDB.ACTS[0].size()
+		for i in count:
+			var along := 9.0 + i * 9.5
+			hub_portals.append(map_point(bent, Vector3(arena_center + 3.0, 0.0, arena.z_start - along)))
 
 	return {
 		"segments": segments,
@@ -162,6 +179,7 @@ static func generate(level_seed: int, level_number: int) -> Dictionary:
 		"rival_point": map_point(bent, Vector3(arena_center, 0.0, arena.z_start - ARENA_LENGTH * 0.55)),
 		"exit_point": map_point(bent, Vector3(arena_center, 0.0, z + 4.0)),
 		"travel_point": map_point(bent, Vector3(arena_center - 4.5, 0.0, z + 4.0)),
+		"hub_portals": hub_portals,
 		"total_length": total,
 		"rival_name": RIVAL_NAMES[rng.randi() % RIVAL_NAMES.size()],
 		"rival_species": biome.species[rng.randi() % biome.species.size()],
