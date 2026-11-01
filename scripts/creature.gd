@@ -61,6 +61,9 @@ var species: CreatureSpecies
 var target: Node3D
 var focus: Node3D  ## Target the owner explicitly ordered this pet to attack.
 var _attack_timer := 0.0
+var _crit_bonus := 0.0
+var _crit_timer := 0.0
+var _mark_timer := 0.0  ## Hunter's Mark: pets always crit this creature.
 var _kite_left := 0.0  ## Archers: seconds left of a hop back from an enemy.
 var _kite_cooldown := 0.0
 var _wander_timer := 0.0
@@ -142,6 +145,8 @@ func _physics_process(delta: float) -> void:
 		return  # position is driven by the leap tween
 	_attack_timer -= delta
 	_kite_left -= delta
+	_crit_timer -= delta
+	_mark_timer -= delta
 	_kite_cooldown -= delta
 	_guard_timer -= delta
 	_slow_timer -= delta
@@ -644,17 +649,47 @@ func _chase_and_attack(victim: Node3D) -> Vector3:
 		_lunge.rpc()
 		if _blind_timer > 0.0 and randf() < 0.5:
 			return Vector3.ZERO  # blinded: the attack misses
+		var hit := get_damage() * _roll_crit(victim)
 		if species.is_ranged():
-			_fire_bolt(victim)
+			_fire_bolt(victim, hit)
 		elif species.is_venomancer():
-			victim.receive_damage(get_damage() * CreatureSpecies.VENOM_HIT_SHARE, self, to / dist * 3.0)
+			victim.receive_damage(hit * CreatureSpecies.VENOM_HIT_SHARE, self, to / dist * 3.0)
 			envenom(victim, get_damage() * CreatureSpecies.VENOM_STACK, CreatureSpecies.VENOM_DURATION,
 					get_damage() * CreatureSpecies.VENOM_MAX)
 		else:
-			victim.receive_damage(get_damage(), self, to / dist * 3.0)
+			victim.receive_damage(hit, self, to / dist * 3.0)
 			if species.is_paladin():
-				_holy_strike(get_damage())
+				_holy_strike(hit)
 	return Vector3.ZERO
+
+
+## Critical hits: the chance (archers are sharper shots), plus any Eagle Eye
+## bonus; a target under a Hunter's Mark is always critted by pets. Returns the
+## damage multiplier for this attack (CRIT_MULTIPLIER on a crit, shown with stars).
+func crit_chance() -> float:
+	var base := CreatureSpecies.ARCHER_CRIT if species.is_archer() else CreatureSpecies.BASE_CRIT
+	return base + (_crit_bonus if _crit_timer > 0.0 else 0.0)
+
+
+func _roll_crit(victim: Node3D) -> float:
+	var marked: bool = victim is Creature and (victim as Creature)._mark_timer > 0.0 and is_player_pet()
+	if marked or randf() < crit_chance():
+		world.play_bonk.rpc(victim.global_position + Vector3.UP * 1.3)
+		return CreatureSpecies.CRIT_MULTIPLIER
+	return 1.0
+
+
+## Eagle Eye: +`bonus` crit chance for `duration` seconds.
+func add_crit(bonus: float, duration: float) -> void:
+	_crit_bonus = maxf(bonus, _crit_bonus if _crit_timer > 0.0 else 0.0)
+	_crit_timer = maxf(_crit_timer, duration)
+	_status_fx.rpc("crit", duration)
+
+
+## Hunter's Mark: the tamer's pets crit this creature every time for `duration`.
+func mark(duration: float) -> void:
+	_mark_timer = maxf(_mark_timer, duration)
+	_status_fx.rpc("mark", duration)
 
 
 ## Server: stacking venom on `victim` (a creature, player or boss), shown with
@@ -686,7 +721,7 @@ func _holy_strike(damage: float) -> void:
 
 ## Wizards and archers: a magic bolt in the species' colour (or an arrow)
 ## flies at the victim and hits when it arrives (if it's still there to be hit).
-func _fire_bolt(victim: Node3D) -> void:
+func _fire_bolt(victim: Node3D, damage: float) -> void:
 	var from := global_position + Vector3.UP * (0.55 * species.size)
 	var to := victim.global_position + Vector3.UP * 0.6
 	var travel := from.distance_to(to) / (ARROW_SPEED if species.is_archer() else BOLT_SPEED)
@@ -694,7 +729,7 @@ func _fire_bolt(victim: Node3D) -> void:
 		world.play_arrow.rpc(from, to, species.color.lightened(0.4), travel)
 	else:
 		world.play_bolt.rpc(from, to, species.color.lightened(0.25), travel)
-	get_tree().create_timer(travel).timeout.connect(_bolt_landed.bind(victim.get_instance_id(), get_damage()))
+	get_tree().create_timer(travel).timeout.connect(_bolt_landed.bind(victim.get_instance_id(), damage))
 
 
 ## The bolt arrives. Looked up by id: the victim may have died on the way.
@@ -926,6 +961,7 @@ func _status_fx(kind: String, duration: float) -> void:
 	var ring_colors := {
 		"slow": Color(0.55, 0.85, 1.0, 0.8), "root": Color(0.45, 0.32, 0.18, 0.95),
 		"poison": Color(0.45, 0.95, 0.3, 0.8), "weaken": Color(0.7, 0.35, 0.85, 0.8),
+		"mark": Color(1.0, 0.25, 0.2, 0.9), "crit": Color(1.0, 0.85, 0.3, 0.8),
 	}
 	if kind in bubble_colors:
 		var sphere := SphereMesh.new()

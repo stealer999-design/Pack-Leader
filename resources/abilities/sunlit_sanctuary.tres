@@ -5,9 +5,9 @@
 [resource]
 script = ExtResource("1_ability")
 display_name = "Sunlit Sanctuary"
-description = "A wide circle of sunlight for 7s: allies inside heal 10% of their max health every second, enemies inside are scorched."
-cooldown = 14.0
-cast_range = 0.0
+description = "(Heal) A wide circle of sunlight at the spot for 7s: allies inside heal 10% of their max health every second, enemies inside are scorched."
+cooldown = 14
+cast_range = 12
 needs_target = false
 radius = 5.5
 sanctuary_duration = 7.0

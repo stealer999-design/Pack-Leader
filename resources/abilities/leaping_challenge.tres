@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="PaladinAbility" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/abilities/paladin_ability.gd" id="1_ability"]
+
+[resource]
+script = ExtResource("1_ability")
+display_name = "Leaping Challenge"
+description = "(Taunt) Leaps to the spot, bites enemies there for 1x, taunts everything within 5 units onto itself and guards (40% less damage) for 4s."
+cooldown = 8
+cast_range = 12
+needs_target = false
+radius = 5.0
+leap = true
+smite_area_multiplier = 1.0
+taunt = true
+guard_duration = 4.0
+guard_reduction = 0.4

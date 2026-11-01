@@ -25,6 +25,10 @@ const VENOM_HIT_SHARE := 0.7  ## A venomancer's bite does this share of its dama
 const VENOM_STACK := 0.4  ## ...and adds this much of its damage per second as venom,
 const VENOM_DURATION := 4.0  ## lasting this long,
 const VENOM_MAX := 1.2  ## stacking up to this much of its damage per second (3 bites).
+## Critical hits on basic attacks: archers are the sharpest shots.
+const BASE_CRIT := 0.05
+const ARCHER_CRIT := 0.15
+const CRIT_MULTIPLIER := 2.0
 const TOXIC_BLOOD := 0.25  ## Poison per second (share of its damage) given to what hits it up close.
 const PALADIN_HEALTH := 1.35  ## Max health multiplier.
 const PALADIN_DAMAGE_TAKEN := 0.85  ## Damage taken multiplier.

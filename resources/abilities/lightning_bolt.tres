@@ -5,11 +5,12 @@
 [resource]
 script = ExtResource("1_ability")
 display_name = "Lightning Bolt"
-description = "Strikes the target with a bolt from the sky: huge damage, and a short stun around it."
-cooldown = 7.0
-cast_range = 11.0
+description = "(Lightning) Strikes the spot with a bolt from the sky: 4x damage and a short stun around it."
+cooldown = 7
+cast_range = 11
+needs_target = false
 damage_multiplier = 4.0
 radius = 2.0
 style = "lightning"
-color = Color(1, 0.95, 0.5, 1)
+color = Color(1, 0.95, 0.45, 1)
 stun_duration = 0.8

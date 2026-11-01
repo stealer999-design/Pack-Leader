@@ -5,7 +5,7 @@ extends PetAbility
 ##   within `radius` of it;
 ## - "lash": the tongue yanks the target next to the pet (bosses are too heavy)
 ##   and poisons it;
-## - "nova": a burst of poison around the pet itself;
+## - "nova": a burst of poison at the aimed spot;
 ## - "cloud": a lingering poison cloud at the target point for
 ##   `cloud_duration` seconds that poisons whatever stands in it.
 ## Every hit deals `damage_multiplier` up front and poisons for
@@ -46,15 +46,16 @@ func execute(pet: Creature, point: Vector3, target: Creature) -> void:
 			target.pull_to(pet.global_position + toward.normalized() * (pet.radius() + target.radius() + 0.3))
 			_poison(pet, target)
 		"nova":
-			_splash(pet, pet.global_position)
+			_splash(pet, world.clamp_to_level(aim))
 		"cloud":
 			var at := world.clamp_to_level(aim)
 			world.add_zone(pet, at, radius, cloud_duration, 0.0, VENOM, pet.get_damage() * poison_dps_multiplier)
 			_splash(pet, at)
 	if heal_allies > 0.0:
-		for ally in world.allies_near(pet, pet.global_position, 8.0):
+		var at := world.clamp_to_level(aim)
+		for ally in world.allies_near(pet, at, maxf(radius, 6.0)):
 			ally.health.heal(ally.health.max_health * heal_allies)
-		world.play_burst.rpc(pet.global_position, Color(0.6, 1.0, 0.6), 3.0)
+		world.play_burst.rpc(at, Color(0.6, 1.0, 0.6), 3.0)
 
 
 func _splash(pet: Creature, at: Vector3) -> void:

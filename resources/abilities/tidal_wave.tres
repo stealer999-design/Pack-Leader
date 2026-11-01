@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="SpellBlastAbility" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/abilities/spell_blast_ability.gd" id="1_ability"]
+
+[resource]
+script = ExtResource("1_ability")
+display_name = "Tidal Wave"
+description = "(Water) A wave crashes out towards where you aim: 2x damage to everything in a 7-unit cone, knocking them back and slowing them for 2s."
+cooldown = 8
+cast_range = 4
+needs_target = false
+damage_multiplier = 2.0
+radius = 7.0
+style = "wave"
+color = Color(0.35, 0.65, 1, 1)
+cone_degrees = 55.0
+knockback = 7.0
+slow_duration = 2.0
+slow_factor = 0.6

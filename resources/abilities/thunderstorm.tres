@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="SpellBlastAbility" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/abilities/spell_blast_ability.gd" id="1_ability"]
+
+[resource]
+script = ExtResource("1_ability")
+display_name = "Thunderstorm"
+description = "(Lightning) A storm over the spot for 3s: 6 bolts strike enemies within 4 units, each for 1.4x damage and a short stun."
+cooldown = 11
+cast_range = 11
+needs_target = false
+damage_multiplier = 1.4
+radius = 1.6
+style = "storm"
+color = Color(1, 0.95, 0.45, 1)
+count = 6
+spread = 4.0
+duration = 3.0
+stun_duration = 0.4

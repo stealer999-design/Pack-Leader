@@ -9,13 +9,17 @@ extends PetAbility
 ## - "rain": `arrows` arrows fall from the sky over `radius` around the target;
 ## - "heal": healing arrows at the `arrows` most injured allies within
 ##   `shot_range` (heal_fraction of their max health), splashing heal_splash
-##   onto allies near them.
-## Hits can also slow, stun or blind.
+##   onto allies near them;
+## - "mark": Hunter's Mark: a flare over the spot marks every enemy within
+##   `radius` for `effect_duration` seconds, and pets crit them every hit;
+## - "rally": Eagle Eye: every pet on its side within `radius` of the spot gets
+##   +`crit_bonus` crit chance for `effect_duration` seconds.
+## Hits can also slow, stun, blind or set burning (damage over time).
 
 const ARROW_SPEED := 32.0
 const ARROW_HIT := 1.1  ## How close to an arrow's landing spot (or path) counts as a hit.
 
-@export_enum("shot", "volley", "pierce", "rain", "heal") var mode := "shot"
+@export_enum("shot", "volley", "pierce", "rain", "heal", "mark", "rally") var mode := "shot"
 @export var color := Color(0.85, 0.95, 1.0)
 @export var arrows := 1
 @export var spread_degrees := 30.0
@@ -27,6 +31,10 @@ const ARROW_HIT := 1.1  ## How close to an arrow's landing spot (or path) counts
 @export var blind_duration := 0.0
 @export_range(0.0, 1.0) var heal_fraction := 0.0
 @export_range(0.0, 1.0) var heal_splash := 0.0
+@export var effect_duration := 6.0
+@export_range(0.0, 1.0) var crit_bonus := 0.5
+## Burning on each enemy hit: damage per second as a share of the pet's damage, for 4s.
+@export var dot_multiplier := 0.0
 
 
 func cannot_cast_reason(pet: Creature) -> String:
@@ -70,6 +78,16 @@ func execute(pet: Creature, point: Vector3, target: Creature) -> void:
 				var sky := spot + Vector3(1.5, 12.0, 1.0)
 				var delay := 0.08 * i
 				pet.get_tree().create_timer(delay + 0.01).timeout.connect(_fire.bind(pet, sky, spot, _hit.bind(pet, spot, damage, 1.3, null)))
+		"mark":
+			var at := world.clamp_to_level(aim)
+			_fire(pet, from, at + Vector3.UP * 0.5, _mark.bind(pet, at), Color(1.0, 0.3, 0.25))
+		"rally":
+			var at := world.clamp_to_level(aim)
+			for ally in world.allies_near(pet, at, radius):
+				if ally is Creature:
+					(ally as Creature).add_crit(crit_bonus, effect_duration)
+			world.play_burst.rpc(at, Color(1.0, 0.85, 0.3), radius)
+			world.play_burst.rpc(pet.global_position, Color(1.0, 0.85, 0.3), 2.0)
 		"heal":
 			for ally in _injured(pet).slice(0, arrows):
 				var to: Vector3 = ally.global_position + Vector3.UP * 0.7
@@ -103,6 +121,15 @@ func _hit(pet: Creature, at: Vector3, damage: float, hit_radius: float, target: 
 		pet.world.play_burst.rpc(at, color, splash_radius)
 
 
+func _mark(pet: Creature, at: Vector3) -> void:
+	if not is_instance_valid(pet):
+		return
+	for enemy in pet.world.enemies_near(pet, at, radius):
+		if enemy is Creature:
+			(enemy as Creature).mark(effect_duration)
+	pet.world.play_burst.rpc(at, Color(1.0, 0.3, 0.25), radius)
+
+
 func _hit_one(pet: Creature, enemy_id: int, damage: float) -> void:
 	var enemy := instance_from_id(enemy_id) as Node3D
 	if is_instance_valid(pet) and is_instance_valid(enemy) and enemy.is_targetable():
@@ -117,6 +144,8 @@ func _apply(pet: Creature, enemy: Node3D, damage: float) -> void:
 		enemy.stun(stun_duration)
 	if blind_duration > 0.0 and enemy.has_method("blind"):
 		enemy.blind(blind_duration)
+	if dot_multiplier > 0.0:
+		pet.envenom(enemy, pet.get_damage() * dot_multiplier, 4.0, pet.get_damage() * dot_multiplier)
 
 
 func _heal(pet: Creature, ally_id: int) -> void:

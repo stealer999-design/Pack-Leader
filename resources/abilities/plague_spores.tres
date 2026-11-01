@@ -5,9 +5,9 @@
 [resource]
 script = ExtResource("1_ability")
 display_name = "Plague Spores"
-description = "Bursts with plague spores: every enemy within 6 units is poisoned for 6s, and every pet and player nearby heals 20%."
+description = "Bursts plague spores at the spot: every enemy within 6 units is poisoned for 6s, and every pet and player nearby heals 20%."
 cooldown = 10.0
-cast_range = 0.0
+cast_range = 11
 needs_target = false
 damage_multiplier = 0.5
 radius = 6.0

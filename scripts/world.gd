@@ -1363,6 +1363,32 @@ func play_arrow(from: Vector3, to: Vector3, color: Color, travel: float) -> void
 		arrow.queue_free())
 
 
+## A whirlwind: a spinning funnel of rings at `at` for `duration` seconds.
+@rpc("authority", "call_local", "unreliable")
+func play_vortex(at: Vector3, radius: float, duration: float, color: Color) -> void:
+	var fx := Node3D.new()
+	add_child(fx)
+	fx.global_position = at
+	var mat := _fx_material(Color(color, 0.45))
+	for i in 6:
+		var ring := MeshInstance3D.new()
+		var torus := TorusMesh.new()
+		var r := radius * (0.35 + i * 0.13)
+		torus.inner_radius = r * 0.85
+		torus.outer_radius = r
+		ring.mesh = torus
+		ring.material_override = mat
+		ring.position = Vector3(sin(i * 1.3) * 0.2, 0.25 + i * 0.45, cos(i * 1.3) * 0.2)
+		ring.rotation.x = 0.15
+		fx.add_child(ring)
+	var spin := fx.create_tween().set_loops(maxi(ceili(duration / 0.5), 1))
+	spin.tween_property(fx, "rotation:y", TAU, 0.5).from(0.0)
+	var fade := fx.create_tween()
+	fade.tween_interval(maxf(duration - 0.4, 0.0))
+	fade.tween_property(mat, "albedo_color:a", 0.0, 0.4)
+	fade.tween_callback(fx.queue_free)
+
+
 ## A wizard casting: a glowing circle of light under the caster with a ring
 ## of sparks rising out of it.
 @rpc("authority", "call_local", "unreliable")

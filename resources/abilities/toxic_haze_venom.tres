@@ -5,9 +5,9 @@
 [resource]
 script = ExtResource("1_ability")
 display_name = "Toxic Haze"
-description = "A toxic burst around it: every enemy within 6 units is poisoned for 7s and deals 50% less damage."
+description = "A toxic burst where you aim: every enemy within 6 units is poisoned for 7s and deals 50% less damage."
 cooldown = 10.0
-cast_range = 0.0
+cast_range = 11
 needs_target = false
 damage_multiplier = 0.4
 radius = 6.0

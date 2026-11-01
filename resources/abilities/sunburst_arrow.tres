@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="ArcherShotAbility" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/abilities/archer_shot_ability.gd" id="1_ability"]
+
+[resource]
+script = ExtResource("1_ability")
+display_name = "Sunburst Arrow"
+description = "A blazing arrow at the spot that explodes: 2.2x damage to everything within 3 units, setting them burning."
+cooldown = 8
+cast_range = 12
+needs_target = false
+damage_multiplier = 2.2
+mode = "shot"
+color = Color(1, 0.75, 0.3, 1)
+splash_radius = 3.0
+dot_multiplier = 0.4

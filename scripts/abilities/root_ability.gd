@@ -1,6 +1,6 @@
 class_name RootAbility
 extends PetAbility
-## Mud Trap: the pet hides a pool of sticky mud on the ground where it stands.
+## Mud Trap: the pet hides a pool of sticky mud on the ground where you aim.
 ## The first enemy to step on it springs it: every enemy within `radius` is
 ## damaged and rooted (can't move).
 
@@ -16,9 +16,9 @@ extends PetAbility
 @export var poison_duration := 5.0
 
 
-func execute(pet: Creature, _point: Vector3, _target: Creature) -> void:
+func execute(pet: Creature, point: Vector3, _target: Creature) -> void:
 	var world := pet.world
-	var at := world.clamp_to_level(pet.global_position)
+	var at := world.clamp_to_level(point)  # where you aimed (the pet walks within cast_range first)
 	world.add_trap(pet, at, trigger_radius, trap_duration, max_traps, func(trap_pos: Vector3) -> void:
 		var damage := pet.get_damage() * damage_multiplier
 		for enemy in world.enemies_near(pet, trap_pos, radius):

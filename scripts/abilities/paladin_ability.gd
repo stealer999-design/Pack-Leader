@@ -10,8 +10,12 @@ extends PetAbility
 ##   (heal_injured), the paladin itself (heal_self), and/or the most injured
 ##   ally for a share of the smite damage (heal_from_smite);
 ## - shield allies within `radius`;
-## - consecrate: holy ground at its feet for `sanctuary_duration` seconds that
-##   heals allies (fraction of max health per second) and burns enemies.
+## - armor: allies within `radius` take `armor_reduction` less damage for
+##   `armor_duration` (pets; players get an equal shield);
+## - consecrate: holy ground for `sanctuary_duration` seconds that heals
+##   allies (fraction of max health per second) and burns enemies.
+## Everything happens around the aimed spot (the mouse); with `leap` the
+## paladin first bounds there itself, then lets fly on landing.
 
 const HOLY := Color(1.0, 0.88, 0.45)
 
@@ -31,15 +35,31 @@ const HOLY := Color(1.0, 0.88, 0.45)
 @export_group("Shield")
 @export_range(0.0, 1.0) var shield_fraction := 0.0
 @export var shield_duration := 6.0
+@export_group("Armor")
+@export var armor_duration := 0.0
+@export_range(0.0, 1.0) var armor_reduction := 0.3
+@export_group("Leap")
+@export var leap := false
 @export_group("Consecrate")
 @export var sanctuary_duration := 0.0
 @export var sanctuary_heal := 0.0
 @export var sanctuary_dps_multiplier := 0.0
 
 
-func execute(pet: Creature, _point: Vector3, target: Creature) -> void:
+func execute(pet: Creature, point: Vector3, target: Creature) -> void:
+	var at := pet.world.clamp_to_level(point)
+	if leap:
+		pet.leap_to(at, 0.45, _effects.bind(pet, at, target))
+	else:
+		_effects(pet, at, target)
+
+
+func _effects(pet: Creature, at: Vector3, target: Creature) -> void:
+	if not is_instance_valid(pet):
+		return
 	var world := pet.world
-	var at := pet.global_position
+	if not is_instance_valid(target) and smite_multiplier > 0.0:
+		target = world.nearest_enemy(pet, at, maxf(radius, 3.0))
 	var dealt := 0.0
 	if smite_multiplier > 0.0 and is_instance_valid(target) and target.is_targetable():
 		var damage := pet.get_damage() * smite_multiplier
@@ -60,12 +80,18 @@ func execute(pet: Creature, _point: Vector3, target: Creature) -> void:
 			enemy.taunt(pet)
 	if guard_duration > 0.0:
 		pet.guard(guard_duration, guard_reduction)
+		world.play_burst.rpc(pet.global_position, Color(0.4, 0.7, 1.0), 1.6)
 	var allies := world.allies_near(pet, at, radius)
 	for ally in allies:
 		if heal_allies > 0.0:
 			ally.health.heal(ally.health.max_health * heal_allies)
 		if shield_fraction > 0.0 and ally.has_method("add_shield"):
 			ally.add_shield(ally.health.max_health * shield_fraction, shield_duration)
+		if armor_duration > 0.0:
+			if ally is Creature:
+				(ally as Creature).guard(armor_duration, armor_reduction)
+			elif ally.has_method("add_shield"):
+				ally.add_shield(ally.health.max_health * armor_reduction, armor_duration)
 	if heal_self > 0.0:
 		pet.health.heal(pet.health.max_health * heal_self)
 	var injured := _most_injured(allies)

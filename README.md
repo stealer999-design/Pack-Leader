@@ -162,34 +162,34 @@ played in the browser".
 
   | Parents | Hybrid | Ability |
   |---|---|---|
-  | Mossback + Emberfox | Magmashell | Magma Orb: a ball of magma that leaves a fire pool for 4s |
-  | Mossback + Voltwing | Thundershell | Storm Shell: reflects 85% of damage for 5s |
-  | Mossback + Gloomhorn | Stonehorn | Rockfall: a boulder from the sky, stuns 2.5s |
-  | Mossback + Bloomling | Mossbloom | Grove Aurora: heals everyone nearby 40% |
-  | Emberfox + Voltwing | Blitzfox | Lightning Bolt: a bolt from the sky for 4x damage |
-  | Emberfox + Gloomhorn | Cinderhorn | Meteor Shower: three meteors, each stuns 1.5s |
-  | Emberfox + Bloomling | Sunpetal | Phoenix Bloom: heals the most hurt ally 70% |
-  | Voltwing + Gloomhorn | Stormhorn | Thunder Chain: lightning jumps 5 times |
-  | Voltwing + Bloomling | Sparkblossom | Static Ward: shields everyone 40% for 7s |
-  | Gloomhorn + Bloomling | Duskbloom | Dusk Veil: enemies deal 50% less for 7s |
-  | Frostfinch + Quillpuff | Glacipuff | Hail Volley: 5 frozen arrows in a fan, slowing to 40% for 3s |
-  | Frostfinch + Aurora Swift | Shimmerwing | Healing Volley: healing arrows at the 3 most hurt allies, 30% each |
-  | Frostfinch + Snowl | Rimeowl | Snipe: a 16-unit shot for 4.5x damage, stuns 1s |
-  | Quillpuff + Aurora Swift | Prismpuff | Prism Shot: 2x damage, blinds enemies around the target for 4s |
-  | Quillpuff + Snowl | Quillowl | Arrow Rain: 8 arrows rain down over an area |
-  | Aurora Swift + Snowl | Dawnowl | Dawn Arrow: heals the most hurt ally 50% and those near it 25% |
-  | Fangjackal + Dunehound | Duneripper | Consecration: holy ground for 6s, burns enemies and heals allies 6%/s |
-  | Fangjackal + Cactipup | Thornjackal | Judgement: smites and taunts a target, heals itself and the most hurt ally |
-  | Fangjackal + Sunfennec | Solarjackal | Holy Light: damages and blinds nearby enemies, heals allies 25% |
-  | Dunehound + Cactipup | Cactihound | Bulwark: taunts, takes 60% less damage, shields allies 35% |
-  | Dunehound + Sunfennec | Sunhound | Sunlit Sanctuary: a wide circle for 7s, heals allies 10%/s, scorches enemies |
-  | Cactipup + Sunfennec | Bloomfennec | Blessing of the Dunes: heals everyone nearby 40% (itself 60%) |
-  | Bogleon + Mirelurk | Swampdrake | Swamp Fang: yanks a target in, 2x damage and heavy poison for 7s |
-  | Bogleon + Wisp Gecko | Glowleon | Soul Rot: spits rot for 2.2x and heavy poison, heals it and you 50% of the hit |
-  | Bogleon + Sporeguana | Toxileon | Toxic Haze: poisons every enemy nearby for 7s, and they deal 50% less |
-  | Mirelurk + Wisp Gecko | Wraithlurk | Spirit Trap: up to 4 traps that root for 3.5s and poison for 6s |
-  | Mirelurk + Sporeguana | Mossdrake | Toxic Bog: a pool of poisonous mud for 7s |
-  | Wisp Gecko + Sporeguana | Sporewisp | Plague Spores: poisons every enemy within 6 units, heals everyone nearby 20% |
+  | Mossback + Emberfox | Magmashell | Magma Orb: (Fire) Lobs a ball of magma at the spot: it bursts for 2x damage and leaves a pool of fire burning for 4s. |
+  | Mossback + Voltwing | Thundershell | Thunderstorm: (Lightning) A storm over the spot for 3s: 6 bolts strike enemies within 4 units, each for 1.4x damage and a short stun. |
+  | Mossback + Gloomhorn | Stonehorn | Hailstorm: (Water) Six hailstones crash down around the spot, each 1.3x damage where it lands, slowing enemies for 2s. |
+  | Mossback + Bloomling | Mossbloom | Gale Blades: (Air) Slicing winds fan out towards where you aim: 2.2x damage in a wide 6.5-unit cone, hurling enemies back. |
+  | Emberfox + Voltwing | Blitzfox | Lightning Bolt: (Lightning) Strikes the spot with a bolt from the sky: 4x damage and a short stun around it. |
+  | Emberfox + Gloomhorn | Cinderhorn | Meteor Shower: (Fire) Rains three blazing meteors around the spot, each 2.2x damage and a 1.5s stun. |
+  | Emberfox + Bloomling | Sunpetal | Flame Wave: (Fire) A wave of fire rolls out towards where you aim: 2x damage in a 7-unit cone, sets enemies burning, and scorches the ground for 4s. |
+  | Voltwing + Gloomhorn | Stormhorn | Thunder Chain: (Lightning) A huge bolt strikes the spot for 2.2x, then lightning jumps on to 5 more enemies. |
+  | Voltwing + Bloomling | Sparkblossom | Ball Lightning: (Lightning) A crackling ball flies to the spot and bursts for 1.8x damage, then arcs on to 4 more enemies. |
+  | Gloomhorn + Bloomling | Duskbloom | Void Cyclone: (Air) A dark whirlwind at the spot for 5s: pulls enemies in, slows them to 40% and tears at them. |
+  | Frostfinch + Quillpuff | Glacipuff | Hail Volley: Fires 5 frozen arrows in a cone towards where you aim, each 1.3x damage and slowing to 40% for 3s. |
+  | Frostfinch + Aurora Swift | Shimmerwing | Eagle Eye: A rallying cry: every pet within 6 units of the spot gets +50% crit chance for 8s (crits do double damage). |
+  | Frostfinch + Snowl | Rimeowl | Snipe: A long-range shot at the enemy nearest where you aim (up to 16 units): 4.5x damage and a 1s stun. |
+  | Quillpuff + Aurora Swift | Prismpuff | Prism Shot: A dazzling arrow at the spot: 2x damage there, and every enemy near it is blinded (half their attacks miss) for 4s. |
+  | Quillpuff + Snowl | Quillowl | Rain of Arrows: Rains 10 arrows down over the area where you aim, each hitting what it lands near for 1.2x damage. |
+  | Aurora Swift + Snowl | Dawnowl | Sunburst Arrow: A blazing arrow at the spot that explodes: 2.2x damage to everything within 3 units, setting them burning. |
+  | Fangjackal + Dunehound | Duneripper | Consecration: (Heal) Hallows the ground where you aim for 6s: enemies inside burn, allies inside heal 6% of their max health every second. |
+  | Fangjackal + Cactipup | Thornjackal | Judgement: (Taunt) Leaps to the spot and smites every enemy there for 2x, taunting them, then heals itself 20% and the most injured ally by the damage dealt. |
+  | Fangjackal + Sunfennec | Solarjackal | Holy Light: (Heal) A flash of holy light at the spot: damages and blinds enemies there for 5s and heals every ally there for 25%. |
+  | Dunehound + Cactipup | Cactihound | Shield Wall: (Shield, taunt) Throws up a wall of shields around the spot: allies there absorb 35% of their max health for 6s and enemies there are taunted onto it. |
+  | Dunehound + Sunfennec | Sunhound | Sunlit Sanctuary: (Heal) A wide circle of sunlight at the spot for 7s: allies inside heal 10% of their max health every second, enemies inside are scorched. |
+  | Cactipup + Sunfennec | Bloomfennec | Blessing of the Dunes: (Heal) Heals every pet and player around the spot for 40% of their max health, and the most injured of them 20% more. |
+  | Bogleon + Mirelurk | Swampdrake | Swamp Fang: Yanks the enemy nearest where you aim next to it, bites for 2x and poisons it hard (120% of its damage a second for 7s). |
+  | Bogleon + Wisp Gecko | Glowleon | Soul Rot: Spits rot where you aim: 2.2x damage and heavy poison for 7s, and it and you heal for 50% of the hit. |
+  | Bogleon + Sporeguana | Toxileon | Toxic Haze: A toxic burst where you aim: every enemy within 6 units is poisoned for 7s and deals 50% less damage. |
+  | Mirelurk + Wisp Gecko | Wraithlurk | Spirit Trap: Hides a trap where you aim (up to 4). The first enemy to step on it springs it: enemies nearby are damaged and rooted for 3.5s. They are poisoned too, for 6s. |
+  | Mirelurk + Sporeguana | Mossdrake | Toxic Bog: A pool of poisonous mud at the target for 7s: everything inside is poisoned (100% of its damage a second). |
+  | Wisp Gecko + Sporeguana | Sporewisp | Plague Spores: Bursts plague spores at the spot: every enemy within 6 units is poisoned for 6s, and every pet and player nearby heals 20%. |
 - **Pets are animated** too, at the pace they actually move: cats and dogs
   trot (diagonal legs together) and sway or wag their tails, birds hop and flap,
   lizards paddle in a sprawl and swing their bodies and tails, winged hybrids
@@ -306,56 +306,40 @@ played in the browser".
   second for 4s, up to three bites' worth), anything that hits them up close
   is poisoned back (toxic blood), and every ability poisons: venom lashes and
   spit, poison clouds and pools, plague spores, and poisoned traps.
-- **Pet abilities:** every species has a signature ability with its own
-  cooldown (shown in the party panel). If the target is out of range, the pet
-  runs into range first and then casts.
+- **Pet abilities:** every species has a signature ability (keys 1 2 3 for
+  party pets 1-3) with its own cooldown, and every ability **lands where your
+  mouse is**: the pet runs within range of that spot first, then casts. Each
+  class has its own kind: **cats** cast damage spells in four elements (fire,
+  lightning, air, water: fireballs, chain lightning, cyclones, tidal waves,
+  thunderstorms, hail), **dogs** taunt (leaping to the spot), heal, and raise
+  armor and shields, **birds** use ranger skills (arrow cones, rain of
+  arrows, piercing shots, snipes, Hunter's Mark and Eagle Eye for crits) and
+  **lizards** poison (venom lashes and spit, poison clouds, plague spores,
+  poisoned traps).
+- **Critical hits:** basic attacks can crit for double damage (shown with
+  stars): archers 15% of the time, everyone else 5%. Eagle Eye adds crit
+  chance to pets near the spot; Hunter's Mark makes your pets crit marked
+  enemies every hit.
 
   | Species | Ability | Effect |
   |---|---|---|
-  | Mossback | Moss Barrier | Shields nearby pets *and players*, absorbing damage equal to 30% of their max health for 6s |
-  | Emberfox | Fireball | Hurls a fireball that explodes where it lands (2.5x damage around it) |
-  | Voltwing | Static Arc | Lightning that chains between up to 3 enemies (needs a target) |
-  | Gloomhorn | Meteor | A meteor falls on the target point, damaging and stunning enemies there for 2s |
-  | Bloomling | Mending Bloom | Heals the most injured ally nearby (a pet or a player, including you) for 45% |
-  | Frostfinch | Frost Arrow | 2x damage to the target and anything close to it, slowing them to half speed for 3s |
-  | Quillpuff | Quill Volley | 5 quills in a fan towards the target, 1.2x damage each |
-  | Aurora Swift | Healing Arrow | A glowing arrow at the most injured ally in range: heals it 35% and allies near it 15% |
-  | Snowl | Piercing Shot | An arrow that flies 14 units through every enemy in its path, 2.5x damage each |
-  | Fangjackal | Holy Bite | Bites a target for 1.8x damage; the most injured ally nearby heals twice the damage dealt |
-  | Dunehound | Sanctuary | Blesses the ground for 6s: allies inside heal 8% of their max health a second |
-  | Cactipup | Guardian's Vow | Taunts nearby enemies onto itself, takes 50% less damage for 5s, heals itself 25% |
-  | Sunfennec | Lay on Paws | Heals the most injured ally 45% and shields every ally nearby for 15% |
-  | Bogleon | Venom Lash | Yanks a target next to it, hits for 1.2x and poisons it for 6s (bosses are too heavy to pull) |
-  | Mirelurk | Mud Trap | Hides a mud trap where it stands (up to 3, for 30s). The first enemy to step on it springs it: enemies nearby are damaged, rooted (can't move) for 2.5s and poisoned for 5s |
-  | Wisp Gecko | Wither | Spits withering venom: 1.5x damage and poison for 6s; the gecko *and you* heal 40% of the hit |
-  | Sporeguana | Spore Cloud | A toxic cloud around it for 6s: enemies inside are poisoned and deal 40% less damage |
-- **Pet skills (K):** every pet has a skill tree of six passive skills, shown
-  on the skills screen (press K or click "Pet skills") with an icon for each:
-  claws for attack damage, a heart for max health, a shield for armor, and a
-  gold paw on **pack skills**, which boost *every* pet in your party while that
-  pet is awake. The skills unlock left to right at levels 5, 10, 15, 20, 25 and
-  30, and each can be trained up to **4 ranks**. Pets earn a skill point at
-  level 5 and every 2 levels after (13 by level 30, against 24 possible ranks),
-  so choose: click a skill to spend a point on it. "Reset skills" gives a pet's
-  points back for free. Tanks like the Mossback and Mirelurk lean on armor and
-  health, strikers like the Emberfox and Snowl on damage, supports like the
-  Bloomling and Cactipup on pack skills. Armor is capped at 60%. Rivals' pets
-  come trained. Unspent points show as "+N" in the party panel.
-- **Stable:** every level has two stables, one at the start camp and one in
-  the village; both open the same stable. Press F at either to open it: your
-  party sits on three cushions (numbered by their ability key) and up to
-  **20 pets sleep in hay beds**. Everything is drag and drop:
-  drag a pet from a bed onto the party to bring it along, from the party onto a
-  bed to rest it, onto an occupied place to swap, between beds to rearrange,
-  or between party slots to change which key (1/2/3) uses its ability. Drop a
-  pet on the **release gate** (and confirm) to set it free. Stabled pets are
-  fully healed. If you capture a creature while your party is full it goes to
-  the first free bed; if every bed is full too, the capture is refused.
-- **No friendly fire:** there are two sides: hostiles (wild creatures, rivals
-  and rivals' pets) and tamers (every player and every player's pet). Nothing
-  can hurt or target its own side, and pets immediately drop a target that
-  someone else captures. Mossbacks are passive, which makes them good first
-  captures.
+  | Mossback | Tidal Wave | (Water) A wave crashes out towards where you aim: 2x damage to everything in a 7-unit cone, knocking them back and slowing them for 2s. |
+  | Emberfox | Fireball | (Fire) Hurls a fireball at the spot you aim at: it explodes for 2.5x damage around it and sets enemies burning. |
+  | Voltwing | Static Arc | (Lightning) Calls lightning down where you aim (1.8x), then it arcs on to 3 more enemies. |
+  | Gloomhorn | Cyclone | (Air) A howling cyclone at the spot for 4s: enemies inside are pulled in, slowed to half speed and battered. |
+  | Bloomling | Bubble Burst | (Water) A giant bubble floats to the spot and bursts: 1.8x damage around it and enemies are slowed to half speed for 3s. |
+  | Frostfinch | Frost Arrow | An icy arrow at the spot: 2x damage to anything close to where it lands, slowing them to half speed for 3s. |
+  | Quillpuff | Arrow Cone | Fires 7 arrows in a wide cone towards where you aim, each hitting for 1.1x damage. |
+  | Aurora Swift | Hunter's Mark | Shoots a red flare at the spot: every enemy within 3.5 units is marked for 6s, and your pets crit them with every hit. |
+  | Snowl | Piercing Shot | An arrow that flies 14 units towards where you aim, through every enemy in its path, 2.5x damage each. |
+  | Fangjackal | Leaping Challenge | (Taunt) Leaps to the spot, bites enemies there for 1x, taunts everything within 5 units onto itself and guards (40% less damage) for 4s. |
+  | Dunehound | Sanctuary | (Heal) Blesses the ground where you aim for 6s: allies inside heal 8% of their max health every second. |
+  | Cactipup | Guardian's Vow | (Taunt) Leaps to the spot, taunts every enemy within 6 units onto itself, takes 50% less damage for 5s and heals itself 25%. |
+  | Sunfennec | Aegis | (Armor) Raises a holy aegis over allies around the spot: pets take 35% less damage for 6s (players get a matching shield), and everyone gets a 15% shield. |
+  | Bogleon | Venom Lash | Yanks the enemy nearest where you aim next to the Bogleon with its tongue, hits it for 1.2x and poisons it (90% of its damage a second for 6s). |
+  | Mirelurk | Mud Trap | Hides a mud trap where you aim (up to 3). The first enemy to step on it springs it: enemies nearby are damaged and rooted for 2.5s. They are poisoned too, for 5s. |
+  | Wisp Gecko | Wither | Spits withering venom where you aim: 1.5x damage, poison for 6s, and the gecko and you heal for 40% of the hit. |
+  | Sporeguana | Spore Cloud | A cloud of toxic spores where you aim, for 6s: enemies inside are poisoned, and those it hits first deal 40% less damage for 6s. |
 
 ## Architecture
 The host is the authoritative server and also plays.

@@ -5,9 +5,10 @@
 [resource]
 script = ExtResource("1_ability")
 display_name = "Piercing Shot"
-description = "An arrow that flies 14 units straight through every enemy in its path, hitting each for 2.5x damage."
-cooldown = 7.0
-cast_range = 12.0
+description = "An arrow that flies 14 units towards where you aim, through every enemy in its path, 2.5x damage each."
+cooldown = 7
+cast_range = 12
+needs_target = false
 damage_multiplier = 2.5
 mode = "pierce"
 color = Color(0.75, 0.7, 1, 1)

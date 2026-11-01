@@ -5,13 +5,14 @@
 [resource]
 script = ExtResource("1_ability")
 display_name = "Meteor Shower"
-description = "Rains three blazing meteors around the target, each stunning what it hits for 1.5s."
-cooldown = 12.0
-cast_range = 10.0
+description = "(Fire) Rains three blazing meteors around the spot, each 2.2x damage and a 1.5s stun."
+cooldown = 12
+cast_range = 11
+needs_target = false
 damage_multiplier = 2.2
 radius = 2.8
 style = "meteor"
-color = Color(1, 0.45, 0.2, 1)
+color = Color(1, 0.5, 0.15, 1)
 stun_duration = 1.5
 count = 3
 spread = 3.0

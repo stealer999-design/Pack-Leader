@@ -5,10 +5,14 @@
 [resource]
 script = ExtResource("1_ability")
 display_name = "Fireball"
-description = "Hurls a fireball that explodes where it lands, burning everything around it."
-cooldown = 6.0
-cast_range = 10.0
+description = "(Fire) Hurls a fireball at the spot you aim at: it explodes for 2.5x damage around it and sets enemies burning."
+cooldown = 6
+cast_range = 11
+needs_target = false
 damage_multiplier = 2.5
 radius = 2.5
 style = "orb"
 color = Color(1, 0.5, 0.15, 1)
+dot_multiplier = 0.3
+burn_duration = 3.0
+burn_dps_multiplier = 0.0

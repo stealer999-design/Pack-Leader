@@ -5,10 +5,10 @@
 [resource]
 script = ExtResource("1_ability")
 display_name = "Wither"
-description = "Spits withering venom at a target: 1.5x damage, poison for 6s, and the gecko and you heal for 40% of the hit."
+description = "Spits withering venom where you aim: 1.5x damage, poison for 6s, and the gecko and you heal for 40% of the hit."
 cooldown = 7.0
-cast_range = 9.0
-needs_target = true
+cast_range = 10
+needs_target = false
 damage_multiplier = 1.5
 radius = 1.2
 mode = "spit"

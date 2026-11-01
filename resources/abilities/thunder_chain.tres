@@ -1,15 +1,16 @@
-[gd_resource type="Resource" script_class="ChainLightningAbility" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="SpellBlastAbility" load_steps=2 format=3]
 
-[ext_resource type="Script" path="res://scripts/abilities/chain_lightning_ability.gd" id="1_ability"]
+[ext_resource type="Script" path="res://scripts/abilities/spell_blast_ability.gd" id="1_ability"]
 
 [resource]
 script = ExtResource("1_ability")
 display_name = "Thunder Chain"
-description = "Lightning that jumps between up to 5 enemies."
-cooldown = 6.0
-cast_range = 12.0
-needs_target = true
-damage_multiplier = 2.5
-chain_count = 5.0
-chain_range = 6.0
-falloff = 0.8
+description = "(Lightning) A huge bolt strikes the spot for 2.2x, then lightning jumps on to 5 more enemies."
+cooldown = 9
+cast_range = 11
+needs_target = false
+damage_multiplier = 2.2
+radius = 2.0
+style = "lightning"
+color = Color(1, 0.95, 0.45, 1)
+chain = 5

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ArcherShotAbility" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/abilities/archer_shot_ability.gd" id="1_ability"]
+
+[resource]
+script = ExtResource("1_ability")
+display_name = "Hunter's Mark"
+description = "Shoots a red flare at the spot: every enemy within 3.5 units is marked for 6s, and your pets crit them with every hit."
+cooldown = 10
+cast_range = 12
+needs_target = false
+radius = 3.5
+mode = "mark"
+effect_duration = 6.0

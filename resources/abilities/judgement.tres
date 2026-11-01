@@ -5,12 +5,13 @@
 [resource]
 script = ExtResource("1_ability")
 display_name = "Judgement"
-description = "Smites a target for 2.5x damage and taunts it, heals itself for 20% and the most injured ally by the damage dealt."
-cooldown = 8.0
-cast_range = 3.0
-needs_target = true
-radius = 8.0
-smite_multiplier = 2.5
+description = "(Taunt) Leaps to the spot and smites every enemy there for 2x, taunting them, then heals itself 20% and the most injured ally by the damage dealt."
+cooldown = 9
+cast_range = 12
+needs_target = false
+radius = 4.0
+leap = true
+smite_area_multiplier = 2.0
 taunt = true
 heal_self = 0.2
-heal_from_smite = 1.0
+heal_from_smite = 0.5

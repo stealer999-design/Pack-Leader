@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SpellBlastAbility" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/abilities/spell_blast_ability.gd" id="1_ability"]
+
+[resource]
+script = ExtResource("1_ability")
+display_name = "Ball Lightning"
+description = "(Lightning) A crackling ball flies to the spot and bursts for 1.8x damage, then arcs on to 4 more enemies."
+cooldown = 8
+cast_range = 11
+needs_target = false
+damage_multiplier = 1.8
+radius = 2.5
+style = "orb"
+color = Color(1, 0.95, 0.45, 1)
+chain = 4

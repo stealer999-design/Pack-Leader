@@ -4,12 +4,13 @@
 
 [resource]
 script = ExtResource("1_ability")
-display_name = "Arrow Rain"
-description = "Rains 8 arrows down over the area around the target, each hitting what it lands near for 1.2x damage."
-cooldown = 10.0
-cast_range = 12.0
+display_name = "Rain of Arrows"
+description = "Rains 10 arrows down over the area where you aim, each hitting what it lands near for 1.2x damage."
+cooldown = 10
+cast_range = 12
+needs_target = false
 damage_multiplier = 1.2
-radius = 3.5
+radius = 3.8
 mode = "rain"
 color = Color(0.95, 0.9, 0.8, 1)
-arrows = 8
+arrows = 10
