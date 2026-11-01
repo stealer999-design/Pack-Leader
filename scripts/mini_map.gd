@@ -104,15 +104,20 @@ func _draw_map() -> void:
 	if world == null or world.layout.is_empty():
 		return
 	var layout := world.layout
-	var segments: Array = layout.segments
+	var v: Dictionary = layout.village
+	var frame: Transform3D = v.frame
+	var plaza: Rect2 = v.plaza
+	var village_corners := [Vector3(plaza.position.x, 0, plaza.position.y), Vector3(plaza.end.x, 0, plaza.end.y),
+			Vector3(plaza.position.x, 0, plaza.end.y), Vector3(plaza.end.x, 0, plaza.position.y)]
 	# Fit the view: the whole level, or a window centred on the player.
 	if expanded:
-		var bounds := Rect2(_to_map(Vector3(segments[0].center_x, 0, segments[0].z_start)), Vector2.ZERO)
-		for seg in segments:
-			bounds = bounds.merge(_segment_rect(seg))
-		if layout.has("village"):
-			var plaza: Rect2 = layout.village.plaza
-			bounds = bounds.expand(_to_map(Vector3(plaza.position.x - 1.0, 0, plaza.position.y)))
+		var bounds := Rect2(_to_map(layout.centerline[0]), Vector2.ZERO)
+		var points: PackedVector3Array = layout.centerline
+		for k in range(0, points.size(), 4):
+			var half := LevelGenerator.half_width(layout, k * LevelGenerator.SAMPLE_STEP)
+			bounds = bounds.expand(_to_map(points[k]) + Vector2(half, half)).expand(_to_map(points[k]) - Vector2(half, half))
+		for corner in village_corners:
+			bounds = bounds.expand(_to_map(frame * corner))
 		_scale = minf(_canvas.size.x / bounds.size.x, _canvas.size.y / bounds.size.y) * 0.96
 		_origin = bounds.get_center()
 	else:
@@ -121,28 +126,32 @@ func _draw_map() -> void:
 
 	var biome := world.biome()
 	var floor_color: Color = layout.floor_tint
-	for seg in segments:
+	# The winding path, a quad at a time: camp, path, arena.
+	var total: float = layout.total_length
+	var camp_end := LevelGenerator.START_LENGTH
+	var arena_start := total - LevelGenerator.ARENA_LENGTH
+	var step := 3.0
+	var along := 0.0
+	while along < total:
+		var next := minf(along + step, total)
 		var color := floor_color
-		if seg.kind == "start":
+		if next <= camp_end + 0.1:
 			color = biome.camp
-		elif seg.kind == "arena":
+		elif along >= arena_start - 0.1:
 			color = biome.arena
-		_draw_rect_map(_segment_rect(seg), color.darkened(0.15))
-	if layout.has("village"):
-		var v: Dictionary = layout.village
-		var half := LevelGenerator.VILLAGE_PATH_WIDTH * 0.5
-		var path_a := _to_map(Vector3(v.wall_x + 0.5, 0, v.z - half))
-		var path_b := _to_map(Vector3(v.path_end_x, 0, v.z + half))
-		_draw_rect_map(Rect2(path_a, Vector2.ZERO).expand(path_b), floor_color.darkened(0.15))
-		var plaza: Rect2 = v.plaza
-		var plaza_a := _to_map(Vector3(plaza.position.x, 0, plaza.position.y))
-		var plaza_b := _to_map(Vector3(plaza.end.x, 0, plaza.end.y))
-		_draw_rect_map(Rect2(plaza_a, Vector2.ZERO).expand(plaza_b), Color(biome.camp).lerp(Color(0.62, 0.58, 0.52), 0.6).darkened(0.15))
-		for house in v.houses:
-			var size: Vector3 = house.size
-			var center := _to_map(house.pos)
-			var half_size := Vector2(size.z, size.x) * 0.5
-			_draw_rect_map(Rect2(center - half_size, half_size * 2.0), Color(0.62, 0.25, 0.2))
+		var h0 := LevelGenerator.half_width(layout, along)
+		var h1 := LevelGenerator.half_width(layout, next)
+		_draw_poly_local([LevelGenerator.map_point(layout, Vector3(-h0, 0, -along)), LevelGenerator.map_point(layout, Vector3(h0, 0, -along)),
+				LevelGenerator.map_point(layout, Vector3(h1, 0, -next)), LevelGenerator.map_point(layout, Vector3(-h1, 0, -next))],
+				color.darkened(0.15))
+		along = next
+	# The village: its side path and square, on their straight stretch.
+	var half_path := LevelGenerator.VILLAGE_PATH_WIDTH * 0.5
+	_draw_rect_path(frame, Rect2(v.path_end_x, v.z - half_path, v.wall_x + 1.0 - v.path_end_x, half_path * 2.0), floor_color.darkened(0.15))
+	_draw_rect_path(frame, plaza, Color(biome.camp).lerp(Color(0.62, 0.58, 0.52), 0.6).darkened(0.15))
+	for house in v.houses:
+		var size: Vector3 = house.size
+		_draw_rect_path(frame, Rect2(house.pos.x - size.x * 0.5, house.pos.z - size.z * 0.5, size.x, size.z), Color(0.62, 0.25, 0.2))
 	for rock in layout.rocks:
 		var size: Vector3 = rock.size
 		var center := _to_map(rock.pos)
@@ -151,17 +160,16 @@ func _draw_map() -> void:
 
 	# Landmarks.
 	_draw_stable(_to_canvas(_to_map(layout.stable_point)))
-	if layout.has("village"):
-		_draw_stable(_to_canvas(_to_map(layout.village.stable_point)))
+	_draw_stable(_to_canvas(_to_map(frame * v.stable_point)))
 	var shop_at := _to_canvas(_to_map(layout.shop_point))
 	_canvas.draw_circle(shop_at, 6.5, Color(0.2, 0.15, 0.05))
 	_canvas.draw_circle(shop_at, 5.0, Color(1.0, 0.88, 0.2))
 	if layout.has("village"):
-		var bat_at := _to_canvas(_to_map(layout.village.bat_shop_point))
+		var bat_at := _to_canvas(_to_map(frame * v.bat_shop_point))
 		_canvas.draw_circle(bat_at, 6.5, Color(0.2, 0.05, 0.05))
 		_canvas.draw_circle(bat_at, 5.0, Color(0.95, 0.35, 0.3))
 		_canvas.draw_line(bat_at + Vector2(-3, 3), bat_at + Vector2(3, -3), Color(0.4, 0.25, 0.12), 2.5)  # a bat
-		var breeder_at := _to_canvas(_to_map(layout.village.breeder_point))
+		var breeder_at := _to_canvas(_to_map(frame * v.breeder_point))
 		_canvas.draw_circle(breeder_at, 6.5, Color(0.25, 0.05, 0.12))
 		_canvas.draw_circle(breeder_at, 5.0, Color(1.0, 0.55, 0.75))
 	var portal_at := _to_canvas(_to_map(layout.exit_point))
@@ -228,10 +236,18 @@ func _draw_stable(at: Vector2) -> void:
 			Color(0.85, 0.3, 0.25))
 
 
-func _segment_rect(seg: Dictionary) -> Rect2:
-	var a := _to_map(Vector3(seg.center_x - seg.width * 0.5, 0, seg.z_start))
-	var b := _to_map(Vector3(seg.center_x + seg.width * 0.5, 0, seg.z_end))
-	return Rect2(a, Vector2.ZERO).expand(b)
+## A polygon given by level-local corner points.
+func _draw_poly_local(corners: Array, color: Color) -> void:
+	var points := PackedVector2Array()
+	for corner: Vector3 in corners:
+		points.append(_to_canvas(_to_map(corner)))
+	_canvas.draw_colored_polygon(points, color)
+
+
+## A rectangle in path space (x, z), placed by `frame`.
+func _draw_rect_path(frame: Transform3D, rect: Rect2, color: Color) -> void:
+	_draw_poly_local([frame * Vector3(rect.position.x, 0, rect.position.y), frame * Vector3(rect.end.x, 0, rect.position.y),
+			frame * Vector3(rect.end.x, 0, rect.end.y), frame * Vector3(rect.position.x, 0, rect.end.y)], color)
 
 
 func _draw_rect_map(rect: Rect2, color: Color) -> void:

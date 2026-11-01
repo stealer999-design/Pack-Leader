@@ -1,7 +1,14 @@
 class_name LevelGenerator
-## Builds the layout of one level from a seed: a single path that always
-## heads the same way (local -Z), winding left and right, from a start camp
-## (with the stable) to the boss arena at the end.
+## Builds the layout of one level from a seed: a single winding path from a
+## start camp (with the stable) to the boss arena at the end, bending through
+## one to three smooth curves, with the village branching off around halfway.
+##
+## The level is first laid out "unrolled" in path space: x across the path,
+## z = -s where s is the distance along it. The path is then bent along a
+## curved centre line (straight at the camp, through the village stretch and
+## at the arena, with the curves in between), and every position is mapped
+## into the level's local space. The village sits on a straight stretch, so
+## it is mapped rigidly (its `frame`).
 ##
 ## Pure data and fully deterministic: every peer generates the same layout from
 ## the same seed, so only the seed has to be sent over the network.
@@ -14,7 +21,18 @@ const ARENA_WIDTH := 56.0
 const MIN_PATH_WIDTH := 24.0
 const MAX_PATH_WIDTH := 40.0
 const SHOP_CLEARANCE := 9.0  ## No rocks, creatures or crates this close to the lemonade stand.
-const MAX_SWAY := 20.0  ## How far the path may drift sideways from its start line.
+## The curves: each bends the path by MIN_TURN..MAX_TURN degrees along an arc
+## of radius MIN_RADIUS..MAX_RADIUS; the path never turns more than MAX_HEADING
+## degrees from its starting direction, so it keeps heading across the screen.
+const MIN_CURVES := 1
+const MAX_CURVES := 3
+const MIN_TURN := 35.0
+const MAX_TURN := 70.0
+const MIN_RADIUS := 34.0
+const MAX_RADIUS := 48.0
+const MAX_HEADING := 75.0
+const STRAIGHT_AROUND_VILLAGE := 24.0  ## The path is straight this far either side of the village.
+const SAMPLE_STEP := 1.0  ## Spacing of the centre-line samples.
 ## The village: a side path off the far wall of the middle segment, at a right
 ## angle (up the screen), leading to a square with the bat shop.
 const VILLAGE_PATH_WIDTH := 12.0
@@ -26,18 +44,24 @@ const RIVAL_NAMES := ["Kael", "Mira", "Dax", "Vesper", "Rook", "Sable", "Juno", 
 
 ## Returns:
 ## {
-##   segments: [{ z_start, z_end, center_x, width, kind }]   kind = "start" | "path" | "arena"
+##   segments: [{ z_start, z_end, center_x, width, kind }]   in path space (z = -s); kind = "start" | "path" | "arena"
+##   centerline: PackedVector3Array (level-local, one point every SAMPLE_STEP of s)
+##   headings: PackedFloat32Array (the path's yaw at each sample; 0 = local -Z)
+##   widths: [Vector2(s, width)] knots, smoothly interpolated (see half_width)
+##   shop_yaw: float, travel_point: Vector3
 ##   rocks: [{ pos: Vector3, size: Vector3 }]
 ##   creature_spots: [{ pos: Vector3, depth: float }]   depth = 0..1 along the path
 ##   crate_spots: [{ pos: Vector3, gold: bool }]
 ##   shop_point: Vector3, shop_side: float (-1 = the far wall, as seen by the camera)
-##   village: { segment: int, z: float, wall_x: float, path_end_x: float,
+##   village: { segment: int, s: float, frame: Transform3D (path space -> level-local, rigid),
+##              (in path space:) z: float, wall_x: float, path_end_x: float,
 ##              plaza: Rect2 (x, z), bat_shop_point, stable_point, breeder_point: Vector3, houses: [{ pos: Vector3, size: Vector3 }] }
 ##   start_point, stable_point, rival_point, exit_point: Vector3
 ##   total_length: float, rival_name: String, rival_species: int, floor_tint: Color,
 ##   biome: int (index into BiomeDB.BIOMES)
 ## }
-## All positions are in the level's local space (start at z = 0, end at z = -total_length).
+## Positions are in the level's local space unless noted (the village's are in
+## path space: map them with village.frame).
 static func generate(level_seed: int, level_number: int) -> Dictionary:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = level_seed
@@ -54,7 +78,6 @@ static func generate(level_seed: int, level_number: int) -> Dictionary:
 	var path_count := 5 + mini(level_number, 5)
 	var center := 0.0
 	for i in path_count:
-		center = clampf(center + rng.randf_range(-10.0, 10.0), -MAX_SWAY, MAX_SWAY)
 		var width := rng.randf_range(MIN_PATH_WIDTH, MAX_PATH_WIDTH)
 		var seg := {"z_start": z, "z_end": z - SEGMENT_LENGTH, "center_x": center, "width": width, "kind": "path"}
 		segments.append(seg)
@@ -86,7 +109,7 @@ static func generate(level_seed: int, level_number: int) -> Dictionary:
 	spots.assign(spots.filter(clear_of_village))
 	crates.assign(crates.filter(clear_of_village))
 
-	var arena_center := clampf(center, -12.0, 12.0)
+	var arena_center := 0.0
 	var arena := {"z_start": z, "z_end": z - ARENA_LENGTH, "center_x": arena_center, "width": ARENA_WIDTH, "kind": "arena"}
 	segments.append(arena)
 	for corner in [Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1)]:
@@ -96,19 +119,50 @@ static func generate(level_seed: int, level_number: int) -> Dictionary:
 		})
 	z -= ARENA_LENGTH
 
+	# Bend the unrolled path: build the centre line, then map everything onto it.
+	var total := -z
+	var widths: Array[Vector2] = [Vector2(0.0, START_WIDTH), Vector2(START_LENGTH - 4.0, START_WIDTH)]
+	for seg: Dictionary in segments:
+		if seg.kind == "path":
+			widths.append(Vector2(-(seg.z_start + seg.z_end) * 0.5, seg.width))
+	widths.append(Vector2(total - ARENA_LENGTH + 4.0, ARENA_WIDTH))
+	widths.append(Vector2(total, ARENA_WIDTH))
+	var village_s: float = -village.z
+	var line := {}
+	for attempt in 16:
+		line = _centerline(rng, total, village_s, attempt >= 12)
+		var trial := {"centerline": line.points, "headings": line.headings, "widths": widths, "total_length": total}
+		village["frame"] = _rigid_frame(trial, village_s)
+		if not _hits_village(trial, village, village_s):
+			break
+	var bent := {"centerline": line.points, "headings": line.headings, "widths": widths, "total_length": total}
+	village["s"] = village_s
+	# Everything unrolled stays inside the path's (now smoothly varying) width.
+	for list in [rocks, spots, crates]:
+		for item: Dictionary in list:
+			var item_s: float = -item.pos.z
+			var half := half_width(bent, item_s) - 2.0
+			item.pos = map_point(bent, Vector3(clampf(item.pos.x, -half, half), 0.0, item.pos.z))
+	var shop_s: float = -shop_point.z
+
 	return {
 		"segments": segments,
+		"centerline": line.points,
+		"headings": line.headings,
+		"widths": widths,
+		"shop_yaw": heading_at(bent, shop_s),
 		"rocks": rocks,
 		"creature_spots": spots,
 		"crate_spots": crates,
-		"shop_point": shop_point,
+		"shop_point": map_point(bent, shop_point),
 		"shop_side": shop_side,
 		"village": village,
-		"start_point": Vector3(0.0, 0.0, -14.0),
-		"stable_point": Vector3(-8.0, 0.0, -16.0),
-		"rival_point": Vector3(arena_center, 0.0, arena.z_start - ARENA_LENGTH * 0.55),
-		"exit_point": Vector3(arena_center, 0.0, z + 4.0),
-		"total_length": -z,
+		"start_point": map_point(bent, Vector3(0.0, 0.0, -14.0)),
+		"stable_point": map_point(bent, Vector3(-8.0, 0.0, -16.0)),
+		"rival_point": map_point(bent, Vector3(arena_center, 0.0, arena.z_start - ARENA_LENGTH * 0.55)),
+		"exit_point": map_point(bent, Vector3(arena_center, 0.0, z + 4.0)),
+		"travel_point": map_point(bent, Vector3(arena_center - 4.5, 0.0, z + 4.0)),
+		"total_length": total,
 		"rival_name": RIVAL_NAMES[rng.randi() % RIVAL_NAMES.size()],
 		"rival_species": biome.species[rng.randi() % biome.species.size()],
 		"floor_tint": Color.from_hsv(rng.randf_range(biome.floor_hue.x, biome.floor_hue.y),
@@ -117,12 +171,165 @@ static func generate(level_seed: int, level_number: int) -> Dictionary:
 	}
 
 
-## The segment containing local z, or the nearest one.
-static func segment_at(layout: Dictionary, local_z: float) -> Dictionary:
-	for seg: Dictionary in layout.segments:
-		if local_z <= seg.z_start and local_z >= seg.z_end:
-			return seg
-	return layout.segments[0] if local_z > 0.0 else layout.segments[-1]
+## The centre line: straight through the camp, the village stretch and the
+## arena, bending through 1-3 arcs elsewhere (curving alternately left and
+## right, never turning more than MAX_HEADING from the start). Returns
+## {points: PackedVector3Array, headings: PackedFloat32Array}, a sample every
+## SAMPLE_STEP. `gentle`: a last-resort, flatter path (if the village collides).
+static func _centerline(rng: RandomNumberGenerator, total: float, village_s: float, gentle: bool) -> Dictionary:
+	# Where curves may go: before the village, and after it (before the arena).
+	var ranges := [
+		Vector2(START_LENGTH + 6.0, village_s - STRAIGHT_AROUND_VILLAGE),
+		Vector2(village_s + STRAIGHT_AROUND_VILLAGE, total - ARENA_LENGTH - 6.0),
+	]
+	var count := rng.randi_range(MIN_CURVES, MAX_CURVES)
+	# Share the curves out between the two stretches (the longer one gets more).
+	var per_range := [0, 0]
+	for i in count:
+		var room := [ranges[0].y - ranges[0].x - per_range[0] * 45.0, ranges[1].y - ranges[1].x - per_range[1] * 45.0]
+		per_range[0 if room[0] >= room[1] else 1] += 1
+	var arcs: Array[Dictionary] = []
+	var heading := 0.0
+	var turn_sign := 1.0 if rng.randf() < 0.5 else -1.0
+	for r in 2:
+		var span: Vector2 = ranges[r]
+		var n: int = per_range[r]
+		if n == 0 or span.y - span.x < 20.0:
+			continue
+		var slot := (span.y - span.x) / n
+		for k in n:
+			var radius := rng.randf_range(MIN_RADIUS, MAX_RADIUS)
+			var turn := deg_to_rad(rng.randf_range(MIN_TURN, MAX_TURN) * (0.6 if gentle else 1.0))
+			var length := minf(radius * turn, slot - 4.0)
+			if length < 12.0:
+				continue
+			turn = length / radius
+			var dir := turn_sign
+			if absf(heading + dir * turn) > deg_to_rad(MAX_HEADING):
+				dir = -dir
+			heading += dir * turn
+			turn_sign = -dir  # the next curve bends the other way: an S
+			var start := span.x + slot * k + rng.randf_range(0.0, maxf(slot - length - 2.0, 0.0))
+			arcs.append({"from": start, "to": start + length, "rate": dir * turn / length})
+	var points := PackedVector3Array()
+	var headings := PackedFloat32Array()
+	var at := Vector3.ZERO
+	var yaw := 0.0
+	var steps := ceili(total / SAMPLE_STEP)
+	for i in steps + 1:
+		var s := i * SAMPLE_STEP
+		points.append(at)
+		headings.append(yaw)
+		# Advance one step: the heading turns while inside an arc.
+		var mid := s + SAMPLE_STEP * 0.5
+		for arc in arcs:
+			if mid >= arc.from and mid < arc.to:
+				yaw += arc.rate * SAMPLE_STEP
+		at += _forward(yaw) * SAMPLE_STEP
+	return {"points": points, "headings": headings}
+
+
+## The path's forward direction for a heading (0 = local -Z; positive turns left).
+static func _forward(yaw: float) -> Vector3:
+	return Vector3(-sin(yaw), 0.0, -cos(yaw))
+
+
+## A point on the centre line, `s` along the path.
+static func point_at(layout: Dictionary, s: float) -> Vector3:
+	var points: PackedVector3Array = layout.centerline
+	var f := clampf(s / SAMPLE_STEP, 0.0, points.size() - 1.0)
+	var i := mini(floori(f), points.size() - 2)
+	return points[i].lerp(points[i + 1], f - i)
+
+
+## The path's heading (yaw) `s` along it.
+static func heading_at(layout: Dictionary, s: float) -> float:
+	var headings: PackedFloat32Array = layout.headings
+	var f := clampf(s / SAMPLE_STEP, 0.0, headings.size() - 1.0)
+	var i := mini(floori(f), headings.size() - 2)
+	return lerpf(headings[i], headings[i + 1], f - i)
+
+
+## Half the path's width `s` along it (the width eases smoothly between knots).
+static func half_width(layout: Dictionary, s: float) -> float:
+	var knots: Array = layout.widths
+	if s <= knots[0].x:
+		return knots[0].y * 0.5
+	for i in knots.size() - 1:
+		var a: Vector2 = knots[i]
+		var b: Vector2 = knots[i + 1]
+		if s <= b.x:
+			return lerpf(a.y, b.y, smoothstep(a.x, b.x, s)) * 0.5
+	return knots[-1].y * 0.5
+
+
+## A path-space point (x across, z = -s) mapped onto the bent path.
+static func map_point(layout: Dictionary, p: Vector3) -> Vector3:
+	var s := -p.z
+	var forward := _forward(heading_at(layout, s))
+	var across := forward.cross(Vector3.UP)  # path space +x
+	var total: float = layout.total_length
+	# Beyond either end, carry straight on.
+	var beyond := 0.0
+	if s < 0.0:
+		beyond = s
+	elif s > total:
+		beyond = s - total
+	return point_at(layout, s) + forward * beyond + across * p.x + Vector3.UP * p.y
+
+
+## The level-local point back to path space: Vector2(s, x) of the nearest
+## point of the centre line.
+static func project(layout: Dictionary, local_point: Vector3) -> Vector2:
+	var points: PackedVector3Array = layout.centerline
+	var best := 0
+	var best_d := INF
+	var p := Vector2(local_point.x, local_point.z)
+	for i in range(0, points.size(), 4):  # coarse, then refine around the best
+		var d := p.distance_squared_to(Vector2(points[i].x, points[i].z))
+		if d < best_d:
+			best_d = d
+			best = i
+	for i in range(maxi(best - 4, 0), mini(best + 5, points.size())):
+		var d := p.distance_squared_to(Vector2(points[i].x, points[i].z))
+		if d < best_d:
+			best_d = d
+			best = i
+	var s := best * SAMPLE_STEP
+	var x := 0.0
+	for pass_i in 3:  # slide along to where the point is square across the path
+		var forward := _forward(heading_at(layout, s))
+		var offset := local_point - point_at(layout, s)
+		offset.y = 0.0
+		s += offset.dot(forward)
+		x = offset.dot(forward.cross(Vector3.UP))
+	return Vector2(s, x)
+
+
+## The rigid transform from path space to level-local for a straight stretch
+## around `s` (where the village is).
+static func _rigid_frame(layout: Dictionary, s: float) -> Transform3D:
+	var forward := _forward(heading_at(layout, s))
+	var across := forward.cross(Vector3.UP)
+	var basis := Basis(across, Vector3.UP, -forward)
+	return Transform3D(basis, point_at(layout, s) - forward * s)
+
+
+## True if the path (away from the village) runs into the village's side path or square.
+static func _hits_village(layout: Dictionary, village: Dictionary, village_s: float) -> bool:
+	var to_village: Transform3D = village.frame.affine_inverse()
+	var plaza: Rect2 = village.plaza
+	var side := Rect2(village.path_end_x, village.z - VILLAGE_PATH_WIDTH * 0.5, village.wall_x - village.path_end_x, VILLAGE_PATH_WIDTH)
+	var points: PackedVector3Array = layout.centerline
+	for i in range(0, points.size(), 2):
+		var s := i * SAMPLE_STEP
+		if absf(s - village_s) < STRAIGHT_AROUND_VILLAGE + 10.0:
+			continue
+		var q := to_village * points[i]
+		var margin := half_width(layout, s) + 4.0
+		if plaza.grow(margin).has_point(Vector2(q.x, q.z)) or side.grow(margin).has_point(Vector2(q.x, q.z)):
+			return true
+	return false
 
 
 ## The village's side path and square, from its segment.
@@ -156,7 +363,8 @@ static func in_village(layout: Dictionary, local_point: Vector3, margin := 0.0) 
 	if not layout.has("village"):
 		return false
 	var v: Dictionary = layout.village
-	var point := Vector2(local_point.x, local_point.z)
+	var q: Vector3 = v.frame.affine_inverse() * local_point
+	var point := Vector2(q.x, q.z)
 	var path := Rect2(v.path_end_x, v.z - VILLAGE_PATH_WIDTH * 0.5, v.wall_x - v.path_end_x + 2.0, VILLAGE_PATH_WIDTH)
 	return path.grow(-margin).has_point(point) or (v.plaza as Rect2).grow(-margin).has_point(point)
 
@@ -165,12 +373,17 @@ static func in_village(layout: Dictionary, local_point: Vector3, margin := 0.0) 
 static func clamp_to_floor(layout: Dictionary, local_point: Vector3, margin := 1.0) -> Vector3:
 	if in_village(layout, local_point, margin):
 		return local_point
-	var p := local_point
-	p.z = clampf(p.z, -layout.total_length + margin, -margin)
-	var seg := segment_at(layout, p.z)
-	var half: float = seg.width * 0.5 - margin
-	p.x = clampf(p.x, seg.center_x - half, seg.center_x + half)
-	return p
+	var sx := project(layout, local_point)
+	var s := clampf(sx.x, margin, layout.total_length - margin)
+	var half := half_width(layout, s) - margin
+	var out := map_point(layout, Vector3(clampf(sx.y, -half, half), 0.0, -s))
+	out.y = local_point.y
+	return out
+
+
+## How far along the path a local point is (0 at the camp's back wall, 1 at the arena's end).
+static func progress(layout: Dictionary, local_point: Vector3) -> float:
+	return clampf(project(layout, local_point).x / layout.total_length, 0.0, 1.0)
 
 
 static func _add_rocks(rng: RandomNumberGenerator, seg: Dictionary, rocks: Array[Dictionary]) -> void:

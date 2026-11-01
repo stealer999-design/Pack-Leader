@@ -68,7 +68,6 @@ var furthest_level := 1
 ## The travel portal at the end of every level (next to the exit portal): it
 ## is always open, and stepping into it opens the travel window (see HUD).
 var travel_portal: Node3D
-const TRAVEL_OFFSET := Vector3(-4.5, 0.0, 0.0)  ## From the exit portal, in the level's own axes.
 
 var layout := {}
 var level_number: int:
@@ -301,7 +300,7 @@ func creature_near(point: Vector3, tolerance := 0.8) -> Creature:
 func is_near_stable(point: Vector3) -> bool:
 	if _flat_distance(point, stable.global_position) <= stable_range:
 		return true
-	var village_stable := level_root.get_node_or_null("VillageStable") as Node3D
+	var village_stable := level_root.get_node_or_null("Village/VillageStable") as Node3D
 	return village_stable != null and _flat_distance(point, village_stable.global_position) <= stable_range
 
 
@@ -310,7 +309,7 @@ func shop_position() -> Vector3:
 
 
 func breeder_position() -> Vector3:
-	return level_root.to_global(layout.village.breeder_point) if not layout.is_empty() else Vector3.INF
+	return level_root.to_global(layout.village.frame * layout.village.breeder_point) if not layout.is_empty() else Vector3.INF
 
 
 func is_near_breeder(point: Vector3) -> bool:
@@ -318,7 +317,7 @@ func is_near_breeder(point: Vector3) -> bool:
 
 
 func bat_shop_position() -> Vector3:
-	return level_root.to_global(layout.village.bat_shop_point) if not layout.is_empty() else Vector3.INF
+	return level_root.to_global(layout.village.frame * layout.village.bat_shop_point) if not layout.is_empty() else Vector3.INF
 
 
 func is_near_bat_shop(point: Vector3) -> bool:
@@ -344,7 +343,7 @@ func exit_point() -> Vector3:
 
 
 func travel_point() -> Vector3:
-	return clamp_to_level(level_root.to_global(layout.exit_point + TRAVEL_OFFSET)) if not layout.is_empty() else Vector3.INF
+	return clamp_to_level(level_root.to_global(layout.travel_point)) if not layout.is_empty() else Vector3.INF
 
 
 func is_near_travel_portal(point: Vector3) -> bool:
@@ -401,7 +400,7 @@ func _travel_core_material() -> StandardMaterial3D:
 func level_progress(point: Vector3) -> float:
 	if layout.is_empty():
 		return 0.0
-	return clampf(-level_root.to_local(point).z / layout.total_length, 0.0, 1.0)
+	return LevelGenerator.progress(layout, level_root.to_local(point))
 
 
 ## Server only: spawn slots at the start camp follow join order so players never overlap.
@@ -767,29 +766,7 @@ func _build_level() -> void:
 	var arena_mat := GroundTextures.material("flagstone", level_biome.arena)
 	var wall_mat := _material(level_biome.wall)
 
-	var segments: Array = layout.segments
-	for i in segments.size():
-		var seg: Dictionary = segments[i]
-		var length: float = seg.z_start - seg.z_end
-		var mid_z: float = (seg.z_start + seg.z_end) * 0.5
-		var mat: Material = {"start": camp_mat, "arena": arena_mat}.get(seg.kind, floor_mat)
-		_add_box(Vector3(seg.center_x, -0.5, mid_z), Vector3(seg.width, 1.0, length + 0.5), mat)
-		for side in [-1.0, 1.0]:
-			var wall_x: float = seg.center_x + side * (seg.width * 0.5 + 0.5)
-			if side < 0.0 and i == layout.village.segment:
-				# A doorway in the far wall: the way into the village.
-				var door_half := LevelGenerator.VILLAGE_PATH_WIDTH * 0.5
-				var door_z: float = layout.village.z
-				_add_wall_z(wall_x, seg.z_start, door_z + door_half, wall_mat)
-				_add_wall_z(wall_x, door_z - door_half, seg.z_end, wall_mat)
-			else:
-				_add_box(Vector3(wall_x, 1.0, mid_z), Vector3(1.0, 2.0, length), wall_mat, side > 0.0)
-		if i > 0:
-			_add_join_walls(segments[i - 1], seg, wall_mat)
-	var first: Dictionary = segments[0]
-	var last: Dictionary = segments[-1]
-	_add_box(Vector3(first.center_x, 1.0, first.z_start + 0.5), Vector3(first.width + 2.0, 2.0, 1.0), wall_mat)
-	_add_box(Vector3(last.center_x, 1.0, last.z_end - 0.5), Vector3(last.width + 2.0, 2.0, 1.0), wall_mat)
+	_build_path(floor_mat, camp_mat, arena_mat, wall_mat)
 
 	# Obstacles: copies of the biome's four premade trees and rocks, each turned
 	# and sized differently. Picked from the level seed, so every peer agrees.
@@ -805,7 +782,17 @@ func _build_level() -> void:
 		level_root.add_child(obstacle)
 
 	_build_shop()
+	# The village is built in path space, then set on its straight stretch.
+	var before := level_root.get_child_count()
 	_build_village(level_biome, wall_mat)
+	var village_root := Node3D.new()
+	village_root.name = "Village"
+	village_root.transform = layout.village.frame
+	var built := level_root.get_children().slice(before)
+	level_root.add_child(village_root)
+	for node in built:
+		level_root.remove_child(node)
+		village_root.add_child(node)
 	stable.global_position = level_root.to_global(layout.stable_point)
 	stable.rotation.y = PATH_YAW + PI / 2.0
 	portal.global_position = level_root.to_global(layout.exit_point)
@@ -817,7 +804,7 @@ func _build_level() -> void:
 ## The lemonade stand halfway along the path: counter, striped awning, potion
 ## bottles and the vendor. Its front faces the middle of the path.
 func _build_shop() -> void:
-	var shop := _build_stall("LemonadeStand", layout.shop_point, layout.shop_side * PI / 2.0,
+	var shop := _build_stall("LemonadeStand", layout.shop_point, layout.shop_side * PI / 2.0 + layout.shop_yaw,
 			Color(1.0, 0.85, 0.2), "Lemonade Stand\nPotions", Color(1.0, 0.9, 0.4))
 	var potion_mat := _material(Color(0.95, 0.25, 0.35))
 	potion_mat.emission_enabled = true
@@ -1093,16 +1080,119 @@ func _add_mesh(parent: Node3D, pos: Vector3, size: Vector3, mat: Material) -> Me
 	return mesh
 
 
-## Closes the gaps where two path segments of different width/offset meet.
-func _add_join_walls(prev: Dictionary, next: Dictionary, mat: Material) -> void:
-	var z: float = next.z_start
-	for side in [-1.0, 1.0]:
-		var a: float = prev.center_x + side * prev.width * 0.5
-		var b: float = next.center_x + side * next.width * 0.5
-		var lo := minf(a, b) - (1.0 if side < 0.0 else 0.0)
-		var hi := maxf(a, b) + (1.0 if side > 0.0 else 0.0)
-		if hi - lo > 0.05:
-			_add_box(Vector3((lo + hi) * 0.5, 1.0, z), Vector3(hi - lo, 2.0, 1.0), mat, side > 0.0)
+## The winding path: a floor ribbon (camp dirt, the biome's ground, arena
+## flagstones) and a wall along each edge, following the bent centre line, with
+## a doorway in the far wall into the village and walls across both ends.
+func _build_path(floor_mat: Material, camp_mat: Material, arena_mat: Material, wall_mat: StandardMaterial3D) -> void:
+	var total: float = layout.total_length
+	var camp_end := LevelGenerator.START_LENGTH
+	var arena_start := total - LevelGenerator.ARENA_LENGTH
+	_add_floor_ribbon(0.0, camp_end, camp_mat)
+	_add_floor_ribbon(camp_end, arena_start, floor_mat)
+	_add_floor_ribbon(arena_start, total, arena_mat)
+	wall_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	var door_half := LevelGenerator.VILLAGE_PATH_WIDTH * 0.5
+	var door_s: float = layout.village.s
+	_add_wall_strip(-1.0, 0.0, door_s - door_half, wall_mat)
+	_add_wall_strip(-1.0, door_s + door_half, total, wall_mat)
+	_add_wall_strip(1.0, 0.0, total, wall_mat, true)
+	for end in [[0.0, 0.5], [total, -0.5]]:
+		var at := LevelGenerator.map_point(layout, Vector3(0.0, 1.0, -end[0] + end[1]))
+		var cap := _add_box(at, Vector3(LevelGenerator.half_width(layout, end[0]) * 2.0 + 2.0, 2.0, 1.0), wall_mat)
+		cap.rotation.y = LevelGenerator.heading_at(layout, end[0])
+
+
+## Floor from `s_from` to `s_to` along the path: a ribbon at ground level with
+## trimesh collision.
+func _add_floor_ribbon(s_from: float, s_to: float, mat: Material) -> void:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var rows := _ribbon_rows(s_from, s_to)
+	for i in rows.size() - 1:
+		var a: Array = rows[i]
+		var b: Array = rows[i + 1]
+		_up_quad(st, a[0], a[1], b[1], b[0])
+	var mesh := st.commit()
+	mesh.surface_set_material(0, mat)
+	_add_solid(mesh, mesh)
+
+
+## A wall along one edge of the path (`side` -1 = the far edge, +1 = the
+## camera's), 1 unit thick and 2 tall; a `low` one is drawn knee-high so it
+## never hides anyone, but still blocks at full height.
+func _add_wall_strip(side: float, s_from: float, s_to: float, mat: Material, low := false) -> void:
+	if s_to - s_from < 0.5:
+		return
+	var visual := _wall_mesh(side, s_from, s_to, LOW_WALL_HEIGHT if low else 2.0, mat)
+	var solid := visual if not low else _wall_mesh(side, s_from, s_to, 2.0, mat)
+	_add_solid(visual, solid)
+
+
+func _wall_mesh(side: float, s_from: float, s_to: float, height: float, mat: Material) -> ArrayMesh:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var prev := []
+	var s := s_from
+	while true:
+		var half := LevelGenerator.half_width(layout, s)
+		var inner := LevelGenerator.map_point(layout, Vector3(side * half, 0.0, -s))
+		var outer := LevelGenerator.map_point(layout, Vector3(side * (half + 1.0), 0.0, -s))
+		var row := [inner, outer, inner + Vector3.UP * height, outer + Vector3.UP * height]
+		if not prev.is_empty():
+			_quad(st, prev[0], row[0], row[2], prev[2])  # inner face
+			_quad(st, prev[1], row[1], row[3], prev[3])  # outer face
+			_quad(st, prev[2], row[2], row[3], prev[3])  # top
+		prev = row
+		if s >= s_to:
+			break
+		s = minf(s + 2.0, s_to)
+	st.generate_normals()
+	var mesh := st.commit()
+	mesh.surface_set_material(0, mat)
+	return mesh
+
+
+## Rows of [left edge, right edge] points every 1.5 units from `s_from` to `s_to`.
+func _ribbon_rows(s_from: float, s_to: float) -> Array:
+	var rows := []
+	var s := s_from
+	while true:
+		var half := LevelGenerator.half_width(layout, s) + 0.6  # tucked under the walls
+		rows.append([LevelGenerator.map_point(layout, Vector3(-half, 0.0, -s)),
+				LevelGenerator.map_point(layout, Vector3(half, 0.0, -s))])
+		if s >= s_to:
+			break
+		s = minf(s + 1.5, s_to)
+	return rows
+
+
+## A quad facing up (wound so its front is seen from above), with up normals.
+func _up_quad(st: SurfaceTool, a: Vector3, b: Vector3, c: Vector3, d: Vector3) -> void:
+	for tri in [[a, b, c], [a, c, d]]:
+		if (tri[1] - tri[0]).cross(tri[2] - tri[0]).y > 0.0:
+			tri = [tri[0], tri[2], tri[1]]
+		for v in tri:
+			st.set_normal(Vector3.UP)
+			st.add_vertex(v)
+
+
+func _quad(st: SurfaceTool, a: Vector3, b: Vector3, c: Vector3, d: Vector3) -> void:
+	for v in [a, b, c, a, c, d]:
+		st.add_vertex(v)
+
+
+## A static body in level space showing `visual`, solid where `solid` is.
+func _add_solid(visual: ArrayMesh, solid: ArrayMesh) -> void:
+	var body := StaticBody3D.new()
+	var mesh := MeshInstance3D.new()
+	mesh.mesh = visual
+	body.add_child(mesh)
+	var shape := CollisionShape3D.new()
+	var trimesh := solid.create_trimesh_shape()
+	trimesh.backface_collision = true
+	shape.shape = trimesh
+	body.add_child(shape)
+	level_root.add_child(body)
 
 
 ## A solid box in level space. A `low` box (the walls on the camera's side of the

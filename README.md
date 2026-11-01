@@ -88,7 +88,9 @@ played in the browser".
 | Space | Dash (brief invulnerability) |
 
 - **Levels:** each level is one long, wide, randomly generated path that
-  always runs from left to right across the screen, winding up and down, with rocks and packs of
+  heads across the screen from left to right and winds through **one to three
+  smooth curves** (S-bends, alternating left and right), its width easing
+  wider and narrower along the way, with walls following its edges, rocks and packs of
   wild creatures that get tougher the further you go. It starts at a camp with
   the stable and ends in a boss arena. Defeat the boss and the **Next level**
   portal opens at the far end; step in and everyone moves on to the next,
@@ -145,7 +147,8 @@ played in the browser".
 - **Your tamer** is a little person with a bat, drawn in your colour (hair
   colour varies by player). They walk with swinging arms and legs; attacking
   swings the bat, and every hit pops a ring of spinning stars.
-- **Village:** halfway along every level, a side path leads up the screen
+- **Village:** around halfway along every level (on a straight stretch of the
+  winding path), a side path leads up the screen
   (through a doorway in the far wall) to a small village square: a few houses,
   a second **stable** and the **Bat Shop**. No wild creatures are placed
   there. At the Bat Shop (F) you can upgrade your Wooden Bat (12 damage) to a
@@ -400,7 +403,7 @@ The host is the authoritative server and also plays.
 | `scripts/network.gd` | Autoload `Network`: WebSocket host/join, solo mode, player registry (names, colours) |
 | `scenes/main.tscn` + `scripts/main.gd` | Menu + `LevelSpawner` that replicates the world to joining clients |
 | `scenes/world.tscn` + `scripts/world.gd` | Level flow (start → rival → portal → next level), level geometry, spawners, XP sharing, FX |
-| `scripts/level_generator.gd` | Deterministic layout of a level from a seed: path segments, rocks, creature spots, boss, exit |
+| `scripts/level_generator.gd` | Deterministic layout of a level from a seed: laid out unrolled, then bent along a curved centre line (1-3 curves); rocks, creature spots, boss, exit; mapping between path space and the level |
 | `scripts/boss_models.gd` | The bosses' models (rival tamer, Glacier Titan, Sand Wyrm, Bog Witch, Howard the Zombie Fish) and what animates |
 | `scripts/biome_db.gd` | The biomes levels cycle through: their creatures, boss and colours |
 | `scenes/rival.tscn` + `scripts/rival.gd` | The AI rival tamer boss (and the base class for every boss) |
