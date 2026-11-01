@@ -271,6 +271,7 @@ func _refresh_pets() -> void:
 		var pet := player.world.get_party_pet(player.peer_id, i)
 		row.portrait.pet = {"species": pet.species_index, "level": pet.level, "fainted": pet.fainted} if pet else {}
 		row.collar.locked = pet == null
+		row.collar.pet_species = pet.species if pet else null
 		row.collar.item = pet.collar if pet else {}
 		if pet == null:
 			row.label.text = "Empty party slot"
@@ -279,7 +280,7 @@ func _refresh_pets() -> void:
 			row.label.text = "No collar.\nDrag one here from the bag."
 			row.label.modulate = UiTheme.TEXT_DIM
 		else:
-			row.label.text = "%s\n%s" % [ItemDB.display_name(pet.collar), ItemDB.effect(pet.collar)]
+			row.label.text = "%s\n%s" % [ItemDB.display_name(pet.collar), ItemDB.effect(pet.collar).replace("This pet: ", "")]
 			row.label.modulate = ItemDB.rarity_color(pet.collar).lightened(0.3)
 
 
@@ -306,7 +307,7 @@ func _on_slot_clicked(item_slot: ItemSlot, double: bool) -> void:
 	if double and _selected and _selected.item.get("type", "") != "bat":
 		# A shortcut: wear it / take it off.
 		if _selected.bag_index >= 0 and ItemDB.is_collar(_selected.item):
-			var pet_slot := _collar_target()
+			var pet_slot := _collar_target(_selected.item)
 			if pet_slot >= 0:
 				player.request_equip_collar.rpc_id(1, _selected.bag_index, pet_slot)
 		elif _selected.bag_index >= 0:
@@ -344,14 +345,17 @@ func _on_dropped(from: ItemSlot, to: ItemSlot) -> void:
 		player.request_unequip.rpc_id(1, from.equip_slot, to.bag_index)
 
 
-## The party pet a double-clicked collar goes on: the first without one, else the first pet.
-func _collar_target() -> int:
+## The party pet a double-clicked collar goes on: the first it fits without a
+## collar, else the first it fits.
+func _collar_target(item: Dictionary) -> int:
 	var first := -1
 	for i in Player.MAX_PARTY:
 		var pet := player.world.get_party_pet(player.peer_id, i)
-		if pet and pet.collar.is_empty():
+		if pet == null or not ItemDB.fits_pet(item, pet.species):
+			continue
+		if pet.collar.is_empty():
 			return i
-		if pet and first < 0:
+		if first < 0:
 			first = i
 	return first
 
@@ -464,6 +468,7 @@ class ItemSlot:
 	var bag_index := -1
 	var is_bin := false  ## The throw-away bin.
 	var pet_slot := -1  ## For a pet's collar slot: the party slot of that pet.
+	var pet_species: CreatureSpecies  ## ...and its species (class collars must match its class).
 	var locked := false:  ## A collar slot with no pet in that party slot.
 		set(v):
 			if v != locked:
@@ -520,7 +525,7 @@ class ItemSlot:
 				# Into the bag: anything from the bag; worn gear unless a misfit is in the way.
 				ok = from.bag_index >= 0 or item.is_empty() or ItemDB.fits(item, from.equip_slot)
 			elif pet_slot >= 0:
-				ok = not locked and from.bag_index >= 0 and ItemDB.is_collar(from.item)
+				ok = not locked and from.bag_index >= 0 and ItemDB.fits_pet(from.item, pet_species)
 			elif equip_slot != "" and equip_slot != "weapon":
 				ok = ItemDB.fits(from.item, equip_slot)
 		if ok != _drop_hover:
@@ -607,9 +612,11 @@ class ItemSlot:
 		if equip_slot == "" or equip_slot == "weapon" or not get_viewport().gui_is_dragging():
 			return false
 		var data = get_viewport().gui_get_drag_data()
-		return data is Dictionary and data.has("item_slot") and data.item_slot != self \
-				and ItemDB.fits(data.item_slot.item, equip_slot) and not locked \
-				and (pet_slot < 0 or data.item_slot.bag_index >= 0)
+		if not (data is Dictionary and data.has("item_slot") and data.item_slot != self) or locked:
+			return false
+		if pet_slot >= 0:
+			return data.item_slot.bag_index >= 0 and ItemDB.fits_pet(data.item_slot.item, pet_species)
+		return ItemDB.fits(data.item_slot.item, equip_slot)
 
 	func _tooltip() -> String:
 		if is_bin:

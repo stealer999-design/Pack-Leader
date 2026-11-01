@@ -675,7 +675,7 @@ static func _clean_pet(entry) -> Dictionary:
 		"skills": PetSkills.clean_ranks(entry.get("skills", []), level),
 	}
 	var collar := ItemDB.clean(entry.get("collar", {}))
-	if ItemDB.is_collar(collar):
+	if ItemDB.fits_pet(collar, SpeciesDB.get_species(species)):
 		pet.collar = collar
 	return pet
 
@@ -953,6 +953,10 @@ func request_equip_collar(index: int, party_slot: int) -> void:
 	if pet == null:
 		return
 	var item := bag[index]
+	if not ItemDB.fits_pet(item, pet.species):
+		world.tell(peer_id, "Only %s can wear a %s collar." % [ItemDB.PET_GEAR[item["class"]].pets, ItemDB.PET_GEAR[item["class"]].title],
+				Color(1, 0.8, 0.5))
+		return
 	bag[index] = pet.collar
 	pet.collar = item
 	pet.refresh_max_health()
@@ -969,7 +973,7 @@ func request_unequip_collar(party_slot: int, index := -1) -> void:
 	if pet == null or pet.collar.is_empty():
 		return
 	if index >= 0 and index < bag.size() and not bag[index].is_empty():
-		if ItemDB.is_collar(bag[index]):
+		if ItemDB.fits_pet(bag[index], pet.species):
 			request_equip_collar(index, party_slot)  # a swap
 			return
 		index = -1

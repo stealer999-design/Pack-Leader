@@ -251,6 +251,20 @@ played in the browser".
   | Gravedigger's Collar | Pet collar | That pet: 30% health, 6% armor |
   | Bone Plate Collar | Pet collar | That pet: 16% armor, 8% damage |
 
+  **Class collars** (pet gear made for one class): Wizard collars for cats,
+  Paladin collars for dogs, Archer collars for birds and Venomancer collars
+  for lizards; only pets of that class can wear them. Each rolls **random
+  stats** from its class's pool, **one per colour step**: Common (white) 1,
+  Fine (green) 2, Superior (blue) 3, stronger at higher levels. The pools are
+  the skill-tree stats: Wizard (ability damage, faster cooldowns, attack
+  damage, crit chance, health), Paladin (healing and shields, armor, health,
+  faster cooldowns, attack damage), Archer (crit chance, crit damage, attack
+  speed, attack damage, ability damage), Venomancer (poison damage, poison
+  duration, toxic blood, armor, attack damage). Half of the class collars that
+  drop are made for the pets of the area you're in. (Legendary collars are
+  unchanged, and the older spiked, padded and studded collars still work on
+  any pet.)
+
   **Pet gear:** the inventory's **Pets** tab (next to **Tamer**) shows your
   party pets, each with one slot, for a **collar**. Drag a collar from the bag
   onto a pet to put it on (swapping with the one it wore), back into the bag

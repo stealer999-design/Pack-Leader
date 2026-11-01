@@ -221,6 +221,7 @@ func skill_bonus(stat: String) -> float:
 			if not ally.fainted:
 				bonus += PetSkills.total(ally.species_index, ally.skill_ranks, "pack_" + stat)
 		bonus += ItemDB.stats(collar).get("collar_" + stat, 0) / 100.0
+		bonus += ItemDB.pet_bonus(collar, stat) / 100.0  # a class collar's rolled stats
 		# The tamer's rings and necklace.
 		var tamer := world.get_player(owner_id)
 		if tamer:
