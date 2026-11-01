@@ -275,7 +275,8 @@ func receive_damage(amount: float, source: Node3D, knockback := Vector3.ZERO) ->
 	# Venomancers' toxic blood: whoever hits one up close is poisoned back.
 	if species.is_venomancer() and source and is_instance_valid(source) and source != self \
 			and _flat_distance(source.global_position) <= 3.0 + radius():
-		envenom(source, get_damage() * CreatureSpecies.TOXIC_BLOOD, 3.0, get_damage() * CreatureSpecies.TOXIC_BLOOD * 2.0)
+		var blood := get_damage() * CreatureSpecies.TOXIC_BLOOD * (1.0 + skill_bonus("toxic_blood"))
+		envenom(source, blood, 3.0, blood * 2.0)
 	if _guard_timer > 0.0:
 		amount *= 1.0 - _guard_reduction
 		knockback = Vector3.ZERO
@@ -618,7 +619,7 @@ func _tick_pending_cast(delta: float) -> Vector3:
 	_pending_cast = {}
 	if _flat_distance(point) > 0.1:
 		model.rotation.y = atan2(-(point.x - global_position.x), -(point.z - global_position.z))
-	_ability_used.rpc(ability.cooldown)
+	_ability_used.rpc(ability.cooldown * (1.0 - minf(skill_bonus("cooldown"), PetSkills.MAX_COOLDOWN)))
 	if species.pet_class() == "wizard":
 		world.play_cast.rpc(global_position, species.color.lightened(0.3))
 	ability.execute(self, point, cast_target)
@@ -645,7 +646,7 @@ func _chase_and_attack(victim: Node3D) -> Vector3:
 		if _kite_left > 0.0:
 			return -to / dist * _move_speed()
 	if _attack_timer <= 0.0:
-		_attack_timer = species.attack_cooldown
+		_attack_timer = species.attack_cooldown / (1.0 + skill_bonus("attack_speed"))
 		_lunge.rpc()
 		if _blind_timer > 0.0 and randf() < 0.5:
 			return Vector3.ZERO  # blinded: the attack misses
@@ -663,19 +664,29 @@ func _chase_and_attack(victim: Node3D) -> Vector3:
 	return Vector3.ZERO
 
 
+## Ability damage: attack damage plus spell power from the skill tree.
+func ability_damage() -> float:
+	return get_damage() * (1.0 + skill_bonus("spell_power"))
+
+
+## Heals and shields this pet gives are multiplied by this (skill tree).
+func heal_power() -> float:
+	return 1.0 + skill_bonus("heal_power")
+
+
 ## Critical hits: the chance (archers are sharper shots), plus any Eagle Eye
 ## bonus; a target under a Hunter's Mark is always critted by pets. Returns the
 ## damage multiplier for this attack (CRIT_MULTIPLIER on a crit, shown with stars).
 func crit_chance() -> float:
 	var base := CreatureSpecies.ARCHER_CRIT if species.is_archer() else CreatureSpecies.BASE_CRIT
-	return base + (_crit_bonus if _crit_timer > 0.0 else 0.0)
+	return base + skill_bonus("crit_chance") + (_crit_bonus if _crit_timer > 0.0 else 0.0)
 
 
 func _roll_crit(victim: Node3D) -> float:
 	var marked: bool = victim is Creature and (victim as Creature)._mark_timer > 0.0 and is_player_pet()
 	if marked or randf() < crit_chance():
 		world.play_bonk.rpc(victim.global_position + Vector3.UP * 1.3)
-		return CreatureSpecies.CRIT_MULTIPLIER
+		return CreatureSpecies.CRIT_MULTIPLIER + skill_bonus("crit_damage")
 	return 1.0
 
 
@@ -698,7 +709,9 @@ func envenom(victim: Node3D, stack_dps: float, duration: float, max_dps: float) 
 	if not is_instance_valid(victim) or victim.get("health") == null or not victim.is_targetable():
 		return
 	var fresh: bool = not victim.health.is_poisoned()
-	victim.health.add_venom(stack_dps, duration, max_dps)
+	var power := 1.0 + skill_bonus("dot_power")  # skill tree: stronger, longer poison
+	duration *= 1.0 + skill_bonus("dot_duration")
+	victim.health.add_venom(stack_dps * power, duration, max_dps * power)
 	if fresh and victim is Creature:
 		victim._status_fx.rpc("poison", duration)
 
@@ -714,7 +727,7 @@ func _holy_strike(damage: float) -> void:
 			best_fraction = ally.health.fraction()
 	if best == null:
 		return
-	best.health.heal(damage * CreatureSpecies.PALADIN_HEAL_ON_HIT)
+	best.health.heal(damage * CreatureSpecies.PALADIN_HEAL_ON_HIT * heal_power())
 	if best != self:
 		world.play_beam.rpc(global_position + Vector3.UP * 0.5, best.global_position + Vector3.UP * 0.7, Color(1.0, 0.88, 0.45))
 

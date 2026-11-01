@@ -7,7 +7,7 @@ extends PetAbility
 
 
 func execute(pet: Creature, _point: Vector3, _target: Creature) -> void:
-	var damage := pet.get_damage() * damage_multiplier
+	var damage := pet.ability_damage() * damage_multiplier
 	for enemy in pet.world.enemies_near(pet, pet.global_position, radius):
 		var push := enemy.global_position - pet.global_position
 		push.y = 0.0

@@ -10,4 +10,4 @@ func execute(pet: Creature, _point: Vector3, target: Creature) -> void:
 	var toward := target.global_position - pet.global_position
 	toward.y = 0.0
 	target.pull_to(pet.global_position + toward.normalized() * (pet.radius() + target.radius() + 0.3))
-	target.receive_damage(pet.get_damage() * damage_multiplier, pet)
+	target.receive_damage(pet.ability_damage() * damage_multiplier, pet)

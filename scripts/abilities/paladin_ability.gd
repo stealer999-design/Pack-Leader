@@ -62,7 +62,7 @@ func _effects(pet: Creature, at: Vector3, target: Creature) -> void:
 		target = world.nearest_enemy(pet, at, maxf(radius, 3.0))
 	var dealt := 0.0
 	if smite_multiplier > 0.0 and is_instance_valid(target) and target.is_targetable():
-		var damage := pet.get_damage() * smite_multiplier
+		var damage := pet.ability_damage() * smite_multiplier
 		target.receive_damage(damage, pet)
 		dealt += damage
 		world.play_beam.rpc(at + Vector3.UP * 0.6, target.global_position + Vector3.UP * 0.6, HOLY)
@@ -71,7 +71,7 @@ func _effects(pet: Creature, at: Vector3, target: Creature) -> void:
 			target.taunt(pet)
 	for enemy in world.enemies_near(pet, at, radius):
 		if smite_area_multiplier > 0.0:
-			var damage := pet.get_damage() * smite_area_multiplier
+			var damage := pet.ability_damage() * smite_area_multiplier
 			enemy.receive_damage(damage, pet)
 			dealt += damage
 		if blind_duration > 0.0 and enemy.has_method("blind"):
@@ -82,26 +82,27 @@ func _effects(pet: Creature, at: Vector3, target: Creature) -> void:
 		pet.guard(guard_duration, guard_reduction)
 		world.play_burst.rpc(pet.global_position, Color(0.4, 0.7, 1.0), 1.6)
 	var allies := world.allies_near(pet, at, radius)
+	var power := pet.heal_power()
 	for ally in allies:
 		if heal_allies > 0.0:
-			ally.health.heal(ally.health.max_health * heal_allies)
+			ally.health.heal(ally.health.max_health * heal_allies * power)
 		if shield_fraction > 0.0 and ally.has_method("add_shield"):
-			ally.add_shield(ally.health.max_health * shield_fraction, shield_duration)
+			ally.add_shield(ally.health.max_health * shield_fraction * power, shield_duration)
 		if armor_duration > 0.0:
 			if ally is Creature:
 				(ally as Creature).guard(armor_duration, armor_reduction)
 			elif ally.has_method("add_shield"):
-				ally.add_shield(ally.health.max_health * armor_reduction, armor_duration)
+				ally.add_shield(ally.health.max_health * armor_reduction * power, armor_duration)
 	if heal_self > 0.0:
-		pet.health.heal(pet.health.max_health * heal_self)
+		pet.health.heal(pet.health.max_health * heal_self * power)
 	var injured := _most_injured(allies)
 	if injured and (heal_injured > 0.0 or (heal_from_smite > 0.0 and dealt > 0.0)):
-		injured.health.heal(injured.health.max_health * heal_injured + dealt * heal_from_smite)
+		injured.health.heal((injured.health.max_health * heal_injured + dealt * heal_from_smite) * power)
 		world.play_beam.rpc(at + Vector3.UP * 0.6, injured.global_position + Vector3.UP * 0.8, Color(0.6, 1.0, 0.6))
 		world.play_burst.rpc(injured.global_position, Color(0.6, 1.0, 0.6), 1.2)
 	if sanctuary_duration > 0.0:
 		world.add_zone(pet, world.clamp_to_level(at), radius, sanctuary_duration,
-				pet.get_damage() * sanctuary_dps_multiplier, HOLY, 0.0, sanctuary_heal)
+				pet.ability_damage() * sanctuary_dps_multiplier, HOLY, 0.0, sanctuary_heal * power)
 	world.play_burst.rpc(at, HOLY, maxf(radius, 2.0))
 
 

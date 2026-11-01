@@ -8,7 +8,7 @@ extends PetAbility
 
 
 func execute(pet: Creature, _point: Vector3, target: Creature) -> void:
-	target.receive_damage(pet.get_damage() * damage_multiplier, pet)
+	target.receive_damage(pet.ability_damage() * damage_multiplier, pet)
 	if target.has_method("poison"):
-		target.poison(pet.get_damage() * poison_dps_multiplier, poison_duration)
+		target.poison(pet.ability_damage() * poison_dps_multiplier, poison_duration)
 	pet.world.play_burst.rpc(target.global_position, Color(0.45, 0.95, 0.3), 1.2)

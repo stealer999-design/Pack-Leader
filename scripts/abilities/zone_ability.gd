@@ -10,4 +10,4 @@ extends PetAbility
 
 func execute(pet: Creature, point: Vector3, _target: Creature) -> void:
 	var at := pet.world.clamp_to_level(point)
-	pet.world.add_zone(pet, at, radius, duration, pet.get_damage() * dps_multiplier, color)
+	pet.world.add_zone(pet, at, radius, duration, pet.ability_damage() * dps_multiplier, color)

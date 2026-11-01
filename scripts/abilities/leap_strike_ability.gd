@@ -10,7 +10,7 @@ func execute(pet: Creature, point: Vector3, _target: Creature) -> void:
 	var to := point - pet.global_position
 	to.y = 0.0
 	var landing := pet.world.clamp_to_level(pet.global_position + to.limit_length(cast_range))
-	var damage := pet.get_damage() * damage_multiplier
+	var damage := pet.ability_damage() * damage_multiplier
 	pet.leap_to(landing, leap_time, func() -> void:
 		for enemy in pet.world.enemies_near(pet, landing, radius):
 			var push := enemy.global_position - landing

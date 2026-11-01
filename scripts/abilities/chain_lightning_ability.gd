@@ -11,7 +11,7 @@ extends PetAbility
 func execute(pet: Creature, _point: Vector3, target: Creature) -> void:
 	var hit: Array[Node3D] = []
 	var points := PackedVector3Array([pet.global_position + Vector3.UP * 0.6])
-	var damage := pet.get_damage() * damage_multiplier
+	var damage := pet.ability_damage() * damage_multiplier
 	var current: Node3D = target
 	while current and hit.size() < chain_count:
 		hit.append(current)

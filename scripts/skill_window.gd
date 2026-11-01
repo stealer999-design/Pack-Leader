@@ -105,7 +105,7 @@ func refresh() -> void:
 	_reset.visible = pet != null
 	if pet == null:
 		return
-	_title.text = "%s   Lv%d" % [pet.species.display_name, pet.level]
+	_title.text = "%s   Lv%d   ·   %s tree" % [pet.species.display_name, pet.level, PetSkills.tree_name(pet.species_index)]
 	_title.modulate = pet.species.color.lightened(0.35)
 	var left := PetSkills.points_left(pet.level, pet.skill_ranks)
 	_points.text = "Skill points: %d to spend   (%d earned)" % [left, PetSkills.points_for_level(pet.level)]

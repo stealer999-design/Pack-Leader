@@ -7,7 +7,7 @@ extends PetAbility
 
 
 func execute(pet: Creature, _point: Vector3, target: Creature) -> void:
-	var damage := pet.get_damage() * damage_multiplier
+	var damage := pet.ability_damage() * damage_multiplier
 	var before := target.health.current
 	target.receive_damage(damage, pet)
 	var dealt := maxf(before - target.health.current, 0.0)

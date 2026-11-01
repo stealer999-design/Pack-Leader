@@ -340,6 +340,39 @@ played in the browser".
   | Mirelurk | Mud Trap | Hides a mud trap where you aim (up to 3). The first enemy to step on it springs it: enemies nearby are damaged and rooted for 2.5s. They are poisoned too, for 5s. |
   | Wisp Gecko | Wither | Spits withering venom where you aim: 1.5x damage, poison for 6s, and the gecko and you heal for 40% of the hit. |
   | Sporeguana | Spore Cloud | A cloud of toxic spores where you aim, for 6s: enemies inside are poisoned, and those it hits first deal 40% less damage for 6s. |
+- **Pet skills (K):** every pet has a skill tree of six passive skills from its
+  **class**, shown on the skills screen (press K or click "Pet skills") with an
+  icon for each, and a gold paw on **pack skills**, which boost *every* pet in
+  your party while that pet is awake:
+
+  | Class | Skills (in unlock order) |
+  |---|---|
+  | Wizard (cats) | Arcane Focus (+8% ability damage a rank), Mana Flow (abilities recharge 6% faster), Charged Bolts (+6% attack damage), Ley Lines (pack: +3% ability damage), Spell Ward (4% less damage taken), Archmage (+12% ability damage) |
+  | Paladin (dogs) | Holy Strength (+10% healing and shields), Iron Hide (4% less damage taken), Devotion (abilities recharge 6% faster), Aura of Protection (pack: 2.5% less damage taken), Vitality (+7% max health), Beacon of Light (pack: +6% healing and shields) |
+  | Archer (birds) | Sharpshooter (+4% crit chance), Quick Draw (attacks 7% faster), Deadly Precision (crits +20% damage), Hunting Party (pack: +2% crit chance), Steady Aim (+6% attack damage), Volley Master (+10% ability damage) |
+  | Venomancer (lizards) | Potent Venom (+8% poison damage), Thick Scales (4% less damage taken), Lingering Toxins (poison lasts 12% longer), Toxic Blood (+25% toxic blood poison), Plague Bearer (pack: +2.5% attack damage), Virulence (+12% poison damage) |
+
+  The skills unlock left to right at levels 5, 10, 15, 20, 25 and 30, and each
+  can be trained up to **4 ranks**. Pets earn a skill point at level 5 and
+  every 2 levels after (13 by level 30, against 24 possible ranks), so choose:
+  click a skill to spend a point on it. "Reset skills" gives a pet's points
+  back for free. Armor is capped at 60% and cooldowns at 50% faster. Rivals'
+  pets come trained. Unspent points show as "+N" in the party panel.
+- **Stable:** every level has two stables, one at the start camp and one in
+  the village; both open the same stable. Press F at either to open it: your
+  party sits on three cushions (numbered by their ability key) and up to
+  **20 pets sleep in hay beds**. Everything is drag and drop:
+  drag a pet from a bed onto the party to bring it along, from the party onto a
+  bed to rest it, onto an occupied place to swap, between beds to rearrange,
+  or between party slots to change which key (1/2/3) uses its ability. Drop a
+  pet on the **release gate** (and confirm) to set it free. Stabled pets are
+  fully healed. If you capture a creature while your party is full it goes to
+  the first free bed; if every bed is full too, the capture is refused.
+- **No friendly fire:** there are two sides: hostiles (wild creatures, rivals
+  and rivals' pets) and tamers (every player and every player's pet). Nothing
+  can hurt or target its own side, and pets immediately drop a target that
+  someone else captures. Mossbacks are passive, which makes them good first
+  captures.
 
 ## Architecture
 The host is the authoritative server and also plays.
@@ -369,7 +402,7 @@ The host is the authoritative server and also plays.
 | `scenes/bog_witch.tscn` + `scripts/bog_witch.gd` | The Bog Witch boss: poison bolts, blink, toxic puddles, Bogleon summons |
 | `scenes/player.tscn` + `scripts/player.gd` | Movement, aim, and server-validated attack/capture/command requests |
 | `scenes/creature.tscn` + `scripts/creature.gd` | One scene for wild creatures *and* pets: wild AI, pet AI, taming, levelling |
-| `scripts/pet_skills.gd` | Every species's six skills, skill points and ranks, and how they add up |
+| `scripts/pet_skills.gd` | The four class skill trees, skill points and ranks, and how they add up |
 | `scripts/level_generator.gd` (village) + `World._build_village` | The village side path, square, houses and bat shop |
 | `scripts/breeding_db.gd`, `scripts/breeder_window.gd` | Which pairs breed into which hybrid, the rules, and the breeder's window |
 | `scripts/person_model.gd` | The tamer's body, bat, walk cycle and bat swing, built from simple meshes |

@@ -1,16 +1,20 @@
 class_name PetSkills
-## Selectable pet skills. Every species has a tree of six skills. Skill i
-## unlocks at UNLOCK_LEVELS[i], and each can be trained up to MAX_RANK ranks with
-## skill points: a pet earns one at level 5 and one every 2 levels after that
-## (13 by level 30, against 24 possible ranks), so owners have to choose.
-## Each rank of a skill boosts one stat by `amount` (a fraction):
-##   damage       the pet's attack and ability damage
-##   health       the pet's max health
-##   armor        the pet takes this much less damage
-##   pack_damage, pack_health, pack_armor
-##                the same boost for *every* pet in its owner's party (itself
-##                included), while this pet is awake. Pack skills stack.
-## Tanks lean on armor and health, strikers on damage and supports on pack buffs.
+## Selectable pet skills. Every pet has a tree of six skills from its class
+## (CLASS_TREES: wizards, paladins, archers and venomancers each have their
+## own). Skill i unlocks at UNLOCK_LEVELS[i], and each can be trained up to
+## MAX_RANK ranks with skill points: a pet earns one at level 5 and one every
+## 2 levels after that (13 by level 30, against 24 possible ranks), so owners
+## have to choose. Each rank boosts one stat by `amount` (a fraction):
+##   damage, health, armor     the pet's attack damage, max health, damage taken
+##   spell_power               its ability damage (and poison from abilities)
+##   cooldown                  its ability cooldowns (shorter)
+##   heal_power                its heals and shields, including holy strikes
+##   crit_chance, crit_damage  its critical hits (chance; extra damage on a crit)
+##   attack_speed              its basic attacks come faster
+##   dot_power, dot_duration   its poison and burns (stronger; last longer)
+##   toxic_blood               the poison it gives whatever hits it
+##   pack_<stat>               the same boost for *every* pet in its owner's
+##                             party (itself included), while this pet is awake.
 ## Skills only work for pets (yours or a rival's), not for wild creatures.
 ## A pet's ranks are an Array of SKILL_COUNT ints, kept on the Creature and in its saved data.
 
@@ -22,209 +26,69 @@ const STAT_TEXT := {
 	"damage": "+%d%% attack damage",
 	"health": "+%d%% max health",
 	"armor": "takes %d%% less damage",
+	"spell_power": "+%d%% ability damage",
+	"cooldown": "abilities recharge %d%% faster",
+	"heal_power": "+%d%% healing and shields",
+	"crit_chance": "+%d%% critical hit chance",
+	"crit_damage": "crits deal +%d%% more damage",
+	"attack_speed": "attacks %d%% faster",
+	"dot_power": "+%d%% poison and burn damage",
+	"dot_duration": "poison and burns last %d%% longer",
+	"toxic_blood": "+%d%% toxic blood poison",
 	"pack_damage": "all your pets: +%d%% attack damage",
 	"pack_health": "all your pets: +%d%% max health",
 	"pack_armor": "all your pets take %d%% less damage",
+	"pack_spell_power": "all your pets: +%d%% ability damage",
+	"pack_crit_chance": "all your pets: +%d%% critical hit chance",
+	"pack_heal_power": "all your pets: +%d%% healing and shields",
 }
 
-## Indexed like SpeciesDB. Each entry: [name, stat, amount per rank], in unlock order.
-const SKILLS := [
-	[  # 0 Mossback (tank)
-		["Thick Shell", "armor", 0.04], ["Mossy Hide", "health", 0.05], ["Hardened Shell", "armor", 0.04],
-		["Herd Guardian", "pack_armor", 0.025], ["Ancient Bark", "health", 0.075], ["Living Fortress", "armor", 0.05],
+## Each class's tree: [name, stat, amount per rank], in unlock order.
+const CLASS_TREES := {
+	"wizard": [
+		["Arcane Focus", "spell_power", 0.08], ["Mana Flow", "cooldown", 0.06], ["Charged Bolts", "damage", 0.06],
+		["Ley Lines", "pack_spell_power", 0.03], ["Spell Ward", "armor", 0.04], ["Archmage", "spell_power", 0.12],
 	],
-	[  # 1 Emberfox (striker)
-		["Sharp Claws", "damage", 0.05], ["Fire Blood", "health", 0.04], ["Blazing Pounce", "damage", 0.05],
-		["Kindle the Pack", "pack_damage", 0.025], ["Wildfire", "damage", 0.075], ["Inferno Heart", "pack_damage", 0.025],
+	"paladin": [
+		["Holy Strength", "heal_power", 0.1], ["Iron Hide", "armor", 0.04], ["Devotion", "cooldown", 0.06],
+		["Aura of Protection", "pack_armor", 0.025], ["Vitality", "health", 0.07], ["Beacon of Light", "pack_heal_power", 0.06],
 	],
-	[  # 2 Voltwing (striker)
-		["Charged Claws", "damage", 0.05], ["Static Coat", "armor", 0.03], ["Overcharge", "damage", 0.05],
-		["Battery", "health", 0.05], ["Storm Leader", "pack_damage", 0.025], ["Thunderclap", "damage", 0.075],
+	"archer": [
+		["Sharpshooter", "crit_chance", 0.04], ["Quick Draw", "attack_speed", 0.07], ["Deadly Precision", "crit_damage", 0.2],
+		["Hunting Party", "pack_crit_chance", 0.02], ["Steady Aim", "damage", 0.06], ["Volley Master", "spell_power", 0.1],
 	],
-	[  # 3 Gloomhorn (bruiser)
-		["Heavy Horns", "damage", 0.05], ["Stout", "health", 0.05], ["Iron Hide", "armor", 0.04],
-		["Rallying Roar", "pack_health", 0.025], ["Mountain's Weight", "health", 0.075], ["Earthborn", "armor", 0.05],
+	"venomancer": [
+		["Potent Venom", "dot_power", 0.08], ["Thick Scales", "armor", 0.04], ["Lingering Toxins", "dot_duration", 0.12],
+		["Toxic Blood", "toxic_blood", 0.25], ["Plague Bearer", "pack_damage", 0.025], ["Virulence", "dot_power", 0.12],
 	],
-	[  # 4 Frostfinch (striker)
-		["Icy Talons", "damage", 0.05], ["Down Feathers", "health", 0.05], ["Frostbite", "damage", 0.05],
-		["Flock Call", "pack_damage", 0.025], ["Frozen Plumage", "armor", 0.04], ["Blizzard Heart", "damage", 0.075],
-	],
-	[  # 5 Quillpuff (tank)
-		["Puffed Quills", "armor", 0.04], ["Blubber", "health", 0.05], ["Ice Plating", "armor", 0.04],
-		["Huddle", "pack_armor", 0.025], ["Glacier Body", "health", 0.075], ["Frozen Bastion", "armor", 0.05],
-	],
-	[  # 6 Aurora Swift (healer)
-		["Light Feathers", "health", 0.05], ["Aurora Glow", "pack_health", 0.025], ["Shimmer", "armor", 0.03],
-		["Northern Lights", "pack_armor", 0.02], ["Radiance", "health", 0.075], ["Celestial Choir", "pack_health", 0.04],
-	],
-	[  # 7 Snowl (assassin)
-		["Silent Talons", "damage", 0.05], ["Keen Eyes", "damage", 0.05], ["Snow Cloak", "armor", 0.03],
-		["Night Hunter", "damage", 0.075], ["Owl's Watch", "pack_damage", 0.025], ["Apex Predator", "damage", 0.075],
-	],
-	[  # 8 Bloomling (healer)
-		["Deep Roots", "health", 0.05], ["Bloom Aura", "pack_health", 0.025], ["Thorny Petals", "armor", 0.03],
-		["Pollen Haze", "pack_armor", 0.02], ["Evergreen", "health", 0.075], ["Spring Blessing", "pack_health", 0.04],
-	],
-	[  # 9 Fangjackal (striker)
-		["Sharp Fangs", "damage", 0.05], ["Scrappy", "health", 0.05], ["Venom Glands", "damage", 0.05],
-		["Pack Hunter", "pack_damage", 0.025], ["Desert Endurance", "health", 0.075], ["Alpha Bite", "damage", 0.075],
-	],
-	[  # 10 Dunehound (tank)
-		["Thick Coat", "health", 0.05], ["Sand Hide", "armor", 0.04], ["Loyal Guard", "pack_armor", 0.025],
-		["Broad Chest", "health", 0.075], ["Dune Stride", "damage", 0.05], ["Stone Hound", "armor", 0.05],
-	],
-	[  # 11 Cactipup (support)
-		["Prickly", "armor", 0.04], ["Water Store", "health", 0.05], ["Spiny Hug", "pack_armor", 0.025],
-		["Desert Bloom", "pack_health", 0.025], ["Needle Coat", "armor", 0.05], ["Oasis Heart", "pack_health", 0.04],
-	],
-	[  # 12 Sunfennec (striker)
-		["Sun-Warmed", "damage", 0.05], ["Keen Ears", "armor", 0.03], ["Solar Bite", "damage", 0.05],
-		["Sunny Howl", "pack_damage", 0.025], ["Heat Shimmer", "armor", 0.04], ["Noonday Fury", "damage", 0.075],
-	],
-	[  # 13 Bogleon (striker)
-		["Sticky Tongue", "damage", 0.05], ["Camouflage", "armor", 0.04], ["Long Lash", "damage", 0.05],
-		["Bog Skin", "health", 0.05], ["Swamp Ambush", "pack_damage", 0.025], ["Chameleon King", "damage", 0.075],
-	],
-	[  # 14 Mirelurk (tank)
-		["Mud Coat", "armor", 0.04], ["Thick Scales", "health", 0.05], ["Murky Hide", "armor", 0.04],
-		["Swamp Ward", "pack_armor", 0.025], ["Ancient Lurker", "health", 0.075], ["Bog Titan", "armor", 0.05],
-	],
-	[  # 15 Wisp Gecko (drainer)
-		["Glow Bite", "damage", 0.05], ["Wisp Light", "health", 0.05], ["Spirit Hunger", "damage", 0.05],
-		["Guiding Glow", "pack_health", 0.025], ["Ghost Skin", "armor", 0.04], ["Soul Lantern", "pack_damage", 0.025],
-	],
-	[  # 16 Sporeguana (support)
-		["Spore Hide", "armor", 0.04], ["Fungal Bulk", "health", 0.05], ["Spore Mist", "pack_armor", 0.02],
-		["Rot Resistance", "health", 0.075], ["Mycelium Link", "pack_health", 0.025], ["Bloom of Decay", "pack_armor", 0.03],
-	],
-	# Hybrids (from the breeder): a little stronger per rank than wild pets.
-	[  # 17 Magmashell (tank)
-		["Lava Shell", "armor", 0.05], ["Ember Heart", "health", 0.06], ["Molten Hide", "armor", 0.05],
-		["Hearth Ward", "pack_armor", 0.03], ["Volcanic Bulk", "health", 0.09], ["Magma Fortress", "armor", 0.06],
-	],
-	[  # 18 Thundershell (tank)
-		["Charged Shell", "armor", 0.05], ["Capacitor", "health", 0.06], ["Arc Plating", "armor", 0.05],
-		["Storm Ward", "pack_armor", 0.03], ["Living Battery", "health", 0.09], ["Thunder Fortress", "armor", 0.06],
-	],
-	[  # 19 Stonehorn (bruiser)
-		["Granite Horn", "damage", 0.06], ["Bedrock", "health", 0.06], ["Stone Skin", "armor", 0.05],
-		["Mountain Call", "pack_health", 0.03], ["Boulder Body", "health", 0.09], ["Avalanche Horn", "damage", 0.09],
-	],
-	[  # 20 Mossbloom (healer)
-		["Deep Moss", "health", 0.06], ["Grove Song", "pack_health", 0.03], ["Bark Petals", "armor", 0.04],
-		["Canopy", "pack_armor", 0.025], ["Old Growth", "health", 0.09], ["Heart of the Grove", "pack_health", 0.05],
-	],
-	[  # 21 Blitzfox (striker)
-		["Lightning Claws", "damage", 0.06], ["Quick Spark", "health", 0.05], ["Flashfire", "damage", 0.06],
-		["Rally Spark", "pack_damage", 0.03], ["Blitz", "damage", 0.09], ["Storm Blaze", "pack_damage", 0.03],
-	],
-	[  # 22 Cinderhorn (bruiser)
-		["Burning Horn", "damage", 0.06], ["Coal Hide", "armor", 0.05], ["Smoulder", "damage", 0.06],
-		["War Drum", "pack_damage", 0.03], ["Furnace Heart", "health", 0.09], ["Meteor Horn", "damage", 0.09],
-	],
-	[  # 23 Sunpetal (healer)
-		["Sunlit Petals", "health", 0.06], ["Warm Glow", "pack_health", 0.03], ["Ember Bark", "armor", 0.04],
-		["Solar Bloom", "pack_damage", 0.025], ["Rebirth", "health", 0.09], ["Phoenix Choir", "pack_health", 0.05],
-	],
-	[  # 24 Stormhorn (striker)
-		["Thunder Horn", "damage", 0.06], ["Storm Hide", "armor", 0.04], ["Overload", "damage", 0.06],
-		["Rolling Thunder", "pack_damage", 0.03], ["Tempest", "damage", 0.09], ["Sky Breaker", "damage", 0.09],
-	],
-	[  # 25 Sparkblossom (support)
-		["Static Petals", "armor", 0.05], ["Bright Bloom", "health", 0.06], ["Spark Ward", "pack_armor", 0.03],
-		["Charged Pollen", "pack_damage", 0.03], ["Lightning Rod", "armor", 0.06], ["Storm Garden", "pack_armor", 0.04],
-	],
-	[  # 26 Duskbloom (bruiser)
-		["Night Horn", "damage", 0.06], ["Shadow Petals", "armor", 0.05], ["Gloom Bulk", "health", 0.06],
-		["Twilight Veil", "pack_armor", 0.03], ["Nightfall", "damage", 0.09], ["Eclipse", "pack_health", 0.04],
-	],
-	[  # 27 Glacipuff (tank)
-		["Glacial Skin", "armor", 0.05], ["Glacial Bulk", "health", 0.06], ["Glacial Plating", "armor", 0.05],
-		["Glacial Ward", "pack_armor", 0.03], ["Glacial Colossus", "health", 0.09], ["Glacial Bulwark", "armor", 0.06],
-	],
-	[  # 28 Shimmerwing (support)
-		["Shimmer Aura", "health", 0.06], ["Shimmer Song", "pack_health", 0.03], ["Shimmer Veil", "armor", 0.04],
-		["Shimmer Shelter", "pack_armor", 0.025], ["Shimmer Vitality", "health", 0.09], ["Shimmer Lifebond", "pack_health", 0.05],
-	],
-	[  # 29 Rimeowl (striker)
-		["Rime Strike", "damage", 0.06], ["Rime Hide", "health", 0.05], ["Rime Fury", "damage", 0.06],
-		["Rime Call", "pack_damage", 0.03], ["Rime Frenzy", "damage", 0.09], ["Rime Apex", "damage", 0.09],
-	],
-	[  # 30 Prismpuff (tank)
-		["Prism Skin", "armor", 0.05], ["Prism Bulk", "health", 0.06], ["Prism Plating", "armor", 0.05],
-		["Prism Ward", "pack_armor", 0.03], ["Prism Colossus", "health", 0.09], ["Prism Bulwark", "armor", 0.06],
-	],
-	[  # 31 Quillowl (striker)
-		["Quill Strike", "damage", 0.06], ["Quill Hide", "health", 0.05], ["Quill Fury", "damage", 0.06],
-		["Quill Call", "pack_damage", 0.03], ["Quill Frenzy", "damage", 0.09], ["Quill Apex", "damage", 0.09],
-	],
-	[  # 32 Dawnowl (support)
-		["Dawn Aura", "health", 0.06], ["Dawn Song", "pack_health", 0.03], ["Dawn Veil", "armor", 0.04],
-		["Dawn Shelter", "pack_armor", 0.025], ["Dawn Vitality", "health", 0.09], ["Dawn Lifebond", "pack_health", 0.05],
-	],
-	[  # 33 Duneripper (striker)
-		["Dune Strike", "damage", 0.06], ["Dune Hide", "health", 0.05], ["Dune Fury", "damage", 0.06],
-		["Dune Call", "pack_damage", 0.03], ["Dune Frenzy", "damage", 0.09], ["Dune Apex", "damage", 0.09],
-	],
-	[  # 34 Thornjackal (striker)
-		["Thorn Strike", "damage", 0.06], ["Thorn Hide", "health", 0.05], ["Thorn Fury", "damage", 0.06],
-		["Thorn Call", "pack_damage", 0.03], ["Thorn Frenzy", "damage", 0.09], ["Thorn Apex", "damage", 0.09],
-	],
-	[  # 35 Solarjackal (striker)
-		["Solar Strike", "damage", 0.06], ["Solar Hide", "health", 0.05], ["Solar Fury", "damage", 0.06],
-		["Solar Call", "pack_damage", 0.03], ["Solar Frenzy", "damage", 0.09], ["Solar Apex", "damage", 0.09],
-	],
-	[  # 36 Cactihound (tank)
-		["Cactus Skin", "armor", 0.05], ["Cactus Bulk", "health", 0.06], ["Cactus Plating", "armor", 0.05],
-		["Cactus Ward", "pack_armor", 0.03], ["Cactus Colossus", "health", 0.09], ["Cactus Bulwark", "armor", 0.06],
-	],
-	[  # 37 Sunhound (tank)
-		["Sun Skin", "armor", 0.05], ["Sun Bulk", "health", 0.06], ["Sun Plating", "armor", 0.05],
-		["Sun Ward", "pack_armor", 0.03], ["Sun Colossus", "health", 0.09], ["Sun Bulwark", "armor", 0.06],
-	],
-	[  # 38 Bloomfennec (support)
-		["Oasis Aura", "health", 0.06], ["Oasis Song", "pack_health", 0.03], ["Oasis Veil", "armor", 0.04],
-		["Oasis Shelter", "pack_armor", 0.025], ["Oasis Vitality", "health", 0.09], ["Oasis Lifebond", "pack_health", 0.05],
-	],
-	[  # 39 Swampdrake (tank)
-		["Drake Skin", "armor", 0.05], ["Drake Bulk", "health", 0.06], ["Drake Plating", "armor", 0.05],
-		["Drake Ward", "pack_armor", 0.03], ["Drake Colossus", "health", 0.09], ["Drake Bulwark", "armor", 0.06],
-	],
-	[  # 40 Glowleon (striker)
-		["Glow Strike", "damage", 0.06], ["Glow Hide", "health", 0.05], ["Glow Fury", "damage", 0.06],
-		["Glow Call", "pack_damage", 0.03], ["Glow Frenzy", "damage", 0.09], ["Glow Apex", "damage", 0.09],
-	],
-	[  # 41 Toxileon (support)
-		["Toxic Aura", "health", 0.06], ["Toxic Song", "pack_health", 0.03], ["Toxic Veil", "armor", 0.04],
-		["Toxic Shelter", "pack_armor", 0.025], ["Toxic Vitality", "health", 0.09], ["Toxic Lifebond", "pack_health", 0.05],
-	],
-	[  # 42 Wraithlurk (tank)
-		["Wraith Skin", "armor", 0.05], ["Wraith Bulk", "health", 0.06], ["Wraith Plating", "armor", 0.05],
-		["Wraith Ward", "pack_armor", 0.03], ["Wraith Colossus", "health", 0.09], ["Wraith Bulwark", "armor", 0.06],
-	],
-	[  # 43 Mossdrake (tank)
-		["Bog Skin", "armor", 0.05], ["Bog Bulk", "health", 0.06], ["Bog Plating", "armor", 0.05],
-		["Bog Ward", "pack_armor", 0.03], ["Bog Colossus", "health", 0.09], ["Bog Bulwark", "armor", 0.06],
-	],
-	[  # 44 Sporewisp (support)
-		["Glimmer Aura", "health", 0.06], ["Glimmer Song", "pack_health", 0.03], ["Glimmer Veil", "armor", 0.04],
-		["Glimmer Shelter", "pack_armor", 0.025], ["Glimmer Vitality", "health", 0.09], ["Glimmer Lifebond", "pack_health", 0.05],
-	],
-]
+}
+
+## The tree's name, as shown in the skill window.
+const TREE_NAMES := {"wizard": "Wizard", "paladin": "Paladin", "archer": "Archer", "venomancer": "Venomancer"}
+
+## Caps, so nothing becomes unkillable or casts nonstop.
+const MAX_COOLDOWN := 0.5
 
 ## Armor from all sources is capped, so nothing becomes unkillable.
 const MAX_ARMOR := 0.6
 
 
-## Every skill of a species: [{name, stat, amount, level}] in unlock order.
+## Every skill of a species (its class's tree): [{name, stat, amount, level}]
+## in unlock order.
 static func all_for(species_index: int) -> Array:
 	var out := []
-	if species_index < 0 or species_index >= SKILLS.size():
+	if species_index < 0 or species_index >= SpeciesDB.PATHS.size():
 		return out
-	for i in SKILLS[species_index].size():
-		var entry: Array = SKILLS[species_index][i]
+	var tree: Array = CLASS_TREES.get(SpeciesDB.get_species(species_index).pet_class(), [])
+	for i in tree.size():
+		var entry: Array = tree[i]
 		out.append({"name": entry[0], "stat": entry[1], "amount": entry[2], "level": UNLOCK_LEVELS[i]})
 	return out
+
+
+## "Wizard" etc. for a species' tree ("" if it has none).
+static func tree_name(species_index: int) -> String:
+	return TREE_NAMES.get(SpeciesDB.get_species(species_index).pet_class(), "")
 
 
 static func empty_ranks() -> Array:

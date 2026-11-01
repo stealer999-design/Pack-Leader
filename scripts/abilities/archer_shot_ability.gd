@@ -48,7 +48,7 @@ func execute(pet: Creature, point: Vector3, target: Creature) -> void:
 	var from := pet.global_position + Vector3.UP * 0.7
 	var aim := target.global_position if is_instance_valid(target) else point
 	aim.y = pet.global_position.y
-	var damage := pet.get_damage() * damage_multiplier
+	var damage := pet.ability_damage() * damage_multiplier
 	match mode:
 		"shot":
 			_fire(pet, from, aim, _hit.bind(pet, aim, damage, maxf(splash_radius, ARROW_HIT), target))
@@ -145,7 +145,7 @@ func _apply(pet: Creature, enemy: Node3D, damage: float) -> void:
 	if blind_duration > 0.0 and enemy.has_method("blind"):
 		enemy.blind(blind_duration)
 	if dot_multiplier > 0.0:
-		pet.envenom(enemy, pet.get_damage() * dot_multiplier, 4.0, pet.get_damage() * dot_multiplier)
+		pet.envenom(enemy, pet.ability_damage() * dot_multiplier, 4.0, pet.ability_damage() * dot_multiplier)
 
 
 func _heal(pet: Creature, ally_id: int) -> void:

@@ -45,7 +45,7 @@ const CHAIN_RANGE := 6.0
 func execute(pet: Creature, point: Vector3, target: Creature) -> void:
 	var world := pet.world
 	var center := world.clamp_to_level(target.global_position if is_instance_valid(target) else point)
-	var damage := pet.get_damage() * damage_multiplier
+	var damage := pet.ability_damage() * damage_multiplier
 	match style:
 		"wave":
 			_wave(pet, center, damage)
@@ -84,7 +84,7 @@ func _land(pet: Creature, impact: Vector3, damage: float) -> void:
 		_hit(pet, enemy, damage, impact)
 	world.play_burst.rpc(impact, color, radius)
 	if burn_duration > 0.0:
-		world.add_zone(pet, impact, radius * 0.8, burn_duration, pet.get_damage() * burn_dps_multiplier, color)
+		world.add_zone(pet, impact, radius * 0.8, burn_duration, pet.ability_damage() * burn_dps_multiplier, color)
 	if chain > 0:
 		_chain_from(pet, impact, hit, damage * 0.7)
 
@@ -99,7 +99,7 @@ func _hit(pet: Creature, enemy: Node3D, damage: float, from: Vector3) -> void:
 	if slow_duration > 0.0 and enemy.has_method("slow"):
 		enemy.slow(slow_duration, slow_factor)
 	if dot_multiplier > 0.0 and enemy.get("health") != null:
-		pet.envenom(enemy, pet.get_damage() * dot_multiplier, maxf(burn_duration, 3.0), pet.get_damage() * dot_multiplier)
+		pet.envenom(enemy, pet.ability_damage() * dot_multiplier, maxf(burn_duration, 3.0), pet.ability_damage() * dot_multiplier)
 
 
 ## Lightning arcing from enemy to enemy (each new one within CHAIN_RANGE of the last).
@@ -154,7 +154,7 @@ func _wave(pet: Creature, toward: Vector3, damage: float) -> void:
 		world.play_spell.rpc("orb", origin + Vector3.UP * 0.6, origin + dir * radius + Vector3.UP * 0.6, color, 0.35)
 	if burn_duration > 0.0:
 		world.add_zone(pet, world.clamp_to_level(origin + forward * radius * 0.6), radius * 0.4, burn_duration,
-				pet.get_damage() * burn_dps_multiplier, color)
+				pet.ability_damage() * burn_dps_multiplier, color)
 
 
 ## A whirlwind at `center`: damage and a slow now, then damage every half second.
@@ -166,5 +166,5 @@ func _vortex(pet: Creature, center: Vector3, damage: float) -> void:
 		enemy.receive_damage(damage, pet, pull.normalized() * 3.0)  # drawn into the middle
 		if enemy.has_method("slow"):
 			enemy.slow(duration, slow_factor)
-	world.add_zone(pet, center, radius, duration, pet.get_damage() * burn_dps_multiplier, Color(color, 0.6))
+	world.add_zone(pet, center, radius, duration, pet.ability_damage() * burn_dps_multiplier, Color(color, 0.6))
 	world.play_vortex.rpc(center, radius, duration, color)

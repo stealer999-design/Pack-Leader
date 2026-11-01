@@ -11,4 +11,4 @@ func execute(pet: Creature, _point: Vector3, target: Creature) -> void:
 	pet.global_position = pet.world.clamp_to_level(behind)
 	pet.world.play_burst.rpc(from, Color(0.45, 0.3, 0.7), 1.5)
 	pet.world.play_burst.rpc(pet.global_position, Color(0.45, 0.3, 0.7), 1.5)
-	target.receive_damage(pet.get_damage() * damage_multiplier, pet, away.normalized() * 3.0)
+	target.receive_damage(pet.ability_damage() * damage_multiplier, pet, away.normalized() * 3.0)

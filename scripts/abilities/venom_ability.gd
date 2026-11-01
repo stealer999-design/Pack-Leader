@@ -49,7 +49,7 @@ func execute(pet: Creature, point: Vector3, target: Creature) -> void:
 			_splash(pet, world.clamp_to_level(aim))
 		"cloud":
 			var at := world.clamp_to_level(aim)
-			world.add_zone(pet, at, radius, cloud_duration, 0.0, VENOM, pet.get_damage() * poison_dps_multiplier)
+			world.add_zone(pet, at, radius, cloud_duration, 0.0, VENOM, pet.ability_damage() * poison_dps_multiplier)
 			_splash(pet, at)
 	if heal_allies > 0.0:
 		var at := world.clamp_to_level(aim)
@@ -67,10 +67,10 @@ func _splash(pet: Creature, at: Vector3) -> void:
 
 
 func _poison(pet: Creature, enemy: Node3D) -> void:
-	var dealt := pet.get_damage() * damage_multiplier
+	var dealt := pet.ability_damage() * damage_multiplier
 	if dealt > 0.0:
 		enemy.receive_damage(dealt, pet)
-	var dps := pet.get_damage() * poison_dps_multiplier
+	var dps := pet.ability_damage() * poison_dps_multiplier
 	pet.envenom(enemy, dps, poison_duration, dps)
 	if weaken_duration > 0.0 and enemy.has_method("weaken"):
 		enemy.weaken(weaken_duration, weaken_factor)
