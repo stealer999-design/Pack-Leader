@@ -62,6 +62,14 @@ var exit_open := false:
 		if is_node_ready():
 			portal.visible = v
 
+## Replicated: the furthest area anyone has reached in this game. The travel
+## portal can take the party back to any area up to it.
+var furthest_level := 1
+## The travel portal at the end of every level (next to the exit portal): it
+## is always open, and stepping into it opens the travel window (see HUD).
+var travel_portal: Node3D
+const TRAVEL_OFFSET := Vector3(-4.5, 0.0, 0.0)  ## From the exit portal, in the level's own axes.
+
 var layout := {}
 var level_number: int:
 	get:
@@ -109,12 +117,14 @@ func _ready() -> void:
 	coin_spawner.spawn_function = _spawn_coin
 	loot_spawner.spawn_function = _spawn_loot
 	portal.visible = exit_open
+	_build_travel_portal()
 	if level_state != Vector2i.ZERO:
 		_build_level()  # a client joining mid-game
 	if not multiplayer.is_server():
 		return
 	Network.player_joined.connect(_on_player_joined)
 	Network.player_left.connect(_on_player_left)
+	furthest_level = SaveGame.furthest_level()
 	_start_level(SaveGame.start_level())
 	for id in Network.players:
 		_on_player_joined(id, Network.players[id])
@@ -123,6 +133,8 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if portal.visible:
 		portal.rotate_y(delta * 1.5)
+	if travel_portal.visible:
+		travel_portal.rotate_y(-delta * 1.2)
 
 
 func _physics_process(delta: float) -> void:
@@ -331,6 +343,60 @@ func exit_point() -> Vector3:
 	return level_root.to_global(layout.exit_point) if not layout.is_empty() else Vector3.ZERO
 
 
+func travel_point() -> Vector3:
+	return clamp_to_level(level_root.to_global(layout.exit_point + TRAVEL_OFFSET)) if not layout.is_empty() else Vector3.INF
+
+
+func is_near_travel_portal(point: Vector3) -> bool:
+	return not layout.is_empty() and _flat_distance(point, travel_point()) < exit_radius
+
+
+## A player picked an area in the travel window: everyone goes there (any area
+## reached so far). Server.
+@rpc("any_peer", "call_local", "reliable")
+func request_travel(number: int) -> void:
+	if not multiplayer.is_server() or _advancing:
+		return
+	var sender := multiplayer.get_remote_sender_id()
+	var p := get_player(sender if sender != 0 else 1)
+	if p == null or p.downed or not is_near_travel_portal(p.global_position):
+		return
+	if number < 1 or number > furthest_level:
+		return
+	_advancing = true
+	announce.rpc("%s opened the way to %s, %s..." % [p.display_name, area_title(number).replace("  ", " "),
+			BiomeDB.for_level(number).name], Color(0.85, 0.65, 1.0))
+	get_tree().create_timer(1.0).timeout.connect(_start_level.bind(number))
+
+
+## A copy of the exit portal in violet, signed "Travel".
+func _build_travel_portal() -> void:
+	travel_portal = portal.duplicate() as Node3D
+	travel_portal.name = "TravelPortal"
+	travel_portal.visible = false
+	add_child(travel_portal)
+	var violet := StandardMaterial3D.new()
+	violet.albedo_color = Color(0.7, 0.45, 1.0)
+	violet.emission_enabled = true
+	violet.emission = Color(0.55, 0.3, 0.95)
+	violet.emission_energy_multiplier = 1.5
+	for part in ["Ring", "Core"]:
+		var mesh := travel_portal.get_node(part) as MeshInstance3D
+		mesh.material_override = violet if part == "Ring" else _travel_core_material()
+	(travel_portal.get_node("Glow") as OmniLight3D).light_color = Color(0.75, 0.55, 1.0)
+	var label := travel_portal.get_node("Sign") as Label3D
+	label.text = "Travel"
+	label.modulate = Color(0.85, 0.7, 1.0)
+
+
+func _travel_core_material() -> StandardMaterial3D:
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.albedo_color = Color(0.6, 0.35, 1.0, 0.55)
+	return mat
+
+
 ## 0 at the start camp, 1 at the end of the arena.
 func level_progress(point: Vector3) -> float:
 	if layout.is_empty():
@@ -417,6 +483,7 @@ func _start_level(number: int) -> void:
 			+ loot_root.get_children():
 		node.queue_free()
 	exit_open = false
+	furthest_level = maxi(furthest_level, number)
 	level_state = Vector2i(randi_range(1, 2_000_000_000), number)  # rebuilds the level here and on clients
 
 	for p in get_players():
@@ -742,6 +809,8 @@ func _build_level() -> void:
 	stable.global_position = level_root.to_global(layout.stable_point)
 	stable.rotation.y = PATH_YAW + PI / 2.0
 	portal.global_position = level_root.to_global(layout.exit_point)
+	travel_portal.global_position = travel_point()
+	travel_portal.visible = true
 	level_changed.emit()
 
 

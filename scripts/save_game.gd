@@ -105,8 +105,14 @@ func describe(index: int) -> String:
 			% [index + 1, data.get("name", "?"), int(data.get("level", 1)), pets, int(data.get("coins", 0)), when]
 
 
-## The level a hosted or solo game starts on.
+## The level a hosted or solo game starts on: where the player last was
+## (which may be an earlier area they travelled back to).
 func start_level() -> int:
+	return clampi(int(loaded.get("current", furthest_level())), 1, furthest_level())
+
+
+## The furthest area reached (the travel portal goes back to any area up to it).
+func furthest_level() -> int:
 	return maxi(int(loaded.get("level", 1)), 1)
 
 
@@ -136,12 +142,13 @@ func save_now(announce := false) -> void:
 		var data := pet.to_data()
 		data["slot"] = pet.party_slot
 		party.append(data)
-	var level := maxi(_world.level_number, int(loaded.get("level", 1)))
+	var level := maxi(maxi(_world.level_number, _world.furthest_level), int(loaded.get("level", 1)))
 	loaded = {
 		"version": VERSION,
 		"name": _player.display_name,
 		"saved_at": Time.get_unix_time_from_system(),
 		"level": level,
+		"current": _world.level_number,
 		"coins": _player.coins,
 		"potions": _player.potions,
 		"bat": _player.bat_tier,

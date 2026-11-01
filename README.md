@@ -90,9 +90,15 @@ played in the browser".
 - **Levels:** each level is one long, wide, randomly generated path that
   always runs from left to right across the screen, winding up and down, with rocks and packs of
   wild creatures that get tougher the further you go. It starts at a camp with
-  the stable and ends in a boss arena. Defeat the boss and a portal opens at
-  the far end; step in and everyone moves on to the next, harder level, and
-  every pet gets bonus XP.
+  the stable and ends in a boss arena. Defeat the boss and the **Next level**
+  portal opens at the far end; step in and everyone moves on to the next,
+  harder level, and every pet gets bonus XP.
+- **Travel:** beside it stands the violet **Travel** portal, always open (even
+  before the boss is beaten). Step into it to pick any area you've reached, to
+  catch the pets that live there, or to level your pets somewhere easier
+  before going on. Everyone travels together; going back never loses your
+  progress (the furthest area reached stays unlocked), and saves resume in
+  the area you were in.
 - **Acts and biomes:** the four biomes make up **Act 1**, one area each, and
   each area's creatures are five levels higher than the last: **Greenmeadow
   1-5, Frostfang Peaks 6-10, Sunscorch Dunes 11-15, Mirewood Bog 16-20**

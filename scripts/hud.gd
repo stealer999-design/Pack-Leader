@@ -15,6 +15,9 @@ var breeder_window: BreederWindow
 var pause_menu: PauseMenu
 var inventory_window: InventoryWindow
 var inventory_button: Button
+var travel_window: PanelContainer
+var _travel_list: VBoxContainer
+var _in_travel_portal := false
 var _new_gear := 0  ## Gear picked up since the inventory was last opened.
 var _bat_shop_info: Label
 var _bat_buy_button: Button
@@ -68,6 +71,7 @@ func _ready() -> void:
 	add_child(breeder_window)
 	inventory_window = InventoryWindow.new()
 	add_child(inventory_window)
+	_build_travel_window()
 	inventory_button = Button.new()
 	inventory_button.text = "Inventory   [I]"
 	inventory_button.focus_mode = Control.FOCUS_NONE
@@ -112,6 +116,13 @@ func _process(delta: float) -> void:
 	var near_bat_shop := _player.world.is_near_bat_shop(_player.global_position)
 	if bat_shop_panel.visible and not near_bat_shop:
 		bat_shop_panel.hide()
+	# The travel portal: stepping in opens the travel window; stepping out closes it.
+	var near_travel := _player.world.is_near_travel_portal(_player.global_position) and not _player.downed
+	if near_travel and not _in_travel_portal and not is_window_open():
+		open_travel()
+	if not near_travel and travel_window.visible:
+		travel_window.hide()
+	_in_travel_portal = near_travel
 	var near_breeder := _player.world.is_near_breeder(_player.global_position)
 	if breeder_window.visible and not near_breeder:
 		breeder_window.hide()
@@ -182,7 +193,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func is_window_open() -> bool:
 	return stable_panel.visible or shop_panel.visible or skill_window.visible or bat_shop_panel.visible \
-			or breeder_window.visible or pause_menu.visible or inventory_window.visible
+			or breeder_window.visible or pause_menu.visible or inventory_window.visible or travel_window.visible
 
 
 func close_windows() -> void:
@@ -192,6 +203,7 @@ func close_windows() -> void:
 	bat_shop_panel.hide()
 	breeder_window.hide()
 	inventory_window.hide()
+	travel_window.hide()
 
 
 ## The inventory (I) can open anywhere; it replaces any other open window.
@@ -477,7 +489,7 @@ func _update_objective() -> void:
 	progress_bar.value = world.level_progress(_player.global_position) * 100.0
 	var rival := world.get_rival()
 	if world.exit_open:
-		objective_label.text = "Rival defeated! Step into the portal at the end of the path."
+		objective_label.text = "Boss defeated! Take the Next level portal, or the violet Travel portal to go back."
 	elif rival and rival.engaged:
 		objective_label.text = "Defeat %s!" % rival.objective_name()
 	else:
@@ -551,3 +563,69 @@ func _bar(value: float, maximum: float, color: Color, height: int) -> ProgressBa
 	bar.value = value
 	bar.self_modulate = color
 	return bar
+
+
+## The travel window (the violet portal at the end of each level): a button for
+## every area reached so far. Picking one takes the whole party there.
+func _build_travel_window() -> void:
+	travel_window = PanelContainer.new()
+	travel_window.visible = false
+	travel_window.set_anchors_preset(Control.PRESET_CENTER)
+	travel_window.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	travel_window.grow_vertical = Control.GROW_DIRECTION_BOTH
+	add_child(travel_window)
+	var margin := MarginContainer.new()
+	for side in ["left", "right", "top", "bottom"]:
+		margin.add_theme_constant_override("margin_" + side, 16)
+	travel_window.add_child(margin)
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 8)
+	margin.add_child(box)
+	var title := Label.new()
+	title.text = "Travel"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 24)
+	title.modulate = Color(0.85, 0.7, 1.0)
+	box.add_child(title)
+	UiIcons.title(title, "map")
+	var info := Label.new()
+	info.text = "Go back to any area you've reached: to catch the pets that live there,\nor to level up your pets before going on. Everyone travels together."
+	info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	info.add_theme_font_size_override("font_size", 13)
+	info.modulate = UiTheme.TEXT_DIM
+	box.add_child(info)
+	var scroll := ScrollContainer.new()
+	scroll.custom_minimum_size = Vector2(560, 300)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	box.add_child(scroll)
+	_travel_list = VBoxContainer.new()
+	_travel_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_travel_list.add_theme_constant_override("separation", 6)
+	scroll.add_child(_travel_list)
+	var hint := Label.new()
+	hint.text = "Step out of the portal or press Esc to close."
+	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hint.add_theme_font_size_override("font_size", 12)
+	hint.modulate = UiTheme.TEXT_DIM
+	box.add_child(hint)
+
+
+func open_travel() -> void:
+	close_windows()
+	for child in _travel_list.get_children():
+		child.queue_free()
+	var world := _player.world
+	for n in range(1, world.furthest_level + 1):
+		var levels := World.area_levels(n)
+		var button := Button.new()
+		button.focus_mode = Control.FOCUS_NONE
+		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		button.custom_minimum_size = Vector2(0, 40)
+		button.text = "%s  ·  %s   (creatures Lv %d-%d)%s" % [World.area_title(n), BiomeDB.for_level(n).name,
+				levels.x, levels.y, "   ·  you are here" if n == world.level_number else ""]
+		UiIcons.button(button, "map")
+		button.pressed.connect(func() -> void:
+			world.request_travel.rpc_id(1, n)
+			travel_window.hide())
+		_travel_list.add_child(button)
+	travel_window.show()
