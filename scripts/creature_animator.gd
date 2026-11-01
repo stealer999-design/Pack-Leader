@@ -76,7 +76,9 @@ func _process(delta: float) -> void:
 			_walk_bird(step, stride, breathe)
 		"lizard":
 			_walk_lizard(step, stride, breathe)
-		"skeleton", "zombie":
+		"scorpion":
+			_walk_lizard(step, stride, breathe)
+		"skeleton", "zombie", "mummy", "imp", "golem", "wraith", "yeti":
 			_walk_upright(step, stride, breathe)
 		_:
 			_walk_four_legs(step, stride, breathe)
@@ -117,7 +119,13 @@ func _walk_lizard(step: float, stride: float, breathe: float) -> void:
 
 
 func _walk_upright(step: float, stride: float, breathe: float) -> void:
-	var zombie := body_type == "zombie"
+	var zombie := body_type == "zombie" or body_type == "mummy"
+	if body_type == "wraith":  # no legs: it drifts, bobbing gently, arms out
+		body.position.y = _base_y + 0.12 + sin(_time * 2.2) * 0.06
+		body.rotation.x = -0.15 * stride
+		for i in _arms.size():
+			_arms[i].rotation.x = _arms[i].get_meta("rest", 0.0) + sin(_time * 1.6 + i) * 0.12
+		return
 	for i in _legs.size():
 		_legs[i].rotation.x = (step if i == 0 else -step) * (0.45 if zombie else 0.6) * stride
 	for i in _arms.size():
@@ -128,6 +136,7 @@ func _walk_upright(step: float, stride: float, breathe: float) -> void:
 			_arms[i].rotation.x = rest + (-step if i == 0 else step) * 0.5 * stride
 	body.position.y = _base_y + absf(step) * 0.04 * stride + breathe
 	body.rotation.z = step * 0.12 * stride if zombie else 0.0  # the lurch
+	_flap(stride, 14.0)  # imps' little wings
 
 
 ## Wings: a quick flap while moving, a slow twitch at rest. Wing0 is on the left.

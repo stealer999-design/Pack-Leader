@@ -8,6 +8,8 @@ class_name GroundTextures
 ##   snow      Frostfang Peaks: drifts, sparkles and cracked icy patches
 ##   sand      Sunscorch Dunes: wind ripples and pebbles
 ##   swamp     Mirewood Bog: mud, moss and dark puddles
+##   graveyard Hollowmere Graveyard: dead grass, soil, leaves and bones
+##   lava      Cinderpeak Caldera: black basalt with glowing cracks of lava
 ##   dirt      every camp: trampled ground with stones
 ##   flagstone every boss arena: big stone slabs
 ##   cobble    the village square: small cobblestones
@@ -16,7 +18,7 @@ const SIZE := 256
 const TILE_UNITS := 8.0  ## World units one tile covers.
 
 ## Biome index (BiomeDB) -> the path's style.
-const BIOME_STYLES := ["grass", "snow", "sand", "swamp", "graveyard"]
+const BIOME_STYLES := ["grass", "snow", "sand", "swamp", "graveyard", "sand", "lava", "snow"]
 
 static var _cache := {}
 
@@ -49,6 +51,8 @@ static func _paint(style: String, color: Color) -> Image:
 			_swamp(canvas, color)
 		"graveyard":
 			_graveyard(canvas, color)
+		"lava":
+			_lava(canvas, color)
 		"flagstone":
 			_stones(canvas, color, 4, 0.0, 3)
 		"cobble":
@@ -150,6 +154,33 @@ static func _graveyard(c: Canvas, color: Color) -> void:
 		c.line(x, y, x + cos(angle) * 4.0, y + sin(angle) * 4.0, bone, 0.7)
 		c.dot(x, y, 1.0, bone)
 		c.dot(x + cos(angle) * 4.0, y + sin(angle) * 4.0, 1.0, bone)
+
+
+## Black basalt, ash and cinders, split by glowing cracks of lava (each crack
+## a jagged line with a hot core and a red glow around it).
+static func _lava(c: Canvas, color: Color) -> void:
+	var rock := color.lerp(Color(0.13, 0.11, 0.11), 0.5)
+	c.fill_noise(rock.darkened(0.3), rock.lightened(0.06), 0.02, 3)
+	c.blend_noise(Color(0.3, 0.28, 0.27), 0.03, 0.66)  # ash drifts
+	c.blend_noise(Color(0.35, 0.08, 0.03), 0.012, 0.72)  # heat glowing under the rock
+	var glow := Color(0.85, 0.2, 0.04)
+	var hot := Color(1.0, 0.62, 0.15)
+	for i in 26:
+		var x := c.rng.randf() * SIZE
+		var y := c.rng.randf() * SIZE
+		var angle := c.rng.randf() * TAU
+		for s in 6:  # a jagged crack
+			angle += c.rng.randf_range(-0.7, 0.7)
+			var length := c.rng.randf_range(5, 14)
+			var x1 := x + cos(angle) * length
+			var y1 := y + sin(angle) * length
+			for w in [Vector2(-1.5, 0), Vector2(1.5, 0), Vector2(0, -1.5), Vector2(0, 1.5)]:
+				c.line(x + w.x, y + w.y, x1 + w.x, y1 + w.y, glow, 0.45)
+			c.line(x, y, x1, y1, hot, 0.95)
+			x = x1
+			y = y1
+	for i in 140:  # cinders
+		c.dot(c.rng.randf() * SIZE, c.rng.randf() * SIZE, c.rng.randf_range(0.5, 1.0), hot if c.rng.randf() < 0.3 else Color(0.06, 0.05, 0.05))
 
 
 static func _dirt(c: Canvas, color: Color) -> void:

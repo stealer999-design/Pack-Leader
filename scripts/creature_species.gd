@@ -7,7 +7,8 @@ extends Resource
 @export var color := Color.WHITE
 @export var size := 1.0
 ## The body the creature is built with (see CreatureModel). Each biome has its own.
-@export_enum("cat", "bird", "dog", "lizard", "skeleton", "zombie") var body_type := "cat"
+@export_enum("cat", "bird", "dog", "lizard", "skeleton", "zombie", "mummy", "scorpion", "imp", "golem", "wraith",
+		"yeti") var body_type := "cat"
 ## An extra body detail for this species (see CreatureModel).
 @export_enum("none", "big_ears", "spines", "horn", "mane", "wings", "crown") var feature := "none"
 
@@ -56,6 +57,8 @@ const ARCHER_KITE_DISTANCE := 2.8
 ## Monsters (the undead of the graveyard) are not creatures you can tame: they
 ## can't be captured, and the tamer's bat can finish them off.
 @export var monster := false
+## Monsters that fight from range (fire imps, frost wraiths): magic bolts like a wizard's.
+@export var ranged_attack := false
 
 @export_group("Taming")
 ## 0..1. Higher = easier to capture. Capture chance also scales with missing health.
@@ -73,7 +76,7 @@ func pet_class() -> String:
 
 
 func is_ranged() -> bool:
-	return pet_class() == "wizard" or pet_class() == "archer"
+	return pet_class() == "wizard" or pet_class() == "archer" or ranged_attack
 
 
 func is_archer() -> bool:

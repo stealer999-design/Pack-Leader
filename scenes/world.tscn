@@ -12,6 +12,7 @@
 [ext_resource type="PackedScene" path="res://scenes/sand_wyrm.tscn" id="10_wyrm"]
 [ext_resource type="PackedScene" path="res://scenes/bog_witch.tscn" id="11_witch"]
 [ext_resource type="PackedScene" path="res://scenes/zombie_fish.tscn" id="12_fish"]
+[ext_resource type="PackedScene" path="res://scenes/act2_boss.tscn" id="13_act2"]
 
 [sub_resource type="Environment" id="env"]
 background_mode = 1
@@ -70,6 +71,7 @@ titan_scene = ExtResource("7_titan")
 wyrm_scene = ExtResource("10_wyrm")
 witch_scene = ExtResource("11_witch")
 fish_scene = ExtResource("12_fish")
+act2_boss_scene = ExtResource("13_act2")
 crate_scene = ExtResource("8_crate")
 coin_scene = ExtResource("9_coin")
 

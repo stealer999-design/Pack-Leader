@@ -59,6 +59,18 @@ static func build(body: MeshInstance3D, body_type: String, main: StandardMateria
 			_skeleton(body, m)
 		"zombie":
 			_zombie(body, m)
+		"mummy":
+			_mummy(body, m)
+		"scorpion":
+			_scorpion(body, m)
+		"imp":
+			_imp(body, m)
+		"golem":
+			_golem(body, m)
+		"wraith":
+			_wraith(body, m)
+		"yeti":
+			_yeti(body, m)
 		_:
 			_cat(body, m)
 	match feature:
@@ -109,7 +121,160 @@ static func build(body: MeshInstance3D, body_type: String, main: StandardMateria
 
 ## Walking on two legs (the graveyard's monsters): taller, with arms.
 static func is_humanoid(body_type: String) -> bool:
-	return body_type == "skeleton" or body_type == "zombie"
+	return body_type in ["skeleton", "zombie", "mummy", "imp", "golem", "wraith", "yeti"]
+
+
+## Two legs from the hips (Leg0/Leg1): thigh, shin and foot, `color` cloth or skin.
+static func _biped_legs(b: Node3D, mat: Material, foot: Material, x: float, thick: float) -> void:
+	for side in [-1.0, 1.0]:
+		var hip := _pivot(b, "Leg%d" % (0 if side < 0 else 1), Vector3(side * x, 0.38, 0))
+		_part(hip, _box(Vector3(thick, 0.74, thick * 1.1)), mat, Vector3(0, -0.38, 0))
+		_part(hip, _box(Vector3(thick * 1.05, 0.1, thick * 1.5)), foot, Vector3(0, -0.76, -0.05))
+
+
+## A mummy: wrapped head to toe in old bandages (in the species colour, with
+## darker strips), glowing blue eyes in the wrappings, arms reaching out.
+static func _mummy(b: Node3D, m: Dictionary) -> void:
+	var strip := _mat(Color(0.5, 0.44, 0.33))
+	var glow := _mat(Color(0.4, 0.85, 1.0), true)
+	_biped_legs(b, m.main, strip, 0.13, 0.17)
+	_part(b, _box(Vector3(0.42, 0.62, 0.26)), m.main, Vector3(0, 0.72, 0))
+	for i in 5:  # wrapping strips around the body
+		_part(b, _box(Vector3(0.44, 0.04, 0.28)), strip, Vector3(0, 0.48 + i * 0.12, 0), Vector3(0, 0, (i % 2) * 10 - 5))
+	var head := _pivot(b, "Head", Vector3(0, 1.1, -0.02))
+	_part(head, _box(Vector3(0.3, 0.34, 0.3)), m.main, Vector3(0, 0.16, 0))
+	for i in 3:
+		_part(head, _box(Vector3(0.32, 0.035, 0.32)), strip, Vector3(0, 0.05 + i * 0.11, 0), Vector3(0, 0, i * 7 - 7))
+	for x in [-0.07, 0.07]:
+		_part(head, _box(Vector3(0.06, 0.035, 0.02)), glow, Vector3(x, 0.2, -0.155))
+	for x in [-0.28, 0.28]:
+		var shoulder := _pivot(b, "Arm%d" % (0 if x < 0 else 1), Vector3(x, 0.95, 0))
+		shoulder.set_meta("rest", 1.3)  # reaching forward
+		_part(shoulder, _box(Vector3(0.13, 0.62, 0.14)), m.main, Vector3(0, -0.3, 0))
+		_part(shoulder, _box(Vector3(0.15, 0.04, 0.16)), strip, Vector3(0, -0.25, 0))
+		_part(shoulder, _box(Vector3(0.05, 0.25, 0.03)), m.main, Vector3(0.03, -0.72, 0.05), Vector3(10, 0, 0))  # a trailing bandage
+
+
+## A sand scorpion: a low armoured body, four legs a side (as two pivots each
+## side), big pincers and a curled tail with a stinger.
+static func _scorpion(b: Node3D, m: Dictionary) -> void:
+	var dark: Material = m.accent
+	var sting := _mat(Color(0.2, 0.08, 0.05))
+	_part(b, _sphere(0.3), m.main, Vector3(0, -0.12, 0.05), Vector3.ZERO, Vector3(1.0, 0.45, 1.5))  # body
+	_part(b, _sphere(0.2), m.main, Vector3(0, -0.1, -0.38), Vector3.ZERO, Vector3(1.1, 0.5, 0.9))  # head
+	for i in 4:  # plates on the back
+		_part(b, _box(Vector3(0.5 - i * 0.05, 0.04, 0.1)), dark, Vector3(0, 0.02, -0.1 + i * 0.13))
+	for x in [-0.08, 0.08]:
+		_part(b, _sphere(0.035), m.glint, Vector3(x, -0.02, -0.52))
+	var i := 0
+	for z in [-0.18, 0.18]:
+		for side in [-1.0, 1.0]:
+			var leg := _pivot(b, "Leg%d" % i, Vector3(side * 0.24, -0.12, z))
+			for k in 2:  # two legs from each pivot, splayed
+				_part(leg, _cylinder(0.02, 0.03, 0.42), dark, Vector3(side * 0.18, -0.12, (k - 0.5) * 0.14),
+						Vector3(0, 0, side * 60))
+			i += 1
+	for side in [-1.0, 1.0]:  # pincers
+		var arm := _pivot(b, "Arm%d" % (0 if side < 0 else 1), Vector3(side * 0.18, -0.1, -0.45))
+		_part(arm, _cylinder(0.03, 0.04, 0.3), m.main, Vector3(side * 0.08, 0, -0.14), Vector3(-90, side * 30, 0))
+		_part(arm, _sphere(0.09), m.main, Vector3(side * 0.16, 0, -0.32), Vector3.ZERO, Vector3(1.0, 0.6, 1.4))
+		_part(arm, _prism(Vector3(0.08, 0.16, 0.05)), dark, Vector3(side * 0.13, 0, -0.45), Vector3(90, 0, 0))
+	var tail := _pivot(b, "Tail", Vector3(0, -0.05, 0.42))
+	for k in 5:  # segments curling up and over the back
+		var a := k * 0.42
+		_part(tail, _sphere(0.08 - k * 0.006), m.main, Vector3(0, sin(a) * 0.38, cos(a) * 0.32 - 0.05))
+	_part(tail, _cylinder(0.0, 0.05, 0.18), sting, Vector3(0, 0.42, -0.22), Vector3(-120, 0, 0))
+
+
+## A fire imp: a small red devil with horns, little leathery wings, a pointed
+## tail and burning yellow eyes. It hurls fire from range.
+static func _imp(b: Node3D, m: Dictionary) -> void:
+	var horn := _mat(Color(0.15, 0.08, 0.06))
+	var glow := _mat(Color(1.0, 0.85, 0.2), true)
+	_biped_legs(b, m.main, horn, 0.11, 0.13)
+	_part(b, _sphere(0.24), m.main, Vector3(0, 0.66, 0), Vector3.ZERO, Vector3(1.0, 1.2, 0.85))  # pot belly
+	var head := _pivot(b, "Head", Vector3(0, 1.0, -0.02))
+	_part(head, _sphere(0.2), m.main, Vector3(0, 0.08, 0))
+	for x in [-1.0, 1.0]:
+		_part(head, _cylinder(0.0, 0.05, 0.22), horn, Vector3(x * 0.12, 0.26, 0.02), Vector3(-15, 0, -x * 25))
+		_part(head, _box(Vector3(0.07, 0.04, 0.02)), glow, Vector3(x * 0.07, 0.1, -0.19), Vector3(0, 0, x * 15))
+	_part(head, _box(Vector3(0.1, 0.02, 0.02)), horn, Vector3(0, -0.01, -0.19))  # grin
+	for x in [-1.0, 1.0]:
+		var wing := _pivot(b, "Wing%d" % (0 if x < 0 else 1), Vector3(x * 0.12, 0.82, 0.18))
+		_part(wing, _prism(Vector3(0.36, 0.3, 0.02)), m.accent, Vector3(x * 0.2, 0.06, 0.04), Vector3(0, x * 25, -x * 70))
+		var shoulder := _pivot(b, "Arm%d" % (0 if x < 0 else 1), Vector3(x * 0.24, 0.82, 0))
+		_part(shoulder, _box(Vector3(0.09, 0.4, 0.1)), m.main, Vector3(0, -0.2, 0))
+		_part(shoulder, _sphere(0.06), horn, Vector3(0, -0.42, 0))  # claw
+	var tail := _pivot(b, "Tail", Vector3(0, 0.5, 0.18))
+	_part(tail, _cylinder(0.015, 0.03, 0.5), m.main, Vector3(0, 0.0, 0.22), Vector3(70, 0, 0))
+	_part(tail, _prism(Vector3(0.12, 0.12, 0.03)), horn, Vector3(0, 0.08, 0.46), Vector3(90, 0, 0))
+
+
+## A magma golem: hulking blocks of black basalt with lava glowing in the
+## cracks between them, glowing eyes, and huge stone fists.
+static func _golem(b: Node3D, m: Dictionary) -> void:
+	var lava := _mat(Color(1.0, 0.45, 0.1), true)
+	_biped_legs(b, m.main, m.main, 0.15, 0.22)
+	_part(b, _box(Vector3(0.62, 0.62, 0.4)), m.main, Vector3(0, 0.76, 0), Vector3(0, 0, 3))  # chest
+	_part(b, _box(Vector3(0.64, 0.05, 0.42)), lava, Vector3(0, 0.62, 0))  # a molten seam
+	_part(b, _box(Vector3(0.05, 0.4, 0.42)), lava, Vector3(0.08, 0.86, 0), Vector3(0, 0, 18))
+	var head := _pivot(b, "Head", Vector3(0, 1.1, -0.05))
+	_part(head, _box(Vector3(0.32, 0.26, 0.3)), m.main, Vector3(0, 0.1, 0))
+	for x in [-0.07, 0.07]:
+		_part(head, _box(Vector3(0.07, 0.04, 0.02)), lava, Vector3(x, 0.12, -0.155))
+	for x in [-0.42, 0.42]:
+		var shoulder := _pivot(b, "Arm%d" % (0 if x < 0 else 1), Vector3(x, 0.98, 0))
+		_part(shoulder, _box(Vector3(0.22, 0.24, 0.22)), m.main, Vector3.ZERO)
+		_part(shoulder, _box(Vector3(0.17, 0.5, 0.18)), m.main, Vector3(0, -0.32, 0))
+		_part(shoulder, _box(Vector3(0.26, 0.22, 0.26)), m.main, Vector3(0, -0.66, 0))  # fist
+		_part(shoulder, _box(Vector3(0.27, 0.03, 0.27)), lava, Vector3(0, -0.56, 0))
+
+
+## A frost wraith: a hooded ghost of ice that drifts above the ground, its robe
+## trailing into wisps, two cold eyes in the hood, and pale reaching hands. It
+## throws shards of frost from range.
+static func _wraith(b: Node3D, m: Dictionary) -> void:
+	var dark := _mat(Color(0.05, 0.08, 0.15))
+	var glow := _mat(Color(0.55, 0.95, 1.0), true)
+	_part(b, _cylinder(0.18, 0.34, 0.9), m.main, Vector3(0, 0.38, 0))  # robe, tapering up
+	for i in 6:  # ragged wisps at the hem
+		var a := TAU * i / 6.0
+		_part(b, _cylinder(0.0, 0.07, 0.3), m.main, Vector3(cos(a) * 0.26, -0.18, sin(a) * 0.26), Vector3(180, 0, 0))
+	var head := _pivot(b, "Head", Vector3(0, 0.95, 0))
+	_part(head, _sphere(0.22), m.main, Vector3(0, 0.1, 0.03), Vector3.ZERO, Vector3(1.0, 1.15, 1.0))  # hood
+	_part(head, _sphere(0.15), dark, Vector3(0, 0.08, -0.08))  # the dark inside the hood
+	for x in [-0.05, 0.05]:
+		_part(head, _sphere(0.03), glow, Vector3(x, 0.1, -0.2))
+	for x in [-0.26, 0.26]:
+		var shoulder := _pivot(b, "Arm%d" % (0 if x < 0 else 1), Vector3(x, 0.78, 0))
+		shoulder.set_meta("rest", 0.9)
+		_part(shoulder, _cylinder(0.06, 0.1, 0.45), m.main, Vector3(0, -0.2, 0))  # sleeve
+		_part(shoulder, _box(Vector3(0.07, 0.12, 0.05)), m.light, Vector3(0, -0.47, 0))  # bony hand
+
+
+## A yeti: a big shaggy white ape with a blue face, short horns, long arms
+## hanging to its knuckles and thick legs.
+static func _yeti(b: Node3D, m: Dictionary) -> void:
+	var face := _mat(Color(0.45, 0.6, 0.8))
+	var horn := _mat(Color(0.85, 0.82, 0.72))
+	var dark := _mat(Color(0.08, 0.1, 0.15))
+	_biped_legs(b, m.main, face, 0.16, 0.24)
+	_part(b, _sphere(0.4), m.main, Vector3(0, 0.72, 0.02), Vector3.ZERO, Vector3(1.1, 1.0, 0.85))  # shaggy body
+	for i in 8:  # tufts of fur
+		var a := TAU * i / 8.0
+		_part(b, _cylinder(0.0, 0.08, 0.2), m.main, Vector3(cos(a) * 0.38, 0.5 + (i % 2) * 0.3, sin(a) * 0.3),
+				Vector3(0, 0, rad_to_deg(-a) + 90))
+	var head := _pivot(b, "Head", Vector3(0, 1.1, -0.1))
+	_part(head, _sphere(0.24), m.main, Vector3(0, 0.08, 0))
+	_part(head, _sphere(0.16), face, Vector3(0, 0.03, -0.12), Vector3.ZERO, Vector3(1.0, 0.9, 0.7))
+	for x in [-1.0, 1.0]:
+		_part(head, _sphere(0.035), dark, Vector3(x * 0.06, 0.08, -0.24))
+		_part(head, _cylinder(0.0, 0.05, 0.16), horn, Vector3(x * 0.17, 0.26, 0.0), Vector3(0, 0, -x * 35))
+	_part(head, _box(Vector3(0.12, 0.03, 0.02)), dark, Vector3(0, -0.04, -0.25))  # mouth
+	for x in [-0.42, 0.42]:
+		var shoulder := _pivot(b, "Arm%d" % (0 if x < 0 else 1), Vector3(x, 0.95, 0))
+		_part(shoulder, _cylinder(0.1, 0.13, 0.75), m.main, Vector3(0, -0.36, 0))
+		_part(shoulder, _sphere(0.12), face, Vector3(0, -0.76, 0))  # big hand
 
 
 ## A skeleton: bones in the species colour, a ribcage, a grinning skull with

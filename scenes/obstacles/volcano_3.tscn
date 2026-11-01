@@ -1,0 +1,115 @@
+[gd_scene load_steps=15 format=3]
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_wipyx"]
+height = 1.2
+radius = 1.1
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_2iltb"]
+albedo_color = Color(0.18, 0.14, 0.13, 1)
+roughness = 0.85
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_47js0"]
+top_radius = 0.55
+bottom_radius = 1.15
+height = 0.9
+radial_segments = 10
+rings = 1
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_qgxns"]
+albedo_color = Color(1, 0.5, 0.1, 1)
+roughness = 0.85
+emission_enabled = true
+emission = Color(1, 0.5, 0.1, 1)
+emission_energy_multiplier = 1.6
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_l63cs"]
+height = 0.04
+radial_segments = 10
+rings = 1
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_qmdte"]
+albedo_color = Color(0.144, 0.112, 0.104, 1)
+roughness = 0.85
+
+[sub_resource type="BoxMesh" id="BoxMesh_8jk8v"]
+size = Vector3(0.6, 0.45, 0.5)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ehw7m"]
+albedo_color = Color(0.21248, 0.18304, 0.17568, 1)
+roughness = 0.85
+
+[sub_resource type="BoxMesh" id="BoxMesh_rgpyl"]
+size = Vector3(0.35, 0.3, 0.3)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_5ui7w"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.45, 0.43, 0.42, 0.55)
+
+[sub_resource type="SphereMesh" id="SphereMesh_y1lkb"]
+radius = 0.3
+height = 0.6
+radial_segments = 12
+rings = 6
+
+[sub_resource type="SphereMesh" id="SphereMesh_n6ua2"]
+radius = 0.4
+height = 0.8
+radial_segments = 12
+rings = 6
+
+[sub_resource type="SphereMesh" id="SphereMesh_goah7"]
+radial_segments = 12
+rings = 6
+
+[sub_resource type="SphereMesh" id="SphereMesh_c4vsq"]
+radius = 0.6
+height = 1.2
+radial_segments = 12
+rings = 6
+
+[node name="Volcano_3" type="StaticBody3D"]
+
+[node name="@CollisionShape3D@550" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("CylinderShape3D_wipyx")
+
+[node name="@MeshInstance3D@551" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
+material_override = SubResource("StandardMaterial3D_2iltb")
+mesh = SubResource("CylinderMesh_47js0")
+
+[node name="@MeshInstance3D@552" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+material_override = SubResource("StandardMaterial3D_qgxns")
+mesh = SubResource("CylinderMesh_l63cs")
+
+[node name="@MeshInstance3D@553" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.901531, 0.0999647, 0.42101, -0.069491, 0.993768, -0.0871557, -0.427099, 0.0493172, 0.902859, 1, 0.22, 0.5)
+material_override = SubResource("StandardMaterial3D_qmdte")
+mesh = SubResource("BoxMesh_8jk8v")
+
+[node name="@MeshInstance3D@554" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.861281, -0.0905243, -0.5, 0.104528, 0.994522, 0, 0.497261, -0.0522642, 0.866025, 0.65, 0.15, 0.8)
+material_override = SubResource("StandardMaterial3D_ehw7m")
+mesh = SubResource("BoxMesh_rgpyl")
+
+[node name="@MeshInstance3D@555" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.25, 0.15)
+material_override = SubResource("StandardMaterial3D_5ui7w")
+mesh = SubResource("SphereMesh_y1lkb")
+
+[node name="@MeshInstance3D@556" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.14875, 1.7, -0.0193267)
+material_override = SubResource("StandardMaterial3D_5ui7w")
+mesh = SubResource("SphereMesh_n6ua2")
+
+[node name="@MeshInstance3D@557" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.0383312, 2.15, -0.14502)
+material_override = SubResource("StandardMaterial3D_5ui7w")
+mesh = SubResource("SphereMesh_goah7")
+
+[node name="@MeshInstance3D@558" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.138872, 2.6, 0.0566967)
+material_override = SubResource("StandardMaterial3D_5ui7w")
+mesh = SubResource("SphereMesh_c4vsq")

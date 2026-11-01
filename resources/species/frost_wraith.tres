@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="CreatureSpecies" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/creature_species.gd" id="1_species"]
+
+[resource]
+script = ExtResource("1_species")
+display_name = "Frost Wraith"
+color = Color(0.7, 0.88, 1, 1)
+size = 1.0
+body_type = "wraith"
+max_health = 50.0
+damage = 11.0
+move_speed = 5.2
+attack_range = 1.0
+attack_cooldown = 1.2
+aggressive = true
+aggro_range = 10.0
+spawn_weight = 3.0
+monster = true
+ranged_attack = true
+catch_rate = 0.0
+xp_reward = 30

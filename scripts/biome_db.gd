@@ -2,11 +2,13 @@ class_name BiomeDB
 ## The biomes levels cycle through. Level 1 uses the first biome, level 2 the
 ## second, and so on, wrapping around (with creature levels still rising).
 ## They are grouped into acts (ACTS): Act 1 is the first four biomes, Act 2 the
-## Graveyard; after that the cycle starts again, as Act 3, 4, ...
+## Graveyard, the desert ruins, the volcano and the ice fields (monsters only); after that the cycle starts again, as Act 3, 4, ...
 ##
 ## species: indices into SpeciesDB that live in this biome.
 ## starter_species: if set, the first two creatures near the camp are always this one.
-## boss: "rival" (a tamer with one pet), "titan", "wyrm" or "witch";
+## boss: "rival" (a tamer with one pet), "titan", "wyrm", "witch", "fish",
+## "pharaoh", "colossus" or "yeti";
+## obstacles: which obstacle set dresses the level (default by position).
 ## boss_name: how the boss is named in objectives (rivals get a random name).
 
 const BIOMES := [
@@ -55,9 +57,39 @@ const BIOMES := [
 		"camp": Color(0.3, 0.29, 0.3), "arena": Color(0.26, 0.25, 0.3),
 		"wall": Color(0.3, 0.3, 0.34), "rock": Color(0.42, 0.42, 0.45),
 	},
+	{
+		"name": "Scorchsand Ruins",
+		"species": [47, 48],  # mummies and sand scorpions
+		"boss": "pharaoh",
+		"boss_name": "the Sand Pharaoh",
+		"obstacles": "desert",
+		"floor_hue": Vector2(0.09, 0.12), "floor_sat": 0.45, "floor_val": 0.46,
+		"camp": Color(0.5, 0.42, 0.3), "arena": Color(0.48, 0.36, 0.22),
+		"wall": Color(0.58, 0.46, 0.3), "rock": Color(0.62, 0.5, 0.34),
+	},
+	{
+		"name": "Cinderpeak Caldera",
+		"species": [49, 50],  # fire imps and magma golems
+		"boss": "colossus",
+		"boss_name": "the Magma Colossus",
+		"obstacles": "volcano",
+		"floor_hue": Vector2(0.0, 0.04), "floor_sat": 0.3, "floor_val": 0.22,
+		"camp": Color(0.28, 0.24, 0.23), "arena": Color(0.3, 0.18, 0.14),
+		"wall": Color(0.2, 0.17, 0.17), "rock": Color(0.26, 0.22, 0.22),
+	},
+	{
+		"name": "Frostveil Expanse",
+		"species": [51, 52],  # frost wraiths and yetis
+		"boss": "yeti",
+		"boss_name": "the Yeti King",
+		"obstacles": "frost",
+		"floor_hue": Vector2(0.54, 0.6), "floor_sat": 0.16, "floor_val": 0.55,
+		"camp": Color(0.42, 0.47, 0.55), "arena": Color(0.36, 0.42, 0.56),
+		"wall": Color(0.62, 0.72, 0.84), "rock": Color(0.55, 0.75, 0.92),
+	},
 ]
 ## Which biomes make up each act (indices into BIOMES, in order).
-const ACTS := [[0, 1, 2, 3], [4]]
+const ACTS := [[0, 1, 2, 3], [4, 5, 6, 7]]
 
 
 static func index_for_level(level_number: int) -> int:

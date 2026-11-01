@@ -78,11 +78,13 @@ outline_size = 10
 text = "Rival"
 
 [node name="BarBg" type="MeshInstance3D" parent="Overhead"]
+cast_shadow = 0
 mesh = SubResource("bar_mesh")
 material_override = SubResource("bar_bg_mat")
 
 [node name="BarFg" type="MeshInstance3D" parent="Overhead"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.01)
+cast_shadow = 0
 mesh = SubResource("bar_mesh")
 material_override = SubResource("bar_fg_mat")
 

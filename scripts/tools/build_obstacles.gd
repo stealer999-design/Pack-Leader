@@ -19,6 +19,7 @@ func _init() -> void:
 		"desert": [_cactus, _sandstone_pillar, _palm, _desert_boulders],
 		"swamp": [_swamp_tree, _vine_tree, _mossy_rock, _old_stump],
 		"graveyard": [_headstones, _dead_tree, _crypt, _grave_cross],
+		"volcano": [_lava_spire, _charred_tree, _obsidian_shards, _smoking_vent],
 	}
 	for biome in designs:
 		for i in designs[biome].size():
@@ -370,6 +371,96 @@ func _grave_cross() -> void:
 	wreath.inner_radius = 0.12
 	wreath.outer_radius = 0.2
 	_part(wreath, _mat(Color(0.3, 0.32, 0.18)), Vector3(0.1, 0.17, 0.75), Vector3(-10, 0, 8))
+
+
+# --- Cinderpeak Caldera -------------------------------------------------------------
+
+## A tall spire of black volcanic rock with lava glowing in its cracks.
+func _lava_spire() -> void:
+	_collide(0.9, 3.0)
+	var basalt := Color(0.14, 0.12, 0.12)
+	_cylinder(0.25, 0.85, 2.4, basalt, Vector3(0, 1.2, 0), Vector3(0, 0, 4))
+	_cylinder(0.0, 0.3, 0.8, basalt.lightened(0.05), Vector3(0.08, 2.75, 0), Vector3(0, 0, 6))
+	_cylinder(0.12, 0.45, 1.2, basalt.darkened(0.1), Vector3(0.7, 0.6, 0.35), Vector3(0, 0, -18))
+	for crack in [[Vector3(0.0, 0.9, -0.62), Vector3(0.07, 1.1, 0.05), 12], [Vector3(0.3, 1.6, -0.38), Vector3(0.06, 0.7, 0.05), -20],
+			[Vector3(-0.42, 0.6, -0.5), Vector3(0.06, 0.6, 0.05), 25]]:
+		_part(_box_mesh(crack[1]), _glow(Color(1.0, 0.45, 0.08)), crack[0], Vector3(0, -20, crack[2]))
+	_sphere(0.35, Color(1.0, 0.4, 0.05), Vector3(-0.5, 0.0, -0.75), Vector3(1.2, 0.15, 1.0)).material_override = _glow(Color(1.0, 0.4, 0.05))
+
+
+## A burnt tree: a charcoal trunk with stumpy broken limbs, embers glowing in it.
+func _charred_tree() -> void:
+	_collide(0.45, 2.6)
+	var char_color := Color(0.08, 0.07, 0.07)
+	_cylinder(0.18, 0.34, 2.0, char_color, Vector3(0, 1.0, 0), Vector3(0, 0, -5))
+	_branch(Vector3(0.05, 1.5, 0), Vector3(0.75, 2.15, 0.2), 0.12, 0.05, char_color)
+	_branch(Vector3(0.0, 1.8, 0), Vector3(-0.6, 2.4, -0.25), 0.1, 0.04, char_color)
+	_branch(Vector3(0.0, 1.1, 0), Vector3(-0.5, 1.35, 0.45), 0.09, 0.04, char_color)
+	for i in 4:
+		var angle := TAU * i / 4.0 + 0.2
+		_branch(Vector3(0, 0.25, 0), Vector3(cos(angle) * 0.6, 0.0, sin(angle) * 0.6), 0.12, 0.04, char_color)
+	for at in [Vector3(0.1, 0.7, -0.3), Vector3(-0.18, 1.3, -0.2), Vector3(0.15, 1.75, -0.15)]:
+		_sphere(0.06, Color(1, 0.5, 0.1), at).material_override = _glow(Color(1.0, 0.5, 0.1))
+	_sphere(0.6, Color(0.25, 0.24, 0.24), Vector3(0, 0.0, 0), Vector3(1.2, 0.12, 1.2))  # ash
+
+
+## A cluster of glassy black obsidian shards jutting from the ground.
+func _obsidian_shards() -> void:
+	_collide(1.0, 1.8)
+	var glass := _mat(Color(0.08, 0.06, 0.12))
+	glass.roughness = 0.1
+	glass.metallic = 0.4
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 7
+	for i in 6:
+		var angle := TAU * i / 6.0 + rng.randf_range(-0.3, 0.3)
+		var dist := 0.2 + (i % 3) * 0.28
+		var height := rng.randf_range(0.9, 2.0)
+		var mesh := CylinderMesh.new()
+		mesh.top_radius = 0.0
+		mesh.bottom_radius = rng.randf_range(0.2, 0.32)
+		mesh.height = height
+		mesh.radial_segments = 4
+		mesh.rings = 1
+		_part(mesh, glass, Vector3(cos(angle) * dist, height * 0.45, sin(angle) * dist),
+				Vector3(rng.randf_range(-15, 15), rng.randf() * 90.0, rng.randf_range(-15, 15)))
+	_sphere(0.8, Color(0.16, 0.13, 0.13), Vector3.ZERO, Vector3(1.0, 0.15, 1.0))
+
+
+## A smoking vent: a low cone of rock with a pool of lava in the top and puffs
+## of grey smoke hanging over it.
+func _smoking_vent() -> void:
+	_collide(1.1, 1.2)
+	var basalt := Color(0.18, 0.14, 0.13)
+	_cylinder(0.55, 1.15, 0.9, basalt, Vector3(0, 0.45, 0))
+	_cylinder(0.5, 0.5, 0.04, Color(1, 0.5, 0.1), Vector3(0, 0.9, 0)).material_override = _glow(Color(1.0, 0.5, 0.1))
+	_rock_pile_small(basalt.darkened(0.2), Vector3(1.0, 0, 0.5))
+	var smoke := _mat(Color(0.45, 0.43, 0.42, 0.55))
+	smoke.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	smoke.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	for i in 4:
+		var puff := _sphere(0.3 + i * 0.1, Color.WHITE, Vector3(sin(i * 1.7) * 0.15, 1.25 + i * 0.45, cos(i * 1.7) * 0.15))
+		puff.material_override = smoke
+
+
+func _rock_pile_small(stone: Color, at: Vector3) -> void:
+	_block(Vector3(0.6, 0.45, 0.5), stone, at + Vector3(0, 0.22, 0), Vector3(5, 25, -4))
+	_block(Vector3(0.35, 0.3, 0.3), stone.lightened(0.08), at + Vector3(-0.35, 0.15, 0.3), Vector3(0, -30, 6))
+
+
+func _box_mesh(size: Vector3) -> BoxMesh:
+	var mesh := BoxMesh.new()
+	mesh.size = size
+	return mesh
+
+
+## Glowing lava: bright, lit from inside.
+func _glow(color: Color) -> StandardMaterial3D:
+	var mat := _mat(color)
+	mat.emission_enabled = true
+	mat.emission = color
+	mat.emission_energy_multiplier = 1.6
+	return mat
 
 
 # --- Helpers ------------------------------------------------------------------------

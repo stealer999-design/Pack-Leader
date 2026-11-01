@@ -305,3 +305,136 @@ static func zombie_fish(model: Node3D, main: StandardMaterial3D) -> Dictionary:
 		shoulder.rotation.x = 1.25
 		arms.append(shoulder)
 	return {"legs": legs, "arms": arms, "jaws": [jaw], "sway": [tail], "bob": [body, 0.0, 0.06, 1.8]}
+
+
+## The Sand Pharaoh: a towering mummy king in gold and blue, a striped royal
+## headdress, a gold mask over a bandaged face with burning eyes, a broad
+## collar, and a crook-headed staff.
+static func sand_pharaoh(model: Node3D, main: StandardMaterial3D) -> Dictionary:
+	var gold := _mat(Color(0.95, 0.75, 0.25))
+	gold.metallic = 0.6
+	gold.roughness = 0.35
+	var lapis := _mat(Color(0.15, 0.25, 0.65))
+	var strip := _mat(Color(0.55, 0.48, 0.36))
+	var glow := _mat(Color(0.35, 0.9, 1.0), true)
+	var legs: Array = []
+	for x in [-0.3, 0.3]:
+		var hip := _pivot(model, Vector3(x, 1.4, 0))
+		_part(hip, _box(Vector3(0.36, 1.4, 0.4)), main, Vector3(0, -0.7, 0))
+		_part(hip, _box(Vector3(0.38, 0.06, 0.42)), strip, Vector3(0, -0.5, 0))
+		_part(hip, _box(Vector3(0.38, 0.06, 0.42)), strip, Vector3(0, -1.0, 0))
+		legs.append(hip)
+	var body := _pivot(model, Vector3.ZERO)
+	_part(body, _cylinder(0.55, 0.62, 0.8), lapis, Vector3(0, 1.45, 0))  # royal kilt
+	for i in 6:
+		_part(body, _box(Vector3(0.08, 0.78, 0.02)), gold, Vector3(0, 1.45, -0.6), Vector3(0, i * 30 - 75, 0))
+	_part(body, _box(Vector3(1.0, 1.1, 0.6)), main, Vector3(0, 2.35, 0))  # wrapped chest
+	for i in 4:
+		_part(body, _box(Vector3(1.02, 0.06, 0.62)), strip, Vector3(0, 2.0 + i * 0.25, 0), Vector3(0, 0, (i % 2) * 6 - 3))
+	_part(body, _cylinder(0.75, 0.75, 0.12), gold, Vector3(0, 2.86, 0))  # broad collar
+	_part(body, _cylinder(0.76, 0.76, 0.06), lapis, Vector3(0, 2.8, 0))
+	var head := _pivot(body, Vector3(0, 3.25, 0))
+	_part(head, _box(Vector3(0.48, 0.55, 0.46)), main, Vector3(0, 0, 0))
+	_part(head, _box(Vector3(0.44, 0.5, 0.04)), gold, Vector3(0, -0.02, -0.25))  # mask
+	for x in [-0.1, 0.1]:
+		_part(head, _box(Vector3(0.1, 0.05, 0.02)), glow, Vector3(x, 0.06, -0.28))
+	_part(head, _box(Vector3(0.06, 0.24, 0.04)), lapis, Vector3(0, -0.32, -0.24))  # royal beard
+	for side in [-1.0, 1.0]:  # the striped headdress falling to the shoulders
+		for i in 4:
+			_part(head, _box(Vector3(0.1, 0.6, 0.38)), gold if i % 2 == 0 else lapis, Vector3(side * (0.28 + i * 0.03), -0.3, 0.02 + i * 0.01), Vector3(0, 0, side * 8))
+	_part(head, _box(Vector3(0.62, 0.22, 0.52)), gold, Vector3(0, 0.3, 0.02))
+	_part(head, _cylinder(0.0, 0.06, 0.18), gold, Vector3(0, 0.42, -0.26), Vector3(-30, 0, 0))  # the cobra on the brow
+	var arms: Array = []
+	for side in [-1.0, 1.0]:
+		var shoulder := _pivot(body, Vector3(side * 0.62, 2.7, 0))
+		_part(shoulder, _box(Vector3(0.26, 0.95, 0.28)), main, Vector3(0, -0.45, 0))
+		_part(shoulder, _cylinder(0.16, 0.16, 0.1), gold, Vector3(0, -0.75, 0))  # bracelet
+		_part(shoulder, _box(Vector3(0.22, 0.2, 0.22)), main, Vector3(0, -1.0, 0))
+		arms.append(shoulder)
+	var staff := _pivot(arms[1], Vector3(0, -1.0, 0))
+	_part(staff, _cylinder(0.04, 0.04, 2.8), gold, Vector3(0, 0.6, -0.1))
+	_part(staff, TorusMesh.new(), gold, Vector3(0, 2.05, -0.25), Vector3(90, 0, 0), Vector3(0.25, 0.25, 0.25))  # the crook
+	arms[1].rotation_degrees.x = 20
+	return {"legs": legs, "arms": [arms[0]], "bob": [body, 0.0, 0.04, 1.2]}
+
+
+## The Magma Colossus: a mountain of black rock walking on stumpy legs, lava
+## pouring through the cracks, a crown of smoking spikes, molten eyes, and
+## fists like boulders.
+static func magma_colossus(model: Node3D, main: StandardMaterial3D) -> Dictionary:
+	var lava := _mat(Color(1.0, 0.45, 0.08), true)
+	var ember := _mat(Color(1.0, 0.75, 0.2), true)
+	var legs: Array = []
+	for x in [-0.55, 0.55]:
+		var hip := _pivot(model, Vector3(x, 1.2, 0))
+		_part(hip, _box(Vector3(0.75, 1.2, 0.8)), main, Vector3(0, -0.6, 0))
+		_part(hip, _box(Vector3(0.77, 0.06, 0.82)), lava, Vector3(0, -0.55, 0))
+		legs.append(hip)
+	var body := _pivot(model, Vector3.ZERO)
+	_part(body, _box(Vector3(2.0, 1.6, 1.3)), main, Vector3(0, 2.1, 0), Vector3(-5, 0, 0))
+	for crack in [[Vector3(0.3, 2.2, -0.66), Vector3(0.13, 1.2, 0.05), 20], [Vector3(-0.4, 2.0, -0.66), Vector3(0.12, 0.9, 0.05), -25],
+			[Vector3(0, 1.6, -0.62), Vector3(1.6, 0.12, 0.05), 0], [Vector3(0.62, 2.5, -0.1), Vector3(0.05, 0.12, 1.0), 0],
+			[Vector3(-0.62, 2.4, -0.1), Vector3(0.05, 0.12, 1.0), 0]]:
+		_part(body, _box(crack[1]), lava, crack[0], Vector3(-5, 0, crack[2]))
+	_part(body, _sphere(0.45), lava, Vector3(0, 2.2, -0.45), Vector3.ZERO, Vector3(1, 1, 0.4))  # the molten heart
+	var head := _pivot(body, Vector3(0, 3.15, -0.2))
+	_part(head, _box(Vector3(0.9, 0.7, 0.8)), main, Vector3.ZERO)
+	for x in [-0.2, 0.2]:
+		_part(head, _box(Vector3(0.18, 0.08, 0.04)), lava, Vector3(x, 0.05, -0.41))
+	_part(head, _box(Vector3(0.5, 0.06, 0.04)), lava, Vector3(0, -0.18, -0.41))  # glowing mouth
+	for i in 5:  # a crown of smoking spikes
+		var a := PI * (0.15 + 0.7 * i / 4.0)
+		_part(head, _cylinder(0.0, 0.12, 0.6), main, Vector3(cos(a) * 0.38, 0.55, -sin(a) * 0.1 + 0.1), Vector3(0, 0, rad_to_deg(PI / 2.0 - a) * 0.6))
+		_part(head, _sphere(0.06), ember, Vector3(cos(a) * 0.44, 0.88, -sin(a) * 0.1 + 0.1))
+	var arms: Array = []
+	for side in [-1.0, 1.0]:
+		var shoulder := _pivot(body, Vector3(side * 1.25, 2.6, 0))
+		_part(shoulder, _box(Vector3(0.7, 0.7, 0.7)), main, Vector3.ZERO)
+		_part(shoulder, _box(Vector3(0.5, 1.0, 0.55)), main, Vector3(0, -0.75, 0))
+		_part(shoulder, _box(Vector3(0.52, 0.05, 0.57)), lava, Vector3(0, -0.6, 0))
+		_part(shoulder, _box(Vector3(0.85, 0.75, 0.85)), main, Vector3(0, -1.5, -0.05))  # fist
+		_part(shoulder, _box(Vector3(0.87, 0.05, 0.87)), lava, Vector3(0, -1.3, -0.05))
+		arms.append(shoulder)
+	return {"legs": legs, "arms": arms, "bob": [body, 0.0, 0.05, 1.4]}
+
+
+## The Yeti King: a giant white yeti with a crown of ice, a frosted blue face
+## with small fierce eyes and tusks, a cloak of fur, and huge arms.
+static func yeti_king(model: Node3D, main: StandardMaterial3D) -> Dictionary:
+	var face := _mat(Color(0.42, 0.58, 0.8))
+	var ice := _mat(Color(0.7, 0.92, 1.0))
+	ice.emission_enabled = true
+	ice.emission = Color(0.3, 0.6, 0.9)
+	ice.emission_energy_multiplier = 0.6
+	var tusk := _mat(Color(0.95, 0.93, 0.85))
+	var dark := _mat(Color(0.05, 0.08, 0.15))
+	var legs: Array = []
+	for x in [-0.5, 0.5]:
+		var hip := _pivot(model, Vector3(x, 1.15, 0))
+		_part(hip, _cylinder(0.32, 0.36, 1.15), main, Vector3(0, -0.55, 0))
+		_part(hip, _box(Vector3(0.6, 0.18, 0.85)), face, Vector3(0, -1.08, -0.15))  # big feet
+		legs.append(hip)
+	var body := _pivot(model, Vector3.ZERO)
+	_part(body, _sphere(1.1), main, Vector3(0, 2.15, 0.05), Vector3.ZERO, Vector3(1.0, 0.95, 0.8))  # shaggy bulk
+	for i in 12:  # fur tufts
+		var a := TAU * i / 12.0
+		_part(body, _cylinder(0.0, 0.2, 0.5), main, Vector3(cos(a) * 1.0, 1.7 + (i % 3) * 0.35, sin(a) * 0.75),
+				Vector3(0, 0, rad_to_deg(-a) + 90))
+	var head := _pivot(body, Vector3(0, 3.15, -0.3))
+	_part(head, _sphere(0.55), main, Vector3.ZERO)
+	_part(head, _sphere(0.38), face, Vector3(0, -0.05, -0.28), Vector3.ZERO, Vector3(1.0, 0.9, 0.7))
+	for x in [-0.14, 0.14]:
+		_part(head, _sphere(0.06), dark, Vector3(x, 0.06, -0.55))
+		_part(head, _box(Vector3(0.14, 0.04, 0.04)), dark, Vector3(x, 0.15, -0.55), Vector3(0, 0, -signf(x) * 20))  # scowl
+		_part(head, _cylinder(0.0, 0.05, 0.22), tusk, Vector3(x * 0.8, -0.3, -0.5), Vector3(-160, 0, 0))
+	for i in 7:  # the crown of ice
+		var a := PI * (0.1 + 0.8 * i / 6.0)
+		_part(head, _cylinder(0.0, 0.08, 0.45 + (i % 2) * 0.2), ice, Vector3(cos(a) * 0.4, 0.5, -sin(a) * 0.15 + 0.05))
+	var arms: Array = []
+	for side in [-1.0, 1.0]:
+		var shoulder := _pivot(body, Vector3(side * 1.05, 2.6, 0))
+		_part(shoulder, _sphere(0.4), main, Vector3.ZERO)
+		_part(shoulder, _cylinder(0.3, 0.38, 1.4), main, Vector3(0, -0.75, 0))
+		_part(shoulder, _sphere(0.36), face, Vector3(0, -1.55, -0.05))  # huge hands
+		arms.append(shoulder)
+	return {"legs": legs, "arms": arms, "bob": [body, 0.0, 0.06, 1.3]}

@@ -108,8 +108,12 @@ played in the browser".
   top level). After the Bog Witch comes **Act 2: Hollowmere Graveyard**
   (21-25), haunted by **skeletons and zombies**. They are monsters, not
   creatures: they can't be captured, and your bat finishes them off (no 1 HP
-  limit). Bring your pets from Act 1. After Howard the Zombie Fish the acts loop: Act 3
-  is Greenmeadow again at 26-30, and so on. Bosses get tougher to match. The HUD shows the act, area and
+  limit). Act 2 goes on through three more monster-only areas: **Scorchsand
+  Ruins** (26-30, a desert of mummies and sand scorpions), **Cinderpeak
+  Caldera** (31-35, a volcano of fire imps and magma golems) and **Frostveil
+  Expanse** (36-40, an ice field of frost wraiths and yetis). Bring your pets
+  from Act 1. After the Yeti King the acts loop: Act 3 is Greenmeadow again at
+  41-45, and so on. Bosses get tougher to match. The HUD shows the act, area and
   creature levels.
 
   Every boss has its own model: the rival is a tamer in a wide-brimmed hat and
@@ -125,6 +129,9 @@ played in the browser".
   | Act 1 area 3 (Lv 11-15) | Sunscorch Dunes (desert) | Dogs: Fangjackal, Dunehound, Cactipup, Sunfennec | **Sand Wyrm**: burrows underground (it can't be hit there), tunnels under a player or pet behind a warning circle and erupts; at half health it whips up sandstorms |
   | Act 1 area 4 (Lv 16-20) | Mirewood Bog (swamp) | Lizards: Bogleon, Mirelurk, Wisp Gecko, Sporeguana | **Bog Witch**: a ranged caster whose bolts poison; she blinks away when you get close, drops toxic puddles and summons Bogleons at 60% and 30% health |
   | Act 2 area 1 (Lv 21-25) | Hollowmere Graveyard | Monsters: Skeletons (quick, with rusty swords) and Zombies (slow, tough, hit hard); can't be captured | **Howard the Zombie Fish**: a huge rotting fish on a pair of zombie legs, one eye bulging and one crossed out, ribs showing, a fishhook in his lip. He spits a Rotten Splash under a player or pet (a red warning circle, then damage and a slow), and calls up skeletons and a zombie at 66% and 33% health |
+  | Act 2 area 2 (Lv 26-30) | Scorchsand Ruins (desert) | Monsters: Mummies (slow, bandaged, tough) and Sand Scorpions (fast, pincers and a stinger) | **Sand Pharaoh**: a towering mummy king in a gold mask and striped headdress with a crook staff. Curse of the Sands (a warning circle, then damage and blindness); mummies and scorpions rise from the sand at 66% and 33% health |
+  | Act 2 area 3 (Lv 31-35) | Cinderpeak Caldera (volcano) | Monsters: Fire Imps (quick, winged, throw fire from range) and Magma Golems (slow, huge, hit hard) | **Magma Colossus**: a walking mountain of black rock with lava in its cracks. Eruption (a warning circle, then damage and burning); calls fire imps and a golem out of the lava at 66% and 33% health |
+  | Act 2 area 4 (Lv 36-40) | Frostveil Expanse (ice) | Monsters: Frost Wraiths (floating, cast ice from range) and Yetis (big, shaggy, hit hard) | **Yeti King**: a giant yeti in a crown of ice. Ice Slam (a warning circle, then damage and a brief freeze); the blizzard brings wraiths and a yeti at 66% and 33% health |
 - **Tamer health:** after 5 seconds without taking damage you regenerate 3% of
   your max health per second. You carry up to **2 potions** (Q heals 50%),
   and start every level with a full pair. Bloomlings and Aurora Swifts can heal
@@ -431,7 +438,7 @@ The host is the authoritative server and also plays.
 | `scenes/main.tscn` + `scripts/main.gd` | Menu + `LevelSpawner` that replicates the world to joining clients |
 | `scenes/world.tscn` + `scripts/world.gd` | Level flow (start → rival → portal → next level), level geometry, spawners, XP sharing, FX |
 | `scripts/level_generator.gd` | Deterministic layout of a level from a seed: laid out unrolled, then bent along a curved centre line (1-3 curves); rocks, creature spots, boss, exit; mapping between path space and the level |
-| `scripts/boss_models.gd` | The bosses' models (rival tamer, Glacier Titan, Sand Wyrm, Bog Witch, Howard the Zombie Fish) and what animates |
+| `scripts/boss_models.gd` | The bosses' models (rival tamer, Glacier Titan, Sand Wyrm, Bog Witch, Howard the Zombie Fish, Sand Pharaoh, Magma Colossus, Yeti King) and what animates |
 | `scripts/biome_db.gd` | The biomes levels cycle through: their creatures, boss and colours |
 | `scenes/rival.tscn` + `scripts/rival.gd` | The AI rival tamer boss (and the base class for every boss) |
 | `scenes/titan.tscn` + `scripts/titan.gd` | The Glacier Titan boss: Avalanche and Frostfinch summons |
@@ -446,13 +453,13 @@ The host is the authoritative server and also plays.
 | `scripts/creature_animator.gd` | Pet animations (walk, tails, wings, breathing), driven by how fast each pet moves |
 | `scripts/pause_menu.gd` | The in-game menu on Esc: resume, save, quit to the main menu |
 | `scripts/ui_theme.gd` → `resources/ui_theme.tres`, `scripts/ui_icons.gd` | The menus' look (dark panels, gold borders, light text) and their line icons (small SVGs drawn at runtime). Rebuild the theme file with `godot --headless --path . -s res://scripts/tools/build_ui_theme.gd` |
-| `scripts/ground_textures.gd` | The ground textures, painted in code per biome: grass, snow and ice, sand ripples, swamp mud and puddles, plus camp dirt, arena flagstones and village cobblestones |
+| `scripts/ground_textures.gd` | The ground textures, painted in code per biome: grass, snow and ice, sand ripples, swamp mud and puddles, graveyard soil, volcanic basalt with glowing lava cracks, plus camp dirt, arena flagstones and village cobblestones |
 | `scripts/building_textures.gd` | The buildings' shared textures, painted in code: clay shingle roofs, plaster walls, plank doors (and stall woodwork) |
-| `scenes/obstacles/*.tscn` (built by `scripts/tools/build_obstacles.gd`) | Four premade trees and rocks per biome (meadow: oak, pine, mossy boulder, berry bush; frost: frosted white spruce, ice crystals, snow boulder, frozen tree; desert: cactus, sandstone pillar, palm, boulders; swamp: willow, vine tree, mossy rock, old stump), placed turned and sized differently from the level seed. Rebuild with `godot --headless --path . -s res://scripts/tools/build_obstacles.gd` |
+| `scenes/obstacles/*.tscn` (built by `scripts/tools/build_obstacles.gd`) | Four premade trees and rocks per biome (meadow: oak, pine, mossy boulder, berry bush; frost: frosted white spruce, ice crystals, snow boulder, frozen tree; desert: cactus, sandstone pillar, palm, boulders; swamp: willow, vine tree, mossy rock, old stump; graveyard: headstones, dead tree, crypt, grave cross; volcano: lava spire, charred tree, obsidian shards, smoking vent). Areas can name their set, so the Act 2 desert and ice areas reuse the desert and frost sets, placed turned and sized differently from the level seed. Rebuild with `godot --headless --path . -s res://scripts/tools/build_obstacles.gd` |
 | `scripts/item_db.gd`, `scripts/inventory_window.gd`, `scripts/loot.gd` | Gear (items, slots, rarities, every kind of gear and its stats), the inventory window (I) and loot sacks on the ground |
 | `scripts/mini_map.gd` | The mini map (and the large map, M), drawn from the level layout |
 | `scripts/skill_window.gd`, `scripts/skill_icons.gd` | The skills screen (K) and its skill icons, drawn in code |
-| `scripts/creature_model.gd` | Builds each creature's body from simple meshes: a cat, bird, dog or lizard, depending on its biome |
+| `scripts/creature_model.gd` | Builds each creature's body from simple meshes: a cat, bird, dog or lizard, depending on its biome, or a monster (skeleton, zombie, mummy, sand scorpion, fire imp, magma golem, frost wraith, yeti) |
 | `scripts/creature_species.gd`, `resources/species/*.tres`, `scripts/species_db.gd` | Species data. Add a `.tres` and list it in `SpeciesDB` to add a species |
 | `scripts/combat.gd` | Faction rule (`Combat.are_enemies`) that enforces no friendly fire |
 | `scripts/abilities/*.gd`, `resources/abilities/*.tres` | `PetAbility` base class and one subclass per ability; tune values in the `.tres` files |

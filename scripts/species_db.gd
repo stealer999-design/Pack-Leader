@@ -52,6 +52,13 @@ const PATHS := [
 	# Graveyard monsters (Act 2): never pets.
 	"res://resources/species/skeleton.tres",
 	"res://resources/species/zombie.tres",
+	# Act 2's other monsters: desert, volcano, ice.
+	"res://resources/species/mummy.tres",
+	"res://resources/species/sand_scorpion.tres",
+	"res://resources/species/fire_imp.tres",
+	"res://resources/species/magma_golem.tres",
+	"res://resources/species/frost_wraith.tres",
+	"res://resources/species/yeti.tres",
 ]
 
 static var _all: Array[CreatureSpecies] = []

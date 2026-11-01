@@ -16,6 +16,7 @@ const RIVAL_ID := -1
 const PATH_YAW := -PI / 4.0  ## The level runs left to right across the screen.
 const LOW_WALL_HEIGHT := 0.5
 ## Obstacle scene names by biome (scenes/obstacles/<name>_<0..3>.tscn).
+## Obstacle set per biome, unless the biome names one ("obstacles").
 const OBSTACLE_BIOMES := ["meadow", "frost", "desert", "swamp", "graveyard"]
 const OBSTACLES_PER_BIOME := 4
 
@@ -26,6 +27,7 @@ const OBSTACLES_PER_BIOME := 4
 @export var wyrm_scene: PackedScene
 @export var witch_scene: PackedScene
 @export var fish_scene: PackedScene
+@export var act2_boss_scene: PackedScene  ## The Sand Pharaoh, Magma Colossus and Yeti King (Act2Boss variants).
 @export var crate_scene: PackedScene
 @export var coin_scene: PackedScene
 ## Pets within this distance of a kill share the XP.
@@ -853,7 +855,9 @@ func _build_shop() -> void:
 
 ## The premade obstacle scenes (scripts/tools/build_obstacles.gd), loaded once.
 func _obstacle_scene(biome_index: int, variant: int) -> PackedScene:
-	var path := "res://scenes/obstacles/%s_%d.tscn" % [OBSTACLE_BIOMES[biome_index], variant]
+	var obstacle_set: String = BiomeDB.BIOMES[biome_index].get("obstacles",
+			OBSTACLE_BIOMES[biome_index % OBSTACLE_BIOMES.size()])
+	var path := "res://scenes/obstacles/%s_%d.tscn" % [obstacle_set, variant]
 	if not _obstacle_scenes.has(path):
 		_obstacle_scenes[path] = load(path)
 	return _obstacle_scenes[path]
@@ -1278,7 +1282,11 @@ func _spawn_rival(data: Dictionary) -> Node:
 	var scene: PackedScene = {
 		"titan": titan_scene, "wyrm": wyrm_scene, "witch": witch_scene, "fish": fish_scene,
 	}.get(data.get("type", "rival"), rival_scene)
+	if Act2Boss.VARIANTS.has(data.get("type", "")):
+		scene = act2_boss_scene
 	var rival: Rival = scene.instantiate()
+	if rival is Act2Boss:
+		(rival as Act2Boss).variant = data.type
 	rival.display_name = data.name
 	rival.level_number = data.level
 	rival.position = data.pos
