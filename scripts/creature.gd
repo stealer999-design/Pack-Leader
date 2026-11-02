@@ -14,6 +14,10 @@ const XP_PER_LEVEL := 70  ## xp_needed(level) = XP_PER_LEVEL * level.
 const PET_MASK := 1 | 4  # pets don't block players or each other
 ## How long a queued ability waits for the pet to get in range before giving up.
 const CAST_TIMEOUT := 3.0
+## Pets heal passively: PASSIVE_HEAL health every PASSIVE_HEAL_INTERVAL
+## seconds, always (even in a fight), unless fainted.
+const PASSIVE_HEAL := 1.0
+const PASSIVE_HEAL_INTERVAL := 0.5
 
 @export var follow_distance := 2.2
 @export var leash_range := 24.0
@@ -83,6 +87,7 @@ var _weaken_factor := 1.0
 var _leaping := false
 var _pending_cast := {}  ## { point, target, time_left } while moving into ability range.
 var _stats_timer := 0.0
+var _passive_heal_timer := 0.0
 # Getting around walls and obstacles (server).
 var _avoid_side := 1.0  ## Which way to go round: 1 left, -1 right.
 var _avoid_hold := 0.0  ## Keeps the chosen side for a moment, so it doesn't dither.
@@ -141,6 +146,11 @@ func _physics_process(delta: float) -> void:
 	if fainted:
 		_tick_faint(delta)
 		return
+	if is_player_pet():
+		_passive_heal_timer -= delta
+		if _passive_heal_timer <= 0.0:
+			_passive_heal_timer += PASSIVE_HEAL_INTERVAL
+			health.heal(PASSIVE_HEAL)
 	if _leaping:
 		return  # position is driven by the leap tween
 	_attack_timer -= delta

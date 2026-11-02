@@ -144,6 +144,8 @@ played in the browser".
   | Act 2 area 2 (Lv 26-30) | Scorchsand Ruins (desert) | Monsters: Mummies (slow, bandaged, tough) and Sand Scorpions (fast, pincers and a stinger) | **Sand Pharaoh**: a towering mummy king in a gold mask and striped headdress with a crook staff. Curse of the Sands (a warning circle, then damage and blindness); mummies and scorpions rise from the sand at 66% and 33% health |
   | Act 2 area 3 (Lv 31-35) | Cinderpeak Caldera (volcano) | Monsters: Fire Imps (quick, winged, throw fire from range) and Magma Golems (slow, huge, hit hard) | **Magma Colossus**: a walking mountain of black rock with lava in its cracks. Eruption (a warning circle, then damage and burning); calls fire imps and a golem out of the lava at 66% and 33% health |
   | Act 2 area 4 (Lv 36-40) | Frostveil Expanse (ice) | Monsters: Frost Wraiths (floating, cast ice from range) and Yetis (big, shaggy, hit hard) | **Yeti King**: a giant yeti in a crown of ice. Ice Slam (a warning circle, then damage and a brief freeze); the blizzard brings wraiths and a yeti at 66% and 33% health |
+- **Pet health:** your pets heal passively, 1 HP every half second, all the
+  time (even mid-fight), unless they've fainted.
 - **Tamer health:** after 5 seconds without taking damage you regenerate 3% of
   your max health per second. You carry up to **2 potions** (Q heals 50%),
   and start every level with a full pair. Bloomlings and Aurora Swifts can heal
