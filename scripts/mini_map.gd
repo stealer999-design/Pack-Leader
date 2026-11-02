@@ -61,14 +61,14 @@ func _apply_mode() -> void:
 		offset_left = 300
 		offset_right = -30
 		offset_top = 230
-		offset_bottom = -100
+		offset_bottom = -124
 		_legend.text = "You (arrow)  ·  your pets: green  ·  wild: red  ·  boss: big red  ·  stand: yellow  ·  bat shop: red  ·  breeder: pink  ·  stable: brown  ·  portal: purple       [M] close"
 	else:
 		set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
 		offset_left = -20 - COMPACT_SIZE.x
-		offset_top = -56 - COMPACT_SIZE.y
+		offset_top = -124 - COMPACT_SIZE.y  # above the action bar
 		offset_right = -20
-		offset_bottom = -56
+		offset_bottom = -124
 		_legend.text = "[M] map"
 	_style.bg_color = Color(0.05, 0.06, 0.08, 0.95 if expanded else 0.85)
 	_legend.modulate = Color(1, 1, 1, 0.6)

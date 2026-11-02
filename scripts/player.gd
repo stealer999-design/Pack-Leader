@@ -212,10 +212,8 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	model.rotation.y = atan2(-_aim_dir.x, -_aim_dir.z)
 
-	if Input.is_action_just_pressed("potion") and _potion_timer <= 0.0:
-		if potions > 0 and health.current < health.max_health:
-			_potion_timer = potion_cooldown
-		request_potion.rpc_id(1)  # the server explains if it can't be used
+	if Input.is_action_just_pressed("potion"):
+		use_potion()
 
 	if Input.is_action_just_pressed("inventory"):
 		world.hud.toggle_inventory()
@@ -245,9 +243,8 @@ func _physics_process(delta: float) -> void:
 		_play_swing_fx()
 		request_attack.rpc_id(1, _aim_dir)
 
-	if Input.is_action_just_pressed("capture") and _capture_timer <= 0.0 and hovered_creature:
-		_capture_timer = capture_cooldown
-		request_capture.rpc_id(1, hovered_creature.name)
+	if Input.is_action_just_pressed("capture"):
+		try_capture()
 
 	if Input.is_action_just_pressed("command"):
 		var rival := world.get_rival()
@@ -265,6 +262,59 @@ func _physics_process(delta: float) -> void:
 		if Input.is_action_just_pressed("ability_%d" % (slot + 1)):
 			var target_name := String(hovered_creature.name) if hovered_creature else ""
 			request_ability.rpc_id(1, slot, _aim_point, target_name)
+
+
+## Local: drink a potion (Q, or the action bar's potion slot).
+func use_potion() -> void:
+	if downed or _potion_timer > 0.0:
+		return
+	if potions > 0 and health.current < health.max_health:
+		_potion_timer = potion_cooldown
+	request_potion.rpc_id(1)  # the server explains if it can't be used
+
+
+## Local: throw a capture (E, or the action bar's capture slot) at the
+## creature under the mouse, or else at the nearest tameable wild creature in
+## range (the weakest one if several are close).
+func try_capture() -> void:
+	if downed or _capture_timer > 0.0:
+		return
+	var target := capture_target()
+	if target == null:
+		return
+	_capture_timer = capture_cooldown
+	request_capture.rpc_id(1, target.name)
+
+
+func capture_target() -> Creature:
+	if hovered_creature and (hovered_creature.is_wild() or hovered_creature.is_rival_pet()):
+		return hovered_creature  # the server explains if it can't be tamed
+	var best: Creature = null
+	var best_score := INF
+	for c in world.get_wild_creatures():
+		if c.is_monster() or not c.is_targetable():
+			continue
+		var d := c.global_position.distance_to(global_position)
+		if d > capture_range + c.radius():
+			continue
+		var score := d + c.health.fraction() * 6.0  # prefer weakened ones
+		if score < best_score:
+			best_score = score
+			best = c
+	return best
+
+
+## 1 just used, 0 ready: for the action bar.
+func capture_cooldown_fraction() -> float:
+	return clampf(_capture_timer / capture_cooldown, 0.0, 1.0)
+
+
+func attack_cooldown_fraction() -> float:
+	return clampf(_attack_timer / attack_cooldown, 0.0, 1.0)
+
+
+func potion_cooldown_fraction() -> float:
+	return clampf(_potion_timer / potion_cooldown, 0.0, 1.0)
 
 
 func is_targetable() -> bool:

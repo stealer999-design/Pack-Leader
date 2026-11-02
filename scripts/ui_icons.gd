@@ -51,6 +51,8 @@ const SHAPES := {
 	"ring": '<circle cx="12" cy="14" r="6"/><path d="M10 7l2-4 2 4z"/>',
 	"necklace": '<path d="M5 3c0 8 3 12 7 12s7-4 7-12"/><path d="M12 15l-2 3 2 3 2-3z"/>',
 	"collar": '<path d="M3 8c0-2 4-4 9-4s9 2 9 4-4 5-9 5-9-3-9-5z"/><path d="M12 13v2"/><circle cx="12" cy="18" r="2.6"/>',
+	"net": '<circle cx="10" cy="9" r="6.5"/><path d="M4.5 6.5l11 5M5 12l9.5-7.5M10 2.5v13M14.6 13.6l6.4 7.4"/>',
+	"menu": '<path d="M4 6h16M4 12h16M4 18h16"/>',
 	"link": '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
 }
 

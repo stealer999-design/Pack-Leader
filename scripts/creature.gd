@@ -88,6 +88,7 @@ var _leaping := false
 var _pending_cast := {}  ## { point, target, time_left } while moving into ability range.
 var _stats_timer := 0.0
 var _passive_heal_timer := 0.0
+var _ability_cooldown_total := 1.0
 # Getting around walls and obstacles (server).
 var _avoid_side := 1.0  ## Which way to go round: 1 left, -1 right.
 var _avoid_hold := 0.0  ## Keeps the chosen side for a moment, so it doesn't dither.
@@ -265,6 +266,11 @@ func capture_chance(boost := 1.0) -> float:
 
 func ability_cooldown_left() -> float:
 	return maxf(_ability_ready_time - _now(), 0.0)
+
+
+## How much of the ability's cooldown is left: 1 just used, 0 ready (for the action bar).
+func ability_cooldown_fraction() -> float:
+	return clampf(ability_cooldown_left() / _ability_cooldown_total, 0.0, 1.0)
 
 
 ## Data needed to recreate this pet later (used by the stable).
@@ -960,6 +966,7 @@ func _lunge() -> void:
 @rpc("authority", "call_local", "reliable")
 func _ability_used(cooldown: float) -> void:
 	_ability_ready_time = _now() + cooldown
+	_ability_cooldown_total = maxf(cooldown, 0.01)
 	var tween := create_tween()
 	tween.tween_property(model, "scale", Vector3.ONE * species.size * 1.25, 0.08)
 	tween.tween_property(model, "scale", Vector3.ONE * species.size, 0.15)

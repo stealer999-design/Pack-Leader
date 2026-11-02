@@ -14,7 +14,8 @@ var bat_shop_panel: PanelContainer
 var breeder_window: BreederWindow
 var pause_menu: PauseMenu
 var inventory_window: InventoryWindow
-var inventory_button: Button
+## The action bar along the bottom (health, potion, capture, bat, pets, buttons).
+var action_bar: ActionBar
 var travel_window: PanelContainer
 var _travel_list: VBoxContainer
 var _in_travel_portal := false
@@ -43,8 +44,6 @@ var _pending_release: PetSlot
 @onready var release_gate: PetSlot = %ReleaseGate
 @onready var release_dialog: ConfirmationDialog = %ReleaseDialog
 @onready var coins_label: Label = %CoinsLabel
-@onready var stance_button: Button = %StanceButton
-@onready var skills_button: Button = %SkillsButton
 @onready var shop_panel: Control = %ShopPanel
 @onready var shop_info: Label = %ShopInfo
 @onready var buy_button: Button = %BuyButton
@@ -58,8 +57,6 @@ func _ready() -> void:
 	_build_stable_slots()
 	buy_button.pressed.connect(func() -> void: _player.request_buy_potion.rpc_id(1))
 	boost_button.pressed.connect(func() -> void: _player.request_buy_boost.rpc_id(1))
-	stance_button.pressed.connect(func() -> void: _player.request_toggle_stance.rpc_id(1))
-	skills_button.pressed.connect(toggle_skills)
 	skill_window = SkillWindow.new()
 	skill_window.theme = stable_panel.theme
 	skill_window.add_theme_stylebox_override("panel", stable_panel.get_theme_stylebox("panel"))
@@ -72,14 +69,6 @@ func _ready() -> void:
 	inventory_window = InventoryWindow.new()
 	add_child(inventory_window)
 	_build_travel_window()
-	inventory_button = Button.new()
-	inventory_button.text = "Inventory   [I]"
-	inventory_button.focus_mode = Control.FOCUS_NONE
-	inventory_button.custom_minimum_size = skills_button.custom_minimum_size
-	inventory_button.tooltip_text = "Your gear: what you're wearing and the bag of what you've found."
-	inventory_button.pressed.connect(toggle_inventory)
-	UiIcons.button(inventory_button, "bag")
-	skills_button.add_sibling(inventory_button)
 	pause_menu = PauseMenu.new()
 	pause_menu.theme = shop_panel.theme
 	pause_menu.get_node("Panel").add_theme_stylebox_override("panel", shop_panel.get_theme_stylebox("panel"))
@@ -88,6 +77,9 @@ func _ready() -> void:
 	mini_map = MiniMap.new()
 	add_child(mini_map)
 	move_child(mini_map, 0)  # under the windows
+	action_bar = ActionBar.new(self, health_bar)
+	add_child(action_bar)
+	move_child(action_bar, 1)
 
 
 func bind(player: Player) -> void:
@@ -96,6 +88,7 @@ func bind(player: Player) -> void:
 	mini_map.player = player
 	breeder_window.player = player
 	inventory_window.bind(player)
+	action_bar.player = player
 	name_label.text = player.display_name
 	name_label.modulate = player.color.lightened(0.3)
 	player.health.changed.connect(_on_health_changed)
@@ -144,7 +137,6 @@ func _process(delta: float) -> void:
 	_update_hover()
 	_update_objective()
 	_update_coins()
-	_update_stance()
 	_party_refresh -= delta
 	if _party_refresh <= 0.0:
 		_party_refresh = 0.2
@@ -226,22 +218,14 @@ func note_new_gear() -> void:
 		_new_gear = 0
 		_update_inventory_button()
 		return
-	inventory_button.pivot_offset = inventory_button.size / 2.0
-	var tween := inventory_button.create_tween()
-	for i in 2:
-		tween.tween_property(inventory_button, "scale", Vector2(1.08, 1.08), 0.12)
-		tween.tween_property(inventory_button, "scale", Vector2.ONE, 0.15)
+	action_bar.inventory_slot.flash()
 
 
 func _update_inventory_button() -> void:
-	if _new_gear > 0:
-		inventory_button.text = "Inventory   [I]   %d new" % _new_gear
-		inventory_button.add_theme_color_override("font_color", UiTheme.ACCENT)
-		inventory_button.add_theme_color_override("icon_normal_color", UiTheme.ACCENT)
-	else:
-		inventory_button.text = "Inventory   [I]"
-		inventory_button.remove_theme_color_override("font_color")
-		inventory_button.remove_theme_color_override("icon_normal_color")
+	var slot := action_bar.inventory_slot
+	slot.badge = "%d new" % _new_gear if _new_gear > 0 else ""
+	slot.highlight = _new_gear > 0
+	slot.refresh()
 
 
 ## The skills screen (K) can open anywhere; it replaces any other open window.
@@ -288,7 +272,6 @@ func _decorate() -> void:
 	UiIcons.title(shop_panel.get_node("Margin/VBox/Title"), "stall", Color(1.0, 0.88, 0.4))
 	UiIcons.button(buy_button, "potion")
 	UiIcons.button(boost_button, "lemon")
-	UiIcons.button(skills_button, "star")
 	UiIcons.button(release_dialog.get_ok_button(), "gate")
 	UiIcons.button(release_dialog.get_cancel_button(), "back")
 
@@ -454,30 +437,14 @@ func _on_health_changed(current: float, maximum: float) -> void:
 
 ## True while the mouse is over a HUD button, so clicking it doesn't also swing.
 func is_mouse_over_buttons() -> bool:
-	var mouse := stance_button.get_viewport().get_mouse_position()
-	for button in [stance_button, skills_button, inventory_button]:
-		if button.is_visible_in_tree() and button.get_global_rect().has_point(mouse):
-			return true
-	return false
-
-
-func _update_stance() -> void:
-	if _player.pets_passive:
-		stance_button.text = "Pets: Passive   [T]"
-		stance_button.self_modulate = Color(0.55, 0.85, 1.0)
-	else:
-		stance_button.text = "Pets: Aggressive   [T]"
-		stance_button.self_modulate = Color(1.0, 0.7, 0.55)
-	stance_button.icon = UiIcons.texture("shield" if _player.pets_passive else "sword")
+	return action_bar.has_mouse()
 
 
 func _update_coins() -> void:
-	var potions := "%d / %d" % [_player.potions, Player.MAX_POTIONS]
-	if _player.potion_cooldown_left() > 0.0:
-		potions += "  (%.0fs)" % ceilf(_player.potion_cooldown_left())
-	coins_label.text = "Coins %d      [Q] Potions %s" % [_player.coins, potions]
-	if _player.boost_time_left() > 0.0:
-		coins_label.text += "\nLucky Lemonade: capture x%.1f  (%ds)" % [_player.boost_multiplier, ceili(_player.boost_time_left())]
+	# Coins and potions are on the action bar; this line only shows a Lucky Lemonade.
+	coins_label.visible = _player.boost_time_left() > 0.0
+	if coins_label.visible:
+		coins_label.text = "Lucky Lemonade: capture x%.1f  (%ds)" % [_player.boost_multiplier, ceili(_player.boost_time_left())]
 
 
 func _update_objective() -> void:
@@ -529,44 +496,14 @@ func _rebuild_party() -> void:
 			% [pets.size(), Player.MAX_PARTY, _player.stable_count(), Player.MAX_STABLE]
 	for child in party_list.get_children():
 		child.queue_free()
-	if pets.is_empty():
+	if pets.is_empty():  # your pets are shown on the action bar
 		var hint := Label.new()
 		var undead: bool = _player.world.biome().species.all(
 				func(i: int) -> bool: return SpeciesDB.get_species(i).monster)
 		hint.text = "The undead can't be tamed:\nbring pets from the stable." if undead \
-				else "Weaken a wild creature,\nthen press E to capture it."
+				else "Weaken a wild creature with your bat,\nthen press E to capture it."
 		hint.modulate = Color(1, 1, 1, 0.6)
 		party_list.add_child(hint)
-	for pet in pets:
-		var entry := VBoxContainer.new()
-		entry.add_theme_constant_override("separation", 1)
-		var label := Label.new()
-		var points := PetSkills.points_left(pet.level, pet.skill_ranks)
-		label.text = "[%d]  %s  Lv%d%s%s" % [pet.party_slot + 1, pet.species.display_name, pet.level,
-				"  · +%d [K]" % points if points > 0 else "", "   (fainted)" if pet.fainted else ""]
-		label.modulate = pet.species.color.lightened(0.35)
-		entry.add_child(label)
-		entry.add_child(_bar(pet.health.current, pet.health.max_health, Color(0.35, 0.9, 0.4), 14))
-		entry.add_child(_bar(pet.xp, pet.xp_to_next(), Color(0.5, 0.7, 1.0), 5))
-		if pet.species.ability:
-			var ability := Label.new()
-			var cd := pet.ability_cooldown_left()
-			ability.text = "      %s   %s" % [pet.species.ability.display_name, "%.1fs" % cd if cd > 0.0 else "ready"]
-			ability.tooltip_text = pet.species.ability.description
-			ability.modulate = Color(1, 1, 1, 0.55) if cd > 0.0 else Color(1.0, 0.9, 0.5)
-			ability.add_theme_font_size_override("font_size", 14)
-			entry.add_child(ability)
-		party_list.add_child(entry)
-
-
-func _bar(value: float, maximum: float, color: Color, height: int) -> ProgressBar:
-	var bar := ProgressBar.new()
-	bar.custom_minimum_size = Vector2(240, height)
-	bar.show_percentage = false
-	bar.max_value = maximum
-	bar.value = value
-	bar.self_modulate = color
-	return bar
 
 
 ## The travel window (the violet portal at the end of each level): a button for

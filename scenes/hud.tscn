@@ -70,22 +70,6 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "Pets  0 / 3"
 
-[node name="StanceButton" type="Button" parent="Stats"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(260, 30)
-layout_mode = 2
-focus_mode = 0
-tooltip_text = "Passive pets follow you but never attack, so you can weaken a creature yourself and capture it."
-text = "Pets: Aggressive   [T]"
-
-[node name="SkillsButton" type="Button" parent="Stats"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(260, 30)
-layout_mode = 2
-focus_mode = 0
-tooltip_text = "Train your pets' skills with the skill points they earn as they level up."
-text = "Pet skills   [K]"
-
 [node name="PartyList" type="VBoxContainer" parent="Stats"]
 unique_name_in_owner = true
 layout_mode = 2
@@ -144,26 +128,13 @@ anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
 offset_left = -500.0
-offset_top = -90.0
+offset_top = -150.0
 offset_right = 500.0
-offset_bottom = -60.0
+offset_bottom = -120.0
 grow_horizontal = 2
 grow_vertical = 0
 theme_override_font_sizes/font_size = 18
 horizontal_alignment = 1
-
-[node name="Controls" type="Label" parent="."]
-theme = SubResource("hud_theme")
-anchors_preset = 2
-anchor_top = 1.0
-anchor_bottom = 1.0
-offset_left = 20.0
-offset_top = -46.0
-offset_right = 900.0
-offset_bottom = -20.0
-grow_vertical = 0
-modulate = Color(1, 1, 1, 0.8)
-text = "WASD move  ·  LMB bat  ·  E capture  ·  1 2 3 abilities  ·  RMB send pets  ·  T stance  ·  Q potion  ·  F use  ·  K skills  ·  I gear  ·  M map  ·  Wheel zoom  ·  Esc menu  ·  Space dash"
 
 [node name="DownedLabel" type="Label" parent="."]
 unique_name_in_owner = true
@@ -196,9 +167,9 @@ anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
 offset_left = -300.0
-offset_top = -130.0
+offset_top = -190.0
 offset_right = 300.0
-offset_bottom = -100.0
+offset_bottom = -160.0
 grow_horizontal = 2
 grow_vertical = 0
 theme_override_colors/font_color = Color(1, 0.9, 0.5, 1)

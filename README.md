@@ -73,10 +73,10 @@ played in the browser".
 |---|---|
 | WASD | Move |
 | LMB | Swing your bat toward the mouse: weakens creatures (never below 1 HP) and smashes vases |
-| E | Throw a capture at the creature under the mouse |
+| E | Throw a capture at the creature under the mouse (or, if there isn't one, the nearest tameable creature in range, preferring weakened ones) |
 | RMB on a wild creature or the rival | Send your pets to attack it |
 | RMB on the ground | Pets drop their target and regroup |
-| T (or the stance button under your pets) | Toggle pets between **Aggressive** and **Passive** |
+| T | Toggle pets between **Aggressive** and **Passive** |
 | 1 / 2 / 3 | Use the ability of the pet in that party slot, aimed at the mouse |
 | Q | Drink a health potion (heals 50%) |
 | F (at the stable / lemonade stand) | Open/close the stable or the shop |
@@ -86,6 +86,20 @@ played in the browser".
 | M | Switch the mini map between the corner and a large view of the whole level |
 | Esc | Close whatever menu is open (stable, shop, a confirmation, the Load Game list); with nothing open, the in-game menu: resume, save, quit to the main menu (solo pauses) |
 | Space | Dash (brief invulnerability) |
+
+- **Action bar:** the bar along the bottom of the screen holds everything you
+  use in a fight, and every box can be clicked as well as using its key (hover
+  one for details):
+  - **left:** your **health** bar, **potions** (Q, with how many you have and
+    a cooldown sweep), **capture** (E, lit up when there's a tameable creature
+    in range, with its catch chance in the tooltip) and your **bat** (LMB);
+  - **middle:** your three **pets** (1 2 3): portrait, level, health and
+    experience strips, the ability cooldown counting down (lit when ready), a
+    "+" when they have skill points to spend, and "Fainted" when down. Click
+    one to open the skills;
+  - **right:** **pet stance** (T), **inventory** (I, showing how much new gear
+    you've picked up), **skills** (K, showing unspent points), the **menu**
+    (Esc) and your **coins**.
 
 - **Levels:** each level is one long, wide, randomly generated path that
   heads across the screen from left to right and winds through **one to three
@@ -480,7 +494,8 @@ The host is the authoritative server and also plays.
 | `scenes/crate.tscn` + `scripts/crate.gd`, `scenes/coin.tscn` + `scripts/coin.gd` | Breakable vases (still called crates in the code) and the coins they spill |
 | `scripts/components/health.gd` | Health with setter-driven signals (works with replication), plus poison and damage-absorbing shields |
 | `scripts/pet_slot.gd` | A drag-and-drop place in the stable window (hay bed, party cushion or release gate), drawn in code |
-| `scenes/hud.tscn` + `scripts/hud.gd` | Health, pet party, hover/capture info, message feed |
+| `scenes/hud.tscn` + `scripts/hud.gd` | The HUD: objective, hover/capture info, message feed, windows |
+| `scripts/action_bar.gd`, `scripts/action_slot.gd` | The action bar along the bottom: health, potion, capture, bat, the three pets, stance, inventory, skills, menu and coins; each box draws its icon or portrait, key, cooldown sweep, badges and strips |
 
 Physics layers: 1 world · 2 players · 3 hostiles (wild creatures, bosses, rival pets) · 4 player pets.
 
