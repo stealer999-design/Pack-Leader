@@ -18,6 +18,8 @@ var icon: Texture2D
 var icon_tint := Color.WHITE
 ## The icon's size, as a share of the box.
 var icon_scale := 0.62
+## Nudges the icon (e.g. clear of the key on tiny buttons).
+var icon_offset := Vector2.ZERO
 ## Font sizes: the badge, the key in the corner, the cooldown seconds, the caption.
 var badge_size := 14
 var key_size := 12
@@ -111,7 +113,7 @@ func _draw_overlay() -> void:
 	if icon:
 		var side := minf(inner.size.x, inner.size.y) * icon_scale
 		var at := inner.position + (inner.size - Vector2(side, side)) * Vector2(0.5, 0.42 if health >= 0.0 else 0.5)
-		c.draw_texture_rect(icon, Rect2(at, Vector2(side, side)), false, icon_tint if not dim else Color(icon_tint, 0.35))
+		c.draw_texture_rect(icon, Rect2(at + icon_offset, Vector2(side, side)), false, icon_tint if not dim else Color(icon_tint, 0.35))
 	# Pet strips along the bottom.
 	if health >= 0.0:
 		var bar := Rect2(inner.position.x + 2, inner.end.y - 10, inner.size.x - 4, 5)

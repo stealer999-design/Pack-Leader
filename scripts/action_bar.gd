@@ -61,6 +61,11 @@ func _init(owner_hud: HUD) -> void:
 	potion_slot = _tiny(stack, "potion", "Potion (Q): heals 50% of your health. You get a fresh pair every level; buy more at the lemonade stand.", STACKED_SLOT)
 	potion_slot.icon_tint = Color(1.0, 0.45, 0.5)
 	potion_slot.pressed.connect(func() -> void: player.use_potion())
+	for slot_key in [[capture_slot, "E"], [potion_slot, "Q"]]:
+		slot_key[0].key_text = slot_key[1]
+		slot_key[0].key_size = 9
+		slot_key[0].icon_scale = 0.6
+		slot_key[0].icon_offset = Vector2(3, 3)
 	capture_slot.icon_tint = Color(0.6, 0.9, 1.0)
 	capture_slot.pressed.connect(func() -> void: player.try_capture())
 	bat_slot = _slot(left, "LMB", "bat", "")
@@ -145,7 +150,7 @@ func _small_text(slot: ActionSlot) -> void:
 	slot.caption_size = 11
 
 
-## A tiny button: just the icon (the key is in its tooltip) and a small badge.
+## A tiny button: the icon, a small badge (a red pill) and, if set, its key.
 func _tiny(parent: Control, icon_name: String, tip: String, slot_size := TINY_SLOT) -> ActionSlot:
 	var slot := ActionSlot.new(slot_size)
 	slot.icon = UiIcons.texture(icon_name, 32)
