@@ -6,7 +6,7 @@
 script = ExtResource("1_ability")
 display_name = "Snipe"
 description = "A long-range shot at the enemy nearest where you aim (up to 16 units): 4.5x damage and a 1s stun."
-cooldown = 9
+cooldown = 3.0
 cast_range = 16
 needs_target = true
 damage_multiplier = 4.5

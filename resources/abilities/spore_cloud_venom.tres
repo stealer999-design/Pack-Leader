@@ -6,7 +6,7 @@
 script = ExtResource("1_ability")
 display_name = "Spore Cloud"
 description = "A cloud of toxic spores where you aim, for 6s: enemies inside are poisoned, and those it hits first deal 40% less damage for 6s."
-cooldown = 10.0
+cooldown = 3.0
 cast_range = 11
 needs_target = false
 damage_multiplier = 0.0

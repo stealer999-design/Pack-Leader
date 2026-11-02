@@ -6,7 +6,7 @@
 script = ExtResource("1_ability")
 display_name = "Ball Lightning"
 description = "(Lightning) A crackling ball flies to the spot and bursts for 1.8x damage, then arcs on to 4 more enemies."
-cooldown = 8
+cooldown = 3.0
 cast_range = 11
 needs_target = false
 damage_multiplier = 1.8

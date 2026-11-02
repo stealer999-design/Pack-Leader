@@ -6,7 +6,7 @@
 script = ExtResource("1_ability")
 display_name = "Toxic Bog"
 description = "A pool of poisonous mud at the target for 7s: everything inside is poisoned (100% of its damage a second)."
-cooldown = 9.0
+cooldown = 3.0
 cast_range = 11
 needs_target = false
 damage_multiplier = 0.6

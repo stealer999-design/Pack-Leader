@@ -6,7 +6,7 @@
 script = ExtResource("1_ability")
 display_name = "Meteor Shower"
 description = "(Fire) Rains three blazing meteors around the spot, each 2.2x damage and a 1.5s stun."
-cooldown = 12
+cooldown = 3.0
 cast_range = 11
 needs_target = false
 damage_multiplier = 2.2

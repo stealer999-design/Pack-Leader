@@ -6,7 +6,7 @@
 script = ExtResource("1_ability")
 display_name = "Aegis"
 description = "(Armor) Raises a holy aegis over allies around the spot: pets take 35% less damage for 6s (players get a matching shield), and everyone gets a 15% shield."
-cooldown = 10
+cooldown = 3.0
 cast_range = 12
 needs_target = false
 radius = 5.0

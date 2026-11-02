@@ -6,7 +6,7 @@
 script = ExtResource("1_ability")
 display_name = "Spirit Trap"
 description = "Hides a trap where you aim (up to 4). The first enemy to step on it springs it: enemies nearby are damaged and rooted for 3.5s. They are poisoned too, for 6s."
-cooldown = 7.0
+cooldown = 3.0
 cast_range = 10
 radius = 4.0
 damage_multiplier = 1.5

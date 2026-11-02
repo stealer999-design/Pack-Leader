@@ -6,7 +6,7 @@
 script = ExtResource("1_ability")
 display_name = "Thunder Chain"
 description = "(Lightning) A huge bolt strikes the spot for 2.2x, then lightning jumps on to 5 more enemies."
-cooldown = 9
+cooldown = 3.0
 cast_range = 11
 needs_target = false
 damage_multiplier = 2.2

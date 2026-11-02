@@ -6,7 +6,7 @@
 script = ExtResource("1_ability")
 display_name = "Prism Shot"
 description = "A dazzling arrow at the spot: 2x damage there, and every enemy near it is blinded (half their attacks miss) for 4s."
-cooldown = 8
+cooldown = 3.0
 cast_range = 12
 needs_target = false
 damage_multiplier = 2.0

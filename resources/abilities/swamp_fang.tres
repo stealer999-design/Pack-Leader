@@ -6,7 +6,7 @@
 script = ExtResource("1_ability")
 display_name = "Swamp Fang"
 description = "Yanks the enemy nearest where you aim next to it, bites for 2x and poisons it hard (120% of its damage a second for 7s)."
-cooldown = 8.0
+cooldown = 3.0
 cast_range = 8
 needs_target = true
 damage_multiplier = 2.0

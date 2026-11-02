@@ -6,7 +6,7 @@
 script = ExtResource("1_ability")
 display_name = "Eagle Eye"
 description = "A rallying cry: every pet within 6 units of the spot gets +50% crit chance for 8s (crits do double damage)."
-cooldown = 12
+cooldown = 3.0
 cast_range = 12
 needs_target = false
 radius = 6.0

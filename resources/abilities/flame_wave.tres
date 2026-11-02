@@ -6,7 +6,7 @@
 script = ExtResource("1_ability")
 display_name = "Flame Wave"
 description = "(Fire) A wave of fire rolls out towards where you aim: 2x damage in a 7-unit cone, sets enemies burning, and scorches the ground for 4s."
-cooldown = 9
+cooldown = 3.0
 cast_range = 4
 needs_target = false
 damage_multiplier = 2.0

@@ -6,7 +6,7 @@
 script = ExtResource("1_ability")
 display_name = "Void Cyclone"
 description = "(Air) A dark whirlwind at the spot for 5s: pulls enemies in, slows them to 40% and tears at them."
-cooldown = 11
+cooldown = 3.0
 cast_range = 11
 needs_target = false
 damage_multiplier = 1.4

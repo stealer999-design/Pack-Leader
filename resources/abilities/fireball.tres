@@ -6,7 +6,7 @@
 script = ExtResource("1_ability")
 display_name = "Fireball"
 description = "(Fire) Hurls a fireball at the spot you aim at: it explodes for 2.5x damage around it and sets enemies burning."
-cooldown = 6
+cooldown = 3.0
 cast_range = 11
 needs_target = false
 damage_multiplier = 2.5

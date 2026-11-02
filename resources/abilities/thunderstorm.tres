@@ -6,7 +6,7 @@
 script = ExtResource("1_ability")
 display_name = "Thunderstorm"
 description = "(Lightning) A storm over the spot for 3s: 6 bolts strike enemies within 4 units, each for 1.4x damage and a short stun."
-cooldown = 11
+cooldown = 3.0
 cast_range = 11
 needs_target = false
 damage_multiplier = 1.4

@@ -6,7 +6,7 @@
 script = ExtResource("1_ability")
 display_name = "Consecration"
 description = "(Heal) Hallows the ground where you aim for 6s: enemies inside burn, allies inside heal 6% of their max health every second."
-cooldown = 12
+cooldown = 3.0
 cast_range = 12
 needs_target = false
 radius = 5.0

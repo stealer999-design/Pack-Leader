@@ -6,7 +6,7 @@
 script = ExtResource("1_ability")
 display_name = "Gale Blades"
 description = "(Air) Slicing winds fan out towards where you aim: 2.2x damage in a wide 6.5-unit cone, hurling enemies back."
-cooldown = 8
+cooldown = 3.0
 cast_range = 4
 needs_target = false
 damage_multiplier = 2.2

@@ -385,7 +385,8 @@ played in the browser".
   is poisoned back (toxic blood), and every ability poisons: venom lashes and
   spit, poison clouds and pools, plague spores, and poisoned traps.
 - **Pet abilities:** every species has a signature ability (keys 1 2 3 for
-  party pets 1-3) with its own cooldown, and every ability **lands where your
+  party pets 1-3) on a **3-second cooldown** (shorter with the cooldown
+  skills), and every ability **lands where your
   mouse is**: the pet runs within range of that spot first, then casts. Each
   class has its own kind: **cats** cast damage spells in four elements (fire,
   lightning, air, water: fireballs, chain lightning, cyclones, tidal waves,

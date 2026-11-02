@@ -6,7 +6,7 @@
 script = ExtResource("1_ability")
 display_name = "Venom Lash"
 description = "Yanks the enemy nearest where you aim next to the Bogleon with its tongue, hits it for 1.2x and poisons it (90% of its damage a second for 6s)."
-cooldown = 8.0
+cooldown = 3.0
 cast_range = 8
 needs_target = true
 damage_multiplier = 1.2

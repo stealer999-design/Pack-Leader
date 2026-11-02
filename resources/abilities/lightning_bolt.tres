@@ -6,7 +6,7 @@
 script = ExtResource("1_ability")
 display_name = "Lightning Bolt"
 description = "(Lightning) Strikes the spot with a bolt from the sky: 4x damage and a short stun around it."
-cooldown = 7
+cooldown = 3.0
 cast_range = 11
 needs_target = false
 damage_multiplier = 4.0

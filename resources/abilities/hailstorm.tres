@@ -6,7 +6,7 @@
 script = ExtResource("1_ability")
 display_name = "Hailstorm"
 description = "(Water) Six hailstones crash down around the spot, each 1.3x damage where it lands, slowing enemies for 2s."
-cooldown = 9
+cooldown = 3.0
 cast_range = 11
 needs_target = false
 damage_multiplier = 1.3

@@ -6,7 +6,7 @@
 script = ExtResource("1_ability")
 display_name = "Piercing Shot"
 description = "An arrow that flies 14 units towards where you aim, through every enemy in its path, 2.5x damage each."
-cooldown = 7
+cooldown = 3.0
 cast_range = 12
 needs_target = false
 damage_multiplier = 2.5

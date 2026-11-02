@@ -6,7 +6,7 @@
 script = ExtResource("1_ability")
 display_name = "Arrow Cone"
 description = "Fires 7 arrows in a wide cone towards where you aim, each hitting for 1.1x damage."
-cooldown = 7
+cooldown = 3.0
 cast_range = 10
 needs_target = false
 damage_multiplier = 1.1

@@ -6,7 +6,7 @@
 script = ExtResource("1_ability")
 display_name = "Mud Trap"
 description = "Hides a mud trap where you aim (up to 3). The first enemy to step on it springs it: enemies nearby are damaged and rooted for 2.5s. They are poisoned too, for 5s."
-cooldown = 8.0
+cooldown = 3.0
 cast_range = 10
 radius = 3.0
 damage_multiplier = 1.0

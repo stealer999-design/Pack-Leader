@@ -6,7 +6,7 @@
 script = ExtResource("1_ability")
 display_name = "Magma Orb"
 description = "(Fire) Lobs a ball of magma at the spot: it bursts for 2x damage and leaves a pool of fire burning for 4s."
-cooldown = 8
+cooldown = 3.0
 cast_range = 11
 needs_target = false
 damage_multiplier = 2.0

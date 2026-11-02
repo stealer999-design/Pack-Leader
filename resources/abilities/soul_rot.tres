@@ -6,7 +6,7 @@
 script = ExtResource("1_ability")
 display_name = "Soul Rot"
 description = "Spits rot where you aim: 2.2x damage and heavy poison for 7s, and it and you heal for 50% of the hit."
-cooldown = 8.0
+cooldown = 3.0
 cast_range = 10
 needs_target = false
 damage_multiplier = 2.2

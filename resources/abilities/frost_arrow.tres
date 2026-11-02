@@ -6,7 +6,7 @@
 script = ExtResource("1_ability")
 display_name = "Frost Arrow"
 description = "An icy arrow at the spot: 2x damage to anything close to where it lands, slowing them to half speed for 3s."
-cooldown = 6
+cooldown = 3.0
 cast_range = 12
 needs_target = false
 damage_multiplier = 2.0

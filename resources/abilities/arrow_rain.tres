@@ -6,7 +6,7 @@
 script = ExtResource("1_ability")
 display_name = "Rain of Arrows"
 description = "Rains 10 arrows down over the area where you aim, each hitting what it lands near for 1.2x damage."
-cooldown = 10
+cooldown = 3.0
 cast_range = 12
 needs_target = false
 damage_multiplier = 1.2

@@ -6,7 +6,7 @@
 script = ExtResource("1_ability")
 display_name = "Tidal Wave"
 description = "(Water) A wave crashes out towards where you aim: 2x damage to everything in a 7-unit cone, knocking them back and slowing them for 2s."
-cooldown = 8
+cooldown = 3.0
 cast_range = 4
 needs_target = false
 damage_multiplier = 2.0

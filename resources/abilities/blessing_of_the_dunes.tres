@@ -6,7 +6,7 @@
 script = ExtResource("1_ability")
 display_name = "Blessing of the Dunes"
 description = "(Heal) Heals every pet and player around the spot for 40% of their max health, and the most injured of them 20% more."
-cooldown = 11
+cooldown = 3.0
 cast_range = 12
 needs_target = false
 radius = 6.0

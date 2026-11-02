@@ -6,7 +6,7 @@
 script = ExtResource("1_ability")
 display_name = "Hail Volley"
 description = "Fires 5 frozen arrows in a cone towards where you aim, each 1.3x damage and slowing to 40% for 3s."
-cooldown = 8
+cooldown = 3.0
 cast_range = 10
 needs_target = false
 damage_multiplier = 1.3

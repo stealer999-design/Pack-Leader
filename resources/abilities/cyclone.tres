@@ -6,7 +6,7 @@
 script = ExtResource("1_ability")
 display_name = "Cyclone"
 description = "(Air) A howling cyclone at the spot for 4s: enemies inside are pulled in, slowed to half speed and battered."
-cooldown = 10
+cooldown = 3.0
 cast_range = 11
 needs_target = false
 damage_multiplier = 1.2

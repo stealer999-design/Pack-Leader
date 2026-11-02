@@ -6,7 +6,7 @@
 script = ExtResource("1_ability")
 display_name = "Shield Wall"
 description = "(Shield, taunt) Throws up a wall of shields around the spot: allies there absorb 35% of their max health for 6s and enemies there are taunted onto it."
-cooldown = 12
+cooldown = 3.0
 cast_range = 12
 needs_target = false
 radius = 5.0
