@@ -1626,6 +1626,8 @@ func play_bolt(from: Vector3, to: Vector3, color: Color, travel: float) -> void:
 	glow.mesh = halo
 	glow.material_override = _fx_material(Color(color, 0.55))
 	fx.add_child(glow)
+	_add_glow(fx, color, 0.9)
+	_add_trail(fx, color, 0.35)
 	var tween := fx.create_tween()
 	tween.tween_property(fx, "global_position", to, travel)
 	tween.tween_callback(func() -> void:
@@ -1667,6 +1669,8 @@ func play_arrow(from: Vector3, to: Vector3, color: Color, travel: float) -> void
 		feather.rotation.z = side * 0.4
 		arrow.add_child(feather)
 	arrow.look_at_from_position(from, to, Vector3.UP if absf((to - from).normalized().y) < 0.95 else Vector3.FORWARD)
+	_add_glow(arrow, color, 0.7)
+	_add_trail(arrow, color, 0.22)
 	var tween := arrow.create_tween()
 	tween.tween_property(arrow, "global_position", to, travel)
 	tween.tween_callback(func() -> void:
@@ -1789,6 +1793,8 @@ func play_spell(style: String, from: Vector3, to: Vector3, color: Color, travel:
 		shell.mesh = orb
 		shell.material_override = _fx_material(layer[1])
 		fx.add_child(shell)
+	_add_glow(fx, color, size * 3.2)
+	_add_trail(fx, color, size * 0.9)
 	var tween := fx.create_tween()
 	tween.tween_property(fx, "global_position", to, travel).set_trans(Tween.TRANS_QUAD) \
 			.set_ease(Tween.EASE_IN if style == "meteor" else Tween.EASE_OUT)
@@ -1800,9 +1806,20 @@ func play_spell(style: String, from: Vector3, to: Vector3, color: Color, travel:
 func play_beam(from: Vector3, to: Vector3, color: Color) -> void:
 	var mat := _fx_material(color)
 	var beam := _bolt_segment(from, to, mat)
-	var tween := beam.create_tween()
+	# A wide, soft, glowing sheath around the beam, and a light at each end.
+	var sheath_mat := _additive_material(Color(color, 0.5))
+	var sheath := _bolt_segment(from, to, sheath_mat)
+	sheath.scale = Vector3(3.0, 3.0, 1.0)
+	beam.add_child(_make_light(color, 3.0))
+	sheath.reparent(beam)
+	var end_glow := Node3D.new()
+	beam.add_child(end_glow)
+	end_glow.global_position = to
+	_add_glow(end_glow, color, 0.8)
+	var tween := beam.create_tween().set_parallel()
 	tween.tween_property(mat, "albedo_color:a", 0.0, 0.4)
-	tween.tween_callback(beam.queue_free)
+	tween.tween_property(sheath_mat, "albedo_color:a", 0.0, 0.4)
+	tween.chain().tween_callback(beam.queue_free)
 
 
 ## A pulsing coloured disc on the ground for `duration` seconds (a damage zone).
@@ -1913,6 +1930,91 @@ func _ring_fx(at: Vector3, color: Color, final_radius: float) -> void:
 	tween.tween_property(ring, "scale", Vector3.ONE * final_radius, 0.35)
 	tween.parallel().tween_property(mat, "albedo_color:a", 0.0, 0.35)
 	tween.tween_callback(ring.queue_free)
+
+
+## Makes a projectile glow, so shots are easy to see: a soft halo that always
+## faces the camera (added on top of what's behind it, so it brightens) and a
+## small light that lights up the ground it flies over. `radius` is the halo's.
+func _add_glow(parent: Node3D, color: Color, radius: float) -> void:
+	var halo := MeshInstance3D.new()
+	var quad := QuadMesh.new()
+	quad.size = Vector2.ONE * radius * 2.0
+	halo.mesh = quad
+	halo.material_override = _glow_material(color)
+	halo.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	parent.add_child(halo)
+	parent.add_child(_make_light(color, radius * 3.5 + 1.0))
+
+
+func _make_light(color: Color, light_range: float) -> OmniLight3D:
+	var light := OmniLight3D.new()
+	light.light_color = color.lightened(0.2)
+	light.light_energy = 1.8
+	light.omni_range = light_range
+	light.shadow_enabled = false
+	return light
+
+
+## A glowing trail behind a projectile: every few hundredths of a second it
+## leaves a small halo that shrinks and fades.
+func _add_trail(projectile: Node3D, color: Color, radius: float) -> void:
+	var timer := Timer.new()
+	timer.wait_time = 0.035
+	timer.autostart = true
+	projectile.add_child(timer)
+	var mat := _glow_material(Color(color, 0.7))
+	timer.timeout.connect(func() -> void:
+		if not is_instance_valid(projectile):
+			return
+		var puff := MeshInstance3D.new()
+		var quad := QuadMesh.new()
+		quad.size = Vector2.ONE * radius * 2.0
+		puff.mesh = quad
+		puff.material_override = mat
+		puff.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		add_child(puff)
+		puff.global_position = projectile.global_position
+		var tween := puff.create_tween()
+		tween.tween_property(puff, "scale", Vector3.ONE * 0.1, 0.3)
+		tween.tween_callback(puff.queue_free))
+
+
+static var _glow_materials := {}
+static var _glow_texture: Texture2D
+
+
+## An additive, camera-facing material with a soft round falloff (cached by colour).
+func _glow_material(color: Color) -> StandardMaterial3D:
+	var key := color.to_html()
+	if not _glow_materials.has(key):
+		if _glow_texture == null:
+			var gradient := Gradient.new()
+			gradient.set_color(0, Color(1, 1, 1, 1))
+			gradient.set_color(1, Color(1, 1, 1, 0))
+			gradient.add_point(0.25, Color(1, 1, 1, 0.85))
+			gradient.add_point(0.55, Color(1, 1, 1, 0.3))
+			var texture := GradientTexture2D.new()
+			texture.gradient = gradient
+			texture.fill = GradientTexture2D.FILL_RADIAL
+			texture.fill_from = Vector2(0.5, 0.5)
+			texture.fill_to = Vector2(1.0, 0.5)
+			texture.width = 64
+			texture.height = 64
+			_glow_texture = texture
+		var mat := _additive_material(color)
+		mat.albedo_texture = _glow_texture
+		mat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+		_glow_materials[key] = mat
+	return _glow_materials[key]
+
+
+func _additive_material(color: Color) -> StandardMaterial3D:
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	mat.albedo_color = color
+	return mat
 
 
 func _fx_material(color: Color) -> StandardMaterial3D:

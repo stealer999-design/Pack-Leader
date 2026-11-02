@@ -384,6 +384,11 @@ played in the browser".
   second for 4s, up to three bites' worth), anything that hits them up close
   is poisoned back (toxic blood), and every ability poisons: venom lashes and
   spit, poison clouds and pools, plague spores, and poisoned traps.
+- **Glowing shots:** every ranged attack, yours and your enemies' alike
+  (wizard bolts and spells, arrows, venom spit, fire imp and frost wraith
+  bolts, beams), glows: a soft halo in its colour, a fading trail behind it,
+  and a light that lights up the ground it flies over, so shots are easy to
+  follow in a busy fight.
 - **Pet abilities:** every species has a signature ability (keys 1 2 3 for
   party pets 1-3) on a **3-second cooldown** (shorter with the cooldown
   skills), and every ability **lands where your
