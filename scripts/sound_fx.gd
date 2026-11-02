@@ -1,7 +1,8 @@
 class_name SoundFX
-## The game's sound effects, synthesised in code when first used (no audio
-## files): each is a short mono 16-bit sample, cached, and played positionally
-## in the world with SoundFX.play(...).
+## The game's sound effects: short mono 16-bit samples, played positionally
+## in the world with SoundFX.play(...). They are designed here, in code, and
+## written out to sounds/<name>.wav by scripts/tools/build_sounds.gd; the game
+## loads those files (and only synthesises a sound if its file is missing).
 ##
 ##   "hit"        a pet's melee bite or swipe: a short thump and swish
 ##   "zap"        a wizard's magic bolt: a quick falling "pew"
@@ -16,6 +17,7 @@ class_name SoundFX
 ##   "step"       a footstep: a soft, low scuff
 
 const RATE := 22050
+const FOLDER := "res://sounds"
 ## How loud each sound is, in dB.
 const VOLUME := {
 	"hit": -9.0, "zap": -12.0, "twang": -9.0, "spell": -3.0, "holy": -4.0, "volley": -3.0,
@@ -45,10 +47,16 @@ static func play(context: Node, sound_name: String, at: Vector3, pitch_spread :=
 	player.play()
 
 
-static func stream(sound_name: String) -> AudioStreamWAV:
+static func stream(sound_name: String) -> AudioStream:
 	if not _cache.has(sound_name):
-		_cache[sound_name] = _to_wav(_synth(sound_name))
+		var path := "%s/%s.wav" % [FOLDER, sound_name]
+		_cache[sound_name] = load(path) if ResourceLoader.exists(path) else synthesize(sound_name)
 	return _cache[sound_name]
+
+
+## Builds a sound from scratch (used by build_sounds.gd).
+static func synthesize(sound_name: String) -> AudioStreamWAV:
+	return _to_wav(_synth(sound_name))
 
 
 static func _synth(sound_name: String) -> PackedFloat32Array:
