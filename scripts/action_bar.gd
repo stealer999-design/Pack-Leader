@@ -1,11 +1,12 @@
 class_name ActionBar
 extends PanelContainer
 ## The action bar along the bottom of the screen, ARPG style:
-##   left:   your health orb with a tiny Potion button (Q), Capture (E) and
-##           your bat (LMB)
-##   middle: your three pets (1 2 3): portrait, level, health and experience,
+##   left:   your health orb, tiny Capture (E) and Potion (Q) buttons stacked
+##           beside it, and your bat (LMB)
+##   then:   your three pets (1 2 3): portrait, level, health and experience,
 ##           and their ability's cooldown
-##   right:  Pet stance (T) and your coins
+##   last:   Pet stance (T) and your coins
+## The bar is only as wide as what's on it.
 ## Every box can be clicked as well as using its key; hovering one explains it.
 ## Inventory (I), Skills (K) and the Menu (Esc) are tiny buttons in `menu_row`,
 ## which the HUD places just under the mini map.
@@ -14,7 +15,7 @@ const SLOT := Vector2(45, 45)
 const TINY_SLOT := Vector2(32, 32)
 const PET_SLOT := Vector2(63, 63)
 const ORB_SIZE := 80.0
-const SIDE_WIDTH := 240.0  ## Both sides the same width, so the pets sit in the middle.
+const STACKED_SLOT := Vector2(30, 30)  ## Capture and potion, one above the other.
 
 var hud: HUD
 var player: Player
@@ -48,17 +49,18 @@ func _init(owner_hud: HUD) -> void:
 
 	# Left: health, potion, capture, bat (right-aligned, towards the pets).
 	var left := HBoxContainer.new()
-	left.custom_minimum_size.x = SIDE_WIDTH
-	left.alignment = BoxContainer.ALIGNMENT_END
 	left.add_theme_constant_override("separation", 6)
 	row.add_child(left)
 	health_orb = HealthOrb.new(ORB_SIZE, PET_SLOT.y)
 	left.add_child(health_orb)
-	potion_slot = _tiny(left, "potion", "Potion (Q): heals 50% of your health. You get a fresh pair every level; buy more at the lemonade stand.")
-	potion_slot.size_flags_vertical = Control.SIZE_SHRINK_END
+	var stack := VBoxContainer.new()
+	stack.add_theme_constant_override("separation", 3)
+	stack.alignment = BoxContainer.ALIGNMENT_CENTER
+	left.add_child(stack)
+	capture_slot = _tiny(stack, "net", "", STACKED_SLOT)
+	potion_slot = _tiny(stack, "potion", "Potion (Q): heals 50% of your health. You get a fresh pair every level; buy more at the lemonade stand.", STACKED_SLOT)
 	potion_slot.icon_tint = Color(1.0, 0.45, 0.5)
 	potion_slot.pressed.connect(func() -> void: player.use_potion())
-	capture_slot = _slot(left, "E", "net", "")
 	capture_slot.icon_tint = Color(0.6, 0.9, 1.0)
 	capture_slot.pressed.connect(func() -> void: player.try_capture())
 	bat_slot = _slot(left, "LMB", "bat", "")
@@ -85,8 +87,6 @@ func _init(owner_hud: HUD) -> void:
 
 	# Right: stance, inventory, skills, menu (left-aligned, from the pets).
 	var right := HBoxContainer.new()
-	right.custom_minimum_size.x = SIDE_WIDTH
-	right.alignment = BoxContainer.ALIGNMENT_BEGIN
 	right.add_theme_constant_override("separation", 6)
 	row.add_child(right)
 	stance_slot = _slot(right, "T", "sword", "")
@@ -146,8 +146,8 @@ func _small_text(slot: ActionSlot) -> void:
 
 
 ## A tiny button: just the icon (the key is in its tooltip) and a small badge.
-func _tiny(parent: Control, icon_name: String, tip: String) -> ActionSlot:
-	var slot := ActionSlot.new(TINY_SLOT)
+func _tiny(parent: Control, icon_name: String, tip: String, slot_size := TINY_SLOT) -> ActionSlot:
+	var slot := ActionSlot.new(slot_size)
 	slot.icon = UiIcons.texture(icon_name, 32)
 	slot.icon_scale = 0.72
 	slot.badge_size = 11

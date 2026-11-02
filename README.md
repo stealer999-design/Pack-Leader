@@ -90,16 +90,18 @@ played in the browser".
 - **Action bar:** the bar along the bottom of the screen holds everything you
   use in a fight, and every box can be clicked as well as using its key (hover
   one for details):
-  - **left:** your **health orb** (a glass ball of red that drains as you're
-    hurt) with a tiny **potion** button beside it (Q, with a red count of how
-    many you have and a cooldown sweep), **capture** (E, lit up when there's a
-    tameable creature in range, with its catch chance in the tooltip) and your
-    **bat** (LMB);
-  - **middle:** your three **pets** (1 2 3): portrait, level, health and
+  - your **health orb** (a glass ball of red that drains as you're hurt);
+  - two tiny buttons stacked beside it: **capture** (E, lit up when there's a
+    tameable creature in range, with its catch chance in the tooltip) above
+    **potion** (Q, with a red count of how many you have and a cooldown sweep);
+  - your **bat** (LMB);
+  - your three **pets** (1 2 3): portrait, level, health and
     experience strips, the ability cooldown counting down (lit when ready), a
     "+" when they have skill points to spend, and "Fainted" when down. Click
     one to open the skills;
-  - **right:** **pet stance** (T) and your **coins**.
+  - **pet stance** (T) and your **coins**.
+
+  The bar is only as wide as what's on it.
 
   Under the mini map sit three tiny buttons: **inventory** (I, with a red
   count of new gear you've picked up), **skills** (K, with your pets' unspent
