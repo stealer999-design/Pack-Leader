@@ -13,6 +13,7 @@ var _time := 0.0
 
 
 func _ready() -> void:
+	SoundFX.play(self, "bing_rare" if ItemDB.is_legendary(item) else "bing", global_position, 0.02)
 	var color := ItemDB.rarity_color(item)
 	_sack = Node3D.new()
 	add_child(_sack)

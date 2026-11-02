@@ -384,6 +384,15 @@ played in the browser".
   second for 4s, up to three bites' worth), anything that hits them up close
   is poisoned back (toxic blood), and every ability poisons: venom lashes and
   spit, poison clouds and pools, plague spores, and poisoned traps.
+- **Sound:** every sound is synthesised in code when the game starts (no
+  audio files; see `scripts/sound_fx.gd`) and plays where it happens:
+  - pets' regular attacks make a simple sound by class: a thump for melee
+    bites, a quick "pew" for wizards' bolts, a bowstring twang for archers;
+  - pet abilities are louder and bigger: a rising shimmer for wizards' spells,
+    a bell chord for paladins, a hard twang and rush of air for archers, a
+    bubbling hiss for venomancers;
+  - an item dropping goes "bing" (a legendary rings two higher notes);
+  - tamers' footsteps patter as they walk.
 - **Glowing shots:** every ranged attack, yours and your enemies' alike
   (wizard bolts and spells, arrows, venom spit, fire imp and frost wraith
   bolts, beams), glows: a soft halo in its colour, a fading trail behind it,
@@ -507,6 +516,7 @@ The host is the authoritative server and also plays.
 | `scripts/components/health.gd` | Health with setter-driven signals (works with replication), plus poison and damage-absorbing shields |
 | `scripts/pet_slot.gd` | A drag-and-drop place in the stable window (hay bed, party cushion or release gate), drawn in code |
 | `scenes/hud.tscn` + `scripts/hud.gd` | The HUD: objective, hover/capture info, message feed, windows |
+| `scripts/sound_fx.gd` | The sound effects, synthesised in code (attacks, abilities, item drops, footsteps) and played positionally |
 | `scripts/action_bar.gd`, `scripts/action_slot.gd`, `scripts/health_orb.gd` | The action bar along the bottom (health, potion, capture, bat, the three pets, stance and coins) and the tiny inventory, skills and menu buttons under the mini map; each box draws its icon or portrait, key, cooldown sweep, badges and strips |
 
 Physics layers: 1 world · 2 players · 3 hostiles (wild creatures, bosses, rival pets) · 4 player pets.

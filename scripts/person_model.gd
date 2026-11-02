@@ -26,6 +26,7 @@ var _body: Node3D  ## Everything above the legs; bobs while walking.
 var _last_position := Vector3.INF
 var _speed := 0.0
 var _walk_phase := 0.0
+var _last_step := 0  ## Footsteps: which foot-down of the walk cycle sounded last.
 var _swinging := false
 var _spikes: Node3D
 var _chain: Node3D
@@ -253,6 +254,12 @@ func _process(delta: float) -> void:
 	if stride > 0.03:
 		_walk_phase += delta * (5.0 + _speed * 0.75)
 	var p := _walk_phase
+	# A footstep each time a foot comes down (the body's lowest point).
+	var step := floori((p - PI * 0.5) / PI)
+	if step != _last_step:
+		_last_step = step
+		if stride > 0.2:
+			SoundFX.play(self, "step", global_position, 0.12)
 	var blend := 1.0 - exp(-14.0 * delta)
 	# Legs: the thigh swings from the hip; the knee bends most as the leg
 	# swings through and stays a little soft when the foot is planted.
