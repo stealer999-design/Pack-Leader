@@ -66,9 +66,9 @@ func _apply_mode() -> void:
 	else:
 		set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
 		offset_left = -20 - COMPACT_SIZE.x
-		offset_top = -124 - COMPACT_SIZE.y  # above the action bar
+		offset_top = -60 - COMPACT_SIZE.y  # the tiny menu buttons sit underneath
 		offset_right = -20
-		offset_bottom = -124
+		offset_bottom = -60
 		_legend.text = "[M] map"
 	_style.bg_color = Color(0.05, 0.06, 0.08, 0.95 if expanded else 0.85)
 	_legend.modulate = Color(1, 1, 1, 0.6)

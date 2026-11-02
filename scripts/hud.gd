@@ -77,7 +77,8 @@ func _ready() -> void:
 	mini_map = MiniMap.new()
 	add_child(mini_map)
 	move_child(mini_map, 0)  # under the windows
-	action_bar = ActionBar.new(self, health_bar)
+	action_bar = ActionBar.new(self)
+	health_bar.hide()  # health is the orb on the action bar
 	add_child(action_bar)
 	move_child(action_bar, 1)
 	add_child(action_bar.menu_row)

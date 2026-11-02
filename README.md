@@ -90,9 +90,11 @@ played in the browser".
 - **Action bar:** the bar along the bottom of the screen holds everything you
   use in a fight, and every box can be clicked as well as using its key (hover
   one for details):
-  - **left:** your **health** bar, **potions** (Q, with how many you have and
-    a cooldown sweep), **capture** (E, lit up when there's a tameable creature
-    in range, with its catch chance in the tooltip) and your **bat** (LMB);
+  - **left:** your **health orb** (a glass ball of red that drains as you're
+    hurt) with a tiny **potion** button beside it (Q, with a red count of how
+    many you have and a cooldown sweep), **capture** (E, lit up when there's a
+    tameable creature in range, with its catch chance in the tooltip) and your
+    **bat** (LMB);
   - **middle:** your three **pets** (1 2 3): portrait, level, health and
     experience strips, the ability cooldown counting down (lit when ready), a
     "+" when they have skill points to spend, and "Fainted" when down. Click
@@ -497,7 +499,7 @@ The host is the authoritative server and also plays.
 | `scripts/components/health.gd` | Health with setter-driven signals (works with replication), plus poison and damage-absorbing shields |
 | `scripts/pet_slot.gd` | A drag-and-drop place in the stable window (hay bed, party cushion or release gate), drawn in code |
 | `scenes/hud.tscn` + `scripts/hud.gd` | The HUD: objective, hover/capture info, message feed, windows |
-| `scripts/action_bar.gd`, `scripts/action_slot.gd` | The action bar along the bottom (health, potion, capture, bat, the three pets, stance and coins) and the tiny inventory, skills and menu buttons under the mini map; each box draws its icon or portrait, key, cooldown sweep, badges and strips |
+| `scripts/action_bar.gd`, `scripts/action_slot.gd`, `scripts/health_orb.gd` | The action bar along the bottom (health, potion, capture, bat, the three pets, stance and coins) and the tiny inventory, skills and menu buttons under the mini map; each box draws its icon or portrait, key, cooldown sweep, badges and strips |
 
 Physics layers: 1 world · 2 players · 3 hostiles (wild creatures, bosses, rival pets) · 4 player pets.
 

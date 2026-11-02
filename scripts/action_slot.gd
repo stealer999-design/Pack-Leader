@@ -18,8 +18,13 @@ var icon: Texture2D
 var icon_tint := Color.WHITE
 ## The icon's size, as a share of the box.
 var icon_scale := 0.62
-## The badge's font size.
+## Font sizes: the badge, the key in the corner, the cooldown seconds, the caption.
 var badge_size := 14
+var key_size := 12
+var cooldown_size := 18
+var caption_size := 13
+## Tiny buttons show the badge as a red pill on the top-right corner.
+var pill_badge := false
 ## 0 = ready, 1 = just used.
 var cooldown := 0.0
 ## Seconds left, drawn over the sweep (empty for none).
@@ -109,7 +114,7 @@ func _draw_overlay() -> void:
 		c.draw_texture_rect(icon, Rect2(at, Vector2(side, side)), false, icon_tint if not dim else Color(icon_tint, 0.35))
 	# Pet strips along the bottom.
 	if health >= 0.0:
-		var bar := Rect2(inner.position.x + 2, inner.end.y - 13, inner.size.x - 4, 7)
+		var bar := Rect2(inner.position.x + 2, inner.end.y - 10, inner.size.x - 4, 5)
 		c.draw_rect(bar, Color(0, 0, 0, 0.7))
 		var hp_color := Color(0.35, 0.9, 0.4) if health > 0.35 else Color(1.0, 0.45, 0.3)
 		c.draw_rect(Rect2(bar.position, Vector2(bar.size.x * clampf(health, 0, 1), bar.size.y)), hp_color)
@@ -131,9 +136,9 @@ func _draw_overlay() -> void:
 			points.append(center + Vector2(cos(angle), sin(angle)) * radius)
 		_draw_clipped(c, points, inner)
 		if cooldown_text != "":
-			_text(c, cooldown_text, inner.get_center() + Vector2(0, 7), 18, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER)
+			_text(c, cooldown_text, inner.get_center() + Vector2(0, cooldown_size * 0.38), cooldown_size, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 	if caption != "":
-		_text(c, caption, inner.get_center() + Vector2(0, 5), 13, Color(1, 1, 1, 0.85), HORIZONTAL_ALIGNMENT_CENTER)
+		_text(c, caption, inner.get_center() + Vector2(0, caption_size * 0.38), caption_size, Color(1, 1, 1, 0.85), HORIZONTAL_ALIGNMENT_CENTER)
 	# Frame.
 	var frame_color := FRAME
 	var width := 2.0
@@ -145,12 +150,12 @@ func _draw_overlay() -> void:
 	c.draw_rect(rect.grow(-1.0), frame_color, false, width)
 	if key_text != "":
 		var font := get_theme_default_font()
-		var w := font.get_string_size(key_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x
-		c.draw_rect(Rect2(Vector2(2, 2), Vector2(w + 8, 17)), Color(0, 0, 0, 0.7))
-		_text(c, key_text, Vector2(6, 15), 12, Color(1.0, 0.92, 0.7), HORIZONTAL_ALIGNMENT_LEFT)
+		var w := font.get_string_size(key_text, HORIZONTAL_ALIGNMENT_LEFT, -1, key_size).x
+		c.draw_rect(Rect2(Vector2(2, 2), Vector2(w + 6, key_size + 4)), Color(0, 0, 0, 0.7))
+		_text(c, key_text, Vector2(5, key_size + 2), key_size, Color(1.0, 0.92, 0.7), HORIZONTAL_ALIGNMENT_LEFT)
 	if badge != "":
-		var y := inner.end.y - (16.0 if health >= 0.0 else 4.0)
-		if badge_size <= 11:  # tiny buttons: a little pill on the top-right corner
+		var y := inner.end.y - (11.0 if health >= 0.0 else 4.0)
+		if pill_badge:  # tiny buttons: a little pill on the top-right corner
 			var font := get_theme_default_font()
 			var w := font.get_string_size(badge, HORIZONTAL_ALIGNMENT_LEFT, -1, badge_size).x + 6.0
 			var pill := Rect2(Vector2(size.x - w + 3.0, -5.0), Vector2(w, 14.0))
