@@ -16,6 +16,10 @@ const SHADE := Color(0.0, 0.0, 0.0, 0.62)
 var key_text := ""
 var icon: Texture2D
 var icon_tint := Color.WHITE
+## The icon's size, as a share of the box.
+var icon_scale := 0.62
+## The badge's font size.
+var badge_size := 14
 ## 0 = ready, 1 = just used.
 var cooldown := 0.0
 ## Seconds left, drawn over the sweep (empty for none).
@@ -100,7 +104,7 @@ func _draw_overlay() -> void:
 	var rect := Rect2(Vector2.ZERO, size)
 	var inner := rect.grow(-3.0)
 	if icon:
-		var side := minf(inner.size.x, inner.size.y) * 0.62
+		var side := minf(inner.size.x, inner.size.y) * icon_scale
 		var at := inner.position + (inner.size - Vector2(side, side)) * Vector2(0.5, 0.42 if health >= 0.0 else 0.5)
 		c.draw_texture_rect(icon, Rect2(at, Vector2(side, side)), false, icon_tint if not dim else Color(icon_tint, 0.35))
 	# Pet strips along the bottom.
@@ -146,7 +150,14 @@ func _draw_overlay() -> void:
 		_text(c, key_text, Vector2(6, 15), 12, Color(1.0, 0.92, 0.7), HORIZONTAL_ALIGNMENT_LEFT)
 	if badge != "":
 		var y := inner.end.y - (16.0 if health >= 0.0 else 4.0)
-		_text(c, badge, Vector2(inner.end.x - 3, y), 14, badge_color, HORIZONTAL_ALIGNMENT_RIGHT)
+		if badge_size <= 11:  # tiny buttons: a little pill on the top-right corner
+			var font := get_theme_default_font()
+			var w := font.get_string_size(badge, HORIZONTAL_ALIGNMENT_LEFT, -1, badge_size).x + 6.0
+			var pill := Rect2(Vector2(size.x - w + 3.0, -5.0), Vector2(w, 14.0))
+			c.draw_rect(pill, Color(0.75, 0.15, 0.15))
+			_text(c, badge, Vector2(pill.end.x - 3.0, pill.end.y - 3.0), badge_size, Color.WHITE, HORIZONTAL_ALIGNMENT_RIGHT)
+		else:
+			_text(c, badge, Vector2(inner.end.x - 1, y + 2), badge_size, badge_color, HORIZONTAL_ALIGNMENT_RIGHT)
 
 
 ## The cooldown wedge, clipped to the box (the wedge's far points lie outside it).

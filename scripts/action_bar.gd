@@ -4,10 +4,13 @@ extends PanelContainer
 ##   left:   your health, then Potion (Q), Capture (E) and your bat (LMB)
 ##   middle: your three pets (1 2 3): portrait, level, health and experience,
 ##           and their ability's cooldown
-##   right:  Pet stance (T), Inventory (I), Skills (K) and the Menu (Esc)
+##   right:  Pet stance (T) and your coins
 ## Every box can be clicked as well as using its key; hovering one explains it.
+## Inventory (I), Skills (K) and the Menu (Esc) are tiny buttons in `menu_row`,
+## which the HUD places just under the mini map.
 
 const SLOT := Vector2(60, 60)
+const TINY_SLOT := Vector2(32, 32)
 const PET_SLOT := Vector2(84, 84)
 const SIDE_WIDTH := 440.0  ## Both sides the same width, so the pets sit in the middle.
 
@@ -23,6 +26,8 @@ var stance_slot: ActionSlot
 var inventory_slot: ActionSlot
 var skills_slot: ActionSlot
 var menu_slot: ActionSlot
+## Inventory, skills and menu: tiny buttons under the mini map (added by the HUD).
+var menu_row: HBoxContainer
 var coins_label: Label
 
 
@@ -94,11 +99,21 @@ func _init(owner_hud: HUD, bar: ProgressBar) -> void:
 	row.add_child(right)
 	stance_slot = _slot(right, "T", "sword", "")
 	stance_slot.pressed.connect(func() -> void: player.request_toggle_stance.rpc_id(1))
-	inventory_slot = _slot(right, "I", "bag", "Inventory: what you're wearing and the bag of gear you've found, and your pets' collars.")
+	menu_row = HBoxContainer.new()
+	menu_row.name = "MenuButtons"
+	menu_row.add_theme_constant_override("separation", 5)
+	menu_row.alignment = BoxContainer.ALIGNMENT_END
+	menu_row.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
+	menu_row.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	menu_row.offset_right = -20.0
+	menu_row.offset_left = -20.0 - 3 * TINY_SLOT.x - 10.0
+	menu_row.offset_top = -118.0  # just under the mini map (see MiniMap)
+	menu_row.offset_bottom = -118.0 + TINY_SLOT.y
+	inventory_slot = _tiny(menu_row, "bag", "Inventory (I): what you're wearing and the bag of gear you've found, and your pets' collars.")
 	inventory_slot.pressed.connect(func() -> void: hud.toggle_inventory())
-	skills_slot = _slot(right, "K", "star", "Pet skills: spend the skill points your pets earn as they level up.")
+	skills_slot = _tiny(menu_row, "star", "Pet skills (K): spend the skill points your pets earn as they level up.")
 	skills_slot.pressed.connect(func() -> void: hud.toggle_skills())
-	menu_slot = _slot(right, "Esc", "menu", "Menu: save, settings, and quit to the title screen.")
+	menu_slot = _tiny(menu_row, "menu", "Menu (Esc): save, settings, and quit to the title screen.")
 	menu_slot.pressed.connect(func() -> void:
 		hud.close_windows()
 		hud.pause_menu.open())
@@ -129,6 +144,17 @@ func _slot(parent: Control, key: String, icon_name: String, tip: String) -> Acti
 	return slot
 
 
+## A tiny button: just the icon (the key is in its tooltip) and a small badge.
+func _tiny(parent: Control, icon_name: String, tip: String) -> ActionSlot:
+	var slot := ActionSlot.new(TINY_SLOT)
+	slot.icon = UiIcons.texture(icon_name, 32)
+	slot.icon_scale = 0.72
+	slot.badge_size = 11
+	slot.tooltip_text = tip
+	parent.add_child(slot)
+	return slot
+
+
 func _style() -> StyleBoxFlat:
 	var style := UiTheme.panel_style(Color(0.06, 0.065, 0.085, 0.9))
 	style.content_margin_left = 12
@@ -138,9 +164,11 @@ func _style() -> StyleBoxFlat:
 	return style
 
 
-## True while the mouse is over the bar (so clicking it doesn't swing the bat).
+## True while the mouse is over the bar or the tiny buttons (so clicking them doesn't swing the bat).
 func has_mouse() -> bool:
-	return is_visible_in_tree() and get_global_rect().has_point(get_viewport().get_mouse_position())
+	var mouse := get_viewport().get_mouse_position()
+	return (is_visible_in_tree() and get_global_rect().has_point(mouse)) \
+			or (menu_row.is_visible_in_tree() and menu_row.get_global_rect().has_point(mouse))
 
 
 func _process(_delta: float) -> void:

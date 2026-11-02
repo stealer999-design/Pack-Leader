@@ -80,6 +80,8 @@ func _ready() -> void:
 	action_bar = ActionBar.new(self, health_bar)
 	add_child(action_bar)
 	move_child(action_bar, 1)
+	add_child(action_bar.menu_row)
+	move_child(action_bar.menu_row, 2)
 
 
 func bind(player: Player) -> void:
@@ -223,7 +225,7 @@ func note_new_gear() -> void:
 
 func _update_inventory_button() -> void:
 	var slot := action_bar.inventory_slot
-	slot.badge = "%d new" % _new_gear if _new_gear > 0 else ""
+	slot.badge = "%d" % _new_gear if _new_gear > 0 else ""
 	slot.highlight = _new_gear > 0
 	slot.refresh()
 

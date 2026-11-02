@@ -97,9 +97,11 @@ played in the browser".
     experience strips, the ability cooldown counting down (lit when ready), a
     "+" when they have skill points to spend, and "Fainted" when down. Click
     one to open the skills;
-  - **right:** **pet stance** (T), **inventory** (I, showing how much new gear
-    you've picked up), **skills** (K, showing unspent points), the **menu**
-    (Esc) and your **coins**.
+  - **right:** **pet stance** (T) and your **coins**.
+
+  Under the mini map sit three tiny buttons: **inventory** (I, with a red
+  count of new gear you've picked up), **skills** (K, with your pets' unspent
+  points) and the **menu** (Esc).
 
 - **Levels:** each level is one long, wide, randomly generated path that
   heads across the screen from left to right and winds through **one to three
@@ -495,7 +497,7 @@ The host is the authoritative server and also plays.
 | `scripts/components/health.gd` | Health with setter-driven signals (works with replication), plus poison and damage-absorbing shields |
 | `scripts/pet_slot.gd` | A drag-and-drop place in the stable window (hay bed, party cushion or release gate), drawn in code |
 | `scenes/hud.tscn` + `scripts/hud.gd` | The HUD: objective, hover/capture info, message feed, windows |
-| `scripts/action_bar.gd`, `scripts/action_slot.gd` | The action bar along the bottom: health, potion, capture, bat, the three pets, stance, inventory, skills, menu and coins; each box draws its icon or portrait, key, cooldown sweep, badges and strips |
+| `scripts/action_bar.gd`, `scripts/action_slot.gd` | The action bar along the bottom (health, potion, capture, bat, the three pets, stance and coins) and the tiny inventory, skills and menu buttons under the mini map; each box draws its icon or portrait, key, cooldown sweep, badges and strips |
 
 Physics layers: 1 world · 2 players · 3 hostiles (wild creatures, bosses, rival pets) · 4 player pets.
 
