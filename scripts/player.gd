@@ -278,9 +278,6 @@ func _physics_process(delta: float) -> void:
 			request_command.rpc_id(1, "")
 
 	for slot in MAX_PARTY:
-		if Input.is_action_just_pressed("ability_%d" % (slot + 1)) and Input.is_key_pressed(KEY_SHIFT):
-			world.hud.action_bar.quick_swap(slot)  # Shift+1/2/3: swap in a reserve pet
-			continue
 		if Input.is_action_just_pressed("ability_%d" % (slot + 1)):
 			var target_name := String(hovered_creature.name) if hovered_creature else ""
 			request_ability.rpc_id(1, slot, _aim_point, target_name)

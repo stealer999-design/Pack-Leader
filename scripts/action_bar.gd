@@ -3,8 +3,7 @@ extends PanelContainer
 ## The action bar along the bottom of the screen, ARPG style:
 ##   left:   your health orb, tiny Capture (E) and Potion (Q) buttons stacked
 ##           beside it, and your bat (LMB)
-##           (the reserve lives in the inventory's Pets tab; Shift+1/2/3
-##           swaps in the next living reserve pet)
+##           (the reserve lives in the inventory's Pets tab, where pets are swapped)
 ##   then:   your three pets (1 2 3): portrait, level, health and experience,
 ##           and their ability's cooldown
 ##   last:   Pet stance (T) and your coins
@@ -262,10 +261,10 @@ func _process(_delta: float) -> void:
 		if points > 0:
 			tip += "\n\n%d skill point%s to spend (K)." % [points, "" if points == 1 else "s"]
 		if pet.fainted:
-			tip = "%s  ·  Level %d  ·  DEAD\nIt can't fight or be healed until it rests at a stable.\nSwap in a living pet from your reserve (I, Pets tab, or Shift+%d)." \
-					% [pet.species.display_name, pet.level, i + 1]
+			tip = "%s  ·  Level %d  ·  DEAD\nIt can't fight or be healed until it rests at a stable.\nSwap in a living pet from your reserve (I, Pets tab)." \
+					% [pet.species.display_name, pet.level]
 		else:
-			tip += "\nClick to open the skills. Swap pets in the inventory (I, Pets tab) or with Shift+%d." % (i + 1)
+			tip += "\nClick to open the skills. Swap pets in the inventory (I, Pets tab)."
 		slot.tooltip_text = tip
 		slot.refresh()
 	# Stance.
@@ -285,12 +284,3 @@ func _process(_delta: float) -> void:
 func _on_pet_pressed(_index: int) -> void:
 	hud.toggle_skills()
 
-
-## Shift+1/2/3: swap the pet in that party slot with the next living reserve pet.
-func quick_swap(slot: int) -> void:
-	for i in player.reserve.size():
-		var data: Dictionary = player.reserve[i]
-		if not data.is_empty() and not data.get("dead", false):
-			player.request_swap.rpc_id(1, "reserve", i, "party", slot)
-			return
-	hud.show_message("No living pet in your reserve to swap in.", Color(1, 0.8, 0.5))

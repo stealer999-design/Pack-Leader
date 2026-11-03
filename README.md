@@ -350,10 +350,9 @@ played in the browser".
 - **Pets:** you can have up to 3 pets out in your party, plus **3 in reserve**
   that travel with you and can be **swapped in at any time**, even mid-fight:
   open the inventory (I) on the **Pets** tab, where the reserve sits under
-  your party, and drag a reserve pet onto a party pet (or the other way). The
-  shortcut Shift+1/2/3 swaps the next living reserve pet into that slot. A pet
-  keeps its health when swapped out and back. Party
-  pets automatically defend you
+  your party, and drag a reserve pet onto a party pet (or the other way). A
+  pet keeps its health when swapped out and back. Party pets automatically
+  defend you
   and each other, and earn XP from kills within 25 units. Levelling is paced
   to the areas (a pet that fights its way through an area ends up around its
   top level). A pet more than 2 levels above what it beats gets less XP: 20%
