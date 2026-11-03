@@ -196,9 +196,12 @@ played in the browser".
   **Spiked Bat** (22 damage) for 60 coins, and once you reach Act 2, to the
   **Chain Bat** (36 damage, wrapped in a heavy chain) for 150 coins. Every bat
   still stops creatures at 1 HP (monsters it kills). Your bat is saved.
+  The Bat Shop also **buys gear**: your bag is shown under the bats; click
+  items to mark them (or "Mark all") and sell them: **Common 1 coin, Fine 2,
+  Superior 3, Legendary 5**. Every item's tooltip says what it sells for.
   The lemonade stand now sits on the stretch of path just before the village.
 - **Breeder (village):** press F at the pink stall with the hay pen. Pick two
-  different pets **of the same kind** (from your party or stable, any level)
+  different pets **of the same kind** (from your party, reserve or stable, any level)
   and pay 25 coins: they have a **hybrid** baby, a new species that only
   comes from breeding. No cross-breeding: cats only breed with cats, birds
   with birds, dogs with dogs and lizards with lizards. Each of the 28 pairings
@@ -208,7 +211,10 @@ played in the browser".
   and a powered-up ability. The parents stay with you; the baby
   (born at 75% of its parents' average level, rounded down: two level 10
   parents have a level 7 baby) joins your party, or the first free hay bed. Hybrids can't be bred
-  again.
+  again. The breeder also **buys pets**: press "Sell pets to the breeder",
+  click the pets to sell (from your party, reserve or stable) and confirm.
+  Every pet sells for **1 coin**, a **hybrid** (only bred, never caught) for
+  **2**. Their collars come off first and go back in your bag.
 
   | Parents | Hybrid | Ability |
   |---|---|---|

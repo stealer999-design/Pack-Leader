@@ -525,6 +525,8 @@ func pet_at(kind: String, index: int) -> Dictionary:
 		return {}
 	if kind == "bed":
 		return stable[index]
+	if kind == "reserve":
+		return reserve[index]
 	var pet := world.get_party_pet(peer_id, index)
 	return pet.to_data() if pet else {}
 
@@ -1161,6 +1163,68 @@ func request_unequip_collar(party_slot: int, index := -1) -> void:
 	pet.collar = {}
 	pet.refresh_max_health()
 	_push_inventory()
+
+
+## Sells bag items (by index) to the bat shop: 1-5 coins each, by rarity.
+@rpc("any_peer", "call_local", "reliable")
+func request_sell_items(indices: Array) -> void:
+	if not _sent_by_owner():
+		return
+	if not world.is_near_bat_shop(global_position):
+		world.tell(peer_id, "You need to be at the bat shop to sell gear.", Color(1, 0.8, 0.5))
+		return
+	var count := 0
+	var earned := 0
+	for index in indices:
+		if (index is int or index is float) and int(index) >= 0 and int(index) < bag.size() and not bag[int(index)].is_empty():
+			earned += ItemDB.sell_price(bag[int(index)])
+			bag[int(index)] = {}
+			count += 1
+	if count == 0:
+		return
+	coins += earned
+	world.tell(peer_id, "You sold %d item%s for %d coin%s." % [count, "" if count == 1 else "s", earned, "" if earned == 1 else "s"],
+			Color(1.0, 0.85, 0.35))
+	_push_inventory()
+
+
+## Sells pets to the breeder: 1 coin each, 2 for a hybrid. `places` is a list
+## of [kind, index] ("party", "reserve" or "bed"). Collars come off first and
+## go back in the bag (or on the ground if it's full).
+@rpc("any_peer", "call_local", "reliable")
+func request_sell_pets(places: Array) -> void:
+	if not _sent_by_owner():
+		return
+	if not world.is_near_breeder(global_position):
+		world.tell(peer_id, "You need to be at the breeder in the village to sell pets.", Color(1, 0.8, 0.5))
+		return
+	var count := 0
+	var earned := 0
+	var seen := {}
+	for place in places:
+		if not place is Array or place.size() != 2 or not place[0] is String or not (place[1] is int or place[1] is float):
+			continue
+		var kind: String = place[0]
+		var index := int(place[1])
+		if seen.has([kind, index]) or not _valid_place(kind, index):
+			continue
+		seen[[kind, index]] = true
+		var data := pet_at(kind, index)
+		if data.is_empty():
+			continue
+		earned += BreedingDB.sell_price(int(data.species))
+		count += 1
+		var collar: Dictionary = data.get("collar", {})
+		_set_place(kind, index, {})
+		if not collar.is_empty() and not add_item(collar):
+			world.loot_spawner.spawn({"pos": world.clamp_to_level(global_position), "item": collar})
+			world.tell(peer_id, "Your bag is full: a collar is on the ground.", Color(1, 0.8, 0.5))
+	if count == 0:
+		return
+	coins += earned
+	_push_stable()
+	world.tell(peer_id, "The breeder bought %d pet%s for %d coin%s." % [count, "" if count == 1 else "s", earned, "" if earned == 1 else "s"],
+			Color(1.0, 0.85, 0.35))
 
 
 ## Throws away several bag items at once (the inventory's select mode).

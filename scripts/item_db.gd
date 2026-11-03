@@ -33,6 +33,8 @@ const RARITIES := [
 	{"name": "Legendary", "prefix": "", "color": Color(1.0, 0.55, 0.12)},
 ]
 const LEGENDARY := 3  ## The Legendary rarity's index.
+## What the bat shop pays for an item, by rarity (Common, Fine, Superior, Legendary).
+const SELL_PRICES := [1, 2, 3, 5]
 ## Chance of each rarity when an ordinary item drops (common, uncommon, rare).
 const RARITY_WEIGHTS := [0.7, 0.23, 0.07]
 
@@ -271,6 +273,13 @@ static func make_legendary(rng: RandomNumberGenerator = null) -> Dictionary:
 	var kinds := KINDS.keys()
 	var type: String = kinds[(rng.randi() if rng else randi()) % kinds.size()]
 	return make(type, MAX_LEVEL, LEGENDARY)
+
+
+## What the bat shop pays for this item (1-5 coins).
+static func sell_price(item: Dictionary) -> int:
+	if item.is_empty():
+		return 0
+	return SELL_PRICES[clampi(int(item.get("rarity", 0)), 0, SELL_PRICES.size() - 1)]
 
 
 static func is_legendary(item: Dictionary) -> bool:

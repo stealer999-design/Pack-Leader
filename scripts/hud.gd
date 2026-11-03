@@ -22,6 +22,11 @@ var _in_travel_portal := false
 var _new_gear := 0  ## Gear picked up since the inventory was last opened.
 var _bat_shop_info: Label
 var _bat_buy_button: Button
+## The bat shop's sell grid: one box per bag place; clicked ones are marked to sell.
+var _sell_slots: Array = []
+var _sell_marked := {}  ## bag index -> true
+var _sell_button: Button
+var _sell_all_button: Button
 var _stable_party_signature := ""
 var _party_slots: Array[PetSlot] = []
 var _bed_slots: Array[PetSlot] = []
@@ -246,11 +251,31 @@ func open_breeder() -> void:
 
 
 func open_bat_shop() -> void:
+	_sell_marked.clear()
 	bat_shop_panel.show()
 	_update_bat_shop()
 
 
 func _update_bat_shop() -> void:
+	# The sell grid follows the bag (items can arrive or leave while it's open).
+	var total := 0
+	for i in _sell_slots.size():
+		var slot = _sell_slots[i]
+		var item: Dictionary = _player.bag[i] if i < _player.bag.size() else {}
+		if slot.item != item:
+			slot.item = item
+		if item.is_empty():
+			_sell_marked.erase(i)
+		slot.marked = _sell_marked.has(i)
+		if _sell_marked.has(i):
+			total += ItemDB.sell_price(item)
+	var count := _sell_marked.size()
+	_sell_button.disabled = count == 0
+	_sell_button.text = "Sell %d item%s for %d coin%s" % [count, "" if count == 1 else "s", total, "" if total == 1 else "s"] \
+			if count > 0 else "Mark items to sell"
+	var any := _player.bag.any(func(it: Dictionary) -> bool: return not it.is_empty())
+	_sell_all_button.disabled = not any
+	_sell_all_button.text = "Unmark all" if any and count == _player.bag.filter(func(it: Dictionary) -> bool: return not it.is_empty()).size() else "Mark all"
 	var current: Dictionary = Player.BATS[_player.bat_tier]
 	var next := _player.next_bat()
 	_bat_shop_info.text = "Your bat: %s (hits for %d).   You have %d coins." % [current.name, roundi(current.damage), _player.coins]
@@ -317,6 +342,54 @@ func _build_bat_shop_panel() -> void:
 	_bat_buy_button.pressed.connect(func() -> void: _player.request_buy_bat.rpc_id(1))
 	UiIcons.button(_bat_buy_button, "upgrade")
 	box.add_child(_bat_buy_button)
+	# Selling gear: the bag, click items to mark them, then sell.
+	var sell_title := Label.new()
+	sell_title.text = "Sell gear: click items in your bag to mark them   (Common 1, Fine 2, Superior 3, Legendary 5 coins)"
+	sell_title.add_theme_font_size_override("font_size", 14)
+	box.add_child(sell_title)
+	var grid := GridContainer.new()
+	grid.columns = 8
+	grid.add_theme_constant_override("h_separation", 6)
+	grid.add_theme_constant_override("v_separation", 6)
+	box.add_child(grid)
+	for i in ItemDB.BAG_SIZE:
+		var slot := InventoryWindow.ItemSlot.new()
+		slot.bag_index = i
+		slot.no_drag = true
+		slot.custom_minimum_size = Vector2(58, 58)
+		slot.clicked.connect(func(s, _double: bool) -> void:
+			if s.item.is_empty():
+				return
+			if _sell_marked.has(s.bag_index):
+				_sell_marked.erase(s.bag_index)
+			else:
+				_sell_marked[s.bag_index] = true
+			_update_bat_shop())
+		grid.add_child(slot)
+		_sell_slots.append(slot)
+	var sell_row := HBoxContainer.new()
+	sell_row.add_theme_constant_override("separation", 10)
+	box.add_child(sell_row)
+	_sell_all_button = Button.new()
+	_sell_all_button.focus_mode = Control.FOCUS_NONE
+	_sell_all_button.pressed.connect(func() -> void:
+		var everything := {}
+		for i in _player.bag.size():
+			if not _player.bag[i].is_empty():
+				everything[i] = true
+		_sell_marked = {} if everything.size() == _sell_marked.size() else everything
+		_update_bat_shop())
+	sell_row.add_child(_sell_all_button)
+	_sell_button = Button.new()
+	_sell_button.focus_mode = Control.FOCUS_NONE
+	_sell_button.custom_minimum_size = Vector2(300, 36)
+	_sell_button.pressed.connect(func() -> void:
+		if _sell_marked.is_empty():
+			return
+		_player.request_sell_items.rpc_id(1, _sell_marked.keys())
+		_sell_marked.clear())
+	UiIcons.button(_sell_button, "coin")
+	sell_row.add_child(_sell_button)
 	var hint := Label.new()
 	hint.text = "Every bat stops at 1 HP on creatures, and a creature at 1 HP is a 99% catch.   [F / Esc] close"
 	hint.modulate = Color(1, 1, 1, 0.6)

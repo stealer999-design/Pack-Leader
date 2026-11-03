@@ -59,6 +59,15 @@ static func hybrid_of(a: int, b: int) -> int:
 	return HYBRIDS.get("%d+%d" % [mini(a, b), maxi(a, b)], -1)
 
 
+## What the breeder pays for a pet: 1 coin, or 2 for a hybrid (only bred, never caught).
+const SELL_PRICE := 1
+const HYBRID_SELL_PRICE := 2
+
+
+static func sell_price(species_index: int) -> int:
+	return HYBRID_SELL_PRICE if is_hybrid(species_index) else SELL_PRICE
+
+
 static func is_hybrid(species_index: int) -> bool:
 	return HYBRIDS.values().has(species_index)
 

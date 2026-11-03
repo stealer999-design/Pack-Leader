@@ -3,6 +3,8 @@ extends PanelContainer
 ## The breeder's window (F at the breeder in the village): pick two of your
 ## pets of the same kind (from the party or the stable) and see the hybrid
 ## they would have, then pay to breed them. The server checks everything again (see Player.request_breed).
+## The "Sell pets" mode lists every pet (party, reserve and stable): click them
+## to mark them and sell them to the breeder (1 coin each, 2 for a hybrid).
 
 var player: Player
 
@@ -13,6 +15,13 @@ var _breed: Button
 var _grid: GridContainer
 var _scroll: ScrollContainer
 var _list_signature := ""
+var _selling := false
+var _sell_marked: Array = []  ## [kind, index] of each pet marked to sell.
+var _breed_parts: Array[Control] = []  ## Hidden while selling.
+var _list_title: Label
+var _mode_button: Button
+var _sell_button: Button
+var _confirm: ConfirmationDialog
 
 
 func _init() -> void:
@@ -42,10 +51,16 @@ func _init() -> void:
 	greeting.modulate = Color(1, 1, 1, 0.75)
 	box.add_child(greeting)
 
+	_mode_button = Button.new()
+	_mode_button.focus_mode = Control.FOCUS_NONE
+	_mode_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	_mode_button.pressed.connect(func() -> void: _set_selling(not _selling))
+	box.add_child(_mode_button)
 	var pair := HBoxContainer.new()
 	pair.alignment = BoxContainer.ALIGNMENT_CENTER
 	pair.add_theme_constant_override("separation", 10)
 	box.add_child(pair)
+	_breed_parts.append(pair)
 	# The parents, the result and the Breed button share one compact row, so the
 	# button is always on screen, even in a short browser window.
 	for i in 2:
@@ -69,11 +84,11 @@ func _init() -> void:
 	_info.custom_minimum_size = Vector2(700, 36)
 	_info.add_theme_font_size_override("font_size", 14)
 	box.add_child(_info)
+	_breed_parts.append(_info)
 
-	var list_title := Label.new()
-	list_title.text = "Your pets (party and stable), by kind: click two of the same kind to pair them"
-	list_title.add_theme_font_size_override("font_size", 14)
-	box.add_child(list_title)
+	_list_title = Label.new()
+	_list_title.add_theme_font_size_override("font_size", 14)
+	box.add_child(_list_title)
 	var scroll := ScrollContainer.new()
 	_scroll = scroll
 	scroll.custom_minimum_size = Vector2(700, 150)
@@ -84,6 +99,22 @@ func _init() -> void:
 	_grid.add_theme_constant_override("h_separation", 6)
 	_grid.add_theme_constant_override("v_separation", 6)
 	scroll.add_child(_grid)
+	_sell_button = Button.new()
+	_sell_button.focus_mode = Control.FOCUS_NONE
+	_sell_button.custom_minimum_size = Vector2(320, 40)
+	_sell_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	_sell_button.pressed.connect(func() -> void:
+		_confirm.dialog_text = "Sell %s to the breeder for %d coin%s?\nThis can't be undone." % [_marked_names(), _marked_total(),
+				"" if _marked_total() == 1 else "s"]
+		_confirm.popup_centered())
+	UiIcons.button(_sell_button, "coin")
+	box.add_child(_sell_button)
+	_confirm = ConfirmationDialog.new()
+	_confirm.title = "Sell pets"
+	_confirm.confirmed.connect(func() -> void:
+		player.request_sell_pets.rpc_id(1, _sell_marked.duplicate())
+		_sell_marked.clear())
+	add_child(_confirm)
 
 	var hint := Label.new()
 	hint.text = "Breeding costs %d coins. The parents stay with you; the baby (at %d%% of their level) joins your party, or the stable.   [F / Esc] close" \
@@ -97,6 +128,7 @@ func open() -> void:
 	# The pet list gives up height on short screens (the rest of the window is fixed).
 	_scroll.custom_minimum_size.y = clampf(get_viewport_rect().size.y - 420.0, 70.0, 150.0)
 	_list_signature = ""
+	_set_selling(false)
 	for parent in _parents:
 		_set_parent(_parents.find(parent), null)
 	show()
@@ -110,13 +142,58 @@ func refresh() -> void:
 	var signature := str(candidates)
 	if signature != _list_signature:
 		_list_signature = signature
+		_sell_marked = _sell_marked.filter(func(place: Array) -> bool: return not player.pet_at(place[0], place[1]).is_empty())
 		_rebuild_list(candidates)
 		# Drop a parent whose pet has moved or changed.
 		for i in _parents.size():
 			var parent := _parents[i]
 			if not parent.source.is_empty() and player.pet_at(parent.source.kind, parent.source.index) != parent.pet:
 				_set_parent(i, null)
-	_update_result()
+	if _selling:
+		_update_selling()
+	else:
+		_update_result()
+
+
+## Switches between breeding and selling pets.
+func _set_selling(on: bool) -> void:
+	_selling = on
+	_sell_marked.clear()
+	for part in _breed_parts:
+		part.visible = not on
+	_sell_button.visible = on
+	_mode_button.text = "Back to breeding" if on else "Sell pets to the breeder"
+	_mode_button.icon = UiIcons.texture("back" if on else "coin")
+	_list_title.text = "Click pets to mark them for sale: 1 coin each, 2 for a hybrid. Collars go back in your bag." if on \
+			else "Your pets (party, reserve and stable), by kind: click two of the same kind to pair them"
+	_list_signature = ""
+	if is_instance_valid(player):
+		refresh()
+
+
+func _update_selling() -> void:
+	var count := _sell_marked.size()
+	_sell_button.disabled = count == 0
+	_sell_button.text = "Sell %d pet%s for %d coin%s" % [count, "" if count == 1 else "s", _marked_total(),
+			"" if _marked_total() == 1 else "s"] if count > 0 else "Mark pets to sell"
+
+
+func _marked_total() -> int:
+	var total := 0
+	for place in _sell_marked:
+		var data: Dictionary = player.pet_at(place[0], place[1])
+		if not data.is_empty():
+			total += BreedingDB.sell_price(int(data.species))
+	return total
+
+
+func _marked_names() -> String:
+	var names := []
+	for place in _sell_marked:
+		var data: Dictionary = player.pet_at(place[0], place[1])
+		if not data.is_empty():
+			names.append("your %s (Lv%d)" % [SpeciesDB.get_species(data.species).display_name, data.level])
+	return ", ".join(names)
 
 
 ## Every pet this tamer has, grouped by kind (cats, birds, dogs, lizards):
@@ -125,6 +202,10 @@ func _candidates() -> Array:
 	var out := []
 	for pet in player.world.get_pets(player.peer_id):
 		out.append({"pet": pet.to_data(), "source": {"kind": "party", "index": pet.party_slot}})
+	for i in player.reserve.size():
+		var carried: Dictionary = player.reserve[i]
+		if not carried.is_empty():
+			out.append({"pet": carried, "source": {"kind": "reserve", "index": i}})
 	for i in player.stable.size():
 		var bed: Dictionary = player.stable[i]
 		if not bed.is_empty():
@@ -144,7 +225,11 @@ func _rebuild_list(candidates: Array) -> void:
 		pick.pet = c.pet
 		pick.source = c.source
 		var why := _cannot_be_parent(c.pet)
-		if why != "":
+		if _selling:
+			var where: String = {"party": "in your party", "reserve": "in your reserve", "bed": "in the stable"}[c.source.kind]
+			pick.tooltip_text += "\n\n%s. Sells for %d coin%s." % [where.capitalize(), BreedingDB.sell_price(int(c.pet.species)),
+					"" if BreedingDB.sell_price(int(c.pet.species)) == 1 else "s"]
+		elif why != "":
 			pick.tooltip_text += "\n" + why
 		pick.clicked.connect(_on_pick)
 		_grid.add_child(pick)
@@ -160,6 +245,15 @@ func _cannot_be_parent(pet: Dictionary) -> String:
 
 
 func _on_pick(pick: PetSlot) -> void:
+	if _selling:
+		var place := [pick.source.kind, pick.source.index]
+		if _sell_marked.has(place):
+			_sell_marked.erase(place)
+		else:
+			_sell_marked.append(place)
+		_mark_selected()
+		_update_selling()
+		return
 	for i in _parents.size():
 		if _parents[i].source == pick.source:
 			_set_parent(i, null)  # clicking a picked cat again un-picks it
@@ -175,6 +269,11 @@ func _set_parent(i: int, pick: PetSlot) -> void:
 
 
 func _mark_selected() -> void:
+	if _selling:
+		for pick: PetSlot in _grid.get_children():
+			pick.selected = _sell_marked.has([pick.source.kind, pick.source.index])
+			pick.modulate = Color.WHITE
+		return
 	# Once one parent is picked, pets of other kinds fade out: no cross-breeding.
 	var first: Dictionary = _parents[0].pet if not _parents[0].pet.is_empty() else _parents[1].pet
 	var kind: String = SpeciesDB.get_species(first.species).body_type if not first.is_empty() else ""

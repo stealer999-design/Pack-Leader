@@ -697,4 +697,5 @@ class ItemSlot:
 			return ItemDB.SLOT_NAMES.get(equip_slot, "Empty")
 		if item.type == "bat":
 			return "%s: hits for %d" % [item.name, roundi(item.damage)]
-		return ItemDB.describe(item)
+		var price := ItemDB.sell_price(item)
+		return ItemDB.describe(item) + "\nSells for %d coin%s at the bat shop." % [price, "" if price == 1 else "s"]
