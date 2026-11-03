@@ -3,6 +3,9 @@ extends PanelContainer
 ## The action bar along the bottom of the screen, ARPG style:
 ##   left:   your health orb, tiny Capture (E) and Potion (Q) buttons stacked
 ##           beside it, and your bat (LMB)
+##   then:   your three pets out, then (smaller) your three reserve pets:
+##           drag one onto another to swap, or click a reserve pet and then
+##           the pet it should replace (Shift+1/2/3 swaps in the next one)
 ##   then:   your three pets (1 2 3): portrait, level, health and experience,
 ##           and their ability's cooldown
 ##   last:   Pet stance (T) and your coins
@@ -15,6 +18,7 @@ const SLOT := Vector2(45, 45)
 const TINY_SLOT := Vector2(32, 32)
 const PET_SLOT := Vector2(63, 63)
 const ORB_SIZE := 80.0
+const RESERVE_SLOT := Vector2(40, 40)
 const STACKED_SLOT := Vector2(30, 30)  ## Capture and potion, one above the other.
 
 var hud: HUD
@@ -25,6 +29,10 @@ var capture_slot: ActionSlot
 var bat_slot: ActionSlot
 var pet_slots: Array[ActionSlot] = []
 var _portraits: Array[PetSlot] = []
+var reserve_slots: Array[ActionSlot] = []
+var _reserve_portraits: Array[PetSlot] = []
+## The reserve pet clicked, waiting for a pet to swap with (-1 = none).
+var selected_reserve := -1
 var stance_slot: ActionSlot
 var inventory_slot: ActionSlot
 var skills_slot: ActionSlot
@@ -88,7 +96,33 @@ func _init(owner_hud: HUD) -> void:
 		slot.add_picture(portrait)
 		pet_slots.append(slot)
 		_portraits.append(portrait)
+		slot.place = {"kind": "party", "index": i}
 		slot.pressed.connect(_on_pet_pressed.bind(i))
+		slot.swapped.connect(_on_swapped)
+
+	# The reserve: smaller boxes beside the pets.
+	var reserve := HBoxContainer.new()
+	reserve.add_theme_constant_override("separation", 4)
+	reserve.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_child(reserve)
+	for i in Player.MAX_RESERVE:
+		var slot := ActionSlot.new(RESERVE_SLOT)
+		_small_text(slot)
+		slot.badge_size = 10
+		slot.caption_size = 10
+		slot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		reserve.add_child(slot)
+		var portrait := PetSlot.new()
+		portrait.kind = "preview"
+		portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		portrait.position = Vector2(5, 4)
+		portrait.size = RESERVE_SLOT - Vector2(10, 14)
+		slot.add_picture(portrait)
+		reserve_slots.append(slot)
+		_reserve_portraits.append(portrait)
+		slot.place = {"kind": "reserve", "index": i}
+		slot.pressed.connect(_on_reserve_pressed.bind(i))
+		slot.swapped.connect(_on_swapped)
 
 	# Right: stance, inventory, skills, menu (left-aligned, from the pets).
 	var right := HBoxContainer.new()
@@ -222,6 +256,9 @@ func _process(_delta: float) -> void:
 		var slot := pet_slots[i]
 		var portrait := _portraits[i]
 		var pet: Creature = by_slot.get(i)
+		slot.can_drag = pet != null
+		if pet:
+			slot.drag_picture = {"species": pet.species_index, "level": pet.level, "fainted": pet.fainted}
 		if pet == null:
 			if not portrait.pet.is_empty():
 				portrait.pet = {}
@@ -231,14 +268,16 @@ func _process(_delta: float) -> void:
 			slot.badge = ""
 			slot.caption = "Empty"
 			slot.dim = false
-			slot.tooltip_text = "An empty party place. Capture a creature (E) or bring a pet from the stable."
+			slot.tooltip_text = "An empty party place. Capture a creature (E), drag a reserve pet here, or bring one from the stable."
+			slot.highlight = selected_reserve >= 0
+			slot.highlight_color = Color(1.0, 0.95, 0.5)
 			slot.refresh()
 			continue
 		var data := {"species": pet.species_index, "level": pet.level, "fainted": pet.fainted}
 		if portrait.pet.get("species", -1) != data.species or portrait.pet.get("level", -1) != data.level \
 				or portrait.pet.get("fainted", false) != data.fainted:
 			portrait.pet = data
-		slot.caption = "Fainted" if pet.fainted else ""
+		slot.caption = "Dead" if pet.fainted else ""
 		slot.dim = pet.fainted
 		slot.health = pet.health.current / maxf(pet.health.max_health, 1.0)
 		slot.xp = float(pet.xp) / maxf(pet.xp_to_next(), 1.0)
@@ -250,6 +289,9 @@ func _process(_delta: float) -> void:
 		slot.cooldown_text = "%d" % ceili(pet.ability_cooldown_left()) if slot.cooldown > 0.0 else ""
 		slot.highlight = ability != null and slot.cooldown <= 0.0 and not pet.fainted
 		slot.highlight_color = pet.species.color.lightened(0.4)
+		if selected_reserve >= 0:  # waiting to pick which pet the reserve pet replaces
+			slot.highlight = true
+			slot.highlight_color = Color(1.0, 0.95, 0.5)
 		var tip := "%s  ·  Level %d  ·  %s\nHealth %d / %d" % [pet.species.display_name, pet.level,
 				pet.species.pet_class().capitalize(),
 				ceili(pet.health.current), roundi(pet.health.max_health)]
@@ -257,8 +299,40 @@ func _process(_delta: float) -> void:
 			tip += "\n\nAbility (%d): %s\n%s" % [i + 1, ability.display_name, ability.description]
 		if points > 0:
 			tip += "\n\n%d skill point%s to spend (K)." % [points, "" if points == 1 else "s"]
-		tip += "\nClick to open the skills."
+		if pet.fainted:
+			tip = "%s  ·  Level %d  ·  DEAD\nIt can't fight or be healed until it rests at a stable.\nDrag it onto a reserve box (or press Shift+%d) to swap in a living pet." \
+					% [pet.species.display_name, pet.level, i + 1]
+		else:
+			tip += "\nClick to open the skills. Drag onto a reserve box to swap it out (or Shift+%d)." % (i + 1)
 		slot.tooltip_text = tip
+		slot.refresh()
+	# The reserve.
+	for i in reserve_slots.size():
+		var slot := reserve_slots[i]
+		var portrait := _reserve_portraits[i]
+		var data: Dictionary = player.reserve[i] if i < player.reserve.size() else {}
+		if selected_reserve == i and (data.is_empty() or data.get("dead", false)):
+			selected_reserve = -1
+		var dead: bool = data.get("dead", false)
+		var picture := {} if data.is_empty() else {"species": data.species, "level": data.level, "fainted": dead}
+		if portrait.pet != picture:
+			portrait.pet = picture
+		slot.can_drag = not data.is_empty()
+		slot.drag_picture = picture
+		slot.caption = "" if not dead else "Dead"
+		slot.dim = dead
+		slot.health = -1.0 if data.is_empty() or dead else float(data.get("health", 1.0))
+		slot.badge = "" if data.is_empty() else "Lv%d" % data.level
+		slot.highlight = selected_reserve == i
+		slot.highlight_color = Color(1.0, 0.95, 0.5)
+		if data.is_empty():
+			slot.tooltip_text = "Reserve: an empty place. Drag a pet here to take it out of the fight (it stays with you).\nCaptures go here when your party is full."
+		else:
+			var species := SpeciesDB.get_species(data.species)
+			slot.tooltip_text = "Reserve: %s  ·  Level %d  ·  %s%s" % [species.display_name, data.level,
+					species.pet_class().capitalize(),
+					"\nDEAD: it can't be swapped in until it rests at a stable." if dead \
+					else "\nClick it, then click the pet it should replace (or drag it onto that pet)."]
 		slot.refresh()
 	# Stance.
 	stance_slot.icon = UiIcons.texture("shield" if player.pets_passive else "sword", 48)
@@ -274,5 +348,32 @@ func _process(_delta: float) -> void:
 
 
 ## Clicking a pet: open its skills.
-func _on_pet_pressed(_index: int) -> void:
+func _on_pet_pressed(index: int) -> void:
+	if selected_reserve >= 0:  # a reserve pet was picked: swap it in here
+		player.request_swap.rpc_id(1, "reserve", selected_reserve, "party", index)
+		selected_reserve = -1
+		return
 	hud.toggle_skills()
+
+
+func _on_reserve_pressed(index: int) -> void:
+	var data: Dictionary = player.reserve[index] if index < player.reserve.size() else {}
+	if data.is_empty() or data.get("dead", false):
+		selected_reserve = -1
+		return
+	selected_reserve = -1 if selected_reserve == index else index
+
+
+func _on_swapped(from: Dictionary, to: Dictionary) -> void:
+	selected_reserve = -1
+	player.request_swap.rpc_id(1, from.kind, from.index, to.kind, to.index)
+
+
+## Shift+1/2/3: swap the pet in that party slot with the next living reserve pet.
+func quick_swap(slot: int) -> void:
+	for i in player.reserve.size():
+		var data: Dictionary = player.reserve[i]
+		if not data.is_empty() and not data.get("dead", false):
+			player.request_swap.rpc_id(1, "reserve", i, "party", slot)
+			return
+	hud.show_message("No living pet in your reserve to swap in.", Color(1, 0.8, 0.5))

@@ -177,6 +177,7 @@ func save_now(announce := false) -> void:
 		"equipment": _player.equipment.duplicate(true),
 		"party": party,
 		"stable": _player.stable.duplicate(true),
+		"reserve": _player.reserve.duplicate(true),
 	}
 	var file := FileAccess.open(slot_path(slot), FileAccess.WRITE)
 	if file == null:

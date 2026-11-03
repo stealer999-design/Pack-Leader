@@ -9,6 +9,11 @@ signal inventory_changed
 
 const MAX_PARTY := 3
 const MAX_STABLE := 20
+## Pets carried in reserve: not out fighting, but they can be swapped in at any
+## time (see request_swap).
+const MAX_RESERVE := 3
+## Seconds between swaps.
+const SWAP_COOLDOWN := 0.6
 const RIVAL_COMMAND := "@rival"
 ## Potions a player can carry. Everyone starts each level with a full set.
 const MAX_POTIONS := 2
@@ -96,6 +101,10 @@ var downed := false:
 ## ({species, level, xp}) or {} for an empty bed. Authoritative on the server and
 ## mirrored to the owning client only.
 var stable: Array[Dictionary] = []
+## The reserve: MAX_RESERVE pets as data (like the stable's), or {} for an empty
+## place. A dead pet's data has "dead": true. Server-authoritative, mirrored
+## to the owner along with the stable.
+var reserve: Array[Dictionary] = []
 
 ## Creature under the mouse cursor (local player only).
 var hovered_creature: Creature
@@ -116,6 +125,8 @@ var _potion_timer := 0.0
 var _boost_timer := 0.0
 var _since_hit := 0.0  ## Server: seconds since this player last took damage.
 var _restored := false  ## Server: a save has been restored for this player.
+var _server_swap_timer := 0.0
+var _stable_check := 0.0  ## Server: how often we look whether this tamer is at a stable.
 var _slow_timer := 0.0
 var _slow_factor := 1.0
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
@@ -146,6 +157,8 @@ func _ready() -> void:
 	add_to_group("players")
 	for i in MAX_STABLE:
 		stable.append({})
+	for i in MAX_RESERVE:
+		reserve.append({})
 	for i in ItemDB.BAG_SIZE:
 		bag.append({})
 	for slot in ItemDB.SLOTS:
@@ -177,6 +190,12 @@ func _physics_process(delta: float) -> void:
 		if not is_multiplayer_authority():
 			_boost_timer -= delta  # the owner counts down below
 		_regenerate(delta)
+		_server_swap_timer -= delta
+		_stable_check -= delta
+		if _stable_check <= 0.0:
+			_stable_check = 0.5
+			if world.is_near_stable(global_position):
+				_rest_at_stable()
 	if not is_multiplayer_authority():
 		return
 
@@ -259,6 +278,9 @@ func _physics_process(delta: float) -> void:
 			request_command.rpc_id(1, "")
 
 	for slot in MAX_PARTY:
+		if Input.is_action_just_pressed("ability_%d" % (slot + 1)) and Input.is_key_pressed(KEY_SHIFT):
+			world.hud.action_bar.quick_swap(slot)  # Shift+1/2/3: swap in a reserve pet
+			continue
 		if Input.is_action_just_pressed("ability_%d" % (slot + 1)):
 			var target_name := String(hovered_creature.name) if hovered_creature else ""
 			request_ability.rpc_id(1, slot, _aim_point, target_name)
@@ -359,22 +381,67 @@ func _first_empty_bed() -> int:
 func _valid_place(kind: String, index: int) -> bool:
 	if kind == "party":
 		return index >= 0 and index < MAX_PARTY
+	if kind == "reserve":
+		return index >= 0 and index < reserve.size()
 	return kind == "bed" and index >= 0 and index < stable.size()
 
 
-## Server: the pet in `bed` joins the party in `slot`; whoever was in that slot
-## takes its place in the bed.
-func _bed_to_party(bed: int, slot: int) -> void:
-	var data := stable[bed]
-	if data.is_empty():
+func reserve_count() -> int:
+	return reserve.filter(func(entry: Dictionary) -> bool: return not entry.is_empty()).size()
+
+
+func _first_empty_reserve() -> int:
+	for i in reserve.size():
+		if reserve[i].is_empty():
+			return i
+	return -1
+
+
+## Server: the pet at a place as data ({} if none), without moving it.
+func _peek_place(kind: String, index: int) -> Dictionary:
+	match kind:
+		"party":
+			var pet := world.get_party_pet(peer_id, index)
+			return pet.to_data() if pet else {}
+		"reserve":
+			return reserve[index]
+		_:
+			return stable[index]
+
+
+## Server: puts a pet (as data, or {} to empty it) at a place, replacing what
+## was there. A party pet steps out next to the tamer; one leaving the party
+## vanishes in a little puff.
+func _set_place(kind: String, index: int, data: Dictionary) -> void:
+	match kind:
+		"party":
+			var current := world.get_party_pet(peer_id, index)
+			if current:
+				world.play_burst.rpc(current.global_position, current.species.color, 1.0)
+				current.queue_free()
+			if not data.is_empty():
+				var pet := world.spawn_pet(peer_id, data, global_position, index)
+				world.play_burst.rpc(pet.global_position, pet.species.color, 1.2)
+		"reserve":
+			reserve[index] = data
+		_:
+			stable[index] = data
+
+
+## Server: swaps the pets at two places (either may be empty).
+func _swap_places(from_kind: String, from_index: int, to_kind: String, to_index: int) -> void:
+	if from_kind == "party" and to_kind == "party":  # just trade party slots (keys 1-3)
+		var a := world.get_party_pet(peer_id, from_index)
+		var b := world.get_party_pet(peer_id, to_index)
+		if a:
+			a.party_slot = to_index
+		if b:
+			b.party_slot = from_index
 		return
-	var current := world.get_party_pet(peer_id, slot)
-	if current:
-		stable[bed] = current.to_data()
-		current.queue_free()
-	else:
-		stable[bed] = {}
-	world.spawn_pet(peer_id, data, global_position, slot)
+	var moving := _peek_place(from_kind, from_index)
+	var other := _peek_place(to_kind, to_index)
+	_set_place(from_kind, from_index, other)
+	_set_place(to_kind, to_index, moving)
 
 
 # --- Requests (client -> server) -------------------------------------------------
@@ -566,8 +633,8 @@ func request_capture(creature_name: String) -> void:
 	if c.global_position.distance_to(global_position) > capture_range + c.radius():
 		world.tell(peer_id, "Too far away to capture.", Color(1, 0.8, 0.5))
 		return
-	if party_is_full() and stable_is_full():
-		world.tell(peer_id, "Your party and stable are both full. Release a pet at the stable first.", Color(1, 0.8, 0.5))
+	if party_is_full() and _first_empty_reserve() < 0 and stable_is_full():
+		world.tell(peer_id, "Your party, reserve and stable are all full. Release a pet at the stable first.", Color(1, 0.8, 0.5))
 		return
 	_server_capture_timer = capture_cooldown * 0.8
 	var success := randf() < c.capture_chance(capture_boost())
@@ -577,11 +644,17 @@ func request_capture(creature_name: String) -> void:
 		world.tell(peer_id, "The %s broke free!" % c.species.display_name, Color(1, 0.6, 0.4))
 		return
 	world.announce.rpc("%s captured a %s!" % [display_name, c.species.display_name], color.lightened(0.3))
-	if party_is_full():
+	if party_is_full() and _first_empty_reserve() >= 0:
+		reserve[_first_empty_reserve()] = c.to_data()
+		c.queue_free()
+		_push_stable()
+		world.tell(peer_id, "Your party is full, so the %s joined your reserve (%d/%d). Swap it in from the action bar." \
+				% [c.species.display_name, reserve_count(), MAX_RESERVE], Color(0.6, 0.85, 1.0))
+	elif party_is_full():
 		stable[_first_empty_bed()] = c.to_data()
 		c.queue_free()
 		_push_stable()
-		world.tell(peer_id, "Your party is full, so the %s was sent to the stable (%d/%d)." \
+		world.tell(peer_id, "Your party and reserve are full, so the %s was sent to the stable (%d/%d)." \
 				% [c.species.display_name, stable_count(), MAX_STABLE], Color(0.6, 0.85, 1.0))
 	else:
 		c.tame(peer_id, world.free_party_slot(peer_id))
@@ -692,6 +765,10 @@ func request_restore(data: Dictionary) -> void:
 	if beds is Array:
 		for i in mini(beds.size(), MAX_STABLE):
 			stable[i] = _clean_pet(beds[i])
+	var carried = data.get("reserve", [])
+	if carried is Array:
+		for i in mini(carried.size(), MAX_RESERVE):
+			reserve[i] = _clean_pet(carried[i])
 	var party = data.get("party", [])
 	var restored_pets := 0
 	if party is Array:
@@ -706,8 +783,8 @@ func request_restore(data: Dictionary) -> void:
 				world.spawn_pet(peer_id, pet, global_position, slot)
 				restored_pets += 1
 	_push_stable()
-	world.tell(peer_id, "Welcome back, %s! %d pets in your party, %d in the stable." \
-			% [display_name, restored_pets, stable_count()], Color(0.7, 0.9, 0.7))
+	world.tell(peer_id, "Welcome back, %s! %d pets in your party, %d in reserve, %d in the stable." \
+			% [display_name, restored_pets, reserve_count(), stable_count()], Color(0.7, 0.9, 0.7))
 
 
 ## A saved pet made safe to use: a real species and sensible numbers, or {}.
@@ -727,46 +804,79 @@ static func _clean_pet(entry) -> Dictionary:
 	var collar := ItemDB.clean(entry.get("collar", {}))
 	if ItemDB.fits_pet(collar, SpeciesDB.get_species(species)):
 		pet.collar = collar
+	if entry.get("dead", false):
+		pet["dead"] = true
+	elif entry.has("health"):
+		pet["health"] = clampf(float(entry.health), 0.01, 1.0)
 	return pet
 
 
-## Drag and drop in the stable window. `kind` is "party" (index = party slot)
-## or "bed" (index = hay bed). Covers every combination:
-## bed -> party: take the pet out (swapping with the pet in that slot, if any);
-## party -> bed: put the pet to bed (swapping with the pet in that bed, if any);
-## bed -> bed / party -> party: swap the two places.
+## Drag and drop in the stable window: `kind` is "party" (index = party
+## slot), "reserve" or "bed" (index = hay bed). The two places swap pets
+## (either may be empty). At the stable every pet is rested, so dead pets can
+## go anywhere here.
 @rpc("any_peer", "call_local", "reliable")
 func request_stable_move(from_kind: String, from_index: int, to_kind: String, to_index: int) -> void:
 	if not _can_use_stable() or not _valid_place(from_kind, from_index) or not _valid_place(to_kind, to_index):
 		return
 	if from_kind == to_kind and from_index == to_index:
 		return
-	if from_kind == "party" and to_kind == "party":
-		var a := world.get_party_pet(peer_id, from_index)
-		var b := world.get_party_pet(peer_id, to_index)
-		if a:
-			a.party_slot = to_index
-		if b:
-			b.party_slot = from_index
-	elif from_kind == "bed" and to_kind == "bed":
-		var moved := stable[from_index]
-		stable[from_index] = stable[to_index]
-		stable[to_index] = moved
-	elif from_kind == "bed":
-		_bed_to_party(from_index, to_index)
-	else:
-		var pet := world.get_party_pet(peer_id, from_index)
-		if pet == null:
-			return
-		if stable[to_index].is_empty():
-			stable[to_index] = pet.to_data()
-			pet.queue_free()
-		else:
-			_bed_to_party(to_index, from_index)
+	_rest_at_stable()
+	_swap_places(from_kind, from_index, to_kind, to_index)
 	_push_stable()
 
 
-## Releases the pet in a bed or party slot back into the wild.
+## Swapping pets on the fly, anywhere (the action bar): between the party and
+## the reserve, or within either. A dead pet can be taken out of the party,
+## but can't be sent back in until it has rested at a stable.
+@rpc("any_peer", "call_local", "reliable")
+func request_swap(from_kind: String, from_index: int, to_kind: String, to_index: int) -> void:
+	if not _sent_by_owner() or downed or _server_swap_timer > 0.0:
+		return
+	if from_kind == "bed" or to_kind == "bed" or not _valid_place(from_kind, from_index) \
+			or not _valid_place(to_kind, to_index) or (from_kind == to_kind and from_index == to_index):
+		return
+	var moving := _peek_place(from_kind, from_index)
+	var other := _peek_place(to_kind, to_index)
+	for pair in [[moving, to_kind], [other, from_kind]]:
+		var data: Dictionary = pair[0]
+		if pair[1] == "party" and data.get("dead", false):
+			world.tell(peer_id, "Your %s is dead: it can't fight again until it rests at a stable." \
+					% SpeciesDB.get_species(data.species).display_name, Color(1, 0.6, 0.5))
+			return
+	_server_swap_timer = SWAP_COOLDOWN
+	_swap_places(from_kind, from_index, to_kind, to_index)
+	_push_stable()
+
+
+## Server: at a stable, every dead pet (in the party, the reserve and the beds)
+## comes back to life, and everyone is healed to full.
+func _rest_at_stable() -> void:
+	var revived: Array[String] = []
+	for pet in world.get_pets(peer_id):
+		if pet.fainted:
+			revived.append(pet.species.display_name)
+			pet.revive()
+		elif pet.health.current < pet.health.max_health:
+			pet.health.current = pet.health.max_health
+	var changed := false
+	for list in [reserve, stable]:
+		for entry: Dictionary in list:
+			if entry.has("health"):  # rested: full health
+				entry.erase("health")
+				changed = true
+			if entry.get("dead", false):
+				entry.erase("dead")
+				revived.append(SpeciesDB.get_species(entry.species).display_name)
+				changed = true
+	if changed:
+		_push_stable()
+	if not revived.is_empty():
+		world.tell(peer_id, "At the stable: your %s %s back on %s feet." % [", ".join(revived),
+				"is" if revived.size() == 1 else "are", "its" if revived.size() == 1 else "their"], Color(0.5, 1.0, 0.6))
+
+
+## Releases the pet in a bed, reserve place or party slot back into the wild.
 @rpc("any_peer", "call_local", "reliable")
 func request_stable_release(kind: String, index: int) -> void:
 	if not _can_use_stable() or not _valid_place(kind, index):
@@ -777,6 +887,10 @@ func request_stable_release(kind: String, index: int) -> void:
 		species_index = stable[index].species
 		collar = stable[index].get("collar", {})
 		stable[index] = {}
+	elif kind == "reserve" and not reserve[index].is_empty():
+		species_index = reserve[index].species
+		collar = reserve[index].get("collar", {})
+		reserve[index] = {}
 	elif kind == "party":
 		var pet := world.get_party_pet(peer_id, index)
 		if pet:
@@ -849,7 +963,7 @@ func _can_use_stable() -> bool:
 
 
 func _push_stable() -> void:
-	_sync_stable.rpc_id(peer_id, stable)
+	_sync_stable.rpc_id(peer_id, stable, reserve)
 
 
 func _sent_by_owner() -> bool:
@@ -1197,11 +1311,12 @@ func _sync_inventory(new_bag: Array, new_equipment: Dictionary) -> void:
 
 
 @rpc("any_peer", "call_local", "reliable")
-func _sync_stable(data: Array) -> void:
+func _sync_stable(data: Array, carried: Array) -> void:
 	if not _sent_by_server():
 		return
-	if not multiplayer.is_server():  # the server already holds the real list
+	if not multiplayer.is_server():  # the server already holds the real lists
 		stable.assign(data)  # typed arrays arrive untyped over RPC
+		reserve.assign(carried)
 	stable_changed.emit()
 
 

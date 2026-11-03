@@ -97,8 +97,11 @@ played in the browser".
   - your **bat** (LMB);
   - your three **pets** (1 2 3): portrait, level, health and
     experience strips, the ability cooldown counting down (lit when ready), a
-    "+" when they have skill points to spend, and "Fainted" when down. Click
+    "+" when they have skill points to spend, and "Dead" when killed. Click
     one to open the skills;
+  - your three **reserve** pets (smaller boxes): drag one onto a pet to swap
+    them, or click it and then click the pet it should replace; Shift+1/2/3
+    swaps the next living reserve pet into that slot;
   - **pet stance** (T) and your **coins**.
 
   The bar is only as wide as what's on it.
@@ -165,7 +168,7 @@ played in the browser".
   | Act 2 area 3 (Lv 31-35) | Cinderpeak Caldera (volcano) | Monsters: Fire Imps (quick, winged, throw fire from range) and Magma Golems (slow, huge, hit hard) | **Magma Colossus**: a walking mountain of black rock with lava in its cracks. Eruption (a warning circle, then damage and burning); calls fire imps and a golem out of the lava at 66% and 33% health |
   | Act 2 area 4 (Lv 36-40) | Frostveil Expanse (ice) | Monsters: Frost Wraiths (floating, cast ice from range) and Yetis (big, shaggy, hit hard) | **Yeti King**: a giant yeti in a crown of ice. Ice Slam (a warning circle, then damage and a brief freeze); the blizzard brings wraiths and a yeti at 66% and 33% health |
 - **Pet health:** your pets heal passively, 1 HP every half second, all the
-  time (even mid-fight), unless they've fainted.
+  time (even mid-fight), unless they're dead (see Death below).
 - **Tamer health:** after 5 seconds without taking damage you regenerate 3% of
   your max health per second. You carry up to **2 potions** (Q heals 50%),
   and start every level with a full pair. Bloomlings and Aurora Swifts can heal
@@ -347,13 +350,23 @@ played in the browser".
   attack and capture it before the pets finish it off. Abilities you trigger
   yourself (1/2/3) still work. Sending pets at an enemy with RMB switches them
   back to **Aggressive** (the default) and they attack; T switches too.
-- **Pets:** you can have up to 3 in your party. They automatically defend you
+- **Pets:** you can have up to 3 pets out in your party, plus **3 in reserve**
+  that travel with you and can be **swapped in at any time**, even mid-fight
+  (drag on the action bar, click a reserve pet and then the pet to replace,
+  or Shift+1/2/3). A pet keeps its health when swapped out and back. Party
+  pets automatically defend you
   and each other, and earn XP from kills within 25 units. Levelling is paced
   to the areas (a pet that fights its way through an area ends up around its
   top level). A pet more than 2 levels above what it beats gets less XP: 20%
   less per extra level, down to a tenth (it tells you once per area), so to
-  keep levelling, move on. When a pet runs out
-  of health it faints and recovers after 8 seconds.
+  keep levelling, move on.
+- **Death:** a pet that runs out of health **dies**: it lies there, can't
+  fight, can't be healed (not by potions, abilities or passive healing) and
+  can't be swapped back into the party until it **rests at a stable**. Swap
+  it out for a reserve pet to keep fighting. As soon as you walk up to a
+  stable (at the camp or in the village), every dead pet, in your party,
+  reserve or the hay beds, comes back to life and everyone is healed to full.
+  Rivals' pets still get back up after 8 seconds.
 - **Look:** characters are drawn in an anime style: cel shading (hard light
   and shadow bands with a rim of light) and black ink outlines on the tamer,
   pets, monsters and bosses (`scripts/anime_look.gd`). The tamer (and the
@@ -456,14 +469,16 @@ played in the browser".
   pets come trained. Unspent points show as "+N" in the party panel.
 - **Stable:** every level has two stables, one at the start camp and one in
   the village; both open the same stable. Press F at either to open it: your
-  party sits on three cushions (numbered by their ability key) and up to
-  **20 pets sleep in hay beds**. Everything is drag and drop:
+  party sits on three cushions (numbered by their ability key), your three
+  **reserve** pets below them, and up to **20 pets sleep in hay beds**.
+  Everything is drag and drop:
   drag a pet from a bed onto the party to bring it along, from the party onto a
   bed to rest it, onto an occupied place to swap, between beds to rearrange,
   or between party slots to change which key (1/2/3) uses its ability. Drop a
-  pet on the **release gate** (and confirm) to set it free. Stabled pets are
-  fully healed. If you capture a creature while your party is full it goes to
-  the first free bed; if every bed is full too, the capture is refused.
+  pet on the **release gate** (and confirm) to set it free. At the stable
+  every pet is healed and dead pets come back to life. If you capture a
+  creature while your party is full it joins your reserve; if that's full too
+  it goes to the first free bed; if every bed is full, the capture is refused.
 - **No friendly fire:** there are two sides: hostiles (wild creatures, rivals
   and rivals' pets) and tamers (every player and every player's pet). Nothing
   can hurt or target its own side, and pets immediately drop a target that
@@ -517,10 +532,10 @@ The host is the authoritative server and also plays.
 | `scripts/abilities/*.gd`, `resources/abilities/*.tres` | `PetAbility` base class and one subclass per ability; tune values in the `.tres` files |
 | `scenes/crate.tscn` + `scripts/crate.gd`, `scenes/coin.tscn` + `scripts/coin.gd` | Breakable vases (still called crates in the code) and the coins they spill |
 | `scripts/components/health.gd` | Health with setter-driven signals (works with replication), plus poison and damage-absorbing shields |
-| `scripts/pet_slot.gd` | A drag-and-drop place in the stable window (hay bed, party cushion or release gate), drawn in code |
+| `scripts/pet_slot.gd` | A drag-and-drop place in the stable window (hay bed, party cushion, reserve place or release gate), drawn in code |
 | `scenes/hud.tscn` + `scripts/hud.gd` | The HUD: objective, hover/capture info, message feed, windows |
 | `scripts/sound_fx.gd`, `sounds/*.wav` (built by `scripts/tools/build_sounds.gd`) | The sound effects (attacks, abilities, item drops, footsteps): designed in code, saved as .wav files, played positionally |
-| `scripts/action_bar.gd`, `scripts/action_slot.gd`, `scripts/health_orb.gd` | The action bar along the bottom (health, potion, capture, bat, the three pets, stance and coins) and the tiny inventory, skills and menu buttons under the mini map; each box draws its icon or portrait, key, cooldown sweep, badges and strips |
+| `scripts/action_bar.gd`, `scripts/action_slot.gd`, `scripts/health_orb.gd` | The action bar along the bottom (health, potion, capture, bat, the three pets and three reserve pets with drag-and-drop swapping, stance and coins) and the tiny inventory, skills and menu buttons under the mini map; each box draws its icon or portrait, key, cooldown sweep, badges and strips |
 
 Physics layers: 1 world · 2 players · 3 hostiles (wild creatures, bosses, rival pets) · 4 player pets.
 

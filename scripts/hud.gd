@@ -25,6 +25,7 @@ var _bat_buy_button: Button
 var _stable_party_signature := ""
 var _party_slots: Array[PetSlot] = []
 var _bed_slots: Array[PetSlot] = []
+var _reserve_slots: Array[PetSlot] = []
 ## The slot whose pet is waiting for the release confirmation.
 var _pending_release: PetSlot
 
@@ -374,9 +375,23 @@ func _on_stable_changed() -> void:
 
 func _build_stable_slots() -> void:
 	for slot in Player.MAX_PARTY:
-		var party_slot := _new_slot("party", slot, Vector2(170, 120))
+		var party_slot := _new_slot("party", slot, Vector2(170, 110))
 		party_slots_box.add_child(party_slot)
 		_party_slots.append(party_slot)
+	var reserve_title := Label.new()
+	reserve_title.text = "Reserve"
+	reserve_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	reserve_title.add_theme_font_size_override("font_size", 16)
+	reserve_title.tooltip_text = "Pets you carry: swap them in at any time from the action bar."
+	reserve_title.mouse_filter = Control.MOUSE_FILTER_PASS
+	party_slots_box.add_child(reserve_title)
+	var reserve_row := HBoxContainer.new()
+	reserve_row.add_theme_constant_override("separation", 6)
+	party_slots_box.add_child(reserve_row)
+	for i in Player.MAX_RESERVE:
+		var reserve_slot := _new_slot("reserve", i, Vector2(78, 84))
+		reserve_row.add_child(reserve_slot)
+		_reserve_slots.append(reserve_slot)
 	for bed in Player.MAX_STABLE:
 		var bed_slot := _new_slot("bed", bed, Vector2(110, 92))
 		bed_grid.add_child(bed_slot)
@@ -408,6 +423,10 @@ func _refresh_stable() -> void:
 	for bed in Player.MAX_STABLE:
 		var data: Dictionary = _player.stable[bed] if bed < _player.stable.size() else {}
 		_bed_slots[bed].pet = {"species": data.species, "level": data.level} if not data.is_empty() else {}
+	for i in Player.MAX_RESERVE:
+		var data: Dictionary = _player.reserve[i] if i < _player.reserve.size() else {}
+		_reserve_slots[i].pet = {"species": data.species, "level": data.level, "fainted": data.get("dead", false)} \
+				if not data.is_empty() else {}
 	stable_title.text = "Hay beds  %d / %d" % [_player.stable_count(), Player.MAX_STABLE]
 
 
@@ -478,7 +497,10 @@ func _update_hover() -> void:
 		hover_label.text = "%s  Lv%d   —   a monster: it can't be captured. Bat it or send pets  [RMB]" \
 				% [c.species.display_name, c.level]
 	elif c.is_wild():
-		var where := "  (party full: goes to stable)" if _player.party_is_full() else ""
+		var where := ""
+		if _player.party_is_full():
+			where = "  (party full: goes to your reserve)" if _player.reserve_count() < Player.MAX_RESERVE \
+					else "  (party and reserve full: goes to the stable)"
 		hover_label.text = "Wild %s  Lv%d   —   capture chance %d%%  [E]%s   ·   send pets  [RMB]" \
 				% [c.species.display_name, c.level, roundi(c.capture_chance(_player.capture_boost()) * 100.0), where]
 	elif c.owner_id == _player.peer_id:
@@ -495,8 +517,8 @@ func _update_hover() -> void:
 
 func _rebuild_party() -> void:
 	var pets := _player.world.get_pets(_player.peer_id)
-	party_title.text = "Pets  %d / %d     Stable  %d / %d" \
-			% [pets.size(), Player.MAX_PARTY, _player.stable_count(), Player.MAX_STABLE]
+	party_title.text = "Pets  %d / %d     Reserve  %d / %d     Stable  %d / %d" \
+			% [pets.size(), Player.MAX_PARTY, _player.reserve_count(), Player.MAX_RESERVE, _player.stable_count(), Player.MAX_STABLE]
 	for child in party_list.get_children():
 		child.queue_free()
 	if pets.is_empty():  # your pets are shown on the action bar

@@ -126,6 +126,11 @@ func _ready() -> void:
 		health.died.connect(_on_died)
 		_wander_point = home
 		_wander_timer = randf() * 3.0
+		if has_meta("dead_on_spawn"):  # a dead pet from the reserve or a save stays dead
+			fainted = true
+			health.current = 0.0
+		elif has_meta("health_fraction"):  # a hurt pet swapped back in is still hurt
+			health.current = maxf(1.0, health.max_health * float(get_meta("health_fraction")))
 	_apply_ownership()
 	_apply_faint()
 	_on_health_changed(health.current, health.max_health)
@@ -278,7 +283,20 @@ func to_data() -> Dictionary:
 	var data := {"species": species_index, "level": level, "xp": xp, "skills": skill_ranks.duplicate()}
 	if not collar.is_empty():
 		data.collar = collar.duplicate()
+	if fainted and is_player_pet():
+		data["dead"] = true
+	elif is_player_pet() and health.current < health.max_health and health.max_health > 0.0:
+		data["health"] = snappedf(health.current / health.max_health, 0.001)  # kept when swapped out
 	return data
+
+
+## Server: brings a dead pet back (at a stable) at full health, beside its tamer.
+func revive() -> void:
+	var master_player := world.get_tamer(owner_id)
+	if master_player:
+		global_position = master_player.global_position + _follow_offset()
+	fainted = false
+	health.current = health.max_health
 
 
 # --- Server-side actions ---------------------------------------------------------
@@ -836,6 +854,8 @@ func _follow_offset() -> Vector3:
 
 
 func _tick_faint(delta: float) -> void:
+	if not is_rival_pet():
+		return  # players' pets stay dead until they rest at a stable
 	_faint_timer -= delta
 	if _faint_timer > 0.0:
 		return
@@ -855,12 +875,17 @@ func _on_died() -> void:
 		world.play_burst.rpc(global_position, species.color, 2.5)
 		queue_free()
 	else:
+		if fainted:
+			return
 		fainted = true
-		_faint_timer = faint_time
+		_faint_timer = faint_time  # only the rival's pet gets back up by itself
 		target = null
 		focus = null
 		_pending_cast = {}
-		world.tell(owner_id, "Your %s fainted! It recovers in %ds." % [species.display_name, int(faint_time)], Color(1, 0.6, 0.4))
+		if is_player_pet():
+			world.play_burst.rpc(global_position, Color(0.6, 0.6, 0.65), 1.6)
+			world.tell(owner_id, "Your %s died! It can't fight or be healed until it rests at a stable. Swap in a reserve pet." \
+					% species.display_name, Color(1, 0.45, 0.4))
 
 
 func _apply_level_stats() -> void:

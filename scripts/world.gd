@@ -822,6 +822,7 @@ func spawn_pet(peer_id: int, data: Dictionary, near: Vector3, slot: int) -> Crea
 	return creature_spawner.spawn({
 		"species": data.species, "level": data.level, "xp": data.xp, "skills": data.get("skills", []),
 		"collar": data.get("collar", {}), "owner": peer_id, "slot": slot, "pos": near + Vector3(offset.x, 0.0, offset.y),
+		"dead": data.get("dead", false), "health": data.get("health", 1.0),
 	}) as Creature
 
 
@@ -1397,6 +1398,10 @@ func _spawn_creature(data: Dictionary) -> Node:
 	creature.party_slot = data.get("slot", -1)
 	creature.position = data.pos
 	creature.home = data.pos
+	if data.get("dead", false):
+		creature.set_meta("dead_on_spawn", true)  # a dead pet stays dead (see Creature._ready)
+	elif data.has("health"):
+		creature.set_meta("health_fraction", clampf(float(data.health), 0.01, 1.0))
 	return creature
 
 

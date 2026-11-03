@@ -263,7 +263,7 @@ kind = "release"
 layout_mode = 2
 size_flags_horizontal = 3
 modulate = Color(1, 1, 1, 0.7)
-text = "Drag pets between the hay beds and your party. Drop one on another to swap them. Pets in the stable are fully healed.  [F / Esc] close"
+text = "Drag pets between your party, your reserve and the hay beds. Drop one on another to swap them.\nAt the stable every pet is healed, and dead pets come back to life.  [F / Esc] close"
 autowrap_mode = 3
 
 [node name="ReleaseDialog" type="ConfirmationDialog" parent="."]

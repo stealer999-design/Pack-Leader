@@ -4,9 +4,11 @@ extends Control
 ## a pet's portrait), its key in the top-left corner, a dark cooldown sweep
 ## that drains clockwise, an optional count or badge in the bottom-right, and
 ## (for pets) health and experience strips along the bottom. Clicking it emits
-## `pressed`.
+## `pressed`. A pet box can also be dragged onto another (see `place`): that
+## emits `swapped` on the box it was dropped on.
 
 signal pressed
+signal swapped(from: Dictionary, to: Dictionary)
 
 const FRAME := Color(0.86, 0.72, 0.48, 0.8)
 const BACK := Color(0.1, 0.1, 0.13, 0.95)
@@ -46,6 +48,13 @@ var xp := -1.0
 var caption := ""
 
 var _hover := false
+## Where a pet box points ({kind: "party"/"reserve", index}); {} = not draggable.
+var place := {}
+## Set by the bar: whether this box has a pet that may be dragged right now.
+var can_drag := false
+## The picture shown under the mouse while dragging (a pet portrait).
+var drag_picture: Dictionary = {}
+var _dragged := false
 ## Everything but the background is drawn on this child, kept on top, so a
 ## portrait added to the slot sits between the two.
 var _overlay := Control.new()
@@ -80,13 +89,55 @@ func add_picture(picture: Control) -> void:
 
 
 func _gui_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		accept_event()
-		var tween := create_tween()
-		pivot_offset = size / 2.0
-		tween.tween_property(self, "scale", Vector2(0.92, 0.92), 0.05)
-		tween.tween_property(self, "scale", Vector2.ONE, 0.08)
-		pressed.emit()
+		if event.pressed:
+			_dragged = false
+			var tween := create_tween()
+			pivot_offset = size / 2.0
+			tween.tween_property(self, "scale", Vector2(0.92, 0.92), 0.05)
+			tween.tween_property(self, "scale", Vector2.ONE, 0.08)
+		elif not _dragged and get_global_rect().has_point(get_global_mouse_position()):
+			pressed.emit()  # on release, so starting a drag isn't also a click
+
+
+func _get_drag_data(_at: Vector2) -> Variant:
+	if place.is_empty() or not can_drag:
+		return null
+	_dragged = true
+	var preview := PetSlot.new()
+	preview.kind = "preview"
+	preview.pet = drag_picture
+	preview.size = Vector2(60, 60)
+	preview.position = -preview.size * 0.5
+	var holder := Control.new()
+	holder.add_child(preview)
+	set_drag_preview(holder)
+	return {"swap_from": place}
+
+
+func _can_drop_data(_at: Vector2, data: Variant) -> bool:
+	var ok: bool = not place.is_empty() and data is Dictionary and data.has("swap_from") and data.swap_from != place
+	if ok != highlight_drop:
+		highlight_drop = ok
+		refresh()
+	return ok
+
+
+func _drop_data(_at: Vector2, data: Variant) -> void:
+	highlight_drop = false
+	refresh()
+	swapped.emit(data.swap_from, place)
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_DRAG_END and highlight_drop:
+		highlight_drop = false
+		refresh()
+
+
+## Lit while a dragged pet hovers over this box.
+var highlight_drop := false
 
 
 ## Grows and shrinks a couple of times to catch the eye.
@@ -149,6 +200,9 @@ func _draw_overlay() -> void:
 		width = 3.0
 	if _hover:
 		frame_color = frame_color.lightened(0.35)
+	if highlight_drop:
+		frame_color = Color(1.0, 0.95, 0.5)
+		width = 3.0
 	c.draw_rect(rect.grow(-1.0), frame_color, false, width)
 	if key_text != "":
 		var font := get_theme_default_font()

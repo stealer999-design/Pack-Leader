@@ -9,7 +9,7 @@ signal dropped(from: PetSlot, to: PetSlot)
 ## Clicked (only "pick" and "parent" slots, in the breeder window).
 signal clicked(slot: PetSlot)
 
-## "bed", "party", "release", or "preview" (the picture that follows the mouse while dragging);
+## "bed", "party", "reserve", "release", or "preview" (the picture that follows the mouse while dragging);
 ## in the breeder window: "pick" (a pet to choose), "parent" or "result".
 @export var kind := "bed"
 @export var index := 0
@@ -46,7 +46,7 @@ func _gui_input(event: InputEvent) -> void:
 
 
 func _get_drag_data(_at: Vector2) -> Variant:
-	if pet.is_empty() or not (kind == "bed" or kind == "party"):
+	if pet.is_empty() or not (kind == "bed" or kind == "party" or kind == "reserve"):
 		return null
 	var preview := PetSlot.new()
 	preview.kind = "preview"
@@ -61,7 +61,7 @@ func _get_drag_data(_at: Vector2) -> Variant:
 
 func _can_drop_data(_at: Vector2, data: Variant) -> bool:
 	var ok: bool = data is Dictionary and data.has("pet_slot") and data.pet_slot != self \
-			and (kind == "bed" or kind == "party" or kind == "release")
+			and (kind == "bed" or kind == "party" or kind == "reserve" or kind == "release")
 	if ok != _drop_hover:
 		_drop_hover = ok
 		queue_redraw()
@@ -88,6 +88,8 @@ func _draw() -> void:
 			_draw_hay_bed()
 		"party":
 			_draw_cushion()
+		"reserve":
+			_draw_reserve()
 		"pick", "parent", "result":
 			_draw_cushion(false)
 		"release":
@@ -98,7 +100,12 @@ func _draw() -> void:
 		if kind != "preview":
 			var species := SpeciesDB.get_species(pet.species)
 			var label := "%s  Lv%d" % [species.display_name, pet.level]
-			_draw_centered_text(label, size.y - 8.0 if kind == "pick" else size.y - 10.0, 9 if kind == "pick" else 13, Color.WHITE)
+			if pet.get("fainted", false) and (kind == "party" or kind == "reserve" or kind == "bed"):
+				label = "%s  ·  dead" % species.display_name
+			var small := kind == "pick" or kind == "reserve"
+			if kind == "reserve":
+				label = "Lv%d%s" % [pet.level, "  dead" if pet.get("fainted", false) else ""]
+			_draw_centered_text(label, size.y - 8.0 if small else size.y - 10.0, 10 if small else 13, Color.WHITE)
 	if selected:
 		draw_rect(Rect2(Vector2(2, 2), size - Vector2(4, 4)), Color(1.0, 0.75, 0.85), false, 3.0)
 	if _drop_hover:
@@ -139,6 +146,18 @@ func _draw_cushion(numbered := true) -> void:
 	if pet.is_empty():
 		var text: String = {"parent": "pick a cat", "result": "?"}.get(kind, "empty slot")
 		_draw_centered_text(text, size.y * 0.55, 13 if kind != "result" else 30, Color(1, 1, 1, 0.45))
+
+
+## A reserve place: a satchel-green cushion (pets you carry, out of the fight).
+func _draw_reserve() -> void:
+	var box := StyleBoxFlat.new()
+	box.bg_color = Color(0.18, 0.3, 0.24)
+	box.border_color = Color(0.5, 0.85, 0.6)
+	box.set_border_width_all(2)
+	box.set_corner_radius_all(12)
+	draw_style_box(box, Rect2(Vector2.ZERO, size))
+	if pet.is_empty():
+		_draw_centered_text("empty", size.y * 0.55, 12, Color(1, 1, 1, 0.45))
 
 
 func _draw_gate() -> void:
@@ -355,4 +374,8 @@ func _tooltip() -> String:
 	var left := PetSkills.points_left(pet.level, ranks)
 	if left > 0:
 		text += "\n  %d skill point%s to spend (in the party, press K)" % [left, "" if left == 1 else "s"]
-	return text + ("\n\nDrag to move it." if kind == "bed" or kind == "party" else "")
+	if pet.get("fainted", false):
+		text = "DEAD: it rests here at the stable and is back on its feet as soon as you're near it.\n\n" + text
+	if kind == "reserve":
+		text += "\n\nIn your reserve: it travels with you and can be swapped in at any time from the action bar."
+	return text + ("\n\nDrag to move it." if kind == "bed" or kind == "party" or kind == "reserve" else "")
