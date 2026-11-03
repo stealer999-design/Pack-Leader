@@ -462,8 +462,9 @@ played in the browser".
   The skills unlock left to right at levels 5, 10, 15, 20, 25 and 30, and each
   can be trained up to **4 ranks**. Pets earn a skill point at level 5 and
   every 2 levels after (13 by level 30, against 24 possible ranks), so choose:
-  click a skill to spend a point on it. "Reset skills" gives a pet's points
-  back for free. Armor is capped at 60% and cooldowns at 50% faster. Rivals'
+  click a skill to spend a point on it, right-click it to take one point
+  back, or press "Reset skills" to get all of a pet's points back. Both are
+  free. Armor is capped at 60% and cooldowns at 50% faster. Rivals'
   pets come trained. Unspent points show as "+N" in the party panel.
 - **Stable:** every level has two stables, one at the start camp and one in
   the village; both open the same stable. Press F at either to open it: your

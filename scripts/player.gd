@@ -696,6 +696,20 @@ func request_train_skill(slot: int, index: int) -> void:
 	pet.refresh_max_health()
 
 
+## Takes one point back out of a party pet's skill (right-click), to spend again. Free.
+@rpc("any_peer", "call_local", "reliable")
+func request_untrain_skill(slot: int, index: int) -> void:
+	if not _sent_by_owner() or index < 0 or index >= PetSkills.SKILL_COUNT:
+		return
+	var pet := world.get_party_pet(peer_id, slot)
+	if pet == null or int(pet.skill_ranks[index]) <= 0:
+		return
+	var ranks := pet.skill_ranks.duplicate()
+	ranks[index] -= 1
+	pet.skill_ranks = ranks  # a new array, so the change replicates
+	pet.refresh_max_health()
+
+
 ## Gives back all of a party pet's skill points, to spend again. Free.
 @rpc("any_peer", "call_local", "reliable")
 func request_reset_skills(slot: int) -> void:

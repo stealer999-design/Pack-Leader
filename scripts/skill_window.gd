@@ -54,6 +54,7 @@ func _init() -> void:
 	box.add_child(_empty)
 	_tree = SkillTree.new()
 	_tree.trained.connect(func(index: int) -> void: player.request_train_skill.rpc_id(1, _slot, index))
+	_tree.untrained.connect(func(index: int) -> void: player.request_untrain_skill.rpc_id(1, _slot, index))
 	box.add_child(_tree)
 
 	var bottom := HBoxContainer.new()
@@ -67,7 +68,7 @@ func _init() -> void:
 	UiIcons.button(_reset, "reset")
 	bottom.add_child(_reset)
 	var hint := Label.new()
-	hint.text = "Click a skill to spend a point on it. Pets earn a point at level 5 and every 2 levels after.   [K / Esc] close"
+	hint.text = "Click a skill to spend a point on it; right-click to take a point back. Pets earn a point at level 5 and every 2 levels after.   [K / Esc] close"
 	hint.modulate = Color(1, 1, 1, 0.7)
 	hint.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -154,6 +155,7 @@ class SkillTree:
 	extends Control
 
 	signal trained(index: int)
+	signal untrained(index: int)
 
 	const NODE_SIZE := Vector2(148, 210)
 	const GAP := 12.0
@@ -168,6 +170,7 @@ class SkillTree:
 			node.position = Vector2(i * (NODE_SIZE.x + GAP), 0)
 			node.size = NODE_SIZE
 			node.clicked.connect(func() -> void: trained.emit(i))
+			node.right_clicked.connect(func() -> void: untrained.emit(i))
 			add_child(node)
 			_nodes.append(node)
 
@@ -192,6 +195,7 @@ class SkillNode:
 	extends Control
 
 	signal clicked
+	signal right_clicked
 
 	const ICON_RADIUS := 34.0
 	const ICON_CENTER_Y := 46.0
@@ -218,7 +222,7 @@ class SkillNode:
 		locked = pet_level < new_skill.level
 		can_train = reason == ""
 		_reason = reason
-		mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if can_train else Control.CURSOR_ARROW
+		mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if can_train or rank > 0 else Control.CURSOR_ARROW
 		tooltip_text = _tooltip()
 		queue_redraw()
 
@@ -226,6 +230,10 @@ class SkillNode:
 		if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 			accept_event()
 			clicked.emit()
+		elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
+			accept_event()
+			if rank > 0:
+				right_clicked.emit()
 
 	func _draw() -> void:
 		if skill.is_empty():
@@ -283,4 +291,6 @@ class SkillNode:
 		if PetSkills.is_pack(skill):
 			lines.append("Pack skill: works for every pet in your party while this one is awake.")
 		lines.append(_reason if not can_train else "Click to spend a skill point.")
+		if rank > 0:
+			lines.append("Right-click to take a point back.")
 		return "\n".join(lines)
