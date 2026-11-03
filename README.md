@@ -99,9 +99,6 @@ played in the browser".
     experience strips, the ability cooldown counting down (lit when ready), a
     "+" when they have skill points to spend, and "Dead" when killed. Click
     one to open the skills;
-  - your three **reserve** pets (smaller boxes): drag one onto a pet to swap
-    them, or click it and then click the pet it should replace; Shift+1/2/3
-    swaps the next living reserve pet into that slot;
   - **pet stance** (T) and your **coins**.
 
   The bar is only as wide as what's on it.
@@ -351,9 +348,11 @@ played in the browser".
   yourself (1/2/3) still work. Sending pets at an enemy with RMB switches them
   back to **Aggressive** (the default) and they attack; T switches too.
 - **Pets:** you can have up to 3 pets out in your party, plus **3 in reserve**
-  that travel with you and can be **swapped in at any time**, even mid-fight
-  (drag on the action bar, click a reserve pet and then the pet to replace,
-  or Shift+1/2/3). A pet keeps its health when swapped out and back. Party
+  that travel with you and can be **swapped in at any time**, even mid-fight:
+  open the inventory (I) on the **Pets** tab, where the reserve sits under
+  your party, and drag a reserve pet onto a party pet (or the other way). The
+  shortcut Shift+1/2/3 swaps the next living reserve pet into that slot. A pet
+  keeps its health when swapped out and back. Party
   pets automatically defend you
   and each other, and earn XP from kills within 25 units. Levelling is paced
   to the areas (a pet that fights its way through an area ends up around its
@@ -523,7 +522,7 @@ The host is the authoritative server and also plays.
 | `scripts/ground_textures.gd` | The ground textures, painted in code per biome: grass, snow and ice, sand ripples, swamp mud and puddles, graveyard soil, volcanic basalt with glowing lava cracks, plus camp dirt, arena flagstones and village cobblestones |
 | `scripts/building_textures.gd` | The buildings' shared textures, painted in code: clay shingle roofs, plaster walls, plank doors (and stall woodwork) |
 | `scenes/obstacles/*.tscn` (built by `scripts/tools/build_obstacles.gd`) | Four premade trees and rocks per biome (meadow: oak, pine, mossy boulder, berry bush; frost: frosted white spruce, ice crystals, snow boulder, frozen tree; desert: cactus, sandstone pillar, palm, boulders; swamp: willow, vine tree, mossy rock, old stump; graveyard: headstones, dead tree, crypt, grave cross; volcano: lava spire, charred tree, obsidian shards, smoking vent). Areas can name their set, so the Act 2 desert and ice areas reuse the desert and frost sets, placed turned and sized differently from the level seed. Rebuild with `godot --headless --path . -s res://scripts/tools/build_obstacles.gd` |
-| `scripts/item_db.gd`, `scripts/inventory_window.gd`, `scripts/loot.gd` | Gear (items, slots, rarities, every kind of gear and its stats), the inventory window (I) and loot sacks on the ground |
+| `scripts/item_db.gd`, `scripts/inventory_window.gd`, `scripts/loot.gd` | Gear (items, slots, rarities, every kind of gear and its stats), the inventory window (I: the Tamer tab, and the Pets tab with collars and the reserve) and loot sacks on the ground |
 | `scripts/mini_map.gd` | The mini map (and the large map, M), drawn from the level layout |
 | `scripts/skill_window.gd`, `scripts/skill_icons.gd` | The skills screen (K) and its skill icons, drawn in code |
 | `scripts/creature_model.gd` | Builds each creature's body from simple meshes: a cat, bird, dog or lizard, depending on its biome, or a monster (skeleton, zombie, mummy, sand scorpion, fire imp, magma golem, frost wraith, yeti) |
@@ -535,7 +534,7 @@ The host is the authoritative server and also plays.
 | `scripts/pet_slot.gd` | A drag-and-drop place in the stable window (hay bed, party cushion, reserve place or release gate), drawn in code |
 | `scenes/hud.tscn` + `scripts/hud.gd` | The HUD: objective, hover/capture info, message feed, windows |
 | `scripts/sound_fx.gd`, `sounds/*.wav` (built by `scripts/tools/build_sounds.gd`) | The sound effects (attacks, abilities, item drops, footsteps): designed in code, saved as .wav files, played positionally |
-| `scripts/action_bar.gd`, `scripts/action_slot.gd`, `scripts/health_orb.gd` | The action bar along the bottom (health, potion, capture, bat, the three pets and three reserve pets with drag-and-drop swapping, stance and coins) and the tiny inventory, skills and menu buttons under the mini map; each box draws its icon or portrait, key, cooldown sweep, badges and strips |
+| `scripts/action_bar.gd`, `scripts/action_slot.gd`, `scripts/health_orb.gd` | The action bar along the bottom (health, potion, capture, bat, the three pets, stance and coins) and the tiny inventory, skills and menu buttons under the mini map; each box draws its icon or portrait, key, cooldown sweep, badges and strips |
 
 Physics layers: 1 world · 2 players · 3 hostiles (wild creatures, bosses, rival pets) · 4 player pets.
 

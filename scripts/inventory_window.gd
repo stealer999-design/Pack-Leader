@@ -39,6 +39,8 @@ var _tamer_tab: Button
 var _pets_tab: Button
 ## One row per party slot: {portrait: PetSlot, collar: ItemSlot, label: Label}.
 var _pet_rows: Array[Dictionary] = []
+## One row per reserve place: {portrait: PetSlot, label: Label}.
+var _reserve_rows: Array[Dictionary] = []
 var _pets_signature := ""
 
 
@@ -121,8 +123,10 @@ func _init() -> void:
 		row.add_theme_constant_override("separation", 10)
 		_pets_column.add_child(row)
 		var portrait := PetSlot.new()
-		portrait.kind = "result"
+		portrait.kind = "party"
+		portrait.index = i
 		portrait.custom_minimum_size = Vector2(100, 84)
+		portrait.dropped.connect(_on_pet_dropped)
 		row.add_child(portrait)
 		var collar := ItemSlot.new()
 		collar.equip_slot = "collar"
@@ -139,6 +143,31 @@ func _init() -> void:
 		label.add_theme_font_size_override("font_size", 13)
 		row.add_child(label)
 		_pet_rows.append({"portrait": portrait, "collar": collar, "label": label})
+	# The reserve: pets carried along, swapped in by dragging them onto a party pet.
+	var reserve_heading := _heading("Reserve: drag onto a party pet to swap")
+	reserve_heading.tooltip_text = "Pets you carry but who aren't fighting. Swap them in and out at any time, even mid-fight\n(drag between the reserve and the party, either way). A dead pet can't go back in until it rests at a stable."
+	reserve_heading.mouse_filter = Control.MOUSE_FILTER_PASS
+	_pets_column.add_child(reserve_heading)
+	var reserve_row := HBoxContainer.new()
+	reserve_row.add_theme_constant_override("separation", 8)
+	_pets_column.add_child(reserve_row)
+	for i in Player.MAX_RESERVE:
+		var cell := VBoxContainer.new()
+		cell.add_theme_constant_override("separation", 2)
+		reserve_row.add_child(cell)
+		var portrait := PetSlot.new()
+		portrait.kind = "reserve"
+		portrait.index = i
+		portrait.custom_minimum_size = Vector2(96, 84)
+		portrait.dropped.connect(_on_pet_dropped)
+		cell.add_child(portrait)
+		var label := Label.new()
+		label.custom_minimum_size = Vector2(96, 0)
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		label.add_theme_font_size_override("font_size", 12)
+		cell.add_child(label)
+		_reserve_rows.append({"portrait": portrait, "label": label})
 	# The bag.
 	var bag_box := VBoxContainer.new()
 	columns.add_child(bag_box)
@@ -276,6 +305,8 @@ func _pets_data() -> String:
 	for i in Player.MAX_PARTY:
 		var pet := player.world.get_party_pet(player.peer_id, i) if is_instance_valid(player) else null
 		out.append([pet.species_index, pet.level, pet.fainted, pet.collar] if pet else [])
+	if is_instance_valid(player):
+		out.append(player.reserve)
 	return str(out)
 
 
@@ -284,7 +315,8 @@ func _refresh_pets() -> void:
 	for i in _pet_rows.size():
 		var row: Dictionary = _pet_rows[i]
 		var pet := player.world.get_party_pet(player.peer_id, i)
-		row.portrait.pet = {"species": pet.species_index, "level": pet.level, "fainted": pet.fainted} if pet else {}
+		row.portrait.pet = {"species": pet.species_index, "level": pet.level, "fainted": pet.fainted,
+				"skills": pet.skill_ranks} if pet else {}
 		row.collar.locked = pet == null
 		row.collar.pet_species = pet.species if pet else null
 		row.collar.item = pet.collar if pet else {}
@@ -297,6 +329,31 @@ func _refresh_pets() -> void:
 		else:
 			row.label.text = "%s\n%s" % [ItemDB.display_name(pet.collar), ItemDB.effect(pet.collar).replace("This pet: ", "")]
 			row.label.modulate = ItemDB.rarity_color(pet.collar).lightened(0.3)
+		if pet and pet.fainted:
+			row.label.text = "DEAD: can't fight or be healed until it rests at a stable. Drag a reserve pet onto it to swap."
+			row.label.modulate = Color(1.0, 0.55, 0.5)
+	for i in _reserve_rows.size():
+		var row: Dictionary = _reserve_rows[i]
+		var data: Dictionary = player.reserve[i] if i < player.reserve.size() else {}
+		var dead: bool = data.get("dead", false)
+		row.portrait.pet = {} if data.is_empty() else {"species": data.species, "level": data.level, "fainted": dead,
+				"skills": data.get("skills", PetSkills.empty_ranks())}
+		if data.is_empty():
+			row.label.text = "empty"
+			row.label.modulate = UiTheme.TEXT_DIM
+		elif dead:
+			row.label.text = "Dead: rest at a stable"
+			row.label.modulate = Color(1.0, 0.55, 0.5)
+		else:
+			row.label.text = "Health %d%%" % roundi(float(data.get("health", 1.0)) * 100.0)
+			row.label.modulate = UiTheme.TEXT if data.has("health") else UiTheme.TEXT_DIM
+
+
+## A pet dragged between the party and the reserve (or within either): swap them.
+func _on_pet_dropped(from: PetSlot, to: PetSlot) -> void:
+	if from.pet.is_empty() or not is_instance_valid(player):
+		return
+	player.request_swap.rpc_id(1, from.kind, from.index, to.kind, to.index)
 
 
 func _show_tab(pets: bool) -> void:
