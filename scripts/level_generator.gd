@@ -433,6 +433,10 @@ const OPEN_POINTS := 192  ## Points around the boundary.
 const OPEN_PLAZA := Vector2(36.0, 34.0)  ## The town square: x by z.
 const CAMP_RADIUS := 16.0
 const ARENA_RADIUS := 21.0
+## The boss arena: a walled box (x by z) outside the field's right edge,
+## joined to it by a corridor CORRIDOR_WIDTH wide.
+const ARENA_BOX := Vector2(56.0, 52.0)
+const CORRIDOR_WIDTH := 10.0
 ## The town's gates: the middle of its camera-facing (south) side and of its left (west) side.
 const GATE_WIDTH := 6.0
 
@@ -451,14 +455,27 @@ static func generate_open(level_seed: int, path: Dictionary) -> Dictionary:
 	var flat := PackedVector2Array()
 	for point in boundary:
 		flat.append(Vector2(point.x, point.z))
-	# Where the wavy edge really is at each end (left: the camp, right: the arena).
+	# Where the wavy edge really is at the left end (the camp).
 	var left_z := boundary[OPEN_POINTS / 4].z
-	var right_z := boundary[OPEN_POINTS * 3 / 4].z
+	# The boss arena: a box outside the right-hand edge, anywhere up or down it,
+	# joined to the field by a corridor through a gap in the wall.
+	var arena_x := rng.randf_range(-OPEN_SIZE.x * 0.3, OPEN_SIZE.x * 0.3)
+	var mouth_z := _right_edge_z(boundary, center, arena_x)
+	var clear_z := INF  # the box must sit beyond the edge all across its width
+	for k in 13:
+		var x := arena_x - ARENA_BOX.x * 0.5 - 2.0 + (ARENA_BOX.x + 4.0) * k / 12.0
+		clear_z = minf(clear_z, _right_edge_z(boundary, center, x))
+	var box_near_z := minf(clear_z - 4.0, mouth_z - 10.0)  # the arena's left (corridor) side
+	var arena_rect := Rect2(arena_x - ARENA_BOX.x * 0.5, box_near_z - ARENA_BOX.y, ARENA_BOX.x, ARENA_BOX.y)
+	var corridor_rect := Rect2(arena_x - CORRIDOR_WIDTH * 0.5, box_near_z, CORRIDOR_WIDTH, mouth_z + 8.0 - box_near_z)
+	var right_z := arena_rect.position.y
 	length = left_z - right_z
 	var layout := {"open": true, "boundary": boundary, "boundary_2d": flat, "center": center, "total_length": length,
-			"left_z": left_z}
+			"left_z": left_z, "arena_rect": arena_rect, "corridor_rect": corridor_rect,
+			"mouth": Vector3(arena_x, 0.0, mouth_z)}
 	var camp_center := Vector3(0.0, 0.0, left_z - CAMP_RADIUS - 2.0)
-	var arena_center := Vector3(0.0, 0.0, right_z + ARENA_RADIUS + 4.0)
+	var arena_center := Vector3(arena_x, 0.0, arena_rect.get_center().y)
+	var mouth := Vector3(arena_x, 0.0, mouth_z)
 
 	# The town: somewhere in the middle, but not dead centre and not near the edges.
 	var plaza := Rect2(-OPEN_PLAZA.x * 0.5, -OPEN_PLAZA.y * 0.5, OPEN_PLAZA.x, OPEN_PLAZA.y)
@@ -474,7 +491,7 @@ static func generate_open(level_seed: int, path: Dictionary) -> Dictionary:
 			if _edge_distance(layout, town + Vector3(corner.x, 0.0, corner.y)) < 30.0:
 				fits = false
 		# ...and well clear of the camp and the boss arena.
-		for zone in [[camp_center, CAMP_RADIUS + 10.0], [arena_center, ARENA_RADIUS + 10.0]]:
+		for zone in [[camp_center, CAMP_RADIUS + 10.0], [mouth, 24.0]]:
 			var local: Vector3 = zone[0] - town
 			var nearest := Vector2(clampf(local.x, plaza.position.x, plaza.end.x), clampf(local.z, plaza.position.y, plaza.end.y))
 			if nearest.distance_to(Vector2(local.x, local.z)) < zone[1]:
@@ -492,7 +509,7 @@ static func generate_open(level_seed: int, path: Dictionary) -> Dictionary:
 			return true
 		if Vector2(p.x - camp_center.x, p.z - camp_center.z).length() < CAMP_RADIUS + 6.0:
 			return true
-		if Vector2(p.x - arena_center.x, p.z - arena_center.z).length() < ARENA_RADIUS + 3.0:
+		if Vector2(p.x - mouth.x, p.z - mouth.z).length() < 14.0:  # keep the way to the boss clear
 			return true
 		var q := p - town
 		return plaza.grow(7.0).has_point(Vector2(q.x, q.z))
@@ -565,8 +582,8 @@ static func generate_open(level_seed: int, path: Dictionary) -> Dictionary:
 		"start_point": Vector3(0.0, 0.0, left_z - 14.0),
 		"stable_point": Vector3(-8.0, 0.0, left_z - 16.0),
 		"rival_point": arena_center,
-		"exit_point": Vector3(0.0, 0.0, right_z + 8.0),
-		"travel_point": Vector3(-4.5, 0.0, right_z + 8.0),
+		"exit_point": Vector3(arena_x, 0.0, right_z + 7.0),
+		"travel_point": Vector3(arena_x - 4.5, 0.0, right_z + 7.0),
 		"hub_portals": [],
 		"rival_name": path.rival_name,
 		"rival_species": path.rival_species,
@@ -636,6 +653,40 @@ static func _village_open(plaza: Rect2) -> Dictionary:
 	return v
 
 
+## Where the field's right-hand edge is (its z) at local `x`.
+static func _right_edge_z(boundary: PackedVector3Array, center: Vector3, x: float) -> float:
+	var best := INF
+	var n := boundary.size()
+	for i in n:
+		var a := boundary[i]
+		var b := boundary[(i + 1) % n]
+		if a.z > center.z or b.z > center.z:
+			continue  # only the right-hand half
+		if (a.x - x) * (b.x - x) <= 0.0 and absf(b.x - a.x) > 0.0001:
+			var z := lerpf(a.z, b.z, (x - a.x) / (b.x - a.x))
+			best = minf(best, z)
+	return best if best < INF else center.z - OPEN_SIZE.y * 0.5
+
+
+## How far inside the walkable ground a local point is (negative = outside):
+## the field, the corridor to the boss and the boss arena.
+static func walkable_distance(layout: Dictionary, p: Vector3) -> float:
+	var best := _edge_distance(layout, p)
+	for key in ["arena_rect", "corridor_rect"]:
+		if layout.has(key):
+			best = maxf(best, _rect_inside(layout[key], Vector2(p.x, p.z)))
+	return best
+
+
+## How far inside a rectangle a point is (negative = outside).
+static func _rect_inside(rect: Rect2, q: Vector2) -> float:
+	var inside := minf(minf(q.x - rect.position.x, rect.end.x - q.x), minf(q.y - rect.position.y, rect.end.y - q.y))
+	if inside >= 0.0:
+		return inside
+	var nearest := Vector2(clampf(q.x, rect.position.x, rect.end.x), clampf(q.y, rect.position.y, rect.end.y))
+	return -q.distance_to(nearest)
+
+
 ## How far inside the field's edge a local point is (negative = outside).
 static func _edge_distance(layout: Dictionary, p: Vector3) -> float:
 	var polygon: PackedVector2Array = layout.boundary_2d
@@ -654,8 +705,15 @@ static func _clamp_open(layout: Dictionary, local_point: Vector3, margin: float)
 	# Most points are nowhere near the edge: the middle 2/3 of the field is always inside.
 	if margin <= 8.0 and absf(flat.x - center.x) < OPEN_SIZE.x * 0.33 and absf(flat.y - center.z) < OPEN_SIZE.y * 0.33:
 		return local_point
-	if _edge_distance(layout, local_point) >= margin:
+	if walkable_distance(layout, local_point) >= margin:
 		return local_point
+	# In (or nearest to) the arena or its corridor: keep it in that box.
+	for key in ["arena_rect", "corridor_rect"]:
+		if layout.has(key):
+			var rect: Rect2 = layout[key]
+			if _rect_inside(rect, flat) > _edge_distance(layout, local_point) and _rect_inside(rect, flat) > -6.0:
+				var inner := rect.grow(-minf(margin, rect.size.x * 0.4))
+				return Vector3(clampf(flat.x, inner.position.x, inner.end.x), local_point.y, clampf(flat.y, inner.position.y, inner.end.y))
 	# Pull it towards the middle until it's far enough in.
 	var to := Vector2(center.x, center.z) - flat
 	var lo := 0.0

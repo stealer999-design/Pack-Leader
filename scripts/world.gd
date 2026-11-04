@@ -617,7 +617,10 @@ func _start_level(number: int) -> void:
 			"species": layout.rival_species, "level": levels.y,
 			"skills": PetSkills.auto_ranks(levels.y), "owner": RIVAL_ID, "slot": 0, "pos": boss_pos + Vector3(1.5, 0.0, 1.5),
 		})
-	announce.rpc("%s: defeat %s!" % [level_biome.name, boss_objective_name()], Color(1, 0.9, 0.5))
+	if layout.get("open", false):
+		announce.rpc("%s: find and defeat %s!" % [level_biome.name, boss_objective_name()], Color(1, 0.9, 0.5))
+	else:
+		announce.rpc("%s: defeat %s!" % [level_biome.name, boss_objective_name()], Color(1, 0.9, 0.5))
 
 
 func on_rival_defeated(rival: Rival) -> void:
@@ -1593,9 +1596,9 @@ func _build_open(floor_mat: Material, camp_mat: Material, arena_mat: Material, w
 	var floor_mesh := st.commit()
 	floor_mesh.surface_set_material(0, floor_mat)
 	_add_solid(floor_mesh, floor_mesh)
-	# Camp and arena patches, just above the field (no collision of their own).
+	# The camp patch, just above the field (no collision of its own).
 	_add_disc(layout.camp_center, LevelGenerator.CAMP_RADIUS, camp_mat)
-	_add_disc(layout.arena_center, LevelGenerator.ARENA_RADIUS, arena_mat)
+	_build_boss_arena(floor_mat, arena_mat, wall_mat)
 	# The wall, in two meshes: tall (back and sides) and low (facing the camera).
 	wall_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 	var tall := SurfaceTool.new()
@@ -1604,10 +1607,14 @@ func _build_open(floor_mat: Material, camp_mat: Material, arena_mat: Material, w
 	low.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var low_solid := SurfaceTool.new()
 	low_solid.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var corridor: Rect2 = layout.get("corridor_rect", Rect2())
 	for i in n:
 		var j := (i + 1) % n
 		var a := boundary[i]
 		var b := boundary[j]
+		var mid := (a + b) * 0.5
+		if corridor.has_area() and mid.z < center.z and absf(mid.x - corridor.get_center().x) < corridor.size.x * 0.5 + 0.3:
+			continue  # the gap where the corridor to the boss arena joins the field
 		var a_out: Vector3 = a + outward.call(i)
 		var b_out: Vector3 = b + outward.call(j)
 		var edge_out := Vector3(b.z - a.z, 0.0, a.x - b.x).normalized()  # this stretch's outward side
@@ -1630,6 +1637,45 @@ func _build_open(floor_mat: Material, camp_mat: Material, arena_mat: Material, w
 			solid = pair[1].commit()
 		if visual.get_surface_count() > 0:
 			_add_solid(visual, solid)
+
+
+## An open level's boss arena: a walled box of flagstones outside the field's
+## right edge, joined to the field by a walled corridor through a gap in its
+## wall. Walls facing the camera are low, like everywhere else.
+func _build_boss_arena(floor_mat: Material, arena_mat: Material, wall_mat: Material) -> void:
+	if not layout.has("arena_rect"):
+		return
+	var box: Rect2 = layout.arena_rect  # x across the screen, y = z (left to right)
+	var corridor: Rect2 = layout.corridor_rect
+	var mouth: Vector3 = layout.mouth
+	# Floors (with collision): the arena, and the corridor out to the field's edge.
+	_add_box(Vector3(box.get_center().x, -0.5, box.get_center().y), Vector3(box.size.x, 1.0, box.size.y), arena_mat)
+	var corridor_end := mouth.z + 1.5  # tucked just under the field's floor
+	var floor_len := corridor_end - box.end.y
+	_add_box(Vector3(corridor.get_center().x, -0.501, box.end.y + floor_len * 0.5), Vector3(corridor.size.x, 1.0, floor_len), floor_mat)
+	# The arena's walls: far side and both ends tall, the camera's side low, a
+	# doorway on the left (corridor) side.
+	var x0 := box.position.x
+	var x1 := box.end.x
+	var z0 := box.position.y
+	var z1 := box.end.y
+	_add_wall_z(x0 - 0.5, z1 + 1.0, z0 - 1.0, wall_mat)
+	_add_wall_z(x1 + 0.5, z1 + 1.0, z0 - 1.0, wall_mat, true)
+	_add_wall_x(z0 - 0.5, x0 - 1.0, x1 + 1.0, wall_mat)
+	_add_wall_x(z1 + 0.5, x0 - 1.0, corridor.position.x - 1.0, wall_mat)
+	_add_wall_x(z1 + 0.5, corridor.end.x + 1.0, x1 + 1.0, wall_mat, true)
+	# The corridor's walls, from the arena to where they meet the field's wall.
+	for side in [-1.0, 1.0]:
+		var x: float = corridor.get_center().x + side * (corridor.size.x * 0.5 + 0.5)
+		var edge := LevelGenerator._right_edge_z(layout.boundary, layout.center, x) + 1.0
+		_add_wall_z(x, z1, edge, wall_mat, side > 0.0)
+
+
+## A wall along x at local `z`, from `x_from` to `x_to`.
+func _add_wall_x(z: float, x_from: float, x_to: float, mat: Material, low := false) -> void:
+	var length := absf(x_to - x_from)
+	if length > 0.05:
+		_add_box(Vector3((x_from + x_to) * 0.5, 1.0, z), Vector3(length, 2.0, 1.0), mat, low)
 
 
 ## A flat disc of `mat` on the ground (camp dirt, arena flagstones).

@@ -113,6 +113,9 @@ func _update_fog() -> void:
 		var bounds := Rect2(_to_map(world.layout.boundary[0]), Vector2.ZERO)
 		for point in world.layout.boundary:
 			bounds = bounds.expand(_to_map(point))
+		if world.layout.has("arena_rect"):
+			var box: Rect2 = world.layout.arena_rect
+			bounds = bounds.expand(_to_map(Vector3(box.position.x, 0, box.position.y))).expand(_to_map(Vector3(box.end.x, 0, box.end.y)))
 		_fog_rect = bounds.grow(4.0)
 		var cells := Vector2i(ceili(_fog_rect.size.x / FOG_CELL), ceili(_fog_rect.size.y / FOG_CELL))
 		_fog = Image.create(cells.x, cells.y, false, Image.FORMAT_RGBA8)
@@ -316,14 +319,19 @@ func _draw_open_map(world: World) -> void:
 		var bounds := Rect2(_to_map(layout.boundary[0]), Vector2.ZERO)
 		for point in layout.boundary:
 			bounds = bounds.expand(_to_map(point))
+		if layout.has("arena_rect"):
+			var box: Rect2 = layout.arena_rect
+			bounds = bounds.expand(_to_map(Vector3(box.position.x, 0, box.position.y))).expand(_to_map(Vector3(box.end.x, 0, box.end.y)))
 		_scale = minf(_canvas.size.x / bounds.size.x, _canvas.size.y / bounds.size.y) * 0.96
 		_origin = bounds.get_center()
 	else:
 		_scale = COMPACT_SCALE
 		_origin = _to_map(world.level_root.to_local(player.global_position))
 	_draw_poly_local(Array(layout.boundary), Color(layout.floor_tint).darkened(0.15))
-	for patch in [[layout.camp_center, LevelGenerator.CAMP_RADIUS, biome.camp], [layout.arena_center, LevelGenerator.ARENA_RADIUS, biome.arena]]:
-		_canvas.draw_circle(_to_canvas(_to_map(patch[0])), patch[1] * _scale, Color(patch[2]).darkened(0.15))
+	_canvas.draw_circle(_to_canvas(_to_map(layout.camp_center)), LevelGenerator.CAMP_RADIUS * _scale, Color(biome.camp).darkened(0.15))
+	if layout.has("arena_rect"):  # the boss arena and its corridor, off the right edge
+		_draw_rect_path(Transform3D(), layout.corridor_rect, Color(layout.floor_tint).darkened(0.15))
+		_draw_rect_path(Transform3D(), layout.arena_rect, Color(biome.arena).darkened(0.15))
 	_draw_rect_path(frame, plaza, Color(biome.camp).lerp(Color(0.62, 0.58, 0.52), 0.6).darkened(0.15))
 	var corners := [Vector3(plaza.position.x, 0, plaza.position.y), Vector3(plaza.end.x, 0, plaza.position.y),
 			Vector3(plaza.end.x, 0, plaza.end.y), Vector3(plaza.position.x, 0, plaza.end.y)]

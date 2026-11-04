@@ -138,7 +138,12 @@ played in the browser".
 - **Act 2 fields:** Act 2's areas (and their repeats) aren't paths: each is a
   **big open field**, a rounded box (about 224 by 328 units) with gently wavy
   edges and a wall all round (low on the side facing the camera). The camp is
-  at the left end, the boss arena (flagstones) at the right end. Somewhere in
+  at the left end. The **boss has its own arena**: a walled box of flagstones
+  outside the field's right-hand edge, anywhere up or down it, joined to the
+  field by a short walled corridor through a gap in the wall; the exit and
+  Travel portals are inside it, past the boss. The objective at the top reads
+  **"Find and defeat"** the boss, and the arena is hidden on the map until
+  you've found it. Somewhere in
   the middle, never dead centre and never near the edges, is a **town**
   ringed by a **white picket fence**, with gates on its south side (towards
   the camera) and west side (towards the camp). The town holds the
