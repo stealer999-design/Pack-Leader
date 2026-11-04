@@ -127,6 +127,14 @@ static func for_level(level_number: int) -> Dictionary:
 
 ## Where area `level_number` falls: {act: 1, 2, ... (rising each time the
 ## cycle repeats), area: its place in that act (1-based)}.
+## Act 2's areas (and their repeats) are open fields instead of a winding
+## path (see LevelGenerator.generate_open).
+static func is_open_level(level_number: int) -> bool:
+	if level_number <= CROSSROADS:
+		return false
+	return (level_number - 1) % BIOMES.size() in ACTS[1]
+
+
 static func act_of(level_number: int) -> Dictionary:
 	if level_number <= CROSSROADS:
 		return {"act": 1, "area": 0}

@@ -508,9 +508,13 @@ func _check_checkpoints() -> void:
 	if layout.is_empty() or is_crossroads():
 		return
 	var stand_progress := level_progress(shop_position())
+	var open: bool = layout.get("open", false)
 	for p in get_players():
-		var reached := _flat_distance(p.global_position, shop_position()) <= shop_range * 2.0 \
-				or level_progress(p.global_position) > stand_progress
+		var reached := _flat_distance(p.global_position, shop_position()) <= shop_range * 2.0
+		if open:  # the stand is in the town: walking into town reaches it
+			reached = reached or LevelGenerator.in_village(layout, level_root.to_local(p.global_position))
+		else:
+			reached = reached or level_progress(p.global_position) > stand_progress
 		if reached and not p.checkpoint and not p.downed:
 			p.checkpoint = true
 			show_checkpoint.rpc_id(p.peer_id)
@@ -598,9 +602,14 @@ func _start_level(number: int) -> void:
 			"species": layout.rival_species, "level": levels.y,
 			"skills": PetSkills.auto_ranks(levels.y), "owner": RIVAL_ID, "slot": 0, "pos": boss_pos + Vector3(1.5, 0.0, 1.5),
 		})
-	announce.rpc("%s, %s (creatures level %d-%d): follow the path and defeat %s!" % [area_title(number),
-			level_biome.name, levels.x, levels.y, boss_objective_name()], Color(1, 0.9, 0.5))
-	announce.rpc("A lemonade stand halfway along the path sells potions.", Color(1, 0.85, 0.35))
+	announce.rpc("%s, %s (creatures level %d-%d): %s and defeat %s!" % [area_title(number),
+			level_biome.name, levels.x, levels.y, "explore the field" if layout.get("open", false) else "follow the path",
+			boss_objective_name()], Color(1, 0.9, 0.5))
+	if layout.get("open", false):
+		announce.rpc("Somewhere in the middle is a fenced town with a lemonade stand (your checkpoint), a stable, the bat shop and the breeder. Explore to find it!",
+				Color(1, 0.85, 0.35))
+	else:
+		announce.rpc("A lemonade stand halfway along the path sells potions.", Color(1, 0.85, 0.35))
 
 
 func on_rival_defeated(rival: Rival) -> void:
@@ -862,7 +871,10 @@ func _build_level() -> void:
 	var arena_mat := GroundTextures.material("flagstone", level_biome.arena)
 	var wall_mat := _material(level_biome.wall)
 
-	_build_path(floor_mat, camp_mat, arena_mat, wall_mat)
+	if layout.get("open", false):
+		_build_open(floor_mat, camp_mat, arena_mat, wall_mat)
+	else:
+		_build_path(floor_mat, camp_mat, arena_mat, wall_mat)
 
 	# Obstacles: copies of the biome's four premade trees and rocks, each turned
 	# and sized differently. Picked from the level seed, so every peer agrees.
@@ -1028,6 +1040,19 @@ func _build_village(level_biome: Dictionary, wall_mat: Material) -> void:
 	var half := LevelGenerator.VILLAGE_PATH_WIDTH * 0.5
 	var path_len: float = v.wall_x - v.path_end_x
 	var cobbles := GroundTextures.material("cobble", Color(level_biome.camp).lerp(Color(0.5, 0.47, 0.43), 0.6))
+	if layout.get("open", false):
+		_build_town_square(v, cobbles)
+	else:
+		_build_village_walls(v, cobbles, wall_mat)
+	_build_village_contents(v)
+
+
+## The path levels' village: a side path through a doorway in the path's far
+## wall, up to a walled square.
+func _build_village_walls(v: Dictionary, cobbles: Material, wall_mat: Material) -> void:
+	var plaza: Rect2 = v.plaza
+	var half := LevelGenerator.VILLAGE_PATH_WIDTH * 0.5
+	var path_len: float = v.wall_x - v.path_end_x
 	# Floors: the side path (reaching into the doorway) and the square.
 	_add_box(Vector3(v.path_end_x + path_len * 0.5 + 0.5, -0.5, v.z), Vector3(path_len + 1.0, 1.0, half * 2.0),
 			GroundTextures.material(GroundTextures.BIOME_STYLES[layout.biome], layout.floor_tint))
@@ -1042,6 +1067,10 @@ func _build_village(level_biome: Dictionary, wall_mat: Material) -> void:
 	_add_wall_z(plaza.end.x + 0.5, plaza.end.y + 1.0, v.z + half, wall_mat, true)
 	_add_wall_z(plaza.end.x + 0.5, v.z - half, plaza.position.y - 1.0, wall_mat, true)
 
+
+## The houses, the village stable, the bat shop, the breeder and the sign:
+## the same in both kinds of village.
+func _build_village_contents(v: Dictionary) -> void:
 	# Houses: plaster walls, a shingled roof, and a plank door and a window on
 	# the south side (local +x), facing the camera.
 	var roof_mat := BuildingTextures.roof()
@@ -1130,7 +1159,90 @@ func _build_village(level_biome: Dictionary, wall_mat: Material) -> void:
 	sign.outline_size = 12
 	sign.modulate = Color(0.95, 0.9, 0.75)
 	sign.position = Vector3(v.wall_x - 1.0, 3.2, v.z)
+	if layout.get("open", false):
+		sign.text = "Town"
+		sign.position = Vector3(v.plaza.end.x + 1.0, 3.0, v.gates.south)  # over the south gate
 	level_root.add_child(sign)
+
+
+## An open level's town: a cobbled square inside a white picket fence, with a
+## gate in its south side (towards the camera) and its west side (towards the camp).
+func _build_town_square(v: Dictionary, cobbles: Material) -> void:
+	var plaza: Rect2 = v.plaza
+	# The cobbles sit a hair above the field so they don't flicker with it.
+	var floor_mesh := MeshInstance3D.new()
+	var slab := BoxMesh.new()
+	slab.size = Vector3(plaza.size.x, 0.04, plaza.size.y)
+	slab.material = cobbles
+	floor_mesh.mesh = slab
+	floor_mesh.position = Vector3(plaza.get_center().x, 0.0, plaza.get_center().y)
+	level_root.add_child(floor_mesh)
+	var gap := LevelGenerator.GATE_WIDTH * 0.5
+	var south: float = v.gates.south
+	var west: float = v.gates.west
+	var x0 := plaza.position.x
+	var x1 := plaza.end.x
+	var z0 := plaza.position.y
+	var z1 := plaza.end.y
+	# Each run of fence: from -> to (in the town's frame).
+	var runs := [
+		[Vector3(x0, 0, z0), Vector3(x0, 0, z1)],  # north (far side)
+		[Vector3(x1, 0, z0), Vector3(x1, 0, south - gap)],  # south, either side of the gate
+		[Vector3(x1, 0, south + gap), Vector3(x1, 0, z1)],
+		[Vector3(x0, 0, z0), Vector3(x1, 0, z0)],  # east (towards the arena)
+		[Vector3(x0, 0, z1), Vector3(west - gap, 0, z1)],  # west, either side of the gate
+		[Vector3(west + gap, 0, z1), Vector3(x1, 0, z1)],
+	]
+	var white := _material(Color(0.93, 0.91, 0.86))
+	var picket := BoxMesh.new()
+	picket.size = Vector3(0.14, 1.05, 0.07)
+	picket.material = white
+	var transforms: Array[Transform3D] = []
+	for run in runs:
+		var from: Vector3 = run[0]
+		var to: Vector3 = run[1]
+		var length := from.distance_to(to)
+		if length < 0.3:
+			continue
+		var dir := (to - from) / length
+		var yaw := atan2(dir.x, dir.z)
+		# Solid (a thin wall the height of the fence), rails, posts and pickets.
+		var body := StaticBody3D.new()
+		var shape := CollisionShape3D.new()
+		var box := BoxShape3D.new()
+		box.size = Vector3(0.3, 1.3, length)
+		shape.shape = box
+		body.add_child(shape)
+		body.position = (from + to) * 0.5 + Vector3.UP * 0.65
+		body.rotation.y = yaw
+		level_root.add_child(body)
+		for rail_y in [0.35, 0.8]:
+			var rail := _add_mesh(level_root, (from + to) * 0.5 + Vector3.UP * rail_y, Vector3(0.06, 0.09, length), white)
+			rail.rotation.y = yaw
+		var posts := maxi(1, ceili(length / 2.5))
+		for k in posts + 1:
+			var at := from.lerp(to, float(k) / posts)
+			var post := _add_mesh(level_root, at + Vector3.UP * 0.65, Vector3(0.16, 1.3, 0.16), white)
+			post.rotation.y = yaw
+		var count := int(length / 0.36)
+		for k in count:
+			var at := from.lerp(to, (k + 0.5) / count) + Vector3.UP * 0.55
+			# A pointed look: every picket a touch taller in the middle of its span.
+			transforms.append(Transform3D(Basis(Vector3.UP, yaw), at))
+	var pickets := MultiMesh.new()
+	pickets.transform_format = MultiMesh.TRANSFORM_3D
+	pickets.mesh = picket
+	pickets.instance_count = transforms.size()
+	for k in transforms.size():
+		pickets.set_instance_transform(k, transforms[k])
+	var fence := MultiMeshInstance3D.new()
+	fence.name = "PicketFence"
+	fence.multimesh = pickets
+	level_root.add_child(fence)
+	# Gateposts: taller, with a little cap, either side of each gate.
+	for gate_post in [Vector3(x1, 0, south - gap), Vector3(x1, 0, south + gap), Vector3(west - gap, 0, z1), Vector3(west + gap, 0, z1)]:
+		_add_mesh(level_root, gate_post + Vector3.UP * 0.85, Vector3(0.24, 1.7, 0.24), white)
+		_add_mesh(level_root, gate_post + Vector3.UP * 1.75, Vector3(0.34, 0.1, 0.34), _material(Color(0.6, 0.4, 0.25)))
 
 
 ## A plank door in a dark frame, with a brass handle, on a wall facing local +x
@@ -1249,6 +1361,80 @@ func _build_path(floor_mat: Material, camp_mat: Material, arena_mat: Material, w
 		var at := LevelGenerator.map_point(layout, Vector3(0.0, 1.0, -end[0] + end[1]))
 		var cap := _add_box(at, Vector3(LevelGenerator.half_width(layout, end[0]) * 2.0 + 2.0, 2.0, 1.0), wall_mat)
 		cap.rotation.y = LevelGenerator.heading_at(layout, end[0])
+
+
+## An open level (Act 2): the field's floor, a wall round its wavy edge (low
+## on the side facing the camera, so it never hides anyone), and patches of
+## trampled dirt at the camp and flagstones in the boss arena.
+func _build_open(floor_mat: Material, camp_mat: Material, arena_mat: Material, wall_mat: StandardMaterial3D) -> void:
+	var boundary: PackedVector3Array = layout.boundary
+	var center: Vector3 = layout.center
+	var n := boundary.size()
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var outward := func(i: int) -> Vector3:
+		var p := boundary[i]
+		return Vector3(p.x - center.x, 0.0, p.z - center.z).normalized()
+	for i in n:
+		var a: Vector3 = boundary[i] + outward.call(i) * 0.6  # tucked under the wall
+		var b: Vector3 = boundary[(i + 1) % n] + outward.call((i + 1) % n) * 0.6
+		_up_quad(st, center, a, b, center)
+	var floor_mesh := st.commit()
+	floor_mesh.surface_set_material(0, floor_mat)
+	_add_solid(floor_mesh, floor_mesh)
+	# Camp and arena patches, just above the field (no collision of their own).
+	_add_disc(layout.camp_center, LevelGenerator.CAMP_RADIUS, camp_mat)
+	_add_disc(layout.arena_center, LevelGenerator.ARENA_RADIUS, arena_mat)
+	# The wall, in two meshes: tall (back and sides) and low (facing the camera).
+	wall_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	var tall := SurfaceTool.new()
+	tall.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var low := SurfaceTool.new()
+	low.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var low_solid := SurfaceTool.new()
+	low_solid.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for i in n:
+		var j := (i + 1) % n
+		var a := boundary[i]
+		var b := boundary[j]
+		var a_out: Vector3 = a + outward.call(i)
+		var b_out: Vector3 = b + outward.call(j)
+		var edge_out := Vector3(b.z - a.z, 0.0, a.x - b.x).normalized()  # this stretch's outward side
+		if edge_out.dot(Vector3(a.x - center.x, 0.0, a.z - center.z)) < 0.0:
+			edge_out = -edge_out
+		var faces_camera := edge_out.x > 0.3
+		for target in ([low, low_solid] if faces_camera else [tall]):
+			var height := LOW_WALL_HEIGHT if target == low else 2.0
+			var up := Vector3.UP * height
+			_quad(target, a, b, b + up, a + up)
+			_quad(target, a_out, b_out, b_out + up, a_out + up)
+			_quad(target, a + up, b + up, b_out + up, a_out + up)
+	for pair in [[tall, tall], [low, low_solid]]:
+		pair[0].generate_normals()
+		var visual: ArrayMesh = pair[0].commit()
+		visual.surface_set_material(0, wall_mat)
+		var solid: ArrayMesh = visual
+		if pair[1] != pair[0]:
+			pair[1].generate_normals()
+			solid = pair[1].commit()
+		if visual.get_surface_count() > 0:
+			_add_solid(visual, solid)
+
+
+## A flat disc of `mat` on the ground (camp dirt, arena flagstones).
+func _add_disc(at: Vector3, radius: float, mat: Material) -> void:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var steps := 40
+	var lift := Vector3.UP * 0.02
+	for i in steps:
+		var a := at + lift + Vector3(cos(TAU * i / steps), 0.0, sin(TAU * i / steps)) * radius
+		var b := at + lift + Vector3(cos(TAU * (i + 1) / steps), 0.0, sin(TAU * (i + 1) / steps)) * radius
+		_up_quad(st, at + lift, a, b, at + lift)
+	var mesh := MeshInstance3D.new()
+	mesh.mesh = st.commit()
+	mesh.mesh.surface_set_material(0, mat)
+	level_root.add_child(mesh)
 
 
 ## Floor from `s_from` to `s_to` along the path: a ribbon at ground level with

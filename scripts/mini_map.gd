@@ -7,10 +7,18 @@ extends PanelContainer
 ## the boss, wild creatures (red), your pets (green), other players and their
 ## pets (in their colours) and you (an arrow pointing where you aim).
 ## Everything is drawn from the level layout and the live nodes on this peer.
+##
+## On open levels (Act 2) the map starts dark: it is revealed as you walk
+## around (FOG_RADIUS around you), and what's under the dark (creatures, vases,
+## the boss) stays hidden until you've been near it.
 
 const COMPACT_SIZE := Vector2(300, 180)
 const COMPACT_SCALE := 4.0  ## Pixels per world unit in the corner map.
 const REDRAW_INTERVAL := 0.066
+## Fog of war on open levels: cells FOG_CELL units across, revealed within
+## FOG_RADIUS of the player.
+const FOG_CELL := 2.0
+const FOG_RADIUS := 18.0
 
 var player: Player
 var expanded := false
@@ -22,6 +30,12 @@ var _redraw_timer := 0.0
 ## Level-space -> map-space: map x = how far along the path, map y = across it.
 var _scale := COMPACT_SCALE
 var _origin := Vector2.ZERO  ## The map-space point at the centre of the canvas.
+## The fog: one pixel per cell over `_fog_rect` (map space), opaque until revealed.
+var _fog: Image
+var _fog_texture: ImageTexture
+var _fog_rect := Rect2()
+var _fog_level := Vector2i.ZERO  ## The level the fog belongs to (level_state).
+var _fog_dirty := false
 
 
 func _init() -> void:
@@ -40,6 +54,7 @@ func _init() -> void:
 	_canvas = Control.new()
 	_canvas.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_canvas.clip_contents = true
+	_canvas.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR  # soft edges on the fog
 	_canvas.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_canvas.draw.connect(_draw_map)
 	box.add_child(_canvas)
@@ -76,10 +91,57 @@ func _apply_mode() -> void:
 
 
 func _process(delta: float) -> void:
+	_update_fog()
 	_redraw_timer -= delta
 	if _redraw_timer <= 0.0:
 		_redraw_timer = REDRAW_INTERVAL
+		if _fog_dirty:
+			_fog_texture.update(_fog)
+			_fog_dirty = false
 		_canvas.queue_redraw()
+
+
+## Open levels: a new, dark fog for each new level; then clears the cells
+## around the player as they walk.
+func _update_fog() -> void:
+	var world := _world()
+	if world == null or world.layout.is_empty() or not world.layout.get("open", false):
+		_fog = null
+		return
+	if _fog == null or _fog_level != world.level_state:
+		_fog_level = world.level_state
+		var bounds := Rect2(_to_map(world.layout.boundary[0]), Vector2.ZERO)
+		for point in world.layout.boundary:
+			bounds = bounds.expand(_to_map(point))
+		_fog_rect = bounds.grow(4.0)
+		var cells := Vector2i(ceili(_fog_rect.size.x / FOG_CELL), ceili(_fog_rect.size.y / FOG_CELL))
+		_fog = Image.create(cells.x, cells.y, false, Image.FORMAT_RGBA8)
+		_fog.fill(Color(0.03, 0.035, 0.05, 1.0))
+		_fog_texture = ImageTexture.create_from_image(_fog)
+		_fog_dirty = false
+	var at := _to_map(world.level_root.to_local(player.global_position))
+	var cell := (at - _fog_rect.position) / FOG_CELL
+	var reach := ceili(FOG_RADIUS / FOG_CELL)
+	for y in range(floori(cell.y) - reach, floori(cell.y) + reach + 1):
+		for x in range(floori(cell.x) - reach, floori(cell.x) + reach + 1):
+			if x < 0 or y < 0 or x >= _fog.get_width() or y >= _fog.get_height():
+				continue
+			if _fog.get_pixel(x, y).a == 0.0:
+				continue
+			var d := Vector2(x + 0.5, y + 0.5).distance_to(cell) * FOG_CELL
+			if d <= FOG_RADIUS:
+				_fog.set_pixel(x, y, Color(0, 0, 0, 0))
+				_fog_dirty = true
+
+
+## True if a level-local point is still under the fog (open levels).
+func _fogged(local: Vector3) -> bool:
+	if _fog == null:
+		return false
+	var cell := (_to_map(local) - _fog_rect.position) / FOG_CELL
+	var x := clampi(floori(cell.x), 0, _fog.get_width() - 1)
+	var y := clampi(floori(cell.y), 0, _fog.get_height() - 1)
+	return _fog.get_pixel(x, y).a > 0.0
 
 
 func _world() -> World:
@@ -104,6 +166,9 @@ func _draw_map() -> void:
 	if world == null or world.layout.is_empty():
 		return
 	var layout := world.layout
+	if layout.get("open", false):
+		_draw_open_map(world)
+		return
 	var v: Dictionary = layout.village
 	var frame: Transform3D = v.frame
 	var plaza: Rect2 = v.plaza
@@ -176,7 +241,15 @@ func _draw_map() -> void:
 	_canvas.draw_arc(portal_at, 7.0, 0, TAU, 20, Color(0.75, 0.45, 1.0), 2.5)
 	if world.exit_open:
 		_canvas.draw_circle(portal_at, 4.5, Color(0.85, 0.6, 1.0))
+	_draw_live(world)
+
+
+## Vases, creatures, the boss, other players and you (vases, creatures and the
+## boss only where the fog has lifted).
+func _draw_live(world: World) -> void:
 	for crate: Crate in world.crates_root.get_children():
+		if _fogged(world.level_root.to_local(crate.global_position)):
+			continue
 		var at := _node_pos(world, crate)
 		_canvas.draw_rect(Rect2(at - Vector2(2, 2), Vector2(4, 4)),
 				Color(1.0, 0.8, 0.2) if crate.gold else Color(0.65, 0.45, 0.25))
@@ -199,9 +272,11 @@ func _draw_map() -> void:
 			radius = 3.5
 		if c.fainted:
 			color = color.darkened(0.5)
+		if not c.is_player_pet() and _fogged(world.level_root.to_local(c.global_position)):
+			continue
 		_canvas.draw_circle(_node_pos(world, c), radius, color)
 	var rival := world.get_rival()
-	if rival and not rival.health.is_dead():
+	if rival and not rival.health.is_dead() and not _fogged(world.level_root.to_local(rival.global_position)):
 		var at := _node_pos(world, rival)
 		_canvas.draw_circle(at, 7.0, Color(0.1, 0.0, 0.0))
 		_canvas.draw_circle(at, 5.5, Color(1.0, 0.2, 0.15))
@@ -227,6 +302,64 @@ func _draw_self(world: World) -> void:
 	for point in arrow:
 		inner.append(at + (point - at) * 0.72)
 	_canvas.draw_colored_polygon(inner, player.color.lightened(0.25))
+
+
+## An open level: the field, the camp and arena patches, the fenced town, rocks
+## and landmarks, then the fog over whatever hasn't been explored yet.
+func _draw_open_map(world: World) -> void:
+	var layout := world.layout
+	var biome := world.biome()
+	var v: Dictionary = layout.village
+	var frame: Transform3D = v.frame
+	var plaza: Rect2 = v.plaza
+	if expanded:
+		var bounds := Rect2(_to_map(layout.boundary[0]), Vector2.ZERO)
+		for point in layout.boundary:
+			bounds = bounds.expand(_to_map(point))
+		_scale = minf(_canvas.size.x / bounds.size.x, _canvas.size.y / bounds.size.y) * 0.96
+		_origin = bounds.get_center()
+	else:
+		_scale = COMPACT_SCALE
+		_origin = _to_map(world.level_root.to_local(player.global_position))
+	_draw_poly_local(Array(layout.boundary), Color(layout.floor_tint).darkened(0.15))
+	for patch in [[layout.camp_center, LevelGenerator.CAMP_RADIUS, biome.camp], [layout.arena_center, LevelGenerator.ARENA_RADIUS, biome.arena]]:
+		_canvas.draw_circle(_to_canvas(_to_map(patch[0])), patch[1] * _scale, Color(patch[2]).darkened(0.15))
+	_draw_rect_path(frame, plaza, Color(biome.camp).lerp(Color(0.62, 0.58, 0.52), 0.6).darkened(0.15))
+	var corners := [Vector3(plaza.position.x, 0, plaza.position.y), Vector3(plaza.end.x, 0, plaza.position.y),
+			Vector3(plaza.end.x, 0, plaza.end.y), Vector3(plaza.position.x, 0, plaza.end.y)]
+	var outline := PackedVector2Array()
+	for corner in corners + [corners[0]]:
+		outline.append(_to_canvas(_to_map(frame * corner)))
+	_canvas.draw_polyline(outline, Color(0.95, 0.93, 0.88), 1.5)  # the picket fence
+	for house in v.houses:
+		var size: Vector3 = house.size
+		_draw_rect_path(frame, Rect2(house.pos.x - size.x * 0.5, house.pos.z - size.z * 0.5, size.x, size.z), Color(0.62, 0.25, 0.2))
+	for rock in layout.rocks:
+		var size: Vector3 = rock.size
+		var center := _to_map(rock.pos)
+		var half := Vector2(size.z, size.x) * 0.5
+		_draw_rect_map(Rect2(center - half, half * 2.0), Color(biome.rock).darkened(0.35))
+	_draw_stable(_to_canvas(_to_map(layout.stable_point)))
+	_draw_stable(_to_canvas(_to_map(frame * v.stable_point)))
+	var shop_at := _to_canvas(_to_map(layout.shop_point))
+	_canvas.draw_circle(shop_at, 6.5, Color(0.2, 0.15, 0.05))
+	_canvas.draw_circle(shop_at, 5.0, Color(1.0, 0.88, 0.2))
+	var bat_at := _to_canvas(_to_map(frame * v.bat_shop_point))
+	_canvas.draw_circle(bat_at, 6.5, Color(0.2, 0.05, 0.05))
+	_canvas.draw_circle(bat_at, 5.0, Color(0.95, 0.35, 0.3))
+	var breeder_at := _to_canvas(_to_map(frame * v.breeder_point))
+	_canvas.draw_circle(breeder_at, 6.5, Color(0.25, 0.05, 0.12))
+	_canvas.draw_circle(breeder_at, 5.0, Color(1.0, 0.55, 0.75))
+	var portal_at := _to_canvas(_to_map(layout.exit_point))
+	_canvas.draw_arc(portal_at, 7.0, 0, TAU, 20, Color(0.75, 0.45, 1.0), 2.5)
+	if world.exit_open:
+		_canvas.draw_circle(portal_at, 4.5, Color(0.85, 0.6, 1.0))
+	# The fog over everything not yet explored (the live things under it are skipped).
+	if _fog_texture:
+		var a := _to_canvas(_fog_rect.position)
+		var b := _to_canvas(_fog_rect.end)
+		_canvas.draw_texture_rect(_fog_texture, Rect2(a, b - a), false)
+	_draw_live(world)
 
 
 ## A little barn: brown with a red roof.

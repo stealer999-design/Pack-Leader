@@ -64,6 +64,13 @@ const RIVAL_NAMES := ["Kael", "Mira", "Dax", "Vesper", "Rook", "Sable", "Juno", 
 ## Positions are in the level's local space unless noted (the village's are in
 ## path space: map them with village.frame).
 static func generate(level_seed: int, level_number: int) -> Dictionary:
+	var path := _generate_path(level_seed, level_number)
+	if BiomeDB.is_open_level(level_number):
+		return generate_open(level_seed, path)
+	return path
+
+
+static func _generate_path(level_seed: int, level_number: int) -> Dictionary:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = level_seed
 	var biome := BiomeDB.for_level(level_number)
@@ -383,12 +390,16 @@ static func in_village(layout: Dictionary, local_point: Vector3, margin := 0.0) 
 	var v: Dictionary = layout.village
 	var q: Vector3 = v.frame.affine_inverse() * local_point
 	var point := Vector2(q.x, q.z)
+	if layout.get("open", false):
+		return (v.plaza as Rect2).grow(-margin).has_point(point)
 	var path := Rect2(v.path_end_x, v.z - VILLAGE_PATH_WIDTH * 0.5, v.wall_x - v.path_end_x + 2.0, VILLAGE_PATH_WIDTH)
 	return path.grow(-margin).has_point(point) or (v.plaza as Rect2).grow(-margin).has_point(point)
 
 
 ## Clamps a local point so it stays on the walkable floor.
 static func clamp_to_floor(layout: Dictionary, local_point: Vector3, margin := 1.0) -> Vector3:
+	if layout.get("open", false):
+		return _clamp_open(layout, local_point, margin)
 	if in_village(layout, local_point, margin):
 		return local_point
 	var sx := project(layout, local_point)
@@ -401,7 +412,240 @@ static func clamp_to_floor(layout: Dictionary, local_point: Vector3, margin := 1
 
 ## How far along the path a local point is (0 at the camp's back wall, 1 at the arena's end).
 static func progress(layout: Dictionary, local_point: Vector3) -> float:
+	if layout.get("open", false):  # from the camp (left) to the arena (right)
+		return clampf((layout.left_z - local_point.z) / layout.total_length, 0.0, 1.0)
 	return clampf(project(layout, local_point).x / layout.total_length, 0.0, 1.0)
+
+
+# --- Open levels (Act 2) ---------------------------------------------------------------
+#
+# A big field instead of a path: a rounded box with gently wavy edges, OPEN_SIZE
+# across, with the start camp at its left end (z near 0) and the boss arena at
+# its right end (z near -length). Local x runs across the screen (+x towards the
+# camera), as on paths. The town sits off-centre in the middle, fenced in, with
+# the lemonade stand inside it. The level has exactly as many creature packs,
+# vases and obstacles as the path level from the same seed would, spread out.
+
+const OPEN_SIZE := Vector2(112.0, 164.0)  ## x (across the screen) by z (left to right).
+const OPEN_POINTS := 128  ## Points around the boundary.
+const OPEN_PLAZA := Vector2(36.0, 34.0)  ## The town square: x by z.
+const CAMP_RADIUS := 16.0
+const ARENA_RADIUS := 21.0
+## The town's gates: the middle of its camera-facing (south) side and of its left (west) side.
+const GATE_WIDTH := 6.0
+
+
+## The open-field layout, with the same keys as a path layout (where they make
+## sense) plus: open: true, boundary: PackedVector3Array (level-local, closed),
+## center: Vector3, camp_center / arena_center: Vector3, gates: [Rect2] (in the
+## town's frame). `path` is the path layout from the same seed: its counts,
+## rival and colours are reused.
+static func generate_open(level_seed: int, path: Dictionary) -> Dictionary:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = level_seed ^ 0x5eed
+	var length := OPEN_SIZE.y
+	var center := Vector3(0.0, 0.0, -length * 0.5)
+	var boundary := _open_boundary(rng, center)
+	var flat := PackedVector2Array()
+	for point in boundary:
+		flat.append(Vector2(point.x, point.z))
+	# Where the wavy edge really is at each end (left: the camp, right: the arena).
+	var left_z := boundary[OPEN_POINTS / 4].z
+	var right_z := boundary[OPEN_POINTS * 3 / 4].z
+	length = left_z - right_z
+	var layout := {"open": true, "boundary": boundary, "boundary_2d": flat, "center": center, "total_length": length,
+			"left_z": left_z}
+	var camp_center := Vector3(0.0, 0.0, left_z - CAMP_RADIUS - 2.0)
+	var arena_center := Vector3(0.0, 0.0, right_z + ARENA_RADIUS + 4.0)
+
+	# The town: somewhere in the middle, but not dead centre and not near the edges.
+	var plaza := Rect2(-OPEN_PLAZA.x * 0.5, -OPEN_PLAZA.y * 0.5, OPEN_PLAZA.x, OPEN_PLAZA.y)
+	var town := Vector3.ZERO
+	for attempt in 40:
+		var side := -1.0 if rng.randf() < 0.5 else 1.0
+		town = center + Vector3(side * rng.randf_range(10.0, 20.0), 0.0, rng.randf_range(-22.0, 22.0))
+		if Vector2(town.x - center.x, town.z - center.z).length() < 12.0:
+			continue
+		var fits := true
+		for corner in [Vector2(plaza.position.x, plaza.position.y), Vector2(plaza.end.x, plaza.position.y),
+				Vector2(plaza.position.x, plaza.end.y), Vector2(plaza.end.x, plaza.end.y)]:
+			if _edge_distance(layout, town + Vector3(corner.x, 0.0, corner.y)) < 12.0:
+				fits = false
+		# ...and well clear of the camp and the boss arena.
+		for zone in [[camp_center, CAMP_RADIUS + 10.0], [arena_center, ARENA_RADIUS + 10.0]]:
+			var local: Vector3 = zone[0] - town
+			var nearest := Vector2(clampf(local.x, plaza.position.x, plaza.end.x), clampf(local.z, plaza.position.y, plaza.end.y))
+			if nearest.distance_to(Vector2(local.x, local.z)) < zone[1]:
+				fits = false
+		if fits:
+			break
+	var village := _village_open(plaza)
+	village["frame"] = Transform3D(Basis(), town)
+	var shop_local := Vector3(plaza.get_center().x + 5.0, 0.0, plaza.get_center().y + 6.0)
+
+	# Everything else is spread over the field, clear of the camp, the arena,
+	# the town (and its fence) and each other.
+	var keep_out := func(p: Vector3, edge: float) -> bool:
+		if _edge_distance(layout, p) < edge:
+			return true
+		if Vector2(p.x - camp_center.x, p.z - camp_center.z).length() < CAMP_RADIUS + 6.0:
+			return true
+		if Vector2(p.x - arena_center.x, p.z - arena_center.z).length() < ARENA_RADIUS + 3.0:
+			return true
+		var q := p - town
+		return plaza.grow(7.0).has_point(Vector2(q.x, q.z))
+	var taken: Array[Vector3] = []
+	var far_enough := func(p: Vector3, spacing: float) -> bool:
+		for other in taken:
+			if Vector2(other.x - p.x, other.z - p.z).length() < spacing:
+				return false
+		return true
+	var sample := func(edge: float, spacing: float) -> Vector3:
+		for attempt in 200:
+			var p := center + Vector3(rng.randf_range(-OPEN_SIZE.x * 0.5, OPEN_SIZE.x * 0.5), 0.0,
+					rng.randf_range(-length * 0.5, length * 0.5))
+			if not keep_out.call(p, edge) and far_enough.call(p, spacing):
+				return p
+		return Vector3.INF
+
+	# Obstacles: as many as the path level had (its arena's four corner rocks
+	# stay round the arena here too).
+	var rocks: Array[Dictionary] = []
+	var path_rocks: Array = path.rocks
+	var arena_rocks := 4
+	for i in maxi(path_rocks.size() - arena_rocks, 0):
+		var p: Vector3 = sample.call(5.0, 6.5)
+		if p != Vector3.INF:
+			taken.append(p)
+			rocks.append({"pos": p, "size": path_rocks[i].size})
+	for corner in [Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1)]:
+		rocks.append({"pos": arena_center + Vector3(corner.x * 14.0, 0.0, corner.y * 12.0), "size": Vector3(3.0, 3.5, 3.0)})
+
+	# Creature packs: the path level's packs (spots that shared a depth), each
+	# around its own point, the deeper ones further right.
+	var packs := {}
+	for spot: Dictionary in path.creature_spots:
+		packs[spot.depth] = packs.get(spot.depth, 0) + 1
+	var spots: Array[Dictionary] = []
+	for size: int in packs.values():
+		var home: Vector3 = sample.call(8.0, 14.0)
+		if home == Vector3.INF:
+			home = sample.call(6.0, 6.0)
+		if home == Vector3.INF:
+			continue
+		taken.append(home)
+		var depth := progress(layout, home)
+		for k in size:
+			var angle: float = TAU * k / size + rng.randf_range(-0.3, 0.3)
+			var pos := home + Vector3(cos(angle), 0.0, sin(angle)) * rng.randf_range(1.5, 4.5)
+			spots.append({"pos": pos, "depth": depth})
+
+	# Vases: the same number (and as many gold ones), spread out.
+	var crates: Array[Dictionary] = []
+	for crate: Dictionary in path.crate_spots:
+		var p: Vector3 = sample.call(3.0, 5.0)
+		if p == Vector3.INF:
+			continue
+		taken.append(p)
+		crates.append({"pos": p, "gold": crate.gold})
+
+	layout.merge({
+		"rocks": rocks,
+		"creature_spots": spots,
+		"crate_spots": crates,
+		"village": village,
+		"shop_point": village.frame * shop_local,
+		"shop_side": -1.0,
+		"shop_yaw": 0.0,  # faces the camera
+		"camp_center": camp_center,
+		"arena_center": arena_center,
+		"start_point": Vector3(0.0, 0.0, left_z - 14.0),
+		"stable_point": Vector3(-8.0, 0.0, left_z - 16.0),
+		"rival_point": arena_center,
+		"exit_point": Vector3(0.0, 0.0, right_z + 8.0),
+		"travel_point": Vector3(-4.5, 0.0, right_z + 8.0),
+		"hub_portals": [],
+		"rival_name": path.rival_name,
+		"rival_species": path.rival_species,
+		"floor_tint": path.floor_tint,
+		"biome": path.biome,
+	})
+	return layout
+
+
+## The field's edge: a rounded box (a superellipse) with slow waves along it,
+## OPEN_POINTS points around `center`, counter-clockwise seen from above.
+static func _open_boundary(rng: RandomNumberGenerator, center: Vector3) -> PackedVector3Array:
+	var a := OPEN_SIZE.x * 0.5
+	var b := OPEN_SIZE.y * 0.5
+	var phases := [rng.randf() * TAU, rng.randf() * TAU, rng.randf() * TAU]
+	var amounts := [rng.randf_range(0.03, 0.06), rng.randf_range(0.02, 0.04), rng.randf_range(0.01, 0.025)]
+	var points := PackedVector3Array()
+	for i in OPEN_POINTS:
+		var t := TAU * i / OPEN_POINTS
+		var c := cos(t)
+		var s := sin(t)
+		var r := 1.0 / pow(pow(absf(c) / a, 4.0) + pow(absf(s) / b, 4.0), 0.25)
+		r *= 1.0 + amounts[0] * sin(2.0 * t + phases[0]) + amounts[1] * sin(3.0 * t + phases[1]) \
+				+ amounts[2] * sin(5.0 * t + phases[2])
+		points.append(center + Vector3(c * r, 0.0, s * r))
+	return points
+
+
+## The town square and what's in it, in the town's own frame (+x towards the camera).
+static func _village_open(plaza: Rect2) -> Dictionary:
+	var v := _village({"z_start": 0.0, "z_end": 0.0, "center_x": 0.0, "width": 0.0}, 0)
+	v.plaza = plaza
+	v.z = plaza.get_center().y
+	v.wall_x = plaza.end.x
+	v.path_end_x = plaza.end.x
+	v.bat_shop_point = Vector3(plaza.position.x + 4.0, 0.0, plaza.get_center().y)
+	v.stable_point = Vector3(plaza.end.x - 5.0, 0.0, plaza.end.y - 4.5)
+	v.breeder_point = Vector3(plaza.get_center().x + 1.0, 0.0, plaza.position.y + 3.0)
+	v.houses = [
+		{"pos": Vector3(plaza.position.x + 5.0, 0.0, plaza.position.y + 5.0), "size": Vector3(6.0, 3.2, 5.0)},
+		{"pos": Vector3(plaza.position.x + 5.0, 0.0, plaza.end.y - 5.0), "size": Vector3(6.0, 3.6, 5.0)},
+		{"pos": Vector3(plaza.end.x - 6.0, 0.0, plaza.position.y + 4.5), "size": Vector3(5.0, 3.0, 5.0)},
+	]
+	# Gates in the fence: south (towards the camera) and west (towards the camp).
+	v.gates = {"south": plaza.get_center().y, "west": plaza.get_center().x}
+	v.s = 0.0
+	return v
+
+
+## How far inside the field's edge a local point is (negative = outside).
+static func _edge_distance(layout: Dictionary, p: Vector3) -> float:
+	var polygon: PackedVector2Array = layout.boundary_2d
+	var flat := Vector2(p.x, p.z)
+	var best := INF
+	var n := polygon.size()
+	for i in n:
+		best = minf(best, flat.distance_to(Geometry2D.get_closest_point_to_segment(flat, polygon[i], polygon[(i + 1) % n])))
+	return best if Geometry2D.is_point_in_polygon(flat, polygon) else -best
+
+
+## Keeps a point inside the field, `margin` from its edge.
+static func _clamp_open(layout: Dictionary, local_point: Vector3, margin: float) -> Vector3:
+	var center: Vector3 = layout.center
+	var flat := Vector2(local_point.x, local_point.z)
+	# Most points are nowhere near the edge: the middle 2/3 of the field is always inside.
+	if margin <= 8.0 and absf(flat.x - center.x) < OPEN_SIZE.x * 0.33 and absf(flat.y - center.z) < OPEN_SIZE.y * 0.33:
+		return local_point
+	if _edge_distance(layout, local_point) >= margin:
+		return local_point
+	# Pull it towards the middle until it's far enough in.
+	var to := Vector2(center.x, center.z) - flat
+	var lo := 0.0
+	var hi := 1.0
+	for i in 12:
+		var mid := (lo + hi) * 0.5
+		var trial := flat + to * mid
+		if _edge_distance(layout, Vector3(trial.x, 0.0, trial.y)) >= margin:
+			hi = mid
+		else:
+			lo = mid
+	var out := flat + to * hi
+	return Vector3(out.x, local_point.y, out.y)
 
 
 static func _add_rocks(rng: RandomNumberGenerator, seg: Dictionary, rocks: Array[Dictionary]) -> void:

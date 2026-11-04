@@ -482,7 +482,8 @@ func request_potion() -> void:
 		world.tell(peer_id, "You're already at full health.", Color(1, 0.8, 0.5))
 		return
 	if potions <= 0:
-		world.tell(peer_id, "You're out of potions. Buy more at the lemonade stand halfway along the path.",
+		world.tell(peer_id, "You're out of potions. Buy more at the lemonade stand %s." \
+				% ("in the town" if world.layout.get("open", false) else "halfway along the path"),
 				Color(1, 0.8, 0.5))
 		return
 	_server_potion_timer = potion_cooldown * 0.8

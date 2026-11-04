@@ -559,7 +559,8 @@ func _update_objective() -> void:
 	elif rival and rival.engaged:
 		objective_label.text = "Defeat %s!" % rival.objective_name()
 	else:
-		objective_label.text = "Follow the path and defeat %s at the end." % world.boss_objective_name()
+		objective_label.text = ("Explore the field and defeat %s at its far end (right)." if world.layout.get("open", false) \
+				else "Follow the path and defeat %s at the end.") % world.boss_objective_name()
 
 
 func _update_hover() -> void:

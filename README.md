@@ -115,6 +115,18 @@ played in the browser".
   the stable and ends in a boss arena. Defeat the boss and the **Next level**
   portal opens at the far end; step in and everyone moves on to the next,
   harder level, and every pet gets bonus XP.
+- **Act 2 fields:** Act 2's areas (and their repeats) aren't paths: each is a
+  **big open field**, a rounded box (about 112 by 164 units) with gently wavy
+  edges and a wall all round (low on the side facing the camera). The camp is
+  at the left end, the boss arena (flagstones) at the right end. Somewhere in
+  the middle, never dead centre and never near the edges, is a **town**
+  ringed by a **white picket fence**, with gates on its south side (towards
+  the camera) and west side (towards the camp). The town holds the
+  **lemonade stand** (walking into town is your checkpoint), a stable, the
+  bat shop and the breeder; no creatures are placed inside it. A field has
+  **exactly as many** creature packs, vases (and gold vases) and obstacles as
+  the path level from the same seed would, just spread out over the field,
+  clear of the camp, the arena and the town.
 - **Travel:** beside it stands the violet **Travel** portal, always open (even
   before the boss is beaten). Step into it to pick any area you've reached, to
   catch the pets that live there, or to level your pets somewhere easier
@@ -185,6 +197,9 @@ played in the browser".
   portal (purple, filled when open), the boss (big red), wild creatures (red),
   your pets (green), other players and their pets (in their colours) and you
   (an arrow). Press M for the whole level, large; M or Esc to shrink it.
+  In Act 2's fields the map starts **dark**: it's revealed as you walk
+  (everything within about 18 units of you), and vases, wild creatures and
+  the boss only show where you've explored. Each player has their own map.
 - **Your tamer** is a little person with a bat, drawn in your colour (hair
   colour varies by player). They walk with swinging arms and legs; attacking
   swings the bat, and every hit pops a ring of spinning stars.
@@ -509,7 +524,7 @@ The host is the authoritative server and also plays.
 | `scripts/network.gd` | Autoload `Network`: WebSocket host/join, solo mode, player registry (names, colours) |
 | `scenes/main.tscn` + `scripts/main.gd` | Menu + `LevelSpawner` that replicates the world to joining clients |
 | `scenes/world.tscn` + `scripts/world.gd` | Level flow (start → rival → portal → next level), level geometry, spawners, XP sharing, FX |
-| `scripts/level_generator.gd` | Deterministic layout of a level from a seed: laid out unrolled, then bent along a curved centre line (1-3 curves); rocks, creature spots, boss, exit; mapping between path space and the level |
+| `scripts/level_generator.gd` | Deterministic layout of a level from a seed: paths are laid out unrolled, then bent along a curved centre line (1-3 curves); Act 2 fields (`generate_open`) are a wavy rounded box with a fenced town, using the path layout's counts; rocks, creature spots, boss, exit; mapping between path space and the level |
 | `scripts/boss_models.gd` | The bosses' models (rival tamer, Glacier Titan, Sand Wyrm, Bog Witch, Howard the Zombie Fish, Sand Pharaoh, Magma Colossus, Yeti King) and what animates |
 | `scripts/biome_db.gd` | The biomes levels cycle through: their creatures, boss and colours |
 | `scenes/rival.tscn` + `scripts/rival.gd` | The AI rival tamer boss (and the base class for every boss) |
@@ -529,7 +544,7 @@ The host is the authoritative server and also plays.
 | `scripts/building_textures.gd` | The buildings' shared textures, painted in code: clay shingle roofs, plaster walls, plank doors (and stall woodwork) |
 | `scenes/obstacles/*.tscn` (built by `scripts/tools/build_obstacles.gd`) | Four premade trees and rocks per biome (meadow: oak, pine, mossy boulder, berry bush; frost: frosted white spruce, ice crystals, snow boulder, frozen tree; desert: cactus, sandstone pillar, palm, boulders; swamp: willow, vine tree, mossy rock, old stump; graveyard: headstones, dead tree, crypt, grave cross; volcano: lava spire, charred tree, obsidian shards, smoking vent). Areas can name their set, so the Act 2 desert and ice areas reuse the desert and frost sets, placed turned and sized differently from the level seed. Rebuild with `godot --headless --path . -s res://scripts/tools/build_obstacles.gd` |
 | `scripts/item_db.gd`, `scripts/inventory_window.gd`, `scripts/loot.gd` | Gear (items, slots, rarities, every kind of gear and its stats), the inventory window (I: the Tamer tab, and the Pets tab with collars and the reserve) and loot sacks on the ground |
-| `scripts/mini_map.gd` | The mini map (and the large map, M), drawn from the level layout |
+| `scripts/mini_map.gd` | The mini map (and the large map, M), drawn from the level layout, with fog of war on open fields |
 | `scripts/skill_window.gd`, `scripts/skill_icons.gd` | The skills screen (K) and its skill icons, drawn in code |
 | `scripts/creature_model.gd` | Builds each creature's body from simple meshes: a cat, bird, dog or lizard, depending on its biome, or a monster (skeleton, zombie, mummy, sand scorpion, fire imp, magma golem, frost wraith, yeti) |
 | `scripts/creature_species.gd`, `resources/species/*.tres`, `scripts/species_db.gd` | Species data. Add a `.tres` and list it in `SpeciesDB` to add a species |
