@@ -59,6 +59,16 @@ const SHAPES := {
 static var _cache := {}
 
 
+## Draws every icon at the sizes the HUD uses, so none is drawn for the first
+## time mid-play (see World._warm_up). Only does the work once.
+static func preload_all() -> void:
+	if _cache.size() >= SHAPES.size() * 4:
+		return
+	for icon_name in SHAPES:
+		for icon_size in [SIZE, 24, 32, 48]:
+			texture(icon_name, icon_size)
+
+
 ## The icon as a texture, `size` pixels square.
 static func texture(icon_name: String, size := SIZE) -> Texture2D:
 	var key := "%s@%d" % [icon_name, size]

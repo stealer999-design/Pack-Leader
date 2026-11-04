@@ -26,12 +26,20 @@ const VOLUME := {
 
 static var _cache := {}
 static var _rng := RandomNumberGenerator.new()
+## True while a level warms up (see World._warm_up): effects play silently.
+static var muted := false
+
+
+## Loads every sound now, so none is loaded for the first time mid-play.
+static func preload_all() -> void:
+	for sound_name in VOLUME:
+		stream(sound_name)
 
 
 ## Plays `sound_name` at `at` (in the world `context` belongs to), with the
 ## pitch varied a little each time so repeats don't sound mechanical.
 static func play(context: Node, sound_name: String, at: Vector3, pitch_spread := 0.08, volume_offset := 0.0) -> void:
-	if context == null or not context.is_inside_tree() or DisplayServer.get_name() == "headless":
+	if muted or context == null or not context.is_inside_tree() or DisplayServer.get_name() == "headless":
 		return
 	var player := AudioStreamPlayer3D.new()
 	player.stream = stream(sound_name)

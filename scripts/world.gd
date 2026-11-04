@@ -89,6 +89,7 @@ var level_number: int:
 		return level_state.y
 
 var _advancing := false
+var _warming := false  ## A level is warming up behind its loading screen (see _warm_up).
 ## Server: active ground zones (Sandstorm, toxic puddles...). See add_zone().
 var _zones: Array[Dictionary] = []
 ## Server: armed traps (Mud Trap) waiting for an enemy to step on them. See add_trap().
@@ -961,6 +962,102 @@ func _build_level() -> void:
 	if is_crossroads():
 		_build_hub_portals()
 	level_changed.emit()
+	_warm_up()
+
+
+## Behind a short loading screen, shows the camera everything this level can
+## show, once: every effect (bolts, arrows, spells, bursts, zones, loot, coins,
+## pickups...), and the whole level at once (every creature, the boss, every
+## building and obstacle), and loads every sound and icon. The GPU compiles
+## each kind of material the first time it draws it, which would otherwise be
+## a little freeze the first time each one appears in play.
+func _warm_up() -> void:
+	var cam := get_viewport().get_camera_3d()
+	if cam == null or DisplayServer.get_name() == "headless" or _warming:
+		return
+	_warming = true
+	var overlay := CanvasLayer.new()
+	overlay.layer = 120
+	add_child(overlay)
+	var curtain := ColorRect.new()
+	curtain.color = Color(0.04, 0.045, 0.06)
+	curtain.set_anchors_preset(Control.PRESET_FULL_RECT)
+	curtain.mouse_filter = Control.MOUSE_FILTER_STOP
+	overlay.add_child(curtain)
+	var label := Label.new()
+	label.text = "Loading %s..." % (area_name(level_number) if level_number > BiomeDB.CROSSROADS else "the Crossroads")
+	label.set_anchors_preset(Control.PRESET_CENTER)
+	label.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.add_theme_font_size_override("font_size", 26)
+	label.modulate = Color(0.95, 0.9, 0.75)
+	curtain.add_child(label)
+	SoundFX.muted = true
+	SoundFX.preload_all()
+	UiIcons.preload_all()
+	await get_tree().process_frame
+
+	# One of every effect, just in front of the camera.
+	var forward := -cam.global_basis.z
+	var p := cam.global_position + forward * 20.0
+	var side := cam.global_basis.x
+	var color := Color(1.0, 0.5, 0.3)
+	play_bolt(p, p + side * 2.0, color, 0.5)
+	play_arrow(p, p + side * 2.0, color, 0.5)
+	play_spell("orb", p, p + side * 2.0, color, 0.5)
+	play_spell("meteor", p + Vector3.UP * 3.0, p, color, 0.5)
+	play_spell("lightning", p, p, color, 0.05)
+	play_lightning(PackedVector3Array([p, p + side, p + side * 2.0]))
+	play_burst(p, color, 2.0)
+	play_shatter(p, color)
+	play_capture_fx(p, p + side * 2.0, true)
+	play_capture_fx(p, p + side * 2.0, false)
+	play_bonk(p)
+	play_vortex(p, 2.0, 0.5, color)
+	play_kiss(p, p + side * 2.0)
+	play_cast(p, color)
+	play_beam(p, p + side * 2.0, color)
+	play_zone(p, 2.0, 0.5, color)
+	play_trap(-99, p, 2.0, color)
+	play_telegraph(p, 2.0, 0.4)
+	var samples: Array[Node3D] = []
+	for item in [ItemDB.make("jacket", 1, 0), ItemDB.make_legendary()]:
+		var sack := Loot.new()
+		sack.item = item
+		sack.position = p
+		add_child(sack)
+		samples.append(sack)
+	var coin: Node3D = coin_scene.instantiate()
+	coin.position = p + side
+	add_child(coin)
+	samples.append(coin)
+	var me := get_player(multiplayer.get_unique_id())
+	if me:
+		samples.append(me.play_pickup(ItemDB.make("hat", 1, 1)))
+		me._play_swing_fx()
+
+	# The whole level at once: pull the camera far back and wide for a few
+	# frames (creatures spawned by the server arrive during them).
+	var rig := get_node("CameraRig")
+	rig.set_process(false)
+	var old := [cam.size, cam.far, cam.position]
+	cam.position = cam.position + Vector3(0, 0, 500.0)
+	cam.far = 2000.0
+	cam.size = 450.0
+	for i in 3:
+		await get_tree().create_timer(0.2).timeout
+	cam.size = old[0]
+	cam.far = old[1]
+	cam.position = old[2]
+	rig.set_process(true)
+	end_trap(-99, false)
+	for sample in samples:
+		if is_instance_valid(sample):
+			sample.queue_free()
+	await get_tree().create_timer(0.35).timeout  # let the sample effects finish under the curtain
+	SoundFX.muted = false
+	overlay.queue_free()
+	_warming = false
 
 
 ## The Crossroads portals: a copy of the exit portal for each Act 1 biome, in

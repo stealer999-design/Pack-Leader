@@ -115,6 +115,13 @@ played in the browser".
   the stable and ends in a boss arena. Defeat the boss and the **Next level**
   portal opens at the far end; step in and everyone moves on to the next,
   harder level, and every pet gets bonus XP.
+- **Loading:** each level starts behind a short "Loading..." screen (about a
+  second), while the game shows the camera everything the level can show,
+  once: every effect (bolts, arrows, spells, bursts, zones, loot, coins,
+  pickups), and the whole level at once (every creature, the boss, buildings
+  and obstacles), and loads every sound and icon. Graphics cards compile each
+  kind of material the first time they draw it, which used to cause little
+  freezes the first few times things appeared mid-play.
 - **Act 2 fields:** Act 2's areas (and their repeats) aren't paths: each is a
   **big open field**, a rounded box (about 224 by 328 units) with gently wavy
   edges and a wall all round (low on the side facing the camera). The camp is

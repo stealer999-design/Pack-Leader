@@ -1246,9 +1246,9 @@ func request_discard_many(indices: Array) -> void:
 ## Gear just picked up: a ring of light in the item's rarity colour bursts
 ## out at the tamer's feet, and the item's icon and name pop up over its head,
 ## float up and fade. Follows the tamer; plays on every peer.
-func play_pickup(item: Dictionary) -> void:
+func play_pickup(item: Dictionary) -> Node3D:
 	if item.is_empty():
-		return
+		return null
 	var rarity := ItemDB.rarity_color(item)
 	var fx := Node3D.new()
 	add_child(fx)
@@ -1316,6 +1316,7 @@ func play_pickup(item: Dictionary) -> void:
 		tween.tween_property(faded, "modulate:a", 0.0, 0.5).set_delay(2.3)
 	tween.tween_property(label, "outline_modulate:a", 0.0, 0.5).set_delay(2.3)
 	tween.chain().tween_callback(fx.queue_free)
+	return fx
 
 
 func _pickup_sprite(texture: Texture2D, tint: Color, priority: int) -> Sprite3D:
