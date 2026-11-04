@@ -12,6 +12,9 @@ const MAX_STABLE := 20
 ## Pets carried in reserve: not out fighting, but they can be swapped in at any
 ## time (see request_swap).
 const MAX_RESERVE := 3
+## Tamers shrug off most poison: they take this share of any poison or venom
+## (lizards' bites and toxic blood, poison abilities and zones, the Bog Witch).
+const POISON_TAKEN := 0.25
 ## Seconds between swaps.
 const SWAP_COOLDOWN := 0.6
 const RIVAL_COMMAND := "@rival"
@@ -937,7 +940,7 @@ func _regenerate(delta: float) -> void:
 
 
 func poison(dps: float, duration: float) -> void:
-	health.add_poison(dps, duration)
+	health.add_poison(dps * POISON_TAKEN, duration)
 
 
 func add_shield(amount: float, duration: float) -> void:

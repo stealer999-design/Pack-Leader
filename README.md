@@ -443,6 +443,9 @@ played in the browser".
   second for 4s, up to three bites' worth), anything that hits them up close
   is poisoned back (toxic blood), and every ability poisons: venom lashes and
   spit, poison clouds and pools, plague spores, and poisoned traps.
+  **Tamers resist poison:** a tamer takes only a quarter of any poison or
+  venom (lizards' bites and toxic blood, poison abilities and zones, the Bog
+  Witch's bolts); pets and creatures take it in full.
 - **Sound:** every sound is designed in code (`scripts/sound_fx.gd`) and
   saved as a ready-made file in `sounds/` (rebuild them with
   `godot --headless --path . -s res://scripts/tools/build_sounds.gd`, then

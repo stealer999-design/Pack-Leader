@@ -746,6 +746,9 @@ func envenom(victim: Node3D, stack_dps: float, duration: float, max_dps: float) 
 	if not is_instance_valid(victim) or victim.get("health") == null or not victim.is_targetable():
 		return
 	var fresh: bool = not victim.health.is_poisoned()
+	if victim is Player:  # tamers take much less poison (see Player.POISON_TAKEN)
+		stack_dps *= Player.POISON_TAKEN
+		max_dps *= Player.POISON_TAKEN
 	var power := 1.0 + skill_bonus("dot_power")  # skill tree: stronger, longer poison
 	duration *= 1.0 + skill_bonus("dot_duration")
 	victim.health.add_venom(stack_dps * power, duration, max_dps * power)
