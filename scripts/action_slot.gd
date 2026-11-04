@@ -116,16 +116,6 @@ func _draw_overlay() -> void:
 		var side := minf(inner.size.x, inner.size.y) * icon_scale
 		var at := inner.position + (inner.size - Vector2(side, side)) * Vector2(0.5, 0.42 if health >= 0.0 else 0.5)
 		c.draw_texture_rect(icon, Rect2(at + icon_offset, Vector2(side, side)), false, icon_tint if not dim else Color(icon_tint, 0.35))
-	# Pet strips along the bottom.
-	if health >= 0.0:
-		var bar := Rect2(inner.position.x + 2, inner.end.y - 10, inner.size.x - 4, 5)
-		c.draw_rect(bar, Color(0, 0, 0, 0.7))
-		var hp_color := Color(0.35, 0.9, 0.4) if health > 0.35 else Color(1.0, 0.45, 0.3)
-		c.draw_rect(Rect2(bar.position, Vector2(bar.size.x * clampf(health, 0, 1), bar.size.y)), hp_color)
-	if xp >= 0.0:
-		var bar := Rect2(inner.position.x + 2, inner.end.y - 5, inner.size.x - 4, 3)
-		c.draw_rect(bar, Color(0, 0, 0, 0.7))
-		c.draw_rect(Rect2(bar.position, Vector2(bar.size.x * clampf(xp, 0, 1), bar.size.y)), Color(0.5, 0.72, 1.0))
 	if dim:
 		c.draw_rect(inner, Color(0, 0, 0, 0.45))
 	# The cooldown: a dark wedge, from 12 o'clock clockwise, shrinking as it recovers.
@@ -143,6 +133,16 @@ func _draw_overlay() -> void:
 			_text(c, cooldown_text, inner.get_center() + Vector2(0, cooldown_size * 0.38), cooldown_size, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 	if caption != "":
 		_text(c, caption, inner.get_center() + Vector2(0, caption_size * 0.38), caption_size, Color(1, 1, 1, 0.85), HORIZONTAL_ALIGNMENT_CENTER)
+	# Pet strips along the bottom (over the cooldown sweep, so they always read clearly).
+	if health >= 0.0:
+		var bar := Rect2(inner.position.x + 2, inner.end.y - 10, inner.size.x - 4, 5)
+		c.draw_rect(bar, Color(0, 0, 0, 0.7))
+		var hp_color := Color(0.35, 0.9, 0.4) if health > 0.35 else Color(1.0, 0.45, 0.3)
+		c.draw_rect(Rect2(bar.position, Vector2(bar.size.x * clampf(health, 0, 1), bar.size.y)), hp_color)
+	if xp >= 0.0:
+		var bar := Rect2(inner.position.x + 2, inner.end.y - 5, inner.size.x - 4, 3)
+		c.draw_rect(bar, Color(0, 0, 0, 0.7))
+		c.draw_rect(Rect2(bar.position, Vector2(bar.size.x * clampf(xp, 0, 1), bar.size.y)), Color(1.0, 0.8, 0.22))  # experience: gold
 	# Frame.
 	var frame_color := FRAME
 	var width := 2.0

@@ -96,7 +96,7 @@ played in the browser".
     **potion** (Q, with a red count of how many you have and a cooldown sweep);
   - your **bat** (LMB);
   - your three **pets** (1 2 3): portrait, level, health and
-    experience strips, the ability cooldown counting down (lit when ready), a
+    experience (gold) strips, the ability cooldown counting down (lit when ready), a
     "+" when they have skill points to spend, and "Dead" when killed. Click
     one to open the skills;
   - **pet stance** (T) and your **coins**.
