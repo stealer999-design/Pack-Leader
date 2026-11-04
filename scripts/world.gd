@@ -1055,6 +1055,7 @@ func _warm_up() -> void:
 	play_shatter(p, color)
 	play_capture_fx(p, p + side * 2.0, true)
 	play_capture_fx(p, p + side * 2.0, false)
+	play_heart(p)
 	play_bonk(p)
 	play_vortex(p, 2.0, 0.5, color)
 	play_kiss(p, p + side * 2.0)
@@ -1896,22 +1897,68 @@ func announce(text: String, color: Color) -> void:
 
 @rpc("authority", "call_local", "unreliable")
 func play_capture_fx(from: Vector3, to: Vector3, success: bool) -> void:
-	var mat := _fx_material(Color(1, 1, 1, 0.9))
-	var orb := MeshInstance3D.new()
-	var mesh := SphereMesh.new()
-	mesh.radius = 0.18
-	mesh.height = 0.36
-	orb.mesh = mesh
-	orb.material_override = mat
-	add_child(orb)
-	orb.global_position = from
-	var result_color := Color(0.4, 1.0, 0.5, 0.8) if success else Color(1.0, 0.35, 0.3, 0.8)
-	var tween := orb.create_tween()
-	tween.tween_property(orb, "global_position", to, 0.25)
-	tween.tween_property(mat, "albedo_color", result_color, 0.05)
-	tween.tween_property(orb, "scale", Vector3.ONE * 5.0, 0.3)
-	tween.parallel().tween_property(mat, "albedo_color:a", 0.0, 0.3)
-	tween.tween_callback(orb.queue_free)
+	# A little dog biscuit: a bar with two round knobs at each end.
+	var treat := Node3D.new()
+	add_child(treat)
+	treat.global_position = from
+	var biscuit := _material(Color(0.86, 0.62, 0.32))
+	var bar := MeshInstance3D.new()
+	var bar_mesh := BoxMesh.new()
+	bar_mesh.size = Vector3(0.3, 0.09, 0.1)
+	bar.mesh = bar_mesh
+	bar.material_override = biscuit
+	treat.add_child(bar)
+	for x in [-0.15, 0.15]:
+		for z in [-0.05, 0.05]:
+			var knob := MeshInstance3D.new()
+			var sphere := SphereMesh.new()
+			sphere.radius = 0.065
+			sphere.height = 0.13
+			knob.mesh = sphere
+			knob.material_override = biscuit
+			knob.position = Vector3(x, 0.0, z)
+			treat.add_child(knob)
+	_add_glow(treat, Color(1.0, 0.85, 0.5), 0.35)
+	# It arcs over, tumbling, and lands on the creature as the server decides.
+	var flight := Player.TREAT_FLIGHT
+	var arc := 1.4 + from.distance_to(to) * 0.12
+	var tween := treat.create_tween()
+	tween.tween_method(func(t: float) -> void:
+		treat.global_position = from.lerp(to, t) + Vector3.UP * sin(PI * t) * arc
+		treat.rotation = Vector3(t * 9.0, t * 4.0, 0.0), 0.0, 1.0, flight)
+	if success:
+		# Gobbled up: it shrinks into the creature with a pink puff.
+		tween.tween_property(treat, "scale", Vector3.ONE * 0.05, 0.15)
+		tween.tween_callback(func() -> void: _ring_fx(to, Color(1.0, 0.55, 0.75), 1.2))
+	else:
+		# Turned down: it bounces off and drops to the ground.
+		var side := Vector3(randf_range(-1.0, 1.0), 0.0, randf_range(-1.0, 1.0)).normalized() * 1.2
+		var ground := Vector3(to.x, from.y - 1.3, to.z) + side
+		tween.tween_property(treat, "global_position", to + side * 0.5 + Vector3.UP * 0.6, 0.15).set_ease(Tween.EASE_OUT)
+		tween.tween_property(treat, "global_position", ground, 0.25).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
+		tween.tween_property(treat, "scale", Vector3.ONE * 0.05, 0.3).set_delay(0.3)
+	tween.tween_callback(treat.queue_free)
+
+
+## A pink heart that pops up over a creature that has just been caught, then
+## rises and fades.
+@rpc("authority", "call_local", "reliable")
+func play_heart(at: Vector3) -> void:
+	var heart := Sprite3D.new()
+	heart.texture = UiIcons.texture("heart_full", 64)
+	heart.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	heart.no_depth_test = true
+	heart.render_priority = 10
+	heart.pixel_size = 0.014
+	heart.modulate = Color(1.0, 0.45, 0.65)
+	add_child(heart)
+	heart.global_position = at
+	heart.scale = Vector3.ONE * 0.2
+	var tween := heart.create_tween().set_parallel()
+	tween.tween_property(heart, "scale", Vector3.ONE, 0.3).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(heart, "global_position", at + Vector3.UP * 1.2, 1.6).set_delay(0.2).set_trans(Tween.TRANS_SINE)
+	tween.tween_property(heart, "modulate:a", 0.0, 0.5).set_delay(1.3)
+	tween.chain().tween_callback(heart.queue_free)
 
 
 ## The bat's bonk: a ring of little yellow stars that pops up and spins around

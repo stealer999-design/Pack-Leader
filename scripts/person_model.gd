@@ -28,6 +28,7 @@ var _speed := 0.0
 var _walk_phase := 0.0
 var _last_step := 0  ## Footsteps: which foot-down of the walk cycle sounded last.
 var _swinging := false
+var _throwing := false  ## The free arm is busy throwing a treat (see throw).
 var _spikes: Node3D
 var _chain: Node3D
 var _jacket: Node3D
@@ -280,8 +281,9 @@ func _process(delta: float) -> void:
 	_body.rotation.z = lerpf(_body.rotation.z, sin(_time * 0.9) * 0.02 * (1.0 - stride), blend)
 	# Arms swing against the legs with the elbows bent; the bat arm keeps its grip.
 	var free_arm := -sin(p) * 0.55 * stride
-	_shoulders[0].rotation.x = lerpf(_shoulders[0].rotation.x, free_arm + 0.05, blend)
-	_shoulders[0].rotation.z = lerpf(_shoulders[0].rotation.z, -0.08, blend)
+	if not _throwing:
+		_shoulders[0].rotation.x = lerpf(_shoulders[0].rotation.x, free_arm + 0.05, blend)
+		_shoulders[0].rotation.z = lerpf(_shoulders[0].rotation.z, -0.08, blend)
 	_elbows[0].rotation.x = lerpf(_elbows[0].rotation.x, 0.3 + (0.35 + 0.4 * maxf(free_arm, 0.0)) * stride, blend)
 	if not _swinging:
 		_bat_arm.rotation = _bat_arm.rotation.lerp(Vector3(REST_ARM - free_arm * 0.35, 0.0, 0.1), blend)
@@ -302,6 +304,20 @@ func swing(duration := 0.32) -> void:
 	_pose(tween, duration * 0.2, Vector3(1.1, 1.3, 0.1), 0.5, -0.75, Vector3(0.6, 0, 0.0), Tween.EASE_OUT)  # follow through
 	_pose(tween, duration * 0.32, Vector3(REST_ARM, 0.0, 0.1), REST_ELBOW, 0.0, Vector3(0.05, 0, -0.08), Tween.EASE_IN_OUT)
 	tween.tween_callback(func() -> void: _swinging = false)
+
+
+## An underarm toss with the free hand (a capture treat): the arm swings
+## back, then forward and up to let go, then settles.
+func throw(duration := 0.4) -> void:
+	_throwing = true
+	var tween := create_tween()
+	tween.tween_property(_shoulders[0], "rotation", Vector3(-0.9, 0.0, -0.15), duration * 0.35).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.parallel().tween_property(_body, "rotation:y", -0.25, duration * 0.35)
+	tween.tween_property(_shoulders[0], "rotation", Vector3(1.9, 0.0, -0.1), duration * 0.25).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tween.parallel().tween_property(_body, "rotation:y", 0.2, duration * 0.25)
+	tween.tween_property(_shoulders[0], "rotation", Vector3(0.05, 0.0, -0.08), duration * 0.4).set_trans(Tween.TRANS_SINE)
+	tween.parallel().tween_property(_body, "rotation:y", 0.0, duration * 0.4)
+	tween.tween_callback(func() -> void: _throwing = false)
 
 
 ## One step of the swing: bat arm (shoulder rotation, elbow bend), body turn,

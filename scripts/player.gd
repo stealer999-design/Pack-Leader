@@ -15,6 +15,9 @@ const MAX_RESERVE := 3
 ## Tamers shrug off most poison: they take this share of any poison or venom
 ## (lizards' bites and toxic blood, poison abilities and zones, the Bog Witch).
 const POISON_TAKEN := 0.25
+## A capture is a treat tossed at the creature: this long in the air, then
+## the creature either takes it (caught) or doesn't (broke free).
+const TREAT_FLIGHT := 0.5
 ## Seconds between swaps.
 const SWAP_COOLDOWN := 0.6
 const RIVAL_COMMAND := "@rival"
@@ -638,11 +641,25 @@ func request_capture(creature_name: String) -> void:
 		return
 	_server_capture_timer = capture_cooldown * 0.8
 	var success := randf() < c.capture_chance(capture_boost())
-	world.play_capture_fx.rpc(global_position + Vector3.UP * 1.2, c.global_position + Vector3.UP * c.radius(), success)
+	_show_throw.rpc()
+	world.play_capture_fx.rpc(global_position + Vector3.UP * 1.3, c.global_position + Vector3.UP * c.radius(), success)
+	get_tree().create_timer(TREAT_FLIGHT).timeout.connect(_treat_landed.bind(c.get_instance_id(), success))
+
+
+## The treat reaches the creature: caught (a heart over its head), or it broke
+## free. Looked up by id: it may be gone, or already caught by someone else.
+func _treat_landed(creature_id: int, success: bool) -> void:
+	var c := instance_from_id(creature_id) as Creature
+	if not is_inside_tree() or c == null or not is_instance_valid(c) or c.is_queued_for_deletion() \
+			or not c.is_wild() or not c.is_targetable():
+		return
+	if success and party_is_full() and _first_empty_reserve() < 0 and stable_is_full():
+		success = false  # no room after all (something else filled it meanwhile)
 	if not success:
 		c.on_capture_failed(self)
 		world.popup(c, "Broke free!", "net", Color(1, 0.6, 0.4), peer_id)
 		return
+	world.play_heart.rpc(c.global_position + Vector3.UP * (c.overhead.position.y + 0.6))
 	world.popup(self, "Caught a %s!" % c.species.display_name, "net", Color(0.6, 1.0, 0.65))
 	if party_is_full() and _first_empty_reserve() >= 0:
 		reserve[_first_empty_reserve()] = c.to_data()
@@ -996,6 +1013,14 @@ func _sent_by_server() -> bool:
 
 
 # --- Server -> clients -------------------------------------------------------------
+
+## Everyone sees the tamer toss the treat.
+@rpc("any_peer", "call_local", "unreliable")
+func _show_throw() -> void:
+	if not _sent_by_server():
+		return
+	person.throw()
+
 
 @rpc("any_peer", "call_local", "unreliable")
 func _show_swing(aim: Vector3) -> void:

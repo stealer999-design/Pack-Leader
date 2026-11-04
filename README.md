@@ -73,7 +73,7 @@ played in the browser".
 |---|---|
 | WASD | Move |
 | LMB | Swing your bat toward the mouse: weakens creatures (never below 1 HP) and smashes vases |
-| E | Throw a capture at the creature under the mouse (or, if there isn't one, the nearest tameable creature in range, preferring weakened ones) |
+| E | Toss a treat at the creature under the mouse (or, if there isn't one, the nearest tameable creature in range, preferring weakened ones) |
 | RMB on a wild creature or the rival | Send your pets to attack it |
 | RMB on the ground | Pets drop their target and regroup |
 | T | Toggle pets between **Aggressive** and **Passive** |
@@ -115,6 +115,13 @@ played in the browser".
   the stable and ends in a boss arena. Defeat the boss and the **Next level**
   portal opens at the far end; step in and everyone moves on to the next,
   harder level, and every pet gets bonus XP.
+- **Capturing with treats:** every wild creature you could tame shows its
+  **catch chance** over its name ("Catch 57%", grey at 0%, red to yellow to
+  green as it rises; it counts your Lucky Lemonade). Pressing E (or the
+  capture button) makes your tamer **toss a dog biscuit**, which arcs over to
+  the creature: if it's caught, the creature gobbles the treat and a **pink
+  heart** pops up over its head; if not, the treat bounces off and it breaks
+  free. The result is decided when the treat lands.
 - **Notifications where you're looking:** what happens to you and your pets
   pops up as a small badge (an icon and a few words) over the head it's
   about, rises and fades: **Level 5!** with a gold arrow over a pet that

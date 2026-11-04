@@ -112,6 +112,10 @@ var _material := StandardMaterial3D.new()
 @onready var ring: MeshInstance3D = $Ring
 @onready var overhead: Node3D = $Overhead
 @onready var name_label: Label3D = $Overhead/NameLabel
+## Over wild creatures you could tame: your chance to catch one with a treat
+## right now (it rises as they're worn down). Drawn on every peer, for that
+## peer's own tamer (Lucky Lemonade included).
+var _catch_label: Label3D
 @onready var bar_fg: MeshInstance3D = $Overhead/BarFg
 
 
@@ -140,6 +144,29 @@ func _process(_delta: float) -> void:
 	var cam := get_viewport().get_camera_3d()
 	if cam:
 		overhead.global_basis = cam.global_basis
+	_update_catch_label()
+
+
+func _update_catch_label() -> void:
+	var wanted := is_wild() and not is_monster() and not fainted and species != null
+	if not wanted:
+		if _catch_label:
+			_catch_label.visible = false
+		return
+	if _catch_label == null:
+		_catch_label = Label3D.new()
+		_catch_label.pixel_size = 0.008
+		_catch_label.font_size = 34
+		_catch_label.outline_size = 9
+		_catch_label.position = Vector3(0, 0.62, 0)
+		overhead.add_child(_catch_label)
+	var me: Player = world.get_player(multiplayer.get_unique_id()) if world else null
+	var chance := capture_chance(me.capture_boost() if me else 1.0)
+	_catch_label.visible = true
+	_catch_label.text = "Catch %d%%" % roundi(chance * 100.0)
+	# Red when hopeless, through yellow, to green when it's a sure thing.
+	_catch_label.modulate = Color(0.75, 0.75, 0.75, 0.8) if chance <= 0.0 \
+			else Color(1.0, 0.35, 0.3).lerp(Color(1.0, 0.9, 0.3), clampf(chance * 2.0, 0.0, 1.0)).lerp(Color(0.45, 1.0, 0.45), clampf(chance * 2.0 - 1.0, 0.0, 1.0))
 
 
 func _physics_process(delta: float) -> void:
