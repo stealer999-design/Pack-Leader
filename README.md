@@ -146,7 +146,9 @@ played in the browser".
   back to the Crossroads to pick the next one. A new area stays sealed until
   the current area's boss is beaten. Cleared areas stay open to revisit (and
   so does the Crossroads, through the Travel portal). Once all four are
-  cleared, the portal leads on to Act 2.
+  cleared, the boss's portal leads on to Act 2, and the Crossroads gets a red
+  **On to Act 2** portal beside the Travel portal, so you can always get there
+  from the hub.
 - **Acts and biomes:** the four biomes make up **Act 1**, one area each, in
   the order you choose, and each area's creatures are five levels higher than
   the last (weakest by the camp, strongest near the boss; the rival's pet is
@@ -375,7 +377,11 @@ played in the browser".
   your party, and drag a reserve pet onto a party pet (or the other way). A
   pet keeps its health when swapped out and back. Party pets automatically
   defend you
-  and each other, and earn XP from kills within 25 units. Levelling is paced
+  and each other. **XP is shared by your whole team:** when an enemy dies
+  within 25 units of you or one of your pets, every living pet in your party
+  and your reserve gets its XP, all alike (wherever it is), so they level at
+  the same rate. Bosses give every living party and reserve pet XP. Pets in
+  the stable don't earn XP, and neither do dead ones. Levelling is paced
   to the areas (a pet that fights its way through an area ends up around its
   top level). A pet more than 2 levels above what it beats gets less XP: 20%
   less per extra level, down to a tenth (it tells you once per area), so to

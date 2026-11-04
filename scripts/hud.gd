@@ -552,7 +552,8 @@ func _update_objective() -> void:
 	var rival := world.get_rival()
 	if world.is_crossroads():
 		level_label.text = "The Crossroads"
-		objective_label.text = "Walk into a portal to choose your next area. Each area you clear makes the next one stronger."
+		objective_label.text = "Act 1 is cleared! The red portal at the far end leads on to Act 2." if world.act1_cleared() \
+				else "Walk into a portal to choose your next area. Each area you clear makes the next one stronger."
 	elif world.exit_open:
 		objective_label.text = "Boss defeated! Take the %s portal, or the violet Travel portal to go back." \
 				% ("Crossroads" if world.next_level() == BiomeDB.CROSSROADS else "Next level")

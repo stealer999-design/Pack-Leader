@@ -187,6 +187,8 @@ static func _generate_path(level_seed: int, level_number: int) -> Dictionary:
 		"exit_point": map_point(bent, Vector3(arena_center, 0.0, z + 4.0)),
 		"travel_point": map_point(bent, Vector3(arena_center - 4.5, 0.0, z + 4.0)),
 		"hub_portals": hub_portals,
+		# The Crossroads: the way on to Act 2 (open once Act 1 is cleared), beside the Travel portal.
+		"onward_point": map_point(bent, Vector3(arena_center + 4.5, 0.0, z + 4.0)),
 		"total_length": total,
 		"rival_name": RIVAL_NAMES[rng.randi() % RIVAL_NAMES.size()],
 		"rival_species": biome.species[rng.randi() % biome.species.size()],

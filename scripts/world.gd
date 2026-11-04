@@ -200,12 +200,25 @@ func hub_portal_state(biome_index: int) -> Dictionary:
 	return {"state": "new", "level": route.size() + 1}
 
 
+## True once every Act 1 area has been cleared: the Crossroads then has a
+## portal on to Act 2.
+func act1_cleared() -> bool:
+	return cleared_level >= BiomeDB.ACTS[0].size() and route.size() >= BiomeDB.ACTS[0].size()
+
+
 ## Server: a player walking into a Crossroads portal takes everyone to that area.
 func _check_hub_portals() -> void:
 	var points: Array = layout.get("hub_portals", [])
 	for p in get_players():
 		if p.downed:
 			continue
+		if act1_cleared() and layout.has("onward_point") \
+				and _flat_distance(p.global_position, level_root.to_global(layout.onward_point)) < exit_radius:
+			_advancing = true
+			var first_act2 := BiomeDB.ACTS[0].size() + 1
+			announce.rpc("%s leads the way on to %s..." % [p.display_name, area_name(first_act2)], Color(1.0, 0.55, 0.45))
+			get_tree().create_timer(1.0).timeout.connect(_start_level.bind(first_act2))
+			return
 		for i in points.size():
 			if _flat_distance(p.global_position, level_root.to_global(points[i])) >= exit_radius:
 				continue
@@ -628,10 +641,10 @@ func on_rival_defeated(rival: Rival) -> void:
 		pet.release_to_wild()
 		announce.rpc("The rival's %s has gone wild. Capture it!" % pet.species.display_name, Color(0.6, 0.85, 1.0))
 	cleared_level = maxi(cleared_level, level_number)
-	for pet in get_all_pets():
-		if not pet.fainted:
-			# About a level's worth for a pet at the top of the area.
-			_give_xp(pet, roundi(rival_defeat_xp * area_levels(level_number).y / 2.0), area_levels(level_number).y)
+	# About a level's worth for a pet at the top of the area, for every living
+	# pet in every tamer's party and reserve (not the stable).
+	for p in get_players():
+		_give_team_xp(p, roundi(rival_defeat_xp * area_levels(level_number).y / 2.0), area_levels(level_number).y)
 	exit_open = true
 	if next_level() == BiomeDB.CROSSROADS:
 		announce.rpc("The portal leads back to the Crossroads: choose where to go next.", Color(1, 0.9, 0.5))
@@ -774,11 +787,44 @@ func _spawn_loot(data: Dictionary) -> Node:
 	return loot
 
 
+## A wild creature died: every tamer who took part (they, or one of their
+## pets, was within xp_share_range) gets its XP for every living pet in their
+## party and their reserve, all alike. Pets in the stable don't level.
 func award_xp(killed: Creature) -> void:
 	var amount := killed.species.xp_reward * killed.level
-	for pet in get_all_pets():
-		if not pet.fainted and pet.global_position.distance_to(killed.global_position) <= xp_share_range:
-			_give_xp(pet, amount, killed.level)
+	for p in get_players():
+		var near := p.global_position.distance_to(killed.global_position) <= xp_share_range
+		for pet in get_pets(p.peer_id):
+			near = near or pet.global_position.distance_to(killed.global_position) <= xp_share_range
+		if near:
+			_give_team_xp(p, amount, killed.level)
+
+
+## XP for a tamer's whole team: each living party pet, and each living reserve pet.
+func _give_team_xp(p: Player, amount: int, foe_level: int) -> void:
+	for pet in get_pets(p.peer_id):
+		if not pet.fainted:
+			_give_xp(pet, amount, foe_level)
+	var changed := false
+	for data: Dictionary in p.reserve:
+		if data.is_empty() or data.get("dead", false):
+			continue
+		var level := int(data.level)
+		var gained := maxi(1, roundi(amount * xp_factor(level, foe_level))) if amount > 0 else 0
+		var xp := int(data.get("xp", 0)) + gained
+		var species := SpeciesDB.get_species(int(data.species))
+		while xp >= Creature.xp_needed(level) and level < 99:
+			xp -= Creature.xp_needed(level)
+			level += 1
+			tell(p.peer_id, "Your %s (in reserve) grew to level %d!" % [species.display_name, level], Color(0.6, 0.85, 1.0))
+			if PetSkills.points_for_level(level) > PetSkills.points_for_level(level - 1):
+				tell(p.peer_id, "Your %s earned a skill point! Swap it into the party and press K to train it." \
+						% species.display_name, Color(1.0, 0.85, 0.4))
+		data["level"] = level
+		data["xp"] = xp
+		changed = changed or gained > 0
+	if changed:
+		p._push_stable()
 
 
 ## Creature levels in each area: five per area, rising through the act (the
@@ -924,6 +970,29 @@ func _build_hub_portals() -> void:
 	var root := Node3D.new()
 	root.name = "HubPortals"
 	level_root.add_child(root)
+	if act1_cleared() and layout.has("onward_point"):
+		# The way on to Act 2, in red, beside the Travel portal.
+		var onward := portal.duplicate() as Node3D
+		onward.name = "Onward"
+		onward.visible = true
+		root.add_child(onward)
+		onward.global_position = level_root.to_global(layout.onward_point)
+		var red := Color(1.0, 0.4, 0.3)
+		var ring := _material(red)
+		ring.emission_enabled = true
+		ring.emission = red * 0.8
+		ring.emission_energy_multiplier = 1.6
+		(onward.get_node("Ring") as MeshInstance3D).material_override = ring
+		var core := StandardMaterial3D.new()
+		core.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		core.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		core.albedo_color = Color(red, 0.5)
+		(onward.get_node("Core") as MeshInstance3D).material_override = core
+		(onward.get_node("Glow") as OmniLight3D).light_color = red
+		var first_act2 := BiomeDB.ACTS[0].size() + 1
+		var label := onward.get_node("Sign") as Label3D
+		label.text = "On to Act 2\n%s\nLv %d-%d" % [BiomeDB.for_level(first_act2).name, area_levels(first_act2).x, area_levels(first_act2).y]
+		label.modulate = red.lightened(0.35)
 	var points: Array = layout.get("hub_portals", [])
 	for i in points.size():
 		var biome_index: int = BiomeDB.ACTS[0][i]
