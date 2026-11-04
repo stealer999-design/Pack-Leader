@@ -15,6 +15,10 @@ class_name SoundFX
 ##   "bing"       an item dropping
 ##   "bing_rare"  a legendary dropping: two notes, higher
 ##   "step"       a footstep: a soft, low scuff
+## Recorded sounds (files only, never synthesised, see FILE_ONLY):
+##   "arrow_swish"  a bird's arrow (its regular attack)
+##   "arrow_shot"   a bird's ability shot (aimed shots, volleys, piercing shots, marks...)
+##   "arrow_rain"   Rain of Arrows: a barrage, as long as the arrows take to land
 
 const RATE := 22050
 const FOLDER := "res://sounds"
@@ -22,7 +26,10 @@ const FOLDER := "res://sounds"
 const VOLUME := {
 	"hit": -9.0, "zap": -12.0, "twang": -9.0, "spell": -3.0, "holy": -4.0, "volley": -3.0,
 	"venom": -3.0, "power": -4.0, "bing": -6.0, "bing_rare": -4.0, "step": -15.0,
+	"arrow_swish": -8.0, "arrow_shot": -3.0, "arrow_rain": -2.0,
 }
+## Sounds that are recordings in sounds/ (build_sounds.gd leaves them alone).
+const FILE_ONLY := ["arrow_swish", "arrow_shot", "arrow_rain"]
 
 static var _cache := {}
 static var _rng := RandomNumberGenerator.new()

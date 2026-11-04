@@ -457,10 +457,11 @@ played in the browser".
   `godot --headless --path . --import`); the game just loads the files. Each
   plays where it happens:
   - pets' regular attacks make a simple sound by class: a thump for melee
-    bites, a quick "pew" for wizards' bolts, a bowstring twang for archers;
+    bites, a quick "pew" for wizards' bolts, an arrow swish for archers;
   - pet abilities are louder and bigger: a rising shimmer for wizards' spells,
-    a bell chord for paladins, a hard twang and rush of air for archers, a
-    bubbling hiss for venomancers;
+    a bell chord for paladins, an arrow being loosed for archers (Rain of
+    Arrows has its own barrage of arrows, trimmed to last as long as the
+    arrows take to land), a bubbling hiss for venomancers;
   - an item dropping goes "bing" (a legendary rings two higher notes);
   - tamers' footsteps patter as they walk.
 - **Glowing shots:** every ranged attack, yours and your enemies' alike
@@ -589,7 +590,7 @@ The host is the authoritative server and also plays.
 | `scripts/components/health.gd` | Health with setter-driven signals (works with replication), plus poison and damage-absorbing shields |
 | `scripts/pet_slot.gd` | A drag-and-drop place in the stable window (hay bed, party cushion, reserve place or release gate), drawn in code |
 | `scenes/hud.tscn` + `scripts/hud.gd` | The HUD: objective, hover/capture info, message feed, windows |
-| `scripts/sound_fx.gd`, `sounds/*.wav` (built by `scripts/tools/build_sounds.gd`) | The sound effects (attacks, abilities, item drops, footsteps): designed in code, saved as .wav files, played positionally |
+| `scripts/sound_fx.gd`, `sounds/*.wav` (built by `scripts/tools/build_sounds.gd`, except the recorded `arrow_*.wav`) | The sound effects (attacks, abilities, item drops, footsteps): designed in code, saved as .wav files, played positionally |
 | `scripts/action_bar.gd`, `scripts/action_slot.gd`, `scripts/health_orb.gd` | The action bar along the bottom (health, potion, capture, bat, the three pets, stance and coins) and the tiny inventory, skills and menu buttons under the mini map; each box draws its icon or portrait, key, cooldown sweep, badges and strips |
 
 Physics layers: 1 world · 2 players · 3 hostiles (wild creatures, bosses, rival pets) · 4 player pets.

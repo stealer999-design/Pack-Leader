@@ -986,7 +986,7 @@ func _flash() -> void:
 @rpc("authority", "call_local", "unreliable")
 func _lunge() -> void:
 	if owner_id != 0:  # pets' attacks make a sound (wild creatures' don't, to keep fights readable)
-		var sound := "twang" if species.is_archer() else "zap" if species.is_ranged() else "hit"
+		var sound := "arrow_swish" if species.is_archer() else "zap" if species.is_ranged() else "hit"
 		SoundFX.play(self, sound, global_position)
 	var tween := create_tween()
 	tween.tween_property(body, "position:z", -0.25, 0.06)
@@ -997,8 +997,11 @@ func _lunge() -> void:
 func _ability_used(cooldown: float) -> void:
 	_ability_ready_time = _now() + cooldown
 	_ability_cooldown_total = maxf(cooldown, 0.01)
-	var ability_sounds := {"wizard": "spell", "paladin": "holy", "archer": "volley", "venomancer": "venom"}
-	SoundFX.play(self, ability_sounds.get(species.pet_class(), "power"), global_position, 0.05)
+	var ability_sounds := {"wizard": "spell", "paladin": "holy", "archer": "arrow_shot", "venomancer": "venom"}
+	var sound: String = ability_sounds.get(species.pet_class(), "power")
+	if species.ability is ArcherShotAbility and (species.ability as ArcherShotAbility).mode == "rain":
+		sound = "arrow_rain"  # a barrage the length of the rain
+	SoundFX.play(self, sound, global_position, 0.03)
 	var tween := create_tween()
 	tween.tween_property(model, "scale", Vector3.ONE * species.size * 1.25, 0.08)
 	tween.tween_property(model, "scale", Vector3.ONE * species.size, 0.15)

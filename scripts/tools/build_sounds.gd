@@ -9,6 +9,8 @@ extends SceneTree
 func _init() -> void:
 	DirAccess.make_dir_recursive_absolute(SoundFX.FOLDER)
 	for sound_name in SoundFX.VOLUME:
+		if sound_name in SoundFX.FILE_ONLY:
+			continue  # recordings, not designed in code
 		var path := "%s/%s.wav" % [SoundFX.FOLDER, sound_name]
 		print(path, ": ", error_string(SoundFX.synthesize(sound_name).save_to_wav(path)))
 	quit()
