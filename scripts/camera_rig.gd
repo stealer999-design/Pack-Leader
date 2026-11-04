@@ -9,7 +9,7 @@ extends Node3D
 ## user://settings.cfg, so it's remembered next time too.
 
 const MIN_ZOOM := 10.0  ## Closest: the camera shows this many units.
-const MAX_ZOOM := 40.0  ## Furthest.
+const MAX_ZOOM := 22.0  ## Furthest: the view the game starts with.
 const ZOOM_STEP := 1.12  ## Per wheel notch.
 const SETTINGS_PATH := "user://settings.cfg"
 

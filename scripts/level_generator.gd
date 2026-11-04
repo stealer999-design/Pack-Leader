@@ -426,8 +426,8 @@ static func progress(layout: Dictionary, local_point: Vector3) -> float:
 # the lemonade stand inside it. The level has exactly as many creature packs,
 # vases and obstacles as the path level from the same seed would, spread out.
 
-const OPEN_SIZE := Vector2(112.0, 164.0)  ## x (across the screen) by z (left to right).
-const OPEN_POINTS := 128  ## Points around the boundary.
+const OPEN_SIZE := Vector2(224.0, 328.0)  ## x (across the screen) by z (left to right).
+const OPEN_POINTS := 192  ## Points around the boundary.
 const OPEN_PLAZA := Vector2(36.0, 34.0)  ## The town square: x by z.
 const CAMP_RADIUS := 16.0
 const ARENA_RADIUS := 21.0
@@ -463,13 +463,13 @@ static func generate_open(level_seed: int, path: Dictionary) -> Dictionary:
 	var town := Vector3.ZERO
 	for attempt in 40:
 		var side := -1.0 if rng.randf() < 0.5 else 1.0
-		town = center + Vector3(side * rng.randf_range(10.0, 20.0), 0.0, rng.randf_range(-22.0, 22.0))
-		if Vector2(town.x - center.x, town.z - center.z).length() < 12.0:
+		town = center + Vector3(side * rng.randf_range(22.0, 48.0), 0.0, rng.randf_range(-55.0, 55.0))
+		if Vector2(town.x - center.x, town.z - center.z).length() < 24.0:
 			continue
 		var fits := true
 		for corner in [Vector2(plaza.position.x, plaza.position.y), Vector2(plaza.end.x, plaza.position.y),
 				Vector2(plaza.position.x, plaza.end.y), Vector2(plaza.end.x, plaza.end.y)]:
-			if _edge_distance(layout, town + Vector3(corner.x, 0.0, corner.y)) < 12.0:
+			if _edge_distance(layout, town + Vector3(corner.x, 0.0, corner.y)) < 30.0:
 				fits = false
 		# ...and well clear of the camp and the boss arena.
 		for zone in [[camp_center, CAMP_RADIUS + 10.0], [arena_center, ARENA_RADIUS + 10.0]]:
@@ -514,7 +514,7 @@ static func generate_open(level_seed: int, path: Dictionary) -> Dictionary:
 	var path_rocks: Array = path.rocks
 	var arena_rocks := 4
 	for i in maxi(path_rocks.size() - arena_rocks, 0):
-		var p: Vector3 = sample.call(5.0, 6.5)
+		var p: Vector3 = sample.call(5.0, 11.0)
 		if p != Vector3.INF:
 			taken.append(p)
 			rocks.append({"pos": p, "size": path_rocks[i].size})
@@ -529,7 +529,7 @@ static func generate_open(level_seed: int, path: Dictionary) -> Dictionary:
 	var spots: Array[Dictionary] = []
 	for group in sizes.size():
 		var size: int = sizes[group]
-		var home: Vector3 = sample.call(8.0, 14.0)
+		var home: Vector3 = sample.call(8.0, 30.0)
 		if home == Vector3.INF:
 			home = sample.call(6.0, 6.0)
 		if home == Vector3.INF:
@@ -544,7 +544,7 @@ static func generate_open(level_seed: int, path: Dictionary) -> Dictionary:
 	# Vases: the same number (and as many gold ones), spread out.
 	var crates: Array[Dictionary] = []
 	for crate: Dictionary in path.crate_spots:
-		var p: Vector3 = sample.call(3.0, 5.0)
+		var p: Vector3 = sample.call(3.0, 10.0)
 		if p == Vector3.INF:
 			continue
 		taken.append(p)

@@ -82,7 +82,7 @@ played in the browser".
 | F (at the stable / lemonade stand) | Open/close the stable or the shop |
 | K | Open/close the pet skills screen |
 | I | Open/close your inventory (gear and bag) |
-| Mouse wheel | Zoom the camera in and out (remembered between games) |
+| Mouse wheel | Zoom the camera in and out (remembered between games); it zooms out no further than the view the game starts with |
 | M | Switch the mini map between the corner and a large view of the whole level |
 | Esc | Close whatever menu is open (stable, shop, a confirmation, the Load Game list); with nothing open, the in-game menu: resume, save, quit to the main menu (solo pauses) |
 | Space | Dash (brief invulnerability) |
@@ -116,7 +116,7 @@ played in the browser".
   portal opens at the far end; step in and everyone moves on to the next,
   harder level, and every pet gets bonus XP.
 - **Act 2 fields:** Act 2's areas (and their repeats) aren't paths: each is a
-  **big open field**, a rounded box (about 112 by 164 units) with gently wavy
+  **big open field**, a rounded box (about 224 by 328 units) with gently wavy
   edges and a wall all round (low on the side facing the camera). The camp is
   at the left end, the boss arena (flagstones) at the right end. Somewhere in
   the middle, never dead centre and never near the edges, is a **town**
