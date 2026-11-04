@@ -3,7 +3,7 @@ extends CanvasLayer
 ## Local player's view: health, pet party (with abilities), hover info, the
 ## message feed and the stable window.
 
-const MAX_MESSAGES := 6
+const MAX_MESSAGES := 4  ## The feed keeps only the big news; the rest pops up over heads (World.popup).
 
 var _player: Player
 var _party_refresh := 0.0
@@ -163,8 +163,8 @@ func show_message(text: String, color: Color) -> void:
 	if messages.get_child_count() > MAX_MESSAGES:
 		messages.get_child(0).queue_free()
 	var tween := label.create_tween()
-	tween.tween_interval(4.0)
-	tween.tween_property(label, "modulate:a", 0.0, 1.0)
+	tween.tween_interval(4.5)
+	tween.tween_property(label, "modulate:a", 0.0, 0.8)
 	tween.tween_callback(label.queue_free)
 
 

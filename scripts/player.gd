@@ -479,12 +479,10 @@ func request_potion() -> void:
 	if not _sent_by_owner() or downed or _server_potion_timer > 0.0:
 		return
 	if health.current >= health.max_health:
-		world.tell(peer_id, "You're already at full health.", Color(1, 0.8, 0.5))
+		notify("Full health", "heart")
 		return
 	if potions <= 0:
-		world.tell(peer_id, "You're out of potions. Buy more at the lemonade stand %s." \
-				% ("in the town" if world.layout.get("open", false) else "halfway along the path"),
-				Color(1, 0.8, 0.5))
+		notify("No potions left", "potion")
 		return
 	_server_potion_timer = potion_cooldown * 0.8
 	potions -= 1
@@ -622,40 +620,37 @@ func request_capture(creature_name: String) -> void:
 		return
 	var c := world.get_creature(creature_name)
 	if c and c.is_rival_pet():
-		world.tell(peer_id, "That pet belongs to the rival. Defeat the rival first!", Color(1, 0.8, 0.5))
+		world.popup(c, "Beat the rival first", "warn", Color(1.0, 0.72, 0.45), peer_id)
 		return
 	if c == null or not c.is_wild() or not c.is_targetable():
 		return
 	if c.is_monster():
-		world.tell(peer_id, "The %s is a monster: it can't be tamed. Finish it with your bat!" % c.species.display_name,
-				Color(1, 0.8, 0.5))
+		world.popup(c, "Monsters can't be tamed", "skull", Color(1.0, 0.72, 0.45), peer_id)
 		return
 	if c.global_position.distance_to(global_position) > capture_range + c.radius():
-		world.tell(peer_id, "Too far away to capture.", Color(1, 0.8, 0.5))
+		notify("Too far away", "net")
 		return
 	if party_is_full() and _first_empty_reserve() < 0 and stable_is_full():
-		world.tell(peer_id, "Your party, reserve and stable are all full. Release a pet at the stable first.", Color(1, 0.8, 0.5))
+		notify("No room: party, reserve and stable full", "warn")
 		return
 	_server_capture_timer = capture_cooldown * 0.8
 	var success := randf() < c.capture_chance(capture_boost())
 	world.play_capture_fx.rpc(global_position + Vector3.UP * 1.2, c.global_position + Vector3.UP * c.radius(), success)
 	if not success:
 		c.on_capture_failed(self)
-		world.tell(peer_id, "The %s broke free!" % c.species.display_name, Color(1, 0.6, 0.4))
+		world.popup(c, "Broke free!", "net", Color(1, 0.6, 0.4), peer_id)
 		return
-	world.announce.rpc("%s captured a %s!" % [display_name, c.species.display_name], color.lightened(0.3))
+	world.popup(self, "Caught a %s!" % c.species.display_name, "net", Color(0.6, 1.0, 0.65))
 	if party_is_full() and _first_empty_reserve() >= 0:
 		reserve[_first_empty_reserve()] = c.to_data()
 		c.queue_free()
 		_push_stable()
-		world.tell(peer_id, "Your party is full, so the %s joined your reserve (%d/%d). Swap it in from the action bar." \
-				% [c.species.display_name, reserve_count(), MAX_RESERVE], Color(0.6, 0.85, 1.0))
+		notify("Sent to your reserve", "paw", Color(0.6, 0.85, 1.0))
 	elif party_is_full():
 		stable[_first_empty_bed()] = c.to_data()
 		c.queue_free()
 		_push_stable()
-		world.tell(peer_id, "Your party and reserve are full, so the %s was sent to the stable (%d/%d)." \
-				% [c.species.display_name, stable_count(), MAX_STABLE], Color(0.6, 0.85, 1.0))
+		notify("Sent to the stable", "stable", Color(0.6, 0.85, 1.0))
 	else:
 		c.tame(peer_id, world.free_party_slot(peer_id))
 
@@ -676,7 +671,7 @@ func request_command(creature_name: String) -> void:
 	# Sending pets at an enemy ends Passive stance: they're told to fight.
 	if focus and pets_passive:
 		pets_passive = false
-		world.tell(peer_id, "Pets are AGGRESSIVE again: attacking!", Color(1, 0.7, 0.5))
+		notify("Pets: attack!", "sword", Color(1, 0.7, 0.5))
 	for pet in world.get_pets(peer_id):
 		pet.set_focus(focus)
 
@@ -734,10 +729,9 @@ func request_toggle_stance() -> void:
 	for pet in world.get_pets(peer_id):
 		pet.set_focus(null)
 	if pets_passive:
-		world.tell(peer_id, "Pets are PASSIVE: they won't attack, so you can weaken and capture creatures.",
-				Color(0.6, 0.85, 1.0))
+		notify("Pets: passive", "shield", Color(0.6, 0.85, 1.0))
 	else:
-		world.tell(peer_id, "Pets are AGGRESSIVE: they'll defend you and fight again.", Color(1, 0.7, 0.5))
+		notify("Pets: attack", "sword", Color(1, 0.7, 0.5))
 
 
 ## Ask the pet in party `slot` to use its ability at `point` (or on `target_name`).
@@ -747,12 +741,12 @@ func request_ability(slot: int, point: Vector3, target_name: String) -> void:
 		return
 	var pet := world.get_party_pet(peer_id, slot)
 	if pet == null:
-		world.tell(peer_id, "No pet in slot %d." % (slot + 1), Color(1, 0.8, 0.5))
+		notify("No pet in slot %d" % (slot + 1), "paw")
 		return
 	var target := world.get_creature(target_name) if target_name != "" else null
 	var error := pet.queue_ability(point, target)
 	if error != "":
-		world.tell(peer_id, error, Color(1, 0.8, 0.5))
+		notify(error.trim_suffix("."), "warn")
 
 
 ## The owner's saved progress (see SaveGame), sent once after spawning. Saves
@@ -886,8 +880,7 @@ func _rest_at_stable() -> void:
 	if changed:
 		_push_stable()
 	if not revived.is_empty():
-		world.tell(peer_id, "At the stable: your %s %s back on %s feet." % [", ".join(revived),
-				"is" if revived.size() == 1 else "are", "its" if revived.size() == 1 else "their"], Color(0.5, 1.0, 0.6))
+		notify("%d pet%s revived" % [revived.size(), "" if revived.size() == 1 else "s"], "heart", Color(0.5, 1.0, 0.6))
 
 
 ## Releases the pet in a bed, reserve place or party slot back into the wild.
@@ -958,7 +951,10 @@ func slow(duration: float, factor: float) -> void:
 
 func _on_died() -> void:
 	downed = true
-	world.announce.rpc("%s is down!" % display_name, Color(1, 0.45, 0.4))
+	world.popup(self, "Down!", "skull", Color(1, 0.45, 0.4))
+	for other in world.get_players():
+		if other != self:  # teammates hear about it in the feed
+			world.tell(other.peer_id, "%s is down!" % display_name, Color(1, 0.45, 0.4))
 	await get_tree().create_timer(respawn_time).timeout
 	if not is_inside_tree():
 		return
@@ -978,6 +974,11 @@ func _can_use_stable() -> bool:
 
 func _push_stable() -> void:
 	_sync_stable.rpc_id(peer_id, stable, reserve)
+
+
+## Server: a badge over this tamer's head that only its player sees (see World.popup).
+func notify(text: String, icon: String, badge_color := Color(1.0, 0.72, 0.45)) -> void:
+	world.popup(self, text, icon, badge_color, peer_id)
 
 
 func _sent_by_owner() -> bool:

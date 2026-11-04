@@ -172,7 +172,6 @@ func _physics_process(delta: float) -> void:
 	for p in get_players():
 		if not p.downed and _flat_distance(p.global_position, exit_point()) < exit_radius:
 			_advancing = true
-			announce.rpc("%s stepped through the portal..." % p.display_name, p.color.lightened(0.3))
 			get_tree().create_timer(1.0).timeout.connect(_start_level.bind(next_level()))
 			return
 
@@ -230,7 +229,7 @@ func _check_hub_portals() -> void:
 				if Time.get_ticks_msec() >= int(p.get_meta("hub_told", 0)) and not route.is_empty():
 					p.set_meta("hub_told", Time.get_ticks_msec() + 4000)
 					var current: String = BiomeDB.BIOMES[route[route.size() - 1]].name
-					tell(p.peer_id, "%s is sealed until you beat the boss of %s." % [area, current], Color(1.0, 0.6, 0.5))
+					p.notify("Sealed: beat %s first" % current, "warn", Color(1.0, 0.6, 0.5))
 				continue
 			if info.state == "new":
 				var chosen := route.duplicate()
@@ -532,8 +531,7 @@ func _check_checkpoints() -> void:
 		if reached and not p.checkpoint and not p.downed:
 			p.checkpoint = true
 			show_checkpoint.rpc_id(p.peer_id)
-			tell(p.peer_id, "Checkpoint! If you go down, you'll get back up at the lemonade stand.",
-					Color(0.5, 1.0, 0.55))
+			p.notify("Checkpoint!", "flag", Color(0.5, 1.0, 0.55))
 
 
 ## Raises this player's checkpoint flag at the stand (each player sees their own).
@@ -589,8 +587,6 @@ func _start_level(number: int) -> void:
 			pet.remove_meta("told_overlevelled")
 
 	if number <= BiomeDB.CROSSROADS:
-		announce.rpc("The Crossroads: walk into a portal to choose your next area. The creature levels rise with each area you clear, so pick the pets you want first!",
-				Color(1, 0.9, 0.5))
 		return
 	var levels := area_levels(number)
 	var base_level := levels.x
@@ -621,14 +617,7 @@ func _start_level(number: int) -> void:
 			"species": layout.rival_species, "level": levels.y,
 			"skills": PetSkills.auto_ranks(levels.y), "owner": RIVAL_ID, "slot": 0, "pos": boss_pos + Vector3(1.5, 0.0, 1.5),
 		})
-	announce.rpc("%s, %s (creatures level %d-%d): %s and defeat %s!" % [area_title(number),
-			level_biome.name, levels.x, levels.y, "explore the field" if layout.get("open", false) else "follow the path",
-			boss_objective_name()], Color(1, 0.9, 0.5))
-	if layout.get("open", false):
-		announce.rpc("Somewhere in the middle is a fenced town with a lemonade stand (your checkpoint), a stable, the bat shop and the breeder. Explore to find it!",
-				Color(1, 0.85, 0.35))
-	else:
-		announce.rpc("A lemonade stand halfway along the path sells potions.", Color(1, 0.85, 0.35))
+	announce.rpc("%s: defeat %s!" % [level_biome.name, boss_objective_name()], Color(1, 0.9, 0.5))
 
 
 func on_rival_defeated(rival: Rival) -> void:
@@ -647,8 +636,6 @@ func on_rival_defeated(rival: Rival) -> void:
 	for p in get_players():
 		_give_team_xp(p, roundi(rival_defeat_xp * area_levels(level_number).y / 2.0), area_levels(level_number).y)
 	exit_open = true
-	if next_level() == BiomeDB.CROSSROADS:
-		announce.rpc("The portal leads back to the Crossroads: choose where to go next.", Color(1, 0.9, 0.5))
 
 
 ## Server: a damaging area on the ground. Every 0.5s it hurts the enemies of
@@ -757,7 +744,6 @@ func roll_legendary(at: Vector3) -> void:
 		return
 	var item := ItemDB.make_legendary()
 	loot_spawner.spawn({"pos": clamp_to_level(at + Vector3(randf_range(-0.6, 0.6), 0, randf_range(-0.6, 0.6))), "item": item})
-	announce.rpc("A legendary item dropped: %s!" % ItemDB.display_name(item), ItemDB.rarity_color(item))
 
 
 func _collect_loot() -> void:
@@ -817,10 +803,7 @@ func _give_team_xp(p: Player, amount: int, foe_level: int) -> void:
 		while xp >= Creature.xp_needed(level) and level < 99:
 			xp -= Creature.xp_needed(level)
 			level += 1
-			tell(p.peer_id, "Your %s (in reserve) grew to level %d!" % [species.display_name, level], Color(0.6, 0.85, 1.0))
-			if PetSkills.points_for_level(level) > PetSkills.points_for_level(level - 1):
-				tell(p.peer_id, "Your %s earned a skill point! Swap it into the party and press K to train it." \
-						% species.display_name, Color(1.0, 0.85, 0.4))
+			p.notify("%s Lv %d (reserve)" % [species.display_name, level], "levelup", Color(1.0, 0.85, 0.35))
 		data["level"] = level
 		data["xp"] = xp
 		changed = changed or gained > 0
@@ -863,8 +846,7 @@ func _give_xp(pet: Creature, amount: int, foe_level: int) -> void:
 	var factor := xp_factor(pet.level, foe_level)
 	if factor < 1.0 and not pet.has_meta("told_overlevelled"):
 		pet.set_meta("told_overlevelled", true)  # once per pet per area
-		tell(pet.owner_id, "Your %s (level %d) is over-levelled here: it earns less experience. Head deeper for more." \
-				% [pet.species.display_name, pet.level], Color(0.85, 0.85, 0.7))
+		popup(pet, "Over-levelled: less XP", "down", Color(0.85, 0.85, 0.7), pet.owner_id)
 	pet.gain_xp(maxi(1, roundi(amount * factor)) if amount > 0 else 0)
 
 
@@ -885,6 +867,64 @@ func spawn_pet(peer_id: int, data: Dictionary, near: Vector3, slot: int) -> Crea
 		"collar": data.get("collar", {}), "owner": peer_id, "slot": slot, "pos": near + Vector3(offset.x, 0.0, offset.y),
 		"dead": data.get("dead", false), "health": data.get("health", 1.0),
 	}) as Creature
+
+
+## Server: a small floating badge (an icon and a few words) over `target` (a
+## pet, a creature or a tamer), where the player is already looking: seen by
+## `peer_id` only, or by everyone (0). Nothing for the rival (negative ids).
+func popup(target: Node3D, text: String, icon: String, color: Color, peer_id := 0) -> void:
+	if not is_instance_valid(target) or not target.is_inside_tree() or peer_id < 0:
+		return
+	var path := get_path_to(target)
+	if peer_id > 0:
+		show_popup.rpc_id(peer_id, path, text, icon, color)
+	else:
+		show_popup.rpc(path, text, icon, color)
+
+
+## The badge: pops up over its target's head, rises and fades. Several at
+## once stack upwards.
+@rpc("authority", "call_local", "reliable")
+func show_popup(path: NodePath, text: String, icon: String, color: Color) -> void:
+	var target := get_node_or_null(path) as Node3D
+	if target == null:
+		return
+	var height := 2.7
+	if target is Creature:
+		height = (target as Creature).overhead.position.y + 0.75
+	var stacked := target.get_children().filter(func(c: Node) -> bool: return c.has_meta("popup")).size()
+	var badge := Node3D.new()
+	badge.set_meta("popup", true)
+	badge.position = Vector3.UP * (height + stacked * 0.95)
+	target.add_child(badge)
+	var sprite := Sprite3D.new()
+	sprite.texture = UiIcons.texture(icon, 64)
+	sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	sprite.no_depth_test = true
+	sprite.render_priority = 10
+	sprite.pixel_size = 0.009
+	sprite.modulate = color
+	sprite.position = Vector3(0, 0.32, 0)
+	badge.add_child(sprite)
+	var label := Label3D.new()
+	label.text = text
+	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	label.no_depth_test = true
+	label.render_priority = 11
+	label.pixel_size = 0.009
+	label.font_size = 40
+	label.outline_size = 12
+	label.modulate = color.lightened(0.25)
+	label.position = Vector3(0, -0.12, 0)
+	badge.add_child(label)
+	badge.scale = Vector3.ONE * 0.3
+	var tween := badge.create_tween().set_parallel()
+	tween.tween_property(badge, "scale", Vector3.ONE, 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(badge, "position:y", badge.position.y + 1.1, 2.2).set_delay(0.2).set_trans(Tween.TRANS_SINE)
+	tween.tween_property(sprite, "modulate:a", 0.0, 0.5).set_delay(1.8)
+	tween.tween_property(label, "modulate:a", 0.0, 0.5).set_delay(1.8)
+	tween.tween_property(label, "outline_modulate:a", 0.0, 0.5).set_delay(1.8)
+	tween.chain().tween_callback(badge.queue_free)
 
 
 ## Sends a HUD message to one player (ignored for the rival).

@@ -52,6 +52,11 @@ const SHAPES := {
 	"necklace": '<path d="M5 3c0 8 3 12 7 12s7-4 7-12"/><path d="M12 15l-2 3 2 3 2-3z"/>',
 	"collar": '<path d="M3 8c0-2 4-4 9-4s9 2 9 4-4 5-9 5-9-3-9-5z"/><path d="M12 13v2"/><circle cx="12" cy="18" r="2.6"/>',
 	"net": '<circle cx="10" cy="9" r="6.5"/><path d="M4.5 6.5l11 5M5 12l9.5-7.5M10 2.5v13M14.6 13.6l6.4 7.4"/>',
+	"levelup": '<path d="M12 3l7 8h-4v9H9v-9H5z" fill="#fff"/>',
+	"skull": '<path d="M12 3a7 7 0 0 0-7 7c0 2.6 1.3 4.3 3 5.2V19h8v-3.8c1.7-.9 3-2.6 3-5.2a7 7 0 0 0-7-7z"/><circle cx="9.3" cy="10.5" r="1.6" fill="#fff"/><circle cx="14.7" cy="10.5" r="1.6" fill="#fff"/><path d="M11 19v2M13 19v2"/>',
+	"flag": '<path d="M6 21V3M6 4h11l-2.5 4L17 12H6"/>',
+	"warn": '<path d="M12 3l9.5 17h-19z"/><path d="M12 9v5M12 17v.5"/>',
+	"down": '<path d="M12 21l7-8h-4V4H9v9H5z" fill="#fff"/>',
 	"menu": '<path d="M4 6h16M4 12h16M4 18h16"/>',
 	"link": '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
 }

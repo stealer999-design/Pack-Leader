@@ -153,7 +153,7 @@ func on_local_player_spawned(player: Player, world: World) -> void:
 
 
 ## Writes the local player's progress to the current slot.
-func save_now(announce := false) -> void:
+func save_now(_announce := false) -> void:
 	if slot < 0 or not is_instance_valid(_player) or not is_instance_valid(_world):
 		return
 	var party := []
@@ -186,8 +186,7 @@ func save_now(announce := false) -> void:
 	file.store_string(JSON.stringify(loaded, "\t"))
 	file.close()
 	_next_autosave_msec = Time.get_ticks_msec() + int(AUTOSAVE_INTERVAL * 1000)
-	if announce:
-		_world.hud.show_message("Game saved (slot %d)." % (slot + 1), Color(0.7, 0.9, 0.7))
+	# (Saving is quiet: no message in the feed.)
 
 
 func _current_party_signature() -> String:

@@ -297,6 +297,7 @@ func revive() -> void:
 		global_position = master_player.global_position + _follow_offset()
 	fainted = false
 	health.current = health.max_health
+	world.popup(self, "Revived!", "heart", Color(0.5, 1.0, 0.6))
 
 
 # --- Server-side actions ---------------------------------------------------------
@@ -465,10 +466,9 @@ func gain_xp(amount: int) -> void:
 		level += 1
 		_apply_level_stats()
 		health.current = health.max_health
-		world.tell(owner_id, "Your %s grew to level %d!" % [species.display_name, level], Color(0.6, 0.85, 1.0))
+		world.popup(self, "Level %d!" % level, "levelup", Color(1.0, 0.85, 0.35))
 		if PetSkills.points_for_level(level) > PetSkills.points_for_level(level - 1):
-			world.tell(owner_id, "Your %s earned a skill point! Press K to train a skill." % species.display_name,
-					Color(1.0, 0.85, 0.4))
+			world.popup(self, "+1 skill point (K)", "star", Color(1.0, 0.75, 0.3), owner_id)
 
 
 # --- AI (server only) ----------------------------------------------------------
@@ -884,8 +884,7 @@ func _on_died() -> void:
 		_pending_cast = {}
 		if is_player_pet():
 			world.play_burst.rpc(global_position, Color(0.6, 0.6, 0.65), 1.6)
-			world.tell(owner_id, "Your %s died! It can't fight or be healed until it rests at a stable. Swap in a reserve pet." \
-					% species.display_name, Color(1, 0.45, 0.4))
+			world.popup(self, "Dead: rest at a stable", "skull", Color(1, 0.45, 0.4))
 
 
 func _apply_level_stats() -> void:

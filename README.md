@@ -115,6 +115,19 @@ played in the browser".
   the stable and ends in a boss arena. Defeat the boss and the **Next level**
   portal opens at the far end; step in and everyone moves on to the next,
   harder level, and every pet gets bonus XP.
+- **Notifications where you're looking:** what happens to you and your pets
+  pops up as a small badge (an icon and a few words) over the head it's
+  about, rises and fades: **Level 5!** with a gold arrow over a pet that
+  levels up, **+1 skill point (K)**, **Dead: rest at a stable**, **Revived!**,
+  **Over-levelled: less XP**; over your tamer **Caught a Bloomling!**, where a
+  capture went (reserve or stable), **Checkpoint!**, reserve pets levelling,
+  stance changes, **No potions left**, **Too far away**; over a creature
+  **Broke free!** or **Monsters can't be tamed**. Several at once stack
+  upwards. The feed on the right is kept for the big news only (the area and
+  its boss, boss summons, a boss beaten, legendary finds, teammates going
+  down, captures and breeding by others, and replies to what you do in a shop
+  or the stable window), holds at most 4 lines and fades after a few seconds.
+  Saving is silent.
 - **Loading:** each level starts behind a short "Loading..." screen (about a
   second), while the game shows the camera everything the level can show,
   once: every effect (bolts, arrows, spells, bursts, zones, loot, coins,
