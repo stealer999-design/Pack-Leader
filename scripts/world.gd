@@ -582,11 +582,16 @@ func _start_level(number: int) -> void:
 	var base_level := levels.x
 	var level_biome := biome()
 	var spots: Array = layout.creature_spots
+	var pack_species := {}  ## Open fields: each pack ("group") is all one kind.
 	for i in spots.size():
 		var spot: Dictionary = spots[i]
 		# The first two creatures by the camp are the biome's starter species (if it has one).
 		var species: int = level_biome.starter_species if level_biome.has("starter_species") and i < 2 \
 				else SpeciesDB.pick_random_index(level_biome.species)
+		if spot.has("group"):
+			if not pack_species.has(spot.group):
+				pack_species[spot.group] = SpeciesDB.pick_random_index(level_biome.species)
+			species = pack_species[spot.group]
 		creature_spawner.spawn({
 			"species": species,
 			# Weakest by the camp, strongest near the boss.

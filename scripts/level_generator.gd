@@ -521,13 +521,14 @@ static func generate_open(level_seed: int, path: Dictionary) -> Dictionary:
 	for corner in [Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1)]:
 		rocks.append({"pos": arena_center + Vector3(corner.x * 14.0, 0.0, corner.y * 12.0), "size": Vector3(3.0, 3.5, 3.0)})
 
-	# Creature packs: the path level's packs (spots that shared a depth), each
-	# around its own point, the deeper ones further right.
-	var packs := {}
-	for spot: Dictionary in path.creature_spots:
-		packs[spot.depth] = packs.get(spot.depth, 0) + 1
+	# Creature packs: as many creatures as the path level had, in packs of
+	# PACK_MIN-PACK_MAX, each pack around its own point (and all one kind: see
+	# World._start_level, which picks a species per "group"). Deeper packs,
+	# further right, are tougher.
+	var sizes := pack_sizes(rng, path.creature_spots.size())
 	var spots: Array[Dictionary] = []
-	for size: int in packs.values():
+	for group in sizes.size():
+		var size: int = sizes[group]
 		var home: Vector3 = sample.call(8.0, 14.0)
 		if home == Vector3.INF:
 			home = sample.call(6.0, 6.0)
@@ -538,7 +539,7 @@ static func generate_open(level_seed: int, path: Dictionary) -> Dictionary:
 		for k in size:
 			var angle: float = TAU * k / size + rng.randf_range(-0.3, 0.3)
 			var pos := home + Vector3(cos(angle), 0.0, sin(angle)) * rng.randf_range(1.5, 4.5)
-			spots.append({"pos": pos, "depth": depth})
+			spots.append({"pos": pos, "depth": depth, "group": group})
 
 	# Vases: the same number (and as many gold ones), spread out.
 	var crates: Array[Dictionary] = []
@@ -571,6 +572,26 @@ static func generate_open(level_seed: int, path: Dictionary) -> Dictionary:
 		"biome": path.biome,
 	})
 	return layout
+
+
+const PACK_MIN := 3
+const PACK_MAX := 5
+
+
+## Splits `total` creatures into packs of PACK_MIN-PACK_MAX (a smaller total
+## makes one smaller pack).
+static func pack_sizes(rng: RandomNumberGenerator, total: int) -> Array[int]:
+	var sizes: Array[int] = []
+	var left := total
+	while left > 0:
+		var size := rng.randi_range(PACK_MIN, PACK_MAX)
+		if left <= PACK_MAX:
+			size = left
+		elif left - size < PACK_MIN:
+			size = left - PACK_MIN  # leave a full pack for last
+		sizes.append(size)
+		left -= size
+	return sizes
 
 
 ## The field's edge: a rounded box (a superellipse) with slow waves along it,

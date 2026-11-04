@@ -124,9 +124,10 @@ played in the browser".
   the camera) and west side (towards the camp). The town holds the
   **lemonade stand** (walking into town is your checkpoint), a stable, the
   bat shop and the breeder; no creatures are placed inside it. A field has
-  **exactly as many** creature packs, vases (and gold vases) and obstacles as
-  the path level from the same seed would, just spread out over the field,
-  clear of the camp, the arena and the town.
+  **exactly as many** monsters, vases (and gold vases) and obstacles as the
+  path level from the same seed would, just spread out over the field, clear
+  of the camp, the arena and the town. The monsters come in **packs of 3 to
+  5**, each pack **all one kind** (a pack of skeletons, a pack of zombies...).
 - **Travel:** beside it stands the violet **Travel** portal, always open (even
   before the boss is beaten). Step into it to pick any area you've reached, to
   catch the pets that live there, or to level your pets somewhere easier
