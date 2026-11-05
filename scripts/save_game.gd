@@ -20,6 +20,8 @@ const AUTOSAVE_INTERVAL := 20.0  ## Seconds of real time.
 var slot := -1
 ## The data loaded from `slot` ({} for a new game).
 var loaded := {}
+## Tutorial tips already shown in this save (key -> true), so each shows once.
+var _tutorials := {}
 
 var _player: Player
 var _world: World
@@ -66,6 +68,7 @@ func delete_slot(index: int) -> void:
 	DirAccess.remove_absolute(slot_path(index))
 	if index == slot:
 		loaded = {}
+		_tutorials = {}
 
 
 func first_empty_slot() -> int:
@@ -91,6 +94,8 @@ func latest_slot() -> int:
 func choose_slot(index: int) -> void:
 	slot = index
 	loaded = read_slot(index)
+	var seen = loaded.get("tutorials", {})
+	_tutorials = seen.duplicate() if seen is Dictionary else {}
 
 
 ## One line describing a slot, for the title screen.
@@ -152,6 +157,16 @@ func on_local_player_spawned(player: Player, world: World) -> void:
 		save_now(true))
 
 
+## True if the tutorial tip `key` has been shown in this save.
+func tutorial_seen(key: String) -> bool:
+	return _tutorials.get(key, false)
+
+
+## Remembers that the tip `key` has been shown (saved with the game).
+func mark_tutorial(key: String) -> void:
+	_tutorials[key] = true
+
+
 ## Writes the local player's progress to the current slot.
 func save_now(_announce := false) -> void:
 	if slot < 0 or not is_instance_valid(_player) or not is_instance_valid(_world):
@@ -164,6 +179,7 @@ func save_now(_announce := false) -> void:
 	var level := maxi(maxi(_world.level_number, _world.furthest_level), int(loaded.get("level", 0)))
 	loaded = {
 		"version": VERSION,
+		"tutorials": _tutorials.duplicate(),
 		"name": _player.display_name,
 		"saved_at": Time.get_unix_time_from_system(),
 		"level": level,

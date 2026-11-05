@@ -471,6 +471,10 @@ func request_attack(aim: Vector3) -> void:
 				damage = maxf(minf(damage, enemy.health.current - 1.0), 0.0)
 			enemy.receive_damage(damage, self, to.normalized() * knockback)
 			world.play_bonk.rpc(enemy.global_position + Vector3.UP * (enemy.radius() * 2.0 + 0.4))
+			if enemy is Creature and enemy.is_wild() and not enemy.is_monster() and enemy.health.current <= 1.0 \
+					and not enemy.has_meta("bat_down_told"):
+				enemy.set_meta("bat_down_told", true)
+				_bat_downed.rpc_id(peer_id, enemy.species.display_name)
 	for crate in world.crates_near(global_position, attack_range):
 		var to := crate.global_position - global_position
 		to.y = 0.0
@@ -1013,6 +1017,18 @@ func _sent_by_server() -> bool:
 
 
 # --- Server -> clients -------------------------------------------------------------
+
+## The server tells this tamer's player their bat has left a wild creature
+## on 1 HP: the first time ever (per save), a tip explains capturing.
+@rpc("any_peer", "call_local", "reliable")
+func _bat_downed(species_name: String) -> void:
+	if not _sent_by_server() or not is_multiplayer_authority() or SaveGame.tutorial_seen("bat_down"):
+		return
+	SaveGame.mark_tutorial("bat_down")
+	world.hud.show_tutorial("You weakened a %s!" % species_name,
+			"Your bat can't kill the pets and it is now at 1HP. Press E to throw it a treat and he will now be your friend.",
+			func() -> void: try_capture())
+
 
 ## Everyone sees the tamer toss the treat.
 @rpc("any_peer", "call_local", "unreliable")

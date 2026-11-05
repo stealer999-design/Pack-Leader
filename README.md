@@ -115,6 +115,12 @@ played in the browser".
   the stable and ends in a boss arena. Defeat the boss and the **Next level**
   portal opens at the far end; step in and everyone moves on to the next,
   harder level, and every pet gets bonus XP.
+- **First-capture tip:** the first time your bat knocks a creature you could
+  tame down to 1 HP, the game pauses (solo; in multiplayer it keeps running)
+  with a tip: *"Your bat can't kill the pets and it is now at 1HP. Press E to
+  throw it a treat and he will now be your friend."* Press E to close it and
+  throw the treat straight away, or click Got it (Enter and Esc close it too).
+  It shows once per save.
 - **Capturing with treats:** every wild creature you could tame shows its
   **catch chance** over its name ("Catch 57%", grey at 0%, red to yellow to
   green as it rises; it counts your Lucky Lemonade). Pressing E (or the

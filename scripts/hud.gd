@@ -154,6 +154,81 @@ func _process(delta: float) -> void:
 			_refresh_stable()
 
 
+## A tutorial tip in a window in the middle of the screen. Solo games pause
+## behind it (the other players' games can't be paused). Closed with its
+## button, Enter, Esc, or E, which also runs `on_e` (e.g. throw the treat).
+func show_tutorial(title_text: String, body: String, on_e: Callable = Callable()) -> void:
+	var panel := TutorialPanel.new()
+	panel.name = "Tutorial"
+	panel.process_mode = Node.PROCESS_MODE_ALWAYS
+	panel.theme = UiTheme.get_theme()
+	panel.add_theme_stylebox_override("panel", UiTheme.panel_style())
+	panel.set_anchors_preset(Control.PRESET_CENTER)
+	panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	panel.grow_vertical = Control.GROW_DIRECTION_BOTH
+	panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(panel)
+	var margin := MarginContainer.new()
+	for side in ["left", "right", "top", "bottom"]:
+		margin.add_theme_constant_override("margin_" + side, 22)
+	panel.add_child(margin)
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 14)
+	margin.add_child(box)
+	var title := Label.new()
+	title.text = title_text
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 24)
+	title.add_theme_color_override("font_color", UiTheme.ACCENT)
+	box.add_child(title)
+	UiIcons.title(title, "net", UiTheme.ACCENT)
+	var text := Label.new()
+	text.text = body
+	text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	text.custom_minimum_size = Vector2(460, 0)
+	text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	text.add_theme_font_size_override("font_size", 18)
+	box.add_child(text)
+	var button := Button.new()
+	button.text = "Got it   [E]"
+	button.focus_mode = Control.FOCUS_NONE
+	button.custom_minimum_size = Vector2(200, 40)
+	button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	UiIcons.button(button, "play")
+	box.add_child(button)
+	var solo := multiplayer.multiplayer_peer is OfflineMultiplayerPeer
+	if solo:
+		get_tree().paused = true
+	var close := func(run_e: bool) -> void:
+		if not is_instance_valid(panel):
+			return
+		panel.queue_free()
+		if solo:
+			get_tree().paused = false
+		if run_e and on_e.is_valid():
+			on_e.call()
+	button.pressed.connect(close.bind(false))
+	panel.close = close
+
+
+## The tutorial window: keeps listening while the game is paused behind it.
+## E closes it and does its action; Enter or Esc just close it.
+class TutorialPanel:
+	extends PanelContainer
+
+	var close: Callable
+
+	func _input(event: InputEvent) -> void:
+		if not close.is_valid() or not event.is_pressed() or event.is_echo():
+			return
+		if event.is_action_pressed("capture"):
+			get_viewport().set_input_as_handled()
+			close.call(true)
+		elif event.is_action_pressed("ui_cancel") or event.is_action_pressed("ui_accept"):
+			get_viewport().set_input_as_handled()
+			close.call(false)
+
+
 func show_message(text: String, color: Color) -> void:
 	var label := Label.new()
 	label.text = text
