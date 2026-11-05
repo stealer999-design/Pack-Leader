@@ -664,6 +664,7 @@ func _treat_landed(creature_id: int, success: bool) -> void:
 		world.popup(c, "Broke free!", "net", Color(1, 0.6, 0.4), peer_id)
 		return
 	world.play_heart.rpc(c.global_position + Vector3.UP * (c.overhead.position.y + 0.6))
+	_first_friend.rpc_id(peer_id, c.species.display_name)
 	world.popup(self, "Caught a %s!" % c.species.display_name, "net", Color(0.6, 1.0, 0.65))
 	if party_is_full() and _first_empty_reserve() >= 0:
 		reserve[_first_empty_reserve()] = c.to_data()
@@ -1028,6 +1029,22 @@ func _bat_downed(species_name: String) -> void:
 	world.hud.show_tutorial("You weakened a %s!" % species_name,
 			"Your bat can't kill the pets and it is now at 1HP. Press E to throw it a treat and he will now be your friend.",
 			func() -> void: try_capture())
+
+
+## The server tells this tamer's player they caught a creature: the first
+## time ever (per save), once the heart has popped up, a tip explains the
+## pet stance.
+@rpc("any_peer", "call_local", "reliable")
+func _first_friend(species_name: String) -> void:
+	if not _sent_by_server() or not is_multiplayer_authority() or SaveGame.tutorial_seen("first_friend"):
+		return
+	SaveGame.mark_tutorial("first_friend")
+	await get_tree().create_timer(1.2).timeout  # let the heart show first
+	if not is_inside_tree():
+		return
+	world.hud.show_tutorial("%s is your first friend!" % species_name,
+			"Now that you have your first friend, you can set him to aggressive or passive with T. They will fight along side you to defeat your next foe, or stand by while you befriend your next pet.",
+			Callable(), "heart")
 
 
 ## Everyone sees the tamer toss the treat.

@@ -157,7 +157,9 @@ func _process(delta: float) -> void:
 ## A tutorial tip in a window in the middle of the screen. Solo games pause
 ## behind it (the other players' games can't be paused). Closed with its
 ## button, Enter, Esc, or E, which also runs `on_e` (e.g. throw the treat).
-func show_tutorial(title_text: String, body: String, on_e: Callable = Callable()) -> void:
+func show_tutorial(title_text: String, body: String, on_e: Callable = Callable(), icon := "net") -> void:
+	if is_instance_valid(get_node_or_null("Tutorial")):
+		get_node("Tutorial").free()  # one tip at a time
 	var panel := TutorialPanel.new()
 	panel.name = "Tutorial"
 	panel.process_mode = Node.PROCESS_MODE_ALWAYS
@@ -181,7 +183,7 @@ func show_tutorial(title_text: String, body: String, on_e: Callable = Callable()
 	title.add_theme_font_size_override("font_size", 24)
 	title.add_theme_color_override("font_color", UiTheme.ACCENT)
 	box.add_child(title)
-	UiIcons.title(title, "net", UiTheme.ACCENT)
+	UiIcons.title(title, icon, UiTheme.ACCENT)
 	var text := Label.new()
 	text.text = body
 	text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART

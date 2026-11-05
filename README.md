@@ -120,7 +120,11 @@ played in the browser".
   with a tip: *"Your bat can't kill the pets and it is now at 1HP. Press E to
   throw it a treat and he will now be your friend."* Press E to close it and
   throw the treat straight away, or click Got it (Enter and Esc close it too).
-  It shows once per save.
+  It shows once per save. Then, a moment after your **first capture** (once
+  its heart has popped up), a second tip pauses the game: *"Now that you have
+  your first friend, you can set him to aggressive or passive with T. They
+  will fight along side you to defeat your next foe, or stand by while you
+  befriend your next pet."* Also once per save.
 - **Capturing with treats:** every wild creature you could tame shows its
   **catch chance** over its name ("Catch 57%", grey at 0%, red to yellow to
   green as it rises; it counts your Lucky Lemonade). Pressing E (or the
