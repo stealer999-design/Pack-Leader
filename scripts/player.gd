@@ -1060,7 +1060,7 @@ func _reserve_tip(species_name: String) -> void:
 	if not is_inside_tree():
 		return
 	world.hud.show_tutorial("%s joined your reserve" % species_name,
-			"Your party holds 3 pets, so your new friend joined your reserve. You can carry 3 more pets in reserve, and they earn experience just like your party.\n\nSwap pets at any time, even in the middle of a fight: open the inventory (I), go to the Pets tab, and drag a reserve pet onto a party pet.\n\nIf a pet dies it can't fight or be healed until you visit a stable, so swap in a reserve pet to keep going. Once your reserve is full too, new friends go to the stable.",
+			"Your party holds 3 pets, so your new friend joined your reserve. You can carry 3 more pets in reserve, and they earn experience just like your party.\n\nSwap pets at any time, even in the middle of a fight: open the inventory (I), go to the Pets tab, and drag a reserve pet onto a party pet.\n\nIf a pet dies it can't fight or be healed until you visit a stable, so swap in a reserve pet to keep going. Once your reserve is full, new pets will go to the stable.",
 			Callable(), "paw")
 
 
