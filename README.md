@@ -124,7 +124,12 @@ played in the browser".
   its heart has popped up), a second tip pauses the game: *"Now that you have
   your first friend, you can set him to aggressive or passive with T. They
   will fight along side you to defeat your next foe, or stand by while you
-  befriend your next pet."* Also once per save.
+  befriend your next pet."* Also once per save. And the first time a capture
+  goes to your **reserve** because your party is full (your 4th pet, in a new
+  game), a third tip explains the reserve: it carries 3 more pets that level
+  up too, you swap them in the inventory's Pets tab at any time (even
+  mid-fight), dead pets need a stable, and once the reserve is full new
+  friends go to the stable.
 - **Capturing with treats:** every wild creature you could tame shows its
   **catch chance** over its name ("Catch 57%", grey at 0%, red to yellow to
   green as it rises; it counts your Lucky Lemonade). Pressing E (or the

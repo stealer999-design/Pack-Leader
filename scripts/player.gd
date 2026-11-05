@@ -671,6 +671,7 @@ func _treat_landed(creature_id: int, success: bool) -> void:
 		c.queue_free()
 		_push_stable()
 		notify("Sent to your reserve", "paw", Color(0.6, 0.85, 1.0))
+		_reserve_tip.rpc_id(peer_id, c.species.display_name)
 	elif party_is_full():
 		stable[_first_empty_bed()] = c.to_data()
 		c.queue_free()
@@ -1045,6 +1046,22 @@ func _first_friend(species_name: String) -> void:
 	world.hud.show_tutorial("%s is your first friend!" % species_name,
 			"Now that you have your first friend, you can set him to aggressive or passive with T. They will fight along side you to defeat your next foe, or stand by while you befriend your next pet.",
 			Callable(), "heart")
+
+
+## The server tells this tamer's player a capture went to the reserve (the
+## party was full: in a new game, the 4th pet). The first time ever (per
+## save), a tip explains the reserve.
+@rpc("any_peer", "call_local", "reliable")
+func _reserve_tip(species_name: String) -> void:
+	if not _sent_by_server() or not is_multiplayer_authority() or SaveGame.tutorial_seen("reserve"):
+		return
+	SaveGame.mark_tutorial("reserve")
+	await get_tree().create_timer(1.2).timeout  # let the heart show first
+	if not is_inside_tree():
+		return
+	world.hud.show_tutorial("%s joined your reserve" % species_name,
+			"Your party holds 3 pets, so your new friend joined your reserve. You can carry 3 more pets in reserve, and they earn experience just like your party.\n\nSwap pets at any time, even in the middle of a fight: open the inventory (I), go to the Pets tab, and drag a reserve pet onto a party pet.\n\nIf a pet dies it can't fight or be healed until you visit a stable, so swap in a reserve pet to keep going. Once your reserve is full too, new friends go to the stable.",
+			Callable(), "paw")
 
 
 ## Everyone sees the tamer toss the treat.
