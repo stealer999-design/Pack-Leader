@@ -217,8 +217,11 @@ func _physics_process(delta: float) -> void:
 		velocity = Vector3.ZERO
 		return
 
-	var move_dir := _camera_relative(Input.get_vector("move_left", "move_right", "move_up", "move_down"))
-	if Input.is_action_just_pressed("dash") and _dash_cooldown_timer <= 0.0:
+	# While a text box has the keyboard (naming a pet), keys are letters, not controls.
+	var typing := world.hud.is_typing()
+	var move_dir := Vector3.ZERO if typing \
+			else _camera_relative(Input.get_vector("move_left", "move_right", "move_up", "move_down"))
+	if not typing and Input.is_action_just_pressed("dash") and _dash_cooldown_timer <= 0.0:
 		_dash_dir = move_dir if move_dir != Vector3.ZERO else _aim_dir
 		_dash_timer = dash_duration
 		_dash_cooldown_timer = dash_cooldown
@@ -235,6 +238,8 @@ func _physics_process(delta: float) -> void:
 
 	velocity.y = 0.0 if is_on_floor() else velocity.y - _gravity * delta
 	move_and_slide()
+	if typing:
+		return
 	model.rotation.y = atan2(-_aim_dir.x, -_aim_dir.z)
 
 	if Input.is_action_just_pressed("potion"):
@@ -838,6 +843,9 @@ static func _clean_pet(entry) -> Dictionary:
 	var collar := ItemDB.clean(entry.get("collar", {}))
 	if ItemDB.fits_pet(collar, SpeciesDB.get_species(species)):
 		pet.collar = collar
+	var given := Creature.clean_name(entry.get("name", ""))
+	if given != "":
+		pet["name"] = given
 	if entry.get("dead", false):
 		pet["dead"] = true
 	elif entry.has("health"):
@@ -857,6 +865,31 @@ func request_stable_move(from_kind: String, from_index: int, to_kind: String, to
 		return
 	_rest_at_stable()
 	_swap_places(from_kind, from_index, to_kind, to_index)
+	_push_stable()
+
+
+## Gives the pet at a place (party slot, reserve place or hay bed) a name, or
+## takes it away ("" = go by its species again). Anywhere, any time.
+@rpc("any_peer", "call_local", "reliable")
+func request_rename(kind: String, index: int, new_name: String) -> void:
+	if not _sent_by_owner() or not _valid_place(kind, index):
+		return
+	var given := Creature.clean_name(new_name)
+	if kind == "party":
+		var pet := world.get_party_pet(peer_id, index)
+		if pet == null:
+			return
+		pet.nickname = given
+		notify(("Named %s" % given) if given != "" else "Name cleared", "heart", Color(1.0, 0.7, 0.85))
+		return
+	var list := reserve if kind == "reserve" else stable
+	var data: Dictionary = list[index]
+	if data.is_empty():
+		return
+	if given != "":
+		data["name"] = given
+	else:
+		data.erase("name")
 	_push_stable()
 
 

@@ -231,6 +231,50 @@ class TutorialPanel:
 			close.call(false)
 
 
+## True while a text box has the keyboard (the player is typing a pet's name).
+func is_typing() -> bool:
+	return is_instance_valid(_rename_dialog) and _rename_dialog.visible
+
+
+var _rename_dialog: Window  ## The open rename box, if any (a window of its own).
+
+
+## The rename box for the pet in `slot` (party, reserve or a hay bed).
+func open_rename(slot: PetSlot) -> void:
+	if slot.pet.is_empty():
+		return
+	var species := SpeciesDB.get_species(slot.pet.species)
+	var dialog := ConfirmationDialog.new()
+	dialog.title = "Name your %s" % species.display_name
+	dialog.ok_button_text = "Name it"
+	dialog.theme = UiTheme.get_theme()
+	var box := VBoxContainer.new()
+	dialog.add_child(box)
+	var hint := Label.new()
+	hint.text = "Up to %d characters. Leave it empty to call it a %s again." % [Creature.MAX_NAME, species.display_name]
+	box.add_child(hint)
+	var field := LineEdit.new()
+	field.max_length = Creature.MAX_NAME
+	field.placeholder_text = species.display_name
+	field.text = slot.pet.get("name", "")
+	field.custom_minimum_size = Vector2(320, 0)
+	box.add_child(field)
+	add_child(dialog)
+	_rename_dialog = dialog
+	var kind := slot.kind
+	var index := slot.index
+	dialog.confirmed.connect(func() -> void:
+		_player.request_rename.rpc_id(1, kind, index, field.text))
+	field.text_submitted.connect(func(_text: String) -> void:
+		dialog.get_ok_button().pressed.emit())
+	dialog.visibility_changed.connect(func() -> void:
+		if not dialog.visible:
+			dialog.queue_free())
+	dialog.popup_centered()
+	field.grab_focus()
+	field.select_all()
+
+
 func show_message(text: String, color: Color) -> void:
 	var label := Label.new()
 	label.text = text
@@ -559,6 +603,7 @@ func _new_slot(kind: String, index: int, min_size: Vector2) -> PetSlot:
 	slot.index = index
 	slot.custom_minimum_size = min_size
 	slot.dropped.connect(_on_slot_dropped)
+	slot.rename_requested.connect(open_rename)
 	return slot
 
 
@@ -569,14 +614,16 @@ func _refresh_stable() -> void:
 		var pet := _player.world.get_party_pet(_player.peer_id, slot)
 		_party_slots[slot].pet = {
 			"species": pet.species_index, "level": pet.level, "fainted": pet.fainted, "skills": pet.skill_ranks,
+			"name": pet.nickname,
 		} if pet else {}
 	for bed in Player.MAX_STABLE:
 		var data: Dictionary = _player.stable[bed] if bed < _player.stable.size() else {}
-		_bed_slots[bed].pet = {"species": data.species, "level": data.level} if not data.is_empty() else {}
+		_bed_slots[bed].pet = {"species": data.species, "level": data.level, "name": data.get("name", "")} \
+				if not data.is_empty() else {}
 	for i in Player.MAX_RESERVE:
 		var data: Dictionary = _player.reserve[i] if i < _player.reserve.size() else {}
-		_reserve_slots[i].pet = {"species": data.species, "level": data.level, "fainted": data.get("dead", false)} \
-				if not data.is_empty() else {}
+		_reserve_slots[i].pet = {"species": data.species, "level": data.level, "fainted": data.get("dead", false),
+				"name": data.get("name", "")} if not data.is_empty() else {}
 	stable_title.text = "Hay beds  %d / %d" % [_player.stable_count(), Player.MAX_STABLE]
 
 
@@ -596,7 +643,7 @@ func _on_slot_dropped(from: PetSlot, to: PetSlot) -> void:
 
 func _party_signature() -> String:
 	return ",".join(_player.world.get_pets(_player.peer_id).map(
-			func(p: Creature) -> String: return "%s:%d:%d:%s" % [p.name, p.party_slot, p.level, p.fainted]))
+			func(p: Creature) -> String: return "%s:%d:%d:%s:%s" % [p.name, p.party_slot, p.level, p.fainted, p.nickname]))
 
 
 # --- Always-on HUD -------------------------------------------------------------------
@@ -656,7 +703,7 @@ func _update_hover() -> void:
 		hover_label.text = "Wild %s  Lv%d   —   capture chance %d%%  [E]%s   ·   send pets  [RMB]" \
 				% [c.species.display_name, c.level, roundi(c.capture_chance(_player.capture_boost()) * 100.0), where]
 	elif c.owner_id == _player.peer_id:
-		hover_label.text = "Your %s  Lv%d%s" % [c.species.display_name, c.level,
+		hover_label.text = "Your %s  Lv%d%s" % [c.title(), c.level,
 				"  ·  " + c.species.pet_class().capitalize() if c.species.pet_class() != "" else ""]
 		var left := PetSkills.points_left(c.level, c.skill_ranks)
 		if left > 0:
@@ -664,7 +711,7 @@ func _update_hover() -> void:
 	else:
 		var other = _player.world.get_tamer(c.owner_id)  # Player or Rival
 		var owner_name: String = ("Rival " + other.display_name if c.is_rival_pet() else other.display_name) if other else "?"
-		hover_label.text = "%s's %s  Lv%d" % [owner_name, c.species.display_name, c.level]
+		hover_label.text = "%s's %s  Lv%d" % [owner_name, c.title(), c.level]
 
 
 func _rebuild_party() -> void:

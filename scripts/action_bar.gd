@@ -253,7 +253,7 @@ func _process(_delta: float) -> void:
 		slot.cooldown_text = "%d" % ceili(pet.ability_cooldown_left()) if slot.cooldown > 0.0 else ""
 		slot.highlight = ability != null and slot.cooldown <= 0.0 and not pet.fainted
 		slot.highlight_color = pet.species.color.lightened(0.4)
-		var tip := "%s  ·  Level %d  ·  %s\nHealth %d / %d" % [pet.species.display_name, pet.level,
+		var tip := "%s  ·  Level %d  ·  %s\nHealth %d / %d" % [pet.title(), pet.level,
 				pet.species.pet_class().capitalize(),
 				ceili(pet.health.current), roundi(pet.health.max_health)]
 		if ability:
@@ -262,7 +262,7 @@ func _process(_delta: float) -> void:
 			tip += "\n\n%d skill point%s to spend (K)." % [points, "" if points == 1 else "s"]
 		if pet.fainted:
 			tip = "%s  ·  Level %d  ·  DEAD\nIt can't fight or be healed until it rests at a stable.\nSwap in a living pet from your reserve (I, Pets tab)." \
-					% [pet.species.display_name, pet.level]
+					% [pet.title(), pet.level]
 		else:
 			tip += "\nClick to open the skills. Swap pets in the inventory (I, Pets tab)."
 		slot.tooltip_text = tip

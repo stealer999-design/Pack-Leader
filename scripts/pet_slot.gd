@@ -8,6 +8,8 @@ extends Control
 signal dropped(from: PetSlot, to: PetSlot)
 ## Clicked (only "pick" and "parent" slots, in the breeder window).
 signal clicked(slot: PetSlot)
+## Right-clicked (a pet in the party, reserve or a hay bed): give it a name.
+signal rename_requested(slot: PetSlot)
 
 ## "bed", "party", "reserve", "release", or "preview" (the picture that follows the mouse while dragging);
 ## in the breeder window: "pick" (a pet to choose), "parent" or "result".
@@ -39,6 +41,11 @@ func _ready() -> void:
 
 
 func _gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT \
+			and not pet.is_empty() and (kind == "party" or kind == "reserve" or kind == "bed"):
+		accept_event()
+		rename_requested.emit(self)
+		return
 	if (kind == "pick" or kind == "parent") and event is InputEventMouseButton and event.pressed \
 			and event.button_index == MOUSE_BUTTON_LEFT:
 		accept_event()
@@ -99,9 +106,10 @@ func _draw() -> void:
 		_draw_pet(center, minf(size.x, size.y) * (0.26 if kind != "preview" else 0.38), kind == "bed")
 		if kind != "preview":
 			var species := SpeciesDB.get_species(pet.species)
-			var label := "%s  Lv%d" % [species.display_name, pet.level]
+			var shown: String = pet.get("name", "") if pet.get("name", "") != "" else species.display_name
+			var label := "%s  Lv%d" % [shown, pet.level]
 			if pet.get("fainted", false) and (kind == "party" or kind == "reserve" or kind == "bed"):
-				label = "%s  ·  dead" % species.display_name
+				label = "%s  ·  dead" % shown
 			var small := kind == "pick" or kind == "reserve"
 			if kind == "reserve":
 				label = "Lv%d%s" % [pet.level, "  dead" if pet.get("fainted", false) else ""]
@@ -353,6 +361,8 @@ func _tooltip() -> String:
 		return "Empty. Drag a pet here." if kind != "release" else "Drop a pet here to release it into the wild."
 	var species := SpeciesDB.get_species(pet.species)
 	var text := "%s  Lv%d" % [species.display_name, pet.level]
+	if pet.get("name", "") != "":
+		text = "%s  (%s)  Lv%d" % [pet.name, species.display_name, pet.level]
 	if species.pet_class() == "wizard":
 		text += "  ·  Wizard (ranged magic attacks; its ability is a spell)"
 	elif species.is_archer():
@@ -378,4 +388,4 @@ func _tooltip() -> String:
 		text = "DEAD: it rests here at the stable and is back on its feet as soon as you're near it.\n\n" + text
 	if kind == "reserve":
 		text += "\n\nIn your reserve: it travels with you and can be swapped in at any time from the action bar."
-	return text + ("\n\nDrag to move it." if kind == "bed" or kind == "party" or kind == "reserve" else "")
+	return text + ("\n\nDrag to move it. Right-click to rename it." if kind == "bed" or kind == "party" or kind == "reserve" else "")

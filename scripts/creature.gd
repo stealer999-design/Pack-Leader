@@ -37,6 +37,14 @@ var collar := {}:
 		if is_node_ready():
 			_show_collar()
 var _collar_model: Node3D
+## A name its tamer gave it ("" = none: it goes by its species). Replicated.
+var nickname := "":
+	set(v):
+		nickname = v
+		if is_node_ready():
+			_refresh_label()
+## The longest name a pet can be given.
+const MAX_NAME := 16
 var home := Vector3.ZERO
 
 # Replicated state.
@@ -308,6 +316,8 @@ func ability_cooldown_fraction() -> float:
 ## Data needed to recreate this pet later (used by the stable).
 func to_data() -> Dictionary:
 	var data := {"species": species_index, "level": level, "xp": xp, "skills": skill_ranks.duplicate()}
+	if nickname != "":
+		data["name"] = nickname
 	if not collar.is_empty():
 		data.collar = collar.duplicate()
 	if fainted and is_player_pet():
@@ -988,10 +998,29 @@ func _apply_faint() -> void:
 	_material.albedo_color = species.color.darkened(0.6) if fainted else species.color
 
 
+## What the pet is called: its name if it has one, else its species.
+func title() -> String:
+	return nickname if nickname != "" else species.display_name
+
+
+## A name made safe: no control characters or line breaks, trimmed, at most
+## MAX_NAME characters ("" = no name).
+static func clean_name(raw) -> String:
+	if not raw is String:
+		return ""
+	var out := ""
+	for ch in (raw as String):
+		var code := ch.unicode_at(0)
+		out += ch if code >= 32 and code != 127 else " "  # line breaks and tabs become spaces
+	while out.contains("  "):
+		out = out.replace("  ", " ")
+	return out.strip_edges().left(MAX_NAME).strip_edges()
+
+
 func _refresh_label() -> void:
 	if species == null:
 		return
-	name_label.text = "%s  Lv%d" % [species.display_name, level]
+	name_label.text = "%s  Lv%d" % [title(), level]
 	var master_player = world.get_tamer(owner_id) if world and not is_wild() else null  # Player or Rival
 	name_label.modulate = master_player.color.lightened(0.3) if master_player else Color.WHITE
 

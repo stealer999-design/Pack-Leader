@@ -433,6 +433,12 @@ played in the browser".
   top level). A pet more than 2 levels above what it beats gets less XP: 20%
   less per extra level, down to a tenth (it tells you once per area), so to
   keep levelling, move on.
+- **Naming pets:** right-click a pet's portrait to give it a name (up to 16
+  characters) in your party or reserve (inventory, Pets tab) or anywhere in
+  the stable window (party, reserve or hay beds). Its name shows over its
+  head, on its portraits, in the skill window and tooltips (with its species
+  in brackets), follows it through swaps, the stable and saves, and is seen
+  by everyone in multiplayer. Clear the box to call it by its species again.
 - **Death:** a pet that runs out of health **dies**: it lies there, can't
   fight, can't be healed (not by potions, abilities or passive healing) and
   can't be swapped back into the party until it **rests at a stable**. Swap

@@ -127,6 +127,7 @@ func _init() -> void:
 		portrait.index = i
 		portrait.custom_minimum_size = Vector2(100, 84)
 		portrait.dropped.connect(_on_pet_dropped)
+		portrait.rename_requested.connect(func(slot: PetSlot) -> void: player.world.hud.open_rename(slot))
 		row.add_child(portrait)
 		var collar := ItemSlot.new()
 		collar.equip_slot = "collar"
@@ -160,6 +161,7 @@ func _init() -> void:
 		portrait.index = i
 		portrait.custom_minimum_size = Vector2(96, 84)
 		portrait.dropped.connect(_on_pet_dropped)
+		portrait.rename_requested.connect(func(slot: PetSlot) -> void: player.world.hud.open_rename(slot))
 		cell.add_child(portrait)
 		var label := Label.new()
 		label.custom_minimum_size = Vector2(96, 0)
@@ -304,7 +306,7 @@ func _pets_data() -> String:
 	var out := []
 	for i in Player.MAX_PARTY:
 		var pet := player.world.get_party_pet(player.peer_id, i) if is_instance_valid(player) else null
-		out.append([pet.species_index, pet.level, pet.fainted, pet.collar] if pet else [])
+		out.append([pet.species_index, pet.level, pet.fainted, pet.collar, pet.nickname] if pet else [])
 	if is_instance_valid(player):
 		out.append(player.reserve)
 	return str(out)
@@ -316,7 +318,7 @@ func _refresh_pets() -> void:
 		var row: Dictionary = _pet_rows[i]
 		var pet := player.world.get_party_pet(player.peer_id, i)
 		row.portrait.pet = {"species": pet.species_index, "level": pet.level, "fainted": pet.fainted,
-				"skills": pet.skill_ranks} if pet else {}
+				"skills": pet.skill_ranks, "name": pet.nickname} if pet else {}
 		row.collar.locked = pet == null
 		row.collar.pet_species = pet.species if pet else null
 		row.collar.item = pet.collar if pet else {}
@@ -337,7 +339,7 @@ func _refresh_pets() -> void:
 		var data: Dictionary = player.reserve[i] if i < player.reserve.size() else {}
 		var dead: bool = data.get("dead", false)
 		row.portrait.pet = {} if data.is_empty() else {"species": data.species, "level": data.level, "fainted": dead,
-				"skills": data.get("skills", PetSkills.empty_ranks())}
+				"skills": data.get("skills", PetSkills.empty_ranks()), "name": data.get("name", "")}
 		if data.is_empty():
 			row.label.text = "empty"
 			row.label.modulate = UiTheme.TEXT_DIM
