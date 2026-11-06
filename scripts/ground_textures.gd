@@ -28,7 +28,9 @@ static func material(style: String, color: Color) -> StandardMaterial3D:
 	var key := "%s/%s" % [style, color.to_html(false)]
 	if not _cache.has(key):
 		var mat := StandardMaterial3D.new()
-		mat.albedo_texture = ImageTexture.create_from_image(_paint(style, color))
+		var image := _paint(style, color)
+		mat.albedo_texture = ImageTexture.create_from_image(image)
+		with_bumps(mat, image, 5.0)
 		mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 		mat.uv1_triplanar = true
 		mat.uv1_world_triplanar = true
@@ -36,6 +38,18 @@ static func material(style: String, color: Color) -> StandardMaterial3D:
 		mat.roughness = 0.95
 		_cache[key] = mat
 	return _cache[key]
+
+
+## Gives a painted material bumps from its own paint (darker = lower), so the
+## ground, stones, shingles and planks catch the light (see ModelLook).
+static func with_bumps(mat: StandardMaterial3D, image: Image, strength: float) -> void:
+	var bumps := image.duplicate() as Image
+	bumps.bump_map_to_normal_map(strength)
+	bumps.generate_mipmaps()
+	mat.normal_enabled = true
+	mat.normal_texture = ImageTexture.create_from_image(bumps)
+	mat.normal_scale = 0.9
+	mat.set_meta("real", true)
 
 
 static func _paint(style: String, color: Color) -> Image:

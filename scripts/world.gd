@@ -1004,6 +1004,8 @@ func _build_level() -> void:
 	travel_portal.visible = true
 	if is_crossroads():
 		_build_hub_portals()
+	ModelLook.apply(level_root)  # walls, buildings, fences, obstacles: realistic surfaces
+	ModelLook.apply(stable)
 	level_changed.emit()
 	_warm_up()
 

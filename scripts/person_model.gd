@@ -103,7 +103,7 @@ func _set_hat(level: int) -> void:
 			_part(_hat, _cylinder(0.4, 0.4, 0.03), mat, Vector3(0, 0.2, 0), Vector3(-6, 0, 0))
 			_part(_hat, _cylinder(0.2, 0.25, 0.24), mat, Vector3(0, 0.33, 0))
 			_part(_hat, _box(Vector3(0.03, 0.3, 0.07)), _mat(Color(0.85, 0.2, 0.15)), Vector3(0.25, 0.4, 0.05), Vector3(0, 0, -25))
-	AnimeLook.apply(_hat, 0.03)
+	ModelLook.apply(_hat, 0.03)
 
 
 func set_spiked(spiked: bool) -> void:
@@ -220,26 +220,25 @@ func build(body_material: StandardMaterial3D, hair_color: Color) -> void:
 		part.rotation = Vector3(0, PI / 2.0 if i % 2 else 0.0, PI / 2.0)
 	_part(_chain, _box(Vector3(0.07, 0.08, 0.04)), _mat(Color(0.65, 0.55, 0.3)), Vector3(0.13, 0.0, 0.0))  # padlock
 	_rest_bat()
-	AnimeLook.apply(self, 0.03)
+	ModelLook.apply(self, 0.03)
 
 
 ## The anime face: sharp eyes with a glint, angled brows and a small mouth,
 ## under a cap of hair.
 func _build_face(hair_color: Color) -> void:
 	var hair := _mat(hair_color)
-	var ink := _mat(Color(0.08, 0.07, 0.1))
-	var white := _mat(Color(0.98, 0.98, 0.96))
-	var iris := _mat(Color(0.2, 0.32, 0.6))
-	var glint := _mat(Color.WHITE)
-	glint.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	# A natural face: small dark eyes, brows in the hair colour, a nose and a mouth.
+	var eye := _mat(Color(0.12, 0.08, 0.06))
+	eye.roughness = 0.15
+	eye.set_meta("smooth", true)
+	var brow := _mat(hair_color.darkened(0.2))
+	var lips := _mat(Color(0.62, 0.38, 0.32))
 	for side in [-1.0, 1.0]:
-		var x: float = side * 0.1
-		_part(_body, _box(Vector3(0.11, 0.07, 0.02)), white, Vector3(x, 1.8, -0.256), Vector3(0, 0, side * 8))
-		_part(_body, _box(Vector3(0.055, 0.072, 0.02)), iris, Vector3(x - side * 0.008, 1.797, -0.263))
-		_part(_body, _box(Vector3(0.028, 0.05, 0.02)), ink, Vector3(x - side * 0.008, 1.797, -0.27))  # pupil
-		_part(_body, _box(Vector3(0.018, 0.018, 0.01)), glint, Vector3(x - side * 0.02, 1.812, -0.279))
-		_part(_body, _box(Vector3(0.12, 0.026, 0.03)), ink, Vector3(x, 1.862, -0.255), Vector3(0, 0, side * 14))  # brow
-	_part(_body, _box(Vector3(0.07, 0.014, 0.02)), ink, Vector3(0, 1.66, -0.262))  # mouth
+		var x: float = side * 0.085
+		_part(_body, _sphere(0.026), eye, Vector3(x, 1.8, -0.25), Vector3.ZERO, Vector3(1.0, 0.8, 0.6))
+		_part(_body, _box(Vector3(0.075, 0.016, 0.025)), brow, Vector3(x, 1.845, -0.253), Vector3(0, 0, side * 6))
+	_part(_body, _box(Vector3(0.035, 0.06, 0.04)), _mat(SKIN.darkened(0.06)), Vector3(0, 1.74, -0.265))  # nose
+	_part(_body, _box(Vector3(0.06, 0.012, 0.02)), lips, Vector3(0, 1.675, -0.258))  # mouth
 	_part(_body, _sphere(0.29), hair, Vector3(0, 1.86, 0.05), Vector3(1, 0.75, 1))  # hair
 
 

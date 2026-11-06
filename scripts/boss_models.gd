@@ -27,8 +27,8 @@ static func rival(model: Node3D, main: StandardMaterial3D, color: Color) -> Dict
 	var cape := _pivot(person._body, Vector3(0, 1.45, 0.17))
 	_part(cape, _box(Vector3(0.62, 0.06, 0.08)), dark, Vector3.ZERO)
 	_part(cape, _box(Vector3(0.7, 1.15, 0.05)), _mat(color.darkened(0.25)), Vector3(0, -0.58, 0.06), Vector3(8, 0, 0))
-	AnimeLook.apply(hat, 0.03)
-	AnimeLook.apply(cape, 0.03)
+	ModelLook.apply(hat, 0.03)
+	ModelLook.apply(cape, 0.03)
 	return {"person": person, "sway": [cape]}
 
 

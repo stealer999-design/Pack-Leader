@@ -446,15 +446,20 @@ played in the browser".
   stable (at the camp or in the village), every dead pet, in your party,
   reserve or the hay beds, comes back to life and everyone is healed to full.
   Rivals' pets still get back up after 8 seconds.
-- **Look:** characters are drawn in an anime style: cel shading (hard light
-  and shadow bands with a rim of light) and black ink outlines on the tamer,
-  pets, monsters and bosses (`scripts/anime_look.gd`). The tamer (and the
-  rival tamer) has anime eyes and jointed limbs: knees and elbows, with a
-  human walk (bending knees, swinging arms, a body that dips, twists and
-  leans) and a batter's swing (wind-up, body turn, follow-through). Pets have
-  sharp eyes with slit pupils, a glint and
-  fierce brows. Pet portraits and menu icons are inked to match. Levels and
-  buildings keep their look for now.
+- **Look:** a realistic style (`scripts/model_look.gd`). Every model (the
+  tamer, pets, monsters, bosses) and every wall, building, fence and obstacle
+  has natural, physically based shading, colours a little less saturated, like
+  real fur, hide and paint, and fine surface detail: a mottled grain in its
+  colour and a bump map, so bodies read as fur or skin and walls as stone. The
+  painted ground, shingles, plaster and planks get bump maps from their own
+  paint. Lighting: a warm sun with soft shadows, cool sky light, ambient
+  occlusion in creases and corners (desktop), a filmic tone curve, a little
+  bloom on glowing things, and smoothed edges (anti-aliasing). Eyes are small
+  and glossy (cats and lizards amber with a slit pupil); the tamer has a
+  natural face. The tamer (and the rival tamer) has jointed limbs: knees and
+  elbows, with a human walk (bending knees, swinging arms, a body that dips,
+  twists and leans) and a batter's swing (wind-up, body turn,
+  follow-through). Pet portraits and menu icons keep their drawn style.
 - **Classes:** pets fight differently by kind. **Cats are Wizards**: instead
   of biting, they fire magic bolts in their own colour from about 6.5 units
   away (wild cats shoot at you too), and their ability is a spell, cast with a

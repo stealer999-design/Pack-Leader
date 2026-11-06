@@ -32,7 +32,9 @@ static func _material(style: String, tile_units: float) -> StandardMaterial3D:
 			_:
 				_planks(canvas)
 		var mat := StandardMaterial3D.new()
-		mat.albedo_texture = ImageTexture.create_from_image(canvas.image())
+		var image := canvas.image()
+		mat.albedo_texture = ImageTexture.create_from_image(image)
+		GroundTextures.with_bumps(mat, image, 7.0)
 		mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 		mat.uv1_triplanar = true
 		mat.uv1_world_triplanar = true
