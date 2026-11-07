@@ -30,12 +30,14 @@ static var _cache := {}
 ## Replaces `body`'s mesh with a `body_type` model. Parts in the species colour use `main`
 ## (the creature's own material, so flashes and fainting recolour them).
 static func build(body: MeshInstance3D, body_type: String, main: StandardMaterial3D, color: Color,
-		feature := "none") -> void:
+		feature := "none", anime := false) -> void:
+	use_style(anime)
 	for child in body.get_children():
 		body.remove_child(child)
 		child.queue_free()
 	body.mesh = null
 	var m := {
+		"anime": anime,  # big anime eyes (a tamer's pets) instead of natural ones
 		"main": main,
 		"accent": _mat(color.darkened(0.45)),
 		"light": _mat(color.lightened(0.45)),
@@ -423,6 +425,9 @@ static func _lizard(b: Node3D, m: Dictionary) -> void:
 ## A natural eye: a small, glossy, dark eyeball set into the head (cats and
 ## lizards have an amber eye with a slit pupil); the light catches it.
 static func _eye(b: Node3D, m: Dictionary, at: Vector3, r: float, slit: bool) -> void:
+	if m.get("anime", false):
+		_anime_eye(b, m, at, r, slit)
+		return
 	var dark := _mat(Color(0.05, 0.035, 0.03))
 	dark.roughness = 0.12
 	dark.set_meta("smooth", true)
@@ -434,6 +439,19 @@ static func _eye(b: Node3D, m: Dictionary, at: Vector3, r: float, slit: bool) ->
 		_part(b, _box(Vector3(r * 0.16, r * 0.9, r * 0.12)), dark, at + Vector3(0, 0, -r * 0.52))
 	else:
 		_part(b, _sphere(r * 0.66), dark, at, Vector3.ZERO, Vector3(1.0, 1.0, 0.75))
+
+
+## The anime eye (a tamer's pets): a big white eye, a bright iris in the
+## opposite hue, a pupil (a slit for cats and lizards), a glint and a fierce brow.
+static func _anime_eye(b: Node3D, m: Dictionary, at: Vector3, r: float, slit: bool) -> void:
+	var side := signf(at.x) if absf(at.x) > 0.001 else 1.0
+	_part(b, _sphere(r), m.eye, at, Vector3(0, 0, side * 12), Vector3(1.15, 0.9, 0.9))
+	_part(b, _sphere(r * 0.62), m.iris, at + Vector3(-side * r * 0.1, -r * 0.05, -r * 0.55), Vector3.ZERO, Vector3(0.85, 1.05, 0.6))
+	var pupil: Mesh = _box(Vector3(r * 0.22, r * 0.95, r * 0.2)) if slit else _sphere(r * 0.3)
+	_part(b, pupil, m.pupil, at + Vector3(-side * r * 0.1, -r * 0.05, -r * 0.85))
+	_part(b, _sphere(r * 0.16), m.glint, at + Vector3(-side * r * 0.35, r * 0.2, -r * 0.92))
+	_part(b, _box(Vector3(r * 2.2, r * 0.32, r * 0.6)), m.pupil, at + Vector3(side * r * 0.15, r * 1.12, -r * 0.4),
+			Vector3(0, 0, side * 22))  # brow, low at the nose end
 
 
 ## Four legs, each on a pivot at the hip: Leg0 front-left, Leg1 back-left,
@@ -474,8 +492,18 @@ static func _cached(key: String, make: Callable) -> Resource:
 	return _cache[key]
 
 
+## Which look the materials being built are for (see use_style): materials are
+## shared between creatures, so each look keeps its own.
+static var _style_key := "real"
+
+
+## Builds what follows (a body, a collar) for the anime look or the realistic one.
+static func use_style(anime: bool) -> void:
+	_style_key = "anime" if anime else "real"
+
+
 static func _mat(color: Color, unshaded := false) -> StandardMaterial3D:
-	return _cached("mat%s%s" % [color.to_html(), unshaded], _new_mat.bind(color, unshaded))
+	return _cached("mat%s%s%s" % [color.to_html(), unshaded, _style_key], _new_mat.bind(color, unshaded))
 
 
 static func _new_mat(color: Color, unshaded: bool) -> StandardMaterial3D:

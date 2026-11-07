@@ -446,17 +446,21 @@ played in the browser".
   stable (at the camp or in the village), every dead pet, in your party,
   reserve or the hay beds, comes back to life and everyone is healed to full.
   Rivals' pets still get back up after 8 seconds.
-- **Look:** a realistic style (`scripts/model_look.gd`). Every model (the
-  tamer, pets, monsters, bosses) and every wall, building, fence and obstacle
+- **Look:** a realistic style (`scripts/model_look.gd`), except **your own
+  pets**, which pop in the anime style (`scripts/anime_look.gd`): full
+  colour, cel shading, black ink outlines and big anime eyes with a bright
+  iris, glint and fierce brow. A creature switches the moment it changes
+  hands: caught, it turns anime; the rival's pet going wild turns realistic.
+  Every other model (the tamer, wild creatures, monsters, bosses) and every wall, building, fence and obstacle
   has natural, physically based shading, colours a little less saturated, like
   real fur, hide and paint, and fine surface detail: a mottled grain in its
   colour and a bump map, so bodies read as fur or skin and walls as stone. The
   painted ground, shingles, plaster and planks get bump maps from their own
   paint. Lighting: a warm sun with soft shadows, cool sky light, ambient
   occlusion in creases and corners (desktop), a filmic tone curve, a little
-  bloom on glowing things, and smoothed edges (anti-aliasing). Eyes are small
-  and glossy (cats and lizards amber with a slit pupil); the tamer has a
-  natural face. The tamer (and the rival tamer) has jointed limbs: knees and
+  bloom on glowing things, and smoothed edges (anti-aliasing). Wild creatures'
+  eyes are small and glossy (cats and lizards amber with a slit pupil); the
+  tamer has a natural face. The tamer (and the rival tamer) has jointed limbs: knees and
   elbows, with a human walk (bending knees, swinging arms, a body that dips,
   twists and leans) and a batter's swing (wind-up, body turn,
   follow-through). Pet portraits and menu icons keep their drawn style.

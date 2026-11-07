@@ -111,6 +111,12 @@ var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 ## Local clock time when the ability is ready again. Set on every peer by _ability_used.
 var _ability_ready_time := 0.0
 var _material := StandardMaterial3D.new()
+## The body colour once its look is applied (the realistic look mutes it):
+## what a hit flash fades back to, and what fainting darkens.
+var _body_color := Color.WHITE
+## Built in the anime style (bright, cel shaded, inked, big eyes): a tamer's
+## own pets. Wild creatures, monsters and the rival's pet are realistic.
+var _anime_style := false
 
 @onready var world: World = get_tree().get_first_node_in_group("world")
 @onready var health: Health = $Health
@@ -947,8 +953,12 @@ func _show_collar() -> void:
 		_collar_model.queue_free()
 		_collar_model = null
 	if not collar.is_empty() and body:
+		CreatureModel.use_style(_anime_style)
 		_collar_model = CreatureModel.add_collar(body, species.body_type, ItemDB.item_color(collar))
-		ModelLook.apply(_collar_model, 0.035)
+		if _anime_style:
+			AnimeLook.apply(_collar_model, 0.035)
+		else:
+			ModelLook.apply(_collar_model)
 
 
 func _level_multiplier() -> float:
@@ -962,14 +972,7 @@ static func _now() -> float:
 # --- Visuals (all peers) ---------------------------------------------------------
 
 func _build_visuals() -> void:
-	_material.albedo_color = species.color
-	CreatureModel.build(body, species.body_type, _material, species.color, species.feature)
-	ModelLook.apply(body, 0.035)
-	_show_collar()
-	var animator := CreatureAnimator.new()
-	animator.name = "Animator"
-	add_child(animator)
-	animator.setup(self, body, species.body_type)
+	_build_body()
 	model.scale = Vector3.ONE * species.size
 	ring.scale = Vector3.ONE * species.size
 	var shape := SphereShape3D.new()
@@ -979,7 +982,36 @@ func _build_visuals() -> void:
 	overhead.position.y = (1.75 if CreatureModel.is_humanoid(species.body_type) else 0.9) * species.size + 0.5
 
 
+## The body, in the style that suits who it belongs to: a tamer's own pets
+## pop in the anime style (cel shading, ink outlines, big eyes, full colour);
+## everything else has the realistic look. Rebuilt when that changes (caught,
+## or the rival's pet going wild).
+func _build_body() -> void:
+	_anime_style = is_player_pet()
+	_material = StandardMaterial3D.new()  # a fresh one: each look changes it
+	_material.albedo_color = species.color
+	CreatureModel.build(body, species.body_type, _material, species.color, species.feature, _anime_style)
+	if _anime_style:
+		AnimeLook.apply(body, 0.035)
+	else:
+		ModelLook.apply(body)
+	_body_color = _material.albedo_color
+	if fainted:
+		_material.albedo_color = _body_color.darkened(0.6)
+	_show_collar()
+	var old := get_node_or_null("Animator")
+	if old:
+		remove_child(old)
+		old.queue_free()
+	var animator := CreatureAnimator.new()
+	animator.name = "Animator"
+	add_child(animator)
+	animator.setup(self, body, species.body_type)
+
+
 func _apply_ownership() -> void:
+	if species != null and body and body.get_child_count() > 0 and is_player_pet() != _anime_style:
+		_build_body()
 	collision_layer = 0 if fainted else (PET_LAYER if is_player_pet() else WILD_LAYER)
 	collision_mask = PET_MASK if is_player_pet() else WILD_MASK
 	ring.visible = not is_wild()
@@ -995,7 +1027,7 @@ func _apply_ownership() -> void:
 func _apply_faint() -> void:
 	_apply_ownership()
 	body.rotation.z = PI / 2.0 if fainted else 0.0
-	_material.albedo_color = species.color.darkened(0.6) if fainted else species.color
+	_material.albedo_color = _body_color.darkened(0.6) if fainted else _body_color
 
 
 ## What the pet is called: its name if it has one, else its species.
@@ -1036,7 +1068,7 @@ func _flash() -> void:
 	if fainted:
 		return
 	_material.albedo_color = Color.WHITE
-	create_tween().tween_property(_material, "albedo_color", species.color, 0.15)
+	create_tween().tween_property(_material, "albedo_color", _body_color, 0.15)
 
 
 @rpc("authority", "call_local", "unreliable")
