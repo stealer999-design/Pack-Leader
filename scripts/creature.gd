@@ -55,6 +55,12 @@ var owner_id := 0:  # 0 = wild, World.RIVAL_ID = the rival's pet, otherwise the 
 			_apply_ownership()
 ## Position in the owner's party (0..MAX_PARTY-1); selects the ability key. -1 when wild.
 var party_slot := -1
+## A Champion: a giant, much tougher wild monster that guards the end of the
+## first two levels of Acts 2-5 (see World._start_level). Set at spawn.
+var elite := false
+const ELITE_SIZE := 1.9
+const ELITE_HEALTH := 8.0
+const ELITE_DAMAGE := 1.6
 var level := 1:
 	set(v):
 		level = v
@@ -259,11 +265,16 @@ func is_targetable() -> bool:
 
 
 func radius() -> float:
-	return 0.45 * species.size
+	return 0.45 * body_size()
+
+
+## How big it is drawn (and how wide it is): its species' size, bigger for a Champion.
+func body_size() -> float:
+	return species.size * (ELITE_SIZE if elite else 1.0)
 
 
 func get_damage() -> float:
-	return species.damage * _level_multiplier() * (1.0 + skill_bonus("damage")) \
+	return species.damage * _level_multiplier() * (ELITE_DAMAGE if elite else 1.0) * (1.0 + skill_bonus("damage")) \
 			* (_weaken_factor if _weaken_timer > 0.0 else 1.0)
 
 
@@ -818,7 +829,7 @@ func _healing_kiss(damage: float) -> void:
 ## Wizards and archers: a magic bolt in the species' colour (or an arrow)
 ## flies at the victim and hits when it arrives (if it's still there to be hit).
 func _fire_bolt(victim: Node3D, damage: float) -> void:
-	var from := global_position + Vector3.UP * (0.55 * species.size)
+	var from := global_position + Vector3.UP * (0.55 * body_size())
 	var to := victim.global_position + Vector3.UP * 0.6
 	var travel := from.distance_to(to) / (ARROW_SPEED if species.is_archer() else BOLT_SPEED)
 	if species.is_archer():
@@ -914,6 +925,8 @@ func _tick_faint(delta: float) -> void:
 
 func _on_died() -> void:
 	if is_wild():
+		if elite:
+			world.on_champion_defeated(self)
 		world.award_xp(self)
 		world.roll_loot(global_position, 0.08)
 		if is_monster():
@@ -935,7 +948,8 @@ func _on_died() -> void:
 
 func _apply_level_stats() -> void:
 	var sturdy := CreatureSpecies.PALADIN_HEALTH if species.is_paladin() else 1.0
-	health.max_health = roundf(species.max_health * _level_multiplier() * (1.0 + skill_bonus("health")) * sturdy)
+	health.max_health = roundf(species.max_health * _level_multiplier() * (1.0 + skill_bonus("health")) * sturdy \
+			* (ELITE_HEALTH if elite else 1.0))
 
 
 ## Pack health skills come and go as pets join, faint and wake up: keep max
@@ -973,13 +987,13 @@ static func _now() -> float:
 
 func _build_visuals() -> void:
 	_build_body()
-	model.scale = Vector3.ONE * species.size
-	ring.scale = Vector3.ONE * species.size
+	model.scale = Vector3.ONE * body_size()
+	ring.scale = Vector3.ONE * body_size()
 	var shape := SphereShape3D.new()
 	shape.radius = radius()
 	collision.shape = shape
 	collision.position.y = radius()
-	overhead.position.y = (1.75 if CreatureModel.is_humanoid(species.body_type) else 0.9) * species.size + 0.5
+	overhead.position.y = (1.75 if CreatureModel.is_humanoid(species.body_type) else 0.9) * body_size() + 0.5
 
 
 ## The body, in the style that suits who it belongs to: a tamer's own pets
@@ -1032,7 +1046,9 @@ func _apply_faint() -> void:
 
 ## What the pet is called: its name if it has one, else its species.
 func title() -> String:
-	return nickname if nickname != "" else species.display_name
+	if nickname != "":
+		return nickname
+	return species.display_name + (" Champion" if elite else "")
 
 
 ## A name made safe: no control characters or line breaks, trimmed, at most
@@ -1055,6 +1071,8 @@ func _refresh_label() -> void:
 	name_label.text = "%s  Lv%d" % [title(), level]
 	var master_player = world.get_tamer(owner_id) if world and not is_wild() else null  # Player or Rival
 	name_label.modulate = master_player.color.lightened(0.3) if master_player else Color.WHITE
+	if elite:
+		name_label.modulate = Color(1.0, 0.75, 0.3)
 
 
 func _on_health_changed(current: float, maximum: float) -> void:
@@ -1091,8 +1109,8 @@ func _ability_used(cooldown: float) -> void:
 		sound = "arrow_rain"  # a barrage the length of the rain
 	SoundFX.play(self, sound, global_position, 0.03)
 	var tween := create_tween()
-	tween.tween_property(model, "scale", Vector3.ONE * species.size * 1.25, 0.08)
-	tween.tween_property(model, "scale", Vector3.ONE * species.size, 0.15)
+	tween.tween_property(model, "scale", Vector3.ONE * body_size() * 1.25, 0.08)
+	tween.tween_property(model, "scale", Vector3.ONE * body_size(), 0.15)
 
 
 @rpc("authority", "call_local", "unreliable")

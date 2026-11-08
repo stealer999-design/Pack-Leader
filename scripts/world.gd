@@ -348,6 +348,11 @@ func boss_objective_name() -> String:
 	var boss := get_rival()
 	if boss:
 		return boss.objective_name()
+	var champion := get_champion()
+	if champion:
+		return "the " + champion.title()
+	if not BiomeDB.has_named_boss(level_number):
+		return "the Champion"
 	return biome().get("boss_name", "Rival %s" % layout.get("rival_name", ""))
 
 
@@ -611,6 +616,14 @@ func _start_level(number: int) -> void:
 	for crate: Dictionary in layout.crate_spots:
 		crate_spawner.spawn({"pos": level_root.to_global(crate.pos), "gold": crate.gold, "level": number})
 	var boss_pos := level_root.to_global(layout.rival_point)
+	if not BiomeDB.has_named_boss(number):
+		# The first two levels of Acts 2-5 end with a Champion instead of the named boss.
+		creature_spawner.spawn({
+			"species": SpeciesDB.pick_random_index(level_biome.species), "level": levels.y + 2,
+			"pos": boss_pos, "elite": true,
+		})
+		announce.rpc("%s: find and defeat %s!" % [level_biome.name, boss_objective_name()], Color(1, 0.9, 0.5))
+		return
 	rival_spawner.spawn({"type": level_biome.boss, "name": layout.rival_name, "level": number, "pos": boss_pos})
 	if level_biome.boss == "rival":
 		creature_spawner.spawn({
@@ -621,6 +634,26 @@ func _start_level(number: int) -> void:
 		announce.rpc("%s: find and defeat %s!" % [level_biome.name, boss_objective_name()], Color(1, 0.9, 0.5))
 	else:
 		announce.rpc("%s: defeat %s!" % [level_biome.name, boss_objective_name()], Color(1, 0.9, 0.5))
+
+
+## The level's Champion (a giant elite monster), if it has one and it's alive.
+func get_champion() -> Creature:
+	for c: Creature in get_tree().get_nodes_in_group("creatures"):
+		if c.elite and is_instance_valid(c) and not c.is_queued_for_deletion() and not c.health.is_dead():
+			return c
+	return null
+
+
+## Server: the Champion guarding this level fell: like beating a boss.
+func on_champion_defeated(champion: Creature) -> void:
+	announce.rpc("The %s is defeated! A portal has opened." % champion.title(), Color(1, 0.9, 0.5))
+	play_burst.rpc(champion.global_position, champion.species.color, 4.0)
+	roll_loot(champion.global_position, 1.0)  # Champions always drop gear
+	roll_legendary(champion.global_position)
+	cleared_level = maxi(cleared_level, level_number)
+	for p in get_players():
+		_give_team_xp(p, roundi(rival_defeat_xp * area_levels(level_number).y / 2.0), area_levels(level_number).y)
+	exit_open = true
 
 
 func on_rival_defeated(rival: Rival) -> void:
@@ -1843,6 +1876,7 @@ func _spawn_creature(data: Dictionary) -> Node:
 	creature.owner_id = data.get("owner", 0)
 	creature.party_slot = data.get("slot", -1)
 	creature.nickname = Creature.clean_name(data.get("name", ""))
+	creature.elite = data.get("elite", false)
 	creature.position = data.pos
 	creature.home = data.pos
 	if data.get("dead", false):

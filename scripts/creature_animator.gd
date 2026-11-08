@@ -66,7 +66,7 @@ func _process(delta: float) -> void:
 		return
 
 	# How far into a full stride, by how fast it moves for its size.
-	var size := creature.species.size
+	var size := creature.body_size()
 	var stride := clampf(_speed / (3.0 * size), 0.0, 1.0)
 	_phase += delta * (3.0 + _speed * 2.2 / size)
 	var step := sin(_phase)

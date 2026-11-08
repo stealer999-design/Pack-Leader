@@ -273,6 +273,9 @@ func _draw_live(world: World) -> void:
 		elif c.is_rival_pet():
 			color = Color(0.75, 0.1, 0.15)
 			radius = 3.5
+		elif c.elite:
+			color = Color(1.0, 0.45, 0.1)
+			radius = 5.5
 		if c.fainted:
 			color = color.darkened(0.5)
 		if not c.is_player_pet() and _fogged(world.level_root.to_local(c.global_position)):

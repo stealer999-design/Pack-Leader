@@ -1,8 +1,9 @@
 class_name BiomeDB
-## The biomes levels cycle through. Level 1 uses the first biome, level 2 the
-## second, and so on, wrapping around (with creature levels still rising).
-## They are grouped into acts (ACTS): Act 1 is the first four biomes, Act 2 the
-## Graveyard, the desert ruins, the volcano and the ice fields (monsters only); after that the cycle starts again, as Act 3, 4, ...
+## The biomes levels cycle through, 16 levels a cycle (LEVELS), with creature
+## levels still rising. Act 1 is the first four biomes (one level each, in the
+## order chosen at the Crossroads); Acts 2-5 are three levels each of the
+## Graveyard, the desert ruins, the volcano and the ice fields (monsters only).
+## After level 16 the cycle starts again, as Act 6, 7, ...
 ##
 ## species: indices into SpeciesDB that live in this biome.
 ## starter_species: if set, the first two creatures near the camp are always this one.
@@ -88,8 +89,16 @@ const BIOMES := [
 		"wall": Color(0.62, 0.72, 0.84), "rock": Color(0.55, 0.75, 0.92),
 	},
 ]
-## Which biomes make up each act (indices into BIOMES, in order).
-const ACTS := [[0, 1, 2, 3], [4, 5, 6, 7]]
+## Which biomes make up each act (indices into BIOMES): Act 1 is the four
+## Crossroads areas (in the order the players choose); each of Acts 2-5 is one
+## monster biome, three levels long.
+const ACTS := [[0, 1, 2, 3], [4], [5], [6], [7]]
+## One cycle of levels, in order: the biome of each (-1 = an Act 1 area, in
+## the chosen order). After the last the cycle starts again (Act 6 is Act 1's
+## areas, stronger, and so on).
+const LEVELS := [-1, -1, -1, -1, 4, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 7]
+## Which levels of the cycle (positions in LEVELS) each act covers.
+const ACT_LEVELS := [[0, 1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 11, 12], [13, 14, 15]]
 
 
 ## The Act 1 biomes, in the order the players chose them at the Crossroads
@@ -106,10 +115,10 @@ const PET_TEXT := {0: "Cats  ·  Wizards", 1: "Birds  ·  Archers", 2: "Dogs  ·
 static func index_for_level(level_number: int) -> int:
 	if level_number <= CROSSROADS:
 		return 0
-	var position := (level_number - 1) % BIOMES.size()
-	if position in ACTS[0]:
-		return act1_order()[ACTS[0].find(position)]
-	return position
+	var position := (level_number - 1) % LEVELS.size()
+	if LEVELS[position] < 0:
+		return act1_order()[ACT_LEVELS[0].find(position)]
+	return LEVELS[position]
 
 
 ## The Act 1 biomes in play order: the chosen route, then the rest.
@@ -127,21 +136,34 @@ static func for_level(level_number: int) -> Dictionary:
 
 ## Where area `level_number` falls: {act: 1, 2, ... (rising each time the
 ## cycle repeats), area: its place in that act (1-based)}.
-## Act 2's areas (and their repeats) are open fields instead of a winding
-## path (see LevelGenerator.generate_open).
+## Acts 2-5 (and their repeats) are open fields instead of a winding path
+## (see LevelGenerator.generate_open).
 static func is_open_level(level_number: int) -> bool:
 	if level_number <= CROSSROADS:
 		return false
-	return (level_number - 1) % BIOMES.size() in ACTS[1]
+	return LEVELS[(level_number - 1) % LEVELS.size()] >= 0
+
+
+## True if this level ends with its biome's named boss: every Act 1 area, and
+## the last level of each later act. The other levels end with a Champion (a
+## giant, much tougher monster of the act; see World._start_level).
+static func has_named_boss(level_number: int) -> bool:
+	if level_number <= CROSSROADS:
+		return false
+	var position := (level_number - 1) % LEVELS.size()
+	for act in ACT_LEVELS:
+		if position in act:
+			return act == ACT_LEVELS[0] or position == act[-1]
+	return true
 
 
 static func act_of(level_number: int) -> Dictionary:
 	if level_number <= CROSSROADS:
 		return {"act": 1, "area": 0}
 	var n := maxi(level_number, 1) - 1
-	var cycle := n / BIOMES.size()
-	var index := n % BIOMES.size()
-	for a in ACTS.size():
-		if index in ACTS[a]:
-			return {"act": cycle * ACTS.size() + a + 1, "area": ACTS[a].find(index) + 1}
+	var cycle := n / LEVELS.size()
+	var index := n % LEVELS.size()
+	for a in ACT_LEVELS.size():
+		if index in ACT_LEVELS[a]:
+			return {"act": cycle * ACT_LEVELS.size() + a + 1, "area": ACT_LEVELS[a].find(index) + 1}
 	return {"act": 1, "area": 1}
