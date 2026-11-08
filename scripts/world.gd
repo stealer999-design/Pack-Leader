@@ -619,7 +619,7 @@ func _start_level(number: int) -> void:
 	if not BiomeDB.has_named_boss(number):
 		# The first two levels of Acts 2-5 end with a Champion instead of the named boss.
 		creature_spawner.spawn({
-			"species": SpeciesDB.pick_random_index(level_biome.species), "level": levels.y + 2,
+			"species": _champion_species(number, level_biome), "level": levels.y + 2,
 			"pos": boss_pos, "elite": true,
 		})
 		announce.rpc("%s: find and defeat %s!" % [level_biome.name, boss_objective_name()], Color(1, 0.9, 0.5))
@@ -634,6 +634,16 @@ func _start_level(number: int) -> void:
 		announce.rpc("%s: find and defeat %s!" % [level_biome.name, boss_objective_name()], Color(1, 0.9, 0.5))
 	else:
 		announce.rpc("%s: defeat %s!" % [level_biome.name, boss_objective_name()], Color(1, 0.9, 0.5))
+
+
+## Which monster is the Champion of this level: the biome's "champions" list
+## (by area within the act), else a random monster of the biome.
+func _champion_species(number: int, level_biome: Dictionary) -> int:
+	var picks: Array = level_biome.get("champions", [])
+	var area: int = BiomeDB.act_of(number).area - 1
+	if area >= 0 and area < picks.size():
+		return picks[area]
+	return SpeciesDB.pick_random_index(level_biome.species)
 
 
 ## The level's Champion (a giant elite monster), if it has one and it's alive.

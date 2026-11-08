@@ -438,3 +438,48 @@ static func yeti_king(model: Node3D, main: StandardMaterial3D) -> Dictionary:
 		_part(shoulder, _sphere(0.36), face, Vector3(0, -1.55, -0.05))  # huge hands
 		arms.append(shoulder)
 	return {"legs": legs, "arms": arms, "bob": [body, 0.0, 0.06, 1.3]}
+
+
+## Sunmane, the Desert Lion: a huge tawny lion with a great shaggy dark mane,
+## a broad muzzle, amber eyes, round ears and a tufted tail. Four legs that
+## trot (front left with back right), a jaw that snaps on attacks.
+static func desert_lion(model: Node3D, main: StandardMaterial3D) -> Dictionary:
+	var mane := _mat(Color(0.45, 0.24, 0.1))
+	var muzzle := _mat(Color(0.93, 0.82, 0.62))
+	var dark := _mat(Color(0.08, 0.05, 0.04))
+	var eye := _mat(Color(1.0, 0.7, 0.15), true)
+	var pad := _mat(Color(0.35, 0.22, 0.14))
+	var legs: Array = []
+	# Order: front left, front right, back right, back left (trot pairs share a phase).
+	for spot in [Vector3(-0.45, 1.3, -1.0), Vector3(0.45, 1.3, -1.0), Vector3(0.45, 1.3, 1.0), Vector3(-0.45, 1.3, 1.0)]:
+		var hip := _pivot(model, spot)
+		_part(hip, _cylinder(0.2, 0.28, 1.2), main, Vector3(0, -0.6, 0))
+		_part(hip, _sphere(0.24), pad, Vector3(0, -1.2, -0.08), Vector3.ZERO, Vector3(1.0, 0.6, 1.3))  # paw
+		legs.append(hip)
+	var body := _pivot(model, Vector3.ZERO)
+	_part(body, _sphere(0.9), main, Vector3(0, 1.75, 0.15), Vector3.ZERO, Vector3(0.85, 0.75, 1.65))  # long body
+	_part(body, _sphere(0.6), muzzle, Vector3(0, 1.35, 0.1), Vector3.ZERO, Vector3(0.9, 0.4, 1.6))  # pale belly
+	# The mane: a great ball of dark fur round the neck, with shaggy tufts.
+	_part(body, _sphere(1.0), mane, Vector3(0, 2.3, -1.05), Vector3.ZERO, Vector3(1.0, 1.05, 0.8))
+	for i in 16:
+		var a := TAU * i / 16.0
+		_part(body, _cylinder(0.0, 0.22, 0.6), mane, Vector3(cos(a) * 0.95, 2.3 + sin(a) * 0.95, -0.95),
+				Vector3(0, 0, rad_to_deg(a) - 90))
+	var head := _pivot(body, Vector3(0, 2.35, -2.0))
+	_part(head, _sphere(0.52), main, Vector3.ZERO, Vector3.ZERO, Vector3(1.0, 0.95, 1.0))
+	_part(head, _sphere(0.3), muzzle, Vector3(0, -0.14, -0.42), Vector3.ZERO, Vector3(1.0, 0.75, 1.0))  # broad muzzle
+	_part(head, _box(Vector3(0.2, 0.12, 0.12)), dark, Vector3(0, -0.02, -0.7))  # nose
+	_part(head, _box(Vector3(0.04, 0.14, 0.04)), dark, Vector3(0, -0.14, -0.7))
+	for x in [-0.2, 0.2]:
+		_part(head, _sphere(0.08), eye, Vector3(x, 0.17, -0.42))
+		_part(head, _sphere(0.035), dark, Vector3(x, 0.17, -0.49))
+		_part(head, _box(Vector3(0.2, 0.05, 0.06)), mane, Vector3(x, 0.27, -0.42), Vector3(0, 0, -signf(x) * 15))  # brow
+		_part(head, _sphere(0.15), main, Vector3(x * 2.0, 0.45, 0.0), Vector3.ZERO, Vector3(1.0, 1.0, 0.5))  # round ears
+		_part(head, _cylinder(0.0, 0.04, 0.16), muzzle, Vector3(x * 0.6, -0.3, -0.62), Vector3(-180, 0, 0))  # fangs
+	var jaw := _pivot(head, Vector3(0, -0.32, -0.15))
+	_part(jaw, _sphere(0.22), muzzle, Vector3(0, -0.04, -0.28), Vector3.ZERO, Vector3(1.0, 0.45, 1.1))
+	jaw.set_meta("open", Vector3(-0.35, 0, 0))
+	var tail := _pivot(body, Vector3(0, 1.9, 1.5))
+	_part(tail, _cylinder(0.06, 0.09, 1.3), main, Vector3(0, -0.3, 0.55), Vector3(-60, 0, 0))
+	_part(tail, _sphere(0.16), mane, Vector3(0, -0.62, 1.12), Vector3.ZERO, Vector3(1.0, 1.4, 1.0))  # the tuft
+	return {"legs": legs, "jaws": [jaw], "sway": [tail], "bob": [body, 0.0, 0.05, 1.4]}

@@ -6,6 +6,8 @@ extends Rival
 ##   blindness) and mummies and scorpions rising from the sand;
 ## - the Magma Colossus: Eruption (a warning circle, then damage and burning)
 ##   and fire imps called out of the lava;
+## - Sunmane, the Desert Lion: Pounce (a warning circle, then he leaps onto
+##   it: damage and a stun) and sand scorpions skittering out at his roar;
 ## - the Yeti King: Ice Slam (a warning circle, then damage and a freeze) and
 ##   frost wraiths summoned out of the blizzard.
 ## Each casts its special every few seconds at a player or pet, and summons its
@@ -17,6 +19,12 @@ const VARIANTS := {
 		"special": "Curse of the Sands", "effect": "blind", "fx": Color(0.95, 0.8, 0.4),
 		"summons": [47, 48, 48], "summon_text": "The Sand Pharaoh raises his servants from the sand!",
 		"challenge": "The Sand Pharaoh wakes from his tomb!",
+	},
+	"lion": {
+		"title": "Sunmane", "objective": "Sunmane the Desert Lion", "color": Color(0.78, 0.52, 0.24),
+		"special": "Pounce", "effect": "pounce", "fx": Color(0.95, 0.75, 0.35),
+		"summons": [48, 48, 47], "summon_text": "Sunmane roars, and the desert answers!",
+		"challenge": "Sunmane the Desert Lion roars!",
 	},
 	"colossus": {
 		"title": "Magma Colossus", "objective": "the Magma Colossus", "color": Color(0.16, 0.13, 0.13),
@@ -56,6 +64,8 @@ func _build_model() -> Dictionary:
 			return BossModels.magma_colossus(model, _material)
 		"yeti":
 			return BossModels.yeti_king(model, _material)
+		"lion":
+			return BossModels.desert_lion(model, _material)
 	return BossModels.sand_pharaoh(model, _material)
 
 
@@ -99,6 +109,12 @@ func _cast_special() -> void:
 		return
 	var spot: Vector3 = victims.pick_random().global_position
 	world.play_telegraph.rpc(spot, special_radius, special_warning)
+	if variant == "lion":  # crouches, then springs to land as the warning runs out
+		var leap := create_tween()
+		leap.tween_interval(special_warning * 0.55)
+		var to := world.clamp_to_level(spot)
+		to.y = global_position.y
+		leap.tween_property(self, "global_position", to, special_warning * 0.45).set_trans(Tween.TRANS_QUAD)
 	get_tree().create_timer(special_warning).timeout.connect(func() -> void:
 		if not is_instance_valid(self) or health.is_dead():
 			return
@@ -111,6 +127,11 @@ func _cast_special() -> void:
 						enemy.blind(4.0)
 				"burn":
 					enemy.health.add_venom(outgoing(attack_damage() * 0.3), 4.0, outgoing(attack_damage() * 0.3))
+				"pounce":
+					if enemy.has_method("stun"):
+						enemy.stun(1.0)  # pets are knocked flat
+					elif enemy.has_method("slow"):
+						enemy.slow(1.2, 0.3)  # tamers stagger
 				"freeze":
 					if enemy.has_method("slow"):
 						enemy.slow(1.5, 0.0)

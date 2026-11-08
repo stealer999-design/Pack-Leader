@@ -206,7 +206,7 @@ played in the browser".
   |---|---|---|---|
   | Act 1 | 1-4 | Greenmeadow, Frostfang Peaks, Sunscorch Dunes, Mirewood Bog (your order) | 1-20 |
   | Act 2 | 5-7 | Hollowmere Graveyard: skeletons and zombies | 21-35 |
-  | Act 3 | 8-10 | Scorchsand Ruins (desert): mummies and sand scorpions | 36-50 |
+  | Act 3 | 8-10 | Scorchsand Ruins (desert): mummies and sand scorpions; boss Sunmane the Desert Lion | 36-50 |
   | Act 4 | 11-13 | Cinderpeak Caldera (volcano): fire imps and magma golems | 51-65 |
   | Act 5 | 14-16 | Frostveil Expanse (ice): frost wraiths and yetis | 66-80 |
 
@@ -234,7 +234,7 @@ played in the browser".
   | Act 1 | Sunscorch Dunes (desert) | Dogs: Fangjackal, Dunehound, Cactipup, Sunfennec | **Sand Wyrm**: burrows underground (it can't be hit there), tunnels under a player or pet behind a warning circle and erupts; at half health it whips up sandstorms |
   | Act 1 | Mirewood Bog (swamp) | Lizards: Bogleon, Mirelurk, Wisp Gecko, Sporeguana | **Bog Witch**: a ranged caster whose bolts poison; she blinks away when you get close, drops toxic puddles and summons Bogleons at 60% and 30% health |
   | Act 2 (Lv 21-35) | Hollowmere Graveyard | Monsters: Skeletons (quick, with rusty swords) and Zombies (slow, tough, hit hard); can't be captured | **Howard the Zombie Fish**: a huge rotting fish on a pair of zombie legs, one eye bulging and one crossed out, ribs showing, a fishhook in his lip. He spits a Rotten Splash under a player or pet (a red warning circle, then damage and a slow), and calls up skeletons and a zombie at 66% and 33% health |
-  | Act 3 (Lv 36-50) | Scorchsand Ruins (desert) | Monsters: Mummies (slow, bandaged, tough) and Sand Scorpions (fast, pincers and a stinger) | **Sand Pharaoh**: a towering mummy king in a gold mask and striped headdress with a crook staff. Curse of the Sands (a warning circle, then damage and blindness); mummies and scorpions rise from the sand at 66% and 33% health |
+  | Act 3 (Lv 36-50) | Scorchsand Ruins (desert) | Monsters: Mummies (slow, bandaged, tough) and Sand Scorpions (fast, pincers and a stinger) | **Sunmane the Desert Lion**: a huge tawny lion with a great dark mane, amber eyes and a tufted tail. Pounce (a warning circle, then he leaps onto it: damage, pets are stunned and tamers staggered); scorpions and a mummy answer his roar at 66% and 33% health. This act's Champions are fixed: a **Skeleton Champion** on level 8 and a **Mummy Champion** on level 9 |
   | Act 4 (Lv 51-65) | Cinderpeak Caldera (volcano) | Monsters: Fire Imps (quick, winged, throw fire from range) and Magma Golems (slow, huge, hit hard) | **Magma Colossus**: a walking mountain of black rock with lava in its cracks. Eruption (a warning circle, then damage and burning); calls fire imps and a golem out of the lava at 66% and 33% health |
   | Act 5 (Lv 66-80) | Frostveil Expanse (ice) | Monsters: Frost Wraiths (floating, cast ice from range) and Yetis (big, shaggy, hit hard) | **Yeti King**: a giant yeti in a crown of ice. Ice Slam (a warning circle, then damage and a brief freeze); the blizzard brings wraiths and a yeti at 66% and 33% health |
 - **Pet health:** your pets heal passively, 1 HP every half second, all the
@@ -609,7 +609,7 @@ The host is the authoritative server and also plays.
 | `scenes/main.tscn` + `scripts/main.gd` | Menu + `LevelSpawner` that replicates the world to joining clients |
 | `scenes/world.tscn` + `scripts/world.gd` | Level flow (start → rival → portal → next level), level geometry, spawners, XP sharing, FX |
 | `scripts/level_generator.gd` | Deterministic layout of a level from a seed: paths are laid out unrolled, then bent along a curved centre line (1-3 curves); open fields of Acts 2-5 (`generate_open`) are a wavy rounded box with a fenced town, using the path layout's counts; rocks, creature spots, boss, exit; mapping between path space and the level |
-| `scripts/boss_models.gd` | The bosses' models (rival tamer, Glacier Titan, Sand Wyrm, Bog Witch, Howard the Zombie Fish, Sand Pharaoh, Magma Colossus, Yeti King) and what animates |
+| `scripts/boss_models.gd` | The bosses' models (rival tamer, Glacier Titan, Sand Wyrm, Bog Witch, Howard the Zombie Fish, Sand Pharaoh (unused for now), Sunmane the Desert Lion, Magma Colossus, Yeti King) and what animates |
 | `scripts/biome_db.gd` | The biomes levels cycle through: their creatures, boss and colours, and the 16-level cycle of acts (which levels end with a named boss or a Champion) |
 | `scenes/rival.tscn` + `scripts/rival.gd` | The AI rival tamer boss (and the base class for every boss) |
 | `scenes/titan.tscn` + `scripts/titan.gd` | The Glacier Titan boss: Avalanche and Frostfinch summons |
