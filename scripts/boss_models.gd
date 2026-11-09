@@ -579,3 +579,50 @@ static func parrot(model: Node3D, main: StandardMaterial3D) -> Dictionary:
 	_part(jaw, _sphere(0.18), beak_dark, Vector3(0, -0.04, -0.12), Vector3.ZERO, Vector3(0.8, 0.6, 1.0))
 	jaw.set_meta("open", Vector3(-0.35, 0, 0))
 	return {"legs": legs, "arms": arms, "jaws": [jaw], "sway": [tail], "bob": [body, 0.0, 0.06, 2.0]}
+
+
+## Dom: a giant orange house cat (tabby stripes, white chest, socks and
+## muzzle), with green eyes, pointed ears, whiskers and a tall curling tail.
+## Four legs that trot, a jaw that opens to hiss (and to be sick).
+static func house_cat(model: Node3D, main: StandardMaterial3D) -> Dictionary:
+	var stripe := _mat(Color(0.62, 0.28, 0.05))
+	var white := _mat(Color(0.96, 0.94, 0.9))
+	var pink := _mat(Color(0.95, 0.55, 0.6))
+	var eye := _mat(Color(0.45, 0.9, 0.3), true)
+	var dark := _mat(Color(0.04, 0.04, 0.04))
+	var legs: Array = []
+	# Order: front left, front right, back right, back left (trot pairs share a phase).
+	for spot in [Vector3(-0.32, 1.0, -0.8), Vector3(0.32, 1.0, -0.8), Vector3(0.32, 1.0, 0.8), Vector3(-0.32, 1.0, 0.8)]:
+		var hip := _pivot(model, spot)
+		_part(hip, _cylinder(0.13, 0.17, 1.0), main, Vector3(0, -0.5, 0))
+		_part(hip, _cylinder(0.14, 0.14, 0.12), stripe, Vector3(0, -0.35, 0))
+		_part(hip, _sphere(0.17), white, Vector3(0, -0.98, -0.06), Vector3.ZERO, Vector3(1.0, 0.6, 1.3))  # white socks
+		legs.append(hip)
+	var body := _pivot(model, Vector3.ZERO)
+	_part(body, _sphere(0.7), main, Vector3(0, 1.45, 0.05), Vector3.ZERO, Vector3(0.75, 0.68, 1.6))  # long body
+	_part(body, _sphere(0.45), white, Vector3(0, 1.3, -0.75), Vector3.ZERO, Vector3(0.85, 1.0, 0.8))  # white chest
+	for i in 5:  # tabby stripes over the back
+		_part(body, TorusMesh.new(), stripe, Vector3(0, 1.45, -0.55 + i * 0.27), Vector3(90, 0, 0),
+				Vector3(0.6, 0.15, 0.55))
+	var head := _pivot(body, Vector3(0, 2.05, -1.05))
+	_part(head, _sphere(0.48), main, Vector3.ZERO, Vector3.ZERO, Vector3(1.1, 0.95, 1.0))
+	_part(head, _sphere(0.22), white, Vector3(0, -0.15, -0.38), Vector3.ZERO, Vector3(1.2, 0.8, 0.8))  # white muzzle
+	_part(head, _box(Vector3(0.1, 0.07, 0.06)), pink, Vector3(0, -0.06, -0.55))  # nose
+	for i in 3:  # stripes on the brow
+		_part(head, _box(Vector3(0.05, 0.22, 0.05)), stripe, Vector3((i - 1) * 0.12, 0.32, -0.36), Vector3(-30, 0, 0))
+	for x in [-1.0, 1.0]:
+		_part(head, _sphere(0.11), eye, Vector3(x * 0.2, 0.08, -0.4), Vector3.ZERO, Vector3(1.0, 1.0, 0.6))
+		_part(head, _box(Vector3(0.025, 0.14, 0.02)), dark, Vector3(x * 0.2, 0.08, -0.47))  # slit pupils
+		var ear := _part(head, _cylinder(0.0, 0.2, 0.4), main, Vector3(x * 0.3, 0.45, -0.02), Vector3(0, 0, x * -18))
+		_part(ear, _cylinder(0.0, 0.11, 0.25), pink, Vector3(0, -0.04, -0.07))
+		for w in 3:  # whiskers
+			_part(head, _box(Vector3(0.5, 0.012, 0.012)), white, Vector3(x * 0.38, -0.14 - w * 0.05, -0.42), Vector3(0, x * 10, x * (w - 1) * 10))
+	var jaw := _pivot(head, Vector3(0, -0.24, -0.2))
+	_part(jaw, _sphere(0.16), white, Vector3(0, -0.03, -0.2), Vector3.ZERO, Vector3(1.0, 0.5, 1.0))
+	jaw.set_meta("open", Vector3(-0.35, 0, 0))
+	# A tall tail curling up at the tip.
+	var tail := _pivot(body, Vector3(0, 1.6, 1.1))
+	_part(tail, _cylinder(0.08, 0.1, 1.0), main, Vector3(0, 0.45, 0.2), Vector3(20, 0, 0))
+	_part(tail, _cylinder(0.07, 0.08, 0.5), stripe, Vector3(0, 1.05, 0.28), Vector3(-25, 0, 0))
+	_part(tail, _sphere(0.08), main, Vector3(0, 1.3, 0.18))
+	return {"legs": legs, "jaws": [jaw], "sway": [tail], "bob": [body, 0.0, 0.04, 1.6]}

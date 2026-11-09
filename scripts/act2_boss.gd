@@ -8,6 +8,10 @@ extends Rival
 ##   and fire imps called out of the lava;
 ## - Sunmane, the Desert Lion: Pounce (a warning circle, then he leaps onto
 ##   it: damage and a stun) and sand scorpions skittering out at his roar;
+## - Dom, a giant orange house cat: by turns, Pounce and Swipe (a small
+##   warning circle; he springs onto it, claws everything there and springs
+##   back) and Hairball (a warning circle, then a pool of green vomit that
+##   hurts anyone standing in it for a while);
 ## - Koleko, a huge fire dog: Lava Spit (a warning circle, then a burst of
 ##   fire that burns and leaves the ground ablaze) and fire imps;
 ## - Pie the Parrot: Feather Flurry (a warning circle, then a storm of
@@ -30,6 +34,12 @@ const VARIANTS := {
 		"special": "Pounce", "effect": "pounce", "fx": Color(0.95, 0.75, 0.35),
 		"summons": [48, 48, 47], "summon_text": "Sunmane roars, and the desert answers!",
 		"challenge": "Sunmane the Desert Lion roars!",
+	},
+	"cat": {
+		"title": "Dom", "objective": "Dom the House Cat", "color": Color(0.98, 0.42, 0.04),
+		"special": "Pounce and Swipe", "effect": "swipe", "fx": Color(1.0, 0.75, 0.4),
+		"summons": [48, 48, 47], "summon_text": "Dom hisses, and the desert answers!",
+		"challenge": "Dom the House Cat stretches, yawns... and pounces!",
 	},
 	"firedog": {
 		"title": "Koleko", "objective": "Koleko the Fire Dog", "color": Color(0.17, 0.13, 0.12),
@@ -69,6 +79,8 @@ var variant := "pharaoh":
 		color = VARIANTS[variant].color
 
 var _special_timer := 3.0
+var _vomit_next := false  ## Dom: alternates Pounce and Swipe with Hairball.
+var _leaping := false
 var _chatter_timer := 1.5
 var _last_phrase := -1
 var _bubble: Node3D
@@ -91,6 +103,8 @@ func _build_model() -> Dictionary:
 			return BossModels.fire_dog(model, _material)
 		"parrot":
 			return BossModels.parrot(model, _material)
+		"cat":
+			return BossModels.house_cat(model, _material)
 	return BossModels.sand_pharaoh(model, _material)
 
 
@@ -132,6 +146,9 @@ func _boss_tick(delta: float) -> void:
 func _cast_special() -> void:
 	var victims := world.enemies_near(self, home, leash_range + 6.0)
 	if victims.is_empty():
+		return
+	if variant == "cat":
+		_cat_special(victims)
 		return
 	var spot: Vector3 = victims.pick_random().global_position
 	world.play_telegraph.rpc(spot, special_radius, special_warning)
@@ -247,3 +264,60 @@ func say(text: String) -> void:
 	tween.tween_property(fading, "scale", Vector3.ONE, 0.15).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tween.tween_interval(2.8)
 	tween.tween_callback(fading.queue_free)
+
+
+# --- Dom the House Cat ------------------------------------------------------------
+
+const SWIPE_RADIUS := 2.2
+const SWIPE_WARNING := 0.7
+const VOMIT_RADIUS := 3.0
+const VOMIT_TIME := 7.0
+
+
+## By turns: spring forward, claw and spring back; or be sick on the ground.
+func _cat_special(victims: Array) -> void:
+	var victim: Node3D = target if target in victims else victims.pick_random()
+	var spot := victim.global_position
+	_vomit_next = not _vomit_next
+	if not _vomit_next:
+		_hairball(spot)
+		return
+	var start := global_position
+	var land := world.clamp_to_level(spot + (start - spot).normalized() * 0.8)
+	land.y = start.y
+	world.play_telegraph.rpc(spot, SWIPE_RADIUS, SWIPE_WARNING)
+	var facing := spot - start
+	model.rotation.y = atan2(-facing.x, -facing.z)  # eyes on the prey, all the way there and back
+	_leaping = true
+	var leap := create_tween()
+	leap.tween_interval(SWIPE_WARNING * 0.6)  # crouch, wiggle...
+	leap.tween_property(self, "global_position", land, SWIPE_WARNING * 0.4).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	leap.tween_callback(func() -> void:
+		if health.is_dead():
+			return
+		_swing.rpc()
+		for enemy in world.enemies_near(self, spot, SWIPE_RADIUS):
+			enemy.receive_damage(outgoing(attack_damage() * 1.5), self)
+		world.play_burst.rpc(spot, _data().fx, SWIPE_RADIUS))
+	leap.tween_interval(0.25)
+	var back := world.clamp_to_level(start)
+	back.y = start.y
+	leap.tween_property(self, "global_position", back, 0.35).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	leap.tween_callback(func() -> void: _leaping = false)
+
+
+## Hairball: a warning circle, then a pool of green vomit that hurts whoever
+## stands in it for VOMIT_TIME seconds.
+func _hairball(spot: Vector3) -> void:
+	world.announce.rpc("Dom coughs up a hairball!", Color(0.6, 0.95, 0.4))
+	world.play_telegraph.rpc(spot, VOMIT_RADIUS, special_warning)
+	_swing.rpc()
+	get_tree().create_timer(special_warning).timeout.connect(func() -> void:
+		if not is_instance_valid(self) or health.is_dead():
+			return
+		world.play_burst.rpc(spot, Color(0.45, 0.85, 0.2), VOMIT_RADIUS * 0.6)
+		world.add_zone(self, spot, VOMIT_RADIUS, VOMIT_TIME, outgoing(attack_damage() * 0.45), Color(0.35, 0.85, 0.15)))
+
+
+func _is_busy() -> bool:
+	return _leaping or super()

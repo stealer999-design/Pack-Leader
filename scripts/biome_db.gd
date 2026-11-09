@@ -8,7 +8,7 @@ class_name BiomeDB
 ## species: indices into SpeciesDB that live in this biome.
 ## starter_species: if set, the first two creatures near the camp are always this one.
 ## boss: "rival" (a tamer with one pet), "titan", "wyrm", "witch", "fish",
-## "pharaoh", "lion", "colossus", "firedog", "yeti" or "parrot";
+## "pharaoh", "lion", "cat", "colossus", "firedog", "yeti" or "parrot";
 ## champions: optional species of the Champions ending the act's first two levels.
 ## obstacles: which obstacle set dresses the level (default by position).
 ## boss_name: how the boss is named in objectives (rivals get a random name).
@@ -62,8 +62,8 @@ const BIOMES := [
 	{
 		"name": "Scorchsand Ruins",
 		"species": [47, 48],  # mummies and sand scorpions
-		"boss": "lion",
-		"boss_name": "Sunmane the Desert Lion",
+		"boss": "cat",
+		"boss_name": "Dom the House Cat",
 		# The Champions at the end of the act's first two levels, in order
 		# (default: a random monster of the biome).
 		"champions": [45, 47],  # a skeleton, then a mummy
