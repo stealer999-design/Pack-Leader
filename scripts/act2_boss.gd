@@ -10,6 +10,9 @@ extends Rival
 ##   it: damage and a stun) and sand scorpions skittering out at his roar;
 ## - Koleko, a huge fire dog: Lava Spit (a warning circle, then a burst of
 ##   fire that burns and leaves the ground ablaze) and fire imps;
+## - Pie the Parrot: Feather Flurry (a warning circle, then a storm of
+##   feathers: damage and a slow), wraiths and a yeti from the blizzard, and
+##   he chatters in speech bubbles ("whatcha doin?", "Honk Honk");
 ## - the Yeti King: Ice Slam (a warning circle, then damage and a freeze) and
 ##   frost wraiths summoned out of the blizzard.
 ## Each casts its special every few seconds at a player or pet, and summons its
@@ -33,6 +36,13 @@ const VARIANTS := {
 		"special": "Lava Spit", "effect": "blaze", "fx": Color(1.0, 0.5, 0.12),
 		"summons": [49, 49, 49], "summon_text": "Koleko howls, and fire imps leap from the flames!",
 		"challenge": "Koleko the Fire Dog bares his burning fangs!",
+	},
+	"parrot": {
+		"title": "Pie", "objective": "Pie the Parrot", "color": Color(0.85, 0.12, 0.1),
+		"special": "Feather Flurry", "effect": "flurry", "fx": Color(1.0, 0.85, 0.3),
+		"summons": [51, 51, 52], "summon_text": "Pie squawks, and the blizzard brings wraiths!",
+		"challenge": "Pie the Parrot swoops down!",
+		"phrases": ["whatcha doin?", "Honk Honk"],
 	},
 	"colossus": {
 		"title": "Magma Colossus", "objective": "the Magma Colossus", "color": Color(0.16, 0.13, 0.13),
@@ -59,6 +69,9 @@ var variant := "pharaoh":
 		color = VARIANTS[variant].color
 
 var _special_timer := 3.0
+var _chatter_timer := 1.5
+var _last_phrase := -1
+var _bubble: Node3D
 var _summon_thresholds: Array[float] = [0.66, 0.33]
 
 
@@ -76,6 +89,8 @@ func _build_model() -> Dictionary:
 			return BossModels.desert_lion(model, _material)
 		"firedog":
 			return BossModels.fire_dog(model, _material)
+		"parrot":
+			return BossModels.parrot(model, _material)
 	return BossModels.sand_pharaoh(model, _material)
 
 
@@ -104,6 +119,7 @@ func _challenge_text() -> String:
 
 
 func _boss_tick(delta: float) -> void:
+	_tick_chatter(delta)
 	_special_timer -= delta
 	if _special_timer <= 0.0:
 		_special_timer = special_interval
@@ -139,6 +155,9 @@ func _cast_special() -> void:
 					enemy.health.add_venom(outgoing(attack_damage() * 0.3), 4.0, outgoing(attack_damage() * 0.3))
 				"blaze":
 					enemy.health.add_venom(outgoing(attack_damage() * 0.3), 4.0, outgoing(attack_damage() * 0.3))
+				"flurry":
+					if enemy.has_method("slow"):
+						enemy.slow(2.0, 0.4)
 				"pounce":
 					if enemy.has_method("stun"):
 						enemy.stun(1.0)  # pets are knocked flat
@@ -164,3 +183,67 @@ func _summon() -> void:
 			"species": data.summons[i], "level": World.area_levels(level_number).x + 2, "pos": spot,
 		}) as Creature
 		risen.target = target
+
+
+# --- Chatter (bosses with "phrases") ---------------------------------------------
+
+## Server: now and then, says one of its phrases in a speech bubble.
+func _tick_chatter(delta: float) -> void:
+	var phrases: Array = _data().get("phrases", [])
+	if phrases.is_empty():
+		return
+	_chatter_timer -= delta
+	if _chatter_timer > 0.0:
+		return
+	_chatter_timer = randf_range(5.0, 9.0)
+	_last_phrase = (_last_phrase + 1 + randi() % maxi(phrases.size() - 1, 1)) % phrases.size()  # never the same twice running
+	say.rpc(phrases[_last_phrase])
+
+
+## A speech bubble over its head for a few seconds (every peer).
+@rpc("authority", "call_local", "reliable")
+func say(text: String) -> void:
+	if is_instance_valid(_bubble):
+		_bubble.queue_free()
+	_bubble = Node3D.new()
+	_bubble.position = Vector3(2.0, -1.0, 0)  # beside his head
+	overhead.add_child(_bubble)
+	var label := Label3D.new()
+	label.text = text
+	label.font_size = 40
+	label.pixel_size = 0.012
+	label.modulate = Color(0.08, 0.08, 0.1)
+	label.outline_size = 0
+	label.position.z = 0.02
+	label.no_depth_test = true
+	label.render_priority = 2
+	_bubble.add_child(label)
+	var width := text.length() * 40 * 0.012 * 0.55 + 0.5
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.albedo_color = Color(1, 1, 1, 0.95)
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.no_depth_test = true
+	mat.render_priority = 1
+	var back := MeshInstance3D.new()
+	var quad := QuadMesh.new()
+	quad.size = Vector2(width, 0.8)
+	back.mesh = quad
+	back.material_override = mat
+	back.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_bubble.add_child(back)
+	var tail := MeshInstance3D.new()  # the little point down to the speaker
+	var point := PrismMesh.new()
+	point.size = Vector3(0.4, 0.35, 0.01)
+	tail.mesh = point
+	tail.material_override = mat
+	tail.rotation_degrees.z = 210  # pointing down-left, at his beak
+	tail.position = Vector3(-width * 0.3, -0.55, 0)
+	tail.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_bubble.add_child(tail)
+	var fading := _bubble
+	fading.scale = Vector3.ONE * 0.3
+	var tween := fading.create_tween()
+	tween.tween_property(fading, "scale", Vector3.ONE, 0.15).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_interval(2.8)
+	tween.tween_callback(fading.queue_free)

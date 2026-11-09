@@ -530,3 +530,52 @@ static func fire_dog(model: Node3D, main: StandardMaterial3D) -> Dictionary:
 	_part(tail, _cylinder(0.0, 0.22, 0.8), flame, Vector3(0, 0.83, 0.99), Vector3(50, 0, 0))  # a tail of fire
 	_part(tail, _cylinder(0.0, 0.12, 0.55), hot, Vector3(0, 0.75, 0.89), Vector3(50, 0, 0))
 	return {"legs": legs, "jaws": [jaw], "sway": [tail], "bob": [body, 0.0, 0.05, 1.6]}
+
+
+## Pie the Parrot: a giant scarlet macaw standing on two scaly legs, with
+## red feathers, yellow and blue wings, a long blue and red tail, a white face
+## patch round each eye and a big hooked beak (the lower half snaps).
+static func parrot(model: Node3D, main: StandardMaterial3D) -> Dictionary:
+	var yellow := _mat(Color(1.0, 0.8, 0.15))
+	var blue := _mat(Color(0.12, 0.35, 0.85))
+	var face := _mat(Color(0.97, 0.95, 0.92))
+	var beak := _mat(Color(0.92, 0.88, 0.8))
+	var beak_dark := _mat(Color(0.12, 0.1, 0.1))
+	var scale_mat := _mat(Color(0.45, 0.42, 0.45))
+	var dark := _mat(Color(0.03, 0.03, 0.03))
+	var legs: Array = []
+	for x in [-0.32, 0.32]:
+		var hip := _pivot(model, Vector3(x, 1.0, 0.0))
+		_part(hip, _cylinder(0.09, 0.11, 1.0), scale_mat, Vector3(0, -0.5, 0))
+		for t in [-25.0, 0.0, 25.0]:  # toes forward
+			_part(hip, _cylinder(0.04, 0.06, 0.45), scale_mat, Vector3(sin(deg_to_rad(t)) * 0.2, -0.98, -0.2), Vector3(-90, t, 0))
+		_part(hip, _cylinder(0.04, 0.06, 0.35), scale_mat, Vector3(0, -0.98, 0.17), Vector3(90, 0, 0))  # and one back
+		legs.append(hip)
+	var body := _pivot(model, Vector3.ZERO)
+	_part(body, _sphere(0.75), main, Vector3(0, 1.85, 0.05), Vector3(-15, 0, 0), Vector3(0.9, 1.25, 0.85))  # plump upright body
+	_part(body, _sphere(0.55), main, Vector3(0, 2.7, -0.12))  # neck and chest
+	# The long tail, red over blue, hanging down behind.
+	var tail := _pivot(body, Vector3(0, 1.3, 0.55))
+	_part(tail, _box(Vector3(0.36, 1.6, 0.06)), blue, Vector3(0, -0.6, 0.35), Vector3(-25, 0, 0))
+	_part(tail, _box(Vector3(0.26, 1.3, 0.07)), main, Vector3(0, -0.4, 0.31), Vector3(-25, 0, 0))
+	# Wings folded at the sides: red shoulders, a yellow band, blue flight feathers.
+	var arms: Array = []
+	for side in [-1.0, 1.0]:
+		var shoulder := _pivot(body, Vector3(side * 0.68, 2.5, 0.0))
+		_part(shoulder, _sphere(0.35), main, Vector3(0, -0.2, 0.05), Vector3.ZERO, Vector3(0.5, 1.0, 1.0))
+		_part(shoulder, _box(Vector3(0.12, 0.45, 0.6)), yellow, Vector3(0, -0.6, 0.1), Vector3(-10, 0, 0))
+		_part(shoulder, _box(Vector3(0.1, 0.9, 0.55)), blue, Vector3(0, -1.2, 0.25), Vector3(-15, 0, 0))
+		arms.append(shoulder)
+	var head := _pivot(body, Vector3(0, 3.25, -0.2))
+	_part(head, _sphere(0.5), main, Vector3.ZERO, Vector3.ZERO, Vector3(0.95, 1.0, 1.05))
+	for x in [-1.0, 1.0]:
+		_part(head, _sphere(0.22), face, Vector3(x * 0.38, 0.0, -0.18), Vector3.ZERO, Vector3(0.4, 1.0, 1.1))  # white face patch
+		_part(head, _sphere(0.08), dark, Vector3(x * 0.45, 0.06, -0.2))
+		_part(head, _sphere(0.03), face, Vector3(x * 0.5, 0.09, -0.23))  # a glint
+	# The big hooked beak.
+	_part(head, _sphere(0.26), beak, Vector3(0, -0.02, -0.5), Vector3.ZERO, Vector3(0.8, 1.0, 1.0))
+	_part(head, _cylinder(0.0, 0.12, 0.35), beak, Vector3(0, -0.22, -0.66), Vector3(-160, 0, 0))  # the hook
+	var jaw := _pivot(head, Vector3(0, -0.2, -0.35))
+	_part(jaw, _sphere(0.18), beak_dark, Vector3(0, -0.04, -0.12), Vector3.ZERO, Vector3(0.8, 0.6, 1.0))
+	jaw.set_meta("open", Vector3(-0.35, 0, 0))
+	return {"legs": legs, "arms": arms, "jaws": [jaw], "sway": [tail], "bob": [body, 0.0, 0.06, 2.0]}

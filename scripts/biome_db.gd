@@ -8,7 +8,7 @@ class_name BiomeDB
 ## species: indices into SpeciesDB that live in this biome.
 ## starter_species: if set, the first two creatures near the camp are always this one.
 ## boss: "rival" (a tamer with one pet), "titan", "wyrm", "witch", "fish",
-## "pharaoh", "lion", "colossus", "firedog" or "yeti";
+## "pharaoh", "lion", "colossus", "firedog", "yeti" or "parrot";
 ## champions: optional species of the Champions ending the act's first two levels.
 ## obstacles: which obstacle set dresses the level (default by position).
 ## boss_name: how the boss is named in objectives (rivals get a random name).
@@ -85,8 +85,8 @@ const BIOMES := [
 	{
 		"name": "Frostveil Expanse",
 		"species": [51, 52],  # frost wraiths and yetis
-		"boss": "yeti",
-		"boss_name": "the Yeti King",
+		"boss": "parrot",
+		"boss_name": "Pie the Parrot",
 		"obstacles": "frost",
 		"floor_hue": Vector2(0.54, 0.6), "floor_sat": 0.16, "floor_val": 0.55,
 		"camp": Color(0.42, 0.47, 0.55), "arena": Color(0.36, 0.42, 0.56),
