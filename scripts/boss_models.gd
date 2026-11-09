@@ -483,3 +483,50 @@ static func desert_lion(model: Node3D, main: StandardMaterial3D) -> Dictionary:
 	_part(tail, _cylinder(0.06, 0.09, 1.3), main, Vector3(0, -0.3, 0.55), Vector3(-60, 0, 0))
 	_part(tail, _sphere(0.16), mane, Vector3(0, -0.62, 1.12), Vector3.ZERO, Vector3(1.0, 1.4, 1.0))  # the tuft
 	return {"legs": legs, "jaws": [jaw], "sway": [tail], "bob": [body, 0.0, 0.05, 1.4]}
+
+
+## Koleko: a huge fire dog of black, cracked rock with lava glowing through
+## the cracks, a crest of flames down his neck and back, tall pointed ears,
+## a long snout full of glowing fangs, burning eyes and a tail of fire.
+static func fire_dog(model: Node3D, main: StandardMaterial3D) -> Dictionary:
+	var lava := _mat(Color(1.0, 0.45, 0.08), true)
+	var flame := _mat(Color(1.0, 0.62, 0.15), true)
+	var hot := _mat(Color(1.0, 0.9, 0.5), true)
+	var dark := _mat(Color(0.05, 0.04, 0.04))
+	var legs: Array = []
+	# Order: front left, front right, back right, back left (trot pairs share a phase).
+	for spot in [Vector3(-0.42, 1.25, -0.95), Vector3(0.42, 1.25, -0.95), Vector3(0.42, 1.25, 0.95), Vector3(-0.42, 1.25, 0.95)]:
+		var hip := _pivot(model, spot)
+		_part(hip, _cylinder(0.17, 0.25, 1.2), main, Vector3(0, -0.6, 0))
+		_part(hip, _box(Vector3(0.36, 0.05, 0.4)), lava, Vector3(0, -0.45, 0))  # a glowing crack
+		_part(hip, _sphere(0.22), main, Vector3(0, -1.18, -0.1), Vector3.ZERO, Vector3(1.0, 0.6, 1.4))  # paw
+		legs.append(hip)
+	var body := _pivot(model, Vector3.ZERO)
+	_part(body, _sphere(0.85), main, Vector3(0, 1.75, 0.1), Vector3.ZERO, Vector3(0.8, 0.72, 1.65))  # lean body
+	_part(body, _sphere(0.75), main, Vector3(0, 2.0, -0.85), Vector3.ZERO, Vector3(0.95, 0.95, 0.9))  # deep chest
+	for i in 5:  # lava cracks along the flanks
+		for side in [-1.0, 1.0]:
+			_part(body, _box(Vector3(0.04, 0.5, 0.06)), lava, Vector3(side * 0.66, 1.75, -0.6 + i * 0.35), Vector3(0, 0, side * (15 + i * 9)))
+	for i in 9:  # the crest of flames from the neck down the back
+		var z := -1.25 + i * 0.3
+		var top := 2.75 if z < -0.5 else 2.42  # chest, then the back
+		_part(body, _cylinder(0.0, 0.2, 0.7 - i * 0.04), flame if i % 2 == 0 else lava, Vector3(0, top, z), Vector3(30, 0, 0))
+	var head := _pivot(body, Vector3(0, 2.55, -1.55))
+	_part(head, _sphere(0.45), main, Vector3.ZERO, Vector3.ZERO, Vector3(0.95, 0.9, 1.05))
+	_part(head, _box(Vector3(0.36, 0.3, 0.65)), main, Vector3(0, -0.1, -0.55))  # long snout
+	_part(head, _box(Vector3(0.18, 0.12, 0.1)), dark, Vector3(0, 0.02, -0.88))  # nose
+	for x in [-0.18, 0.18]:
+		_part(head, _sphere(0.08), hot, Vector3(x, 0.14, -0.36))  # burning eyes
+		_part(head, _box(Vector3(0.18, 0.05, 0.06)), dark, Vector3(x, 0.24, -0.38), Vector3(0, 0, -signf(x) * 20))  # glare
+		_part(head, _cylinder(0.0, 0.14, 0.55), main, Vector3(x * 1.3, 0.55, 0.05), Vector3(-10, 0, signf(x) * -15))  # tall ears
+		_part(head, _cylinder(0.0, 0.07, 0.35), lava, Vector3(x * 1.3, 0.52, 0.0), Vector3(-10, 0, signf(x) * -15))
+		_part(head, _cylinder(0.0, 0.035, 0.14), hot, Vector3(x * 0.6, -0.3, -0.75), Vector3(-180, 0, 0))  # fangs
+	var jaw := _pivot(head, Vector3(0, -0.25, -0.25))
+	_part(jaw, _box(Vector3(0.3, 0.1, 0.6)), main, Vector3(0, -0.05, -0.3))
+	_part(jaw, _box(Vector3(0.24, 0.03, 0.5)), lava, Vector3(0, 0.01, -0.3))  # fire in the mouth
+	jaw.set_meta("open", Vector3(-0.35, 0, 0))
+	var tail := _pivot(body, Vector3(0, 2.0, 1.45))
+	_part(tail, _cylinder(0.08, 0.1, 0.9), main, Vector3(0, 0.29, 0.34), Vector3(50, 0, 0))
+	_part(tail, _cylinder(0.0, 0.22, 0.8), flame, Vector3(0, 0.83, 0.99), Vector3(50, 0, 0))  # a tail of fire
+	_part(tail, _cylinder(0.0, 0.12, 0.55), hot, Vector3(0, 0.75, 0.89), Vector3(50, 0, 0))
+	return {"legs": legs, "jaws": [jaw], "sway": [tail], "bob": [body, 0.0, 0.05, 1.6]}

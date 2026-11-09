@@ -8,6 +8,8 @@ extends Rival
 ##   and fire imps called out of the lava;
 ## - Sunmane, the Desert Lion: Pounce (a warning circle, then he leaps onto
 ##   it: damage and a stun) and sand scorpions skittering out at his roar;
+## - Koleko, a huge fire dog: Lava Spit (a warning circle, then a burst of
+##   fire that burns and leaves the ground ablaze) and fire imps;
 ## - the Yeti King: Ice Slam (a warning circle, then damage and a freeze) and
 ##   frost wraiths summoned out of the blizzard.
 ## Each casts its special every few seconds at a player or pet, and summons its
@@ -25,6 +27,12 @@ const VARIANTS := {
 		"special": "Pounce", "effect": "pounce", "fx": Color(0.95, 0.75, 0.35),
 		"summons": [48, 48, 47], "summon_text": "Sunmane roars, and the desert answers!",
 		"challenge": "Sunmane the Desert Lion roars!",
+	},
+	"firedog": {
+		"title": "Koleko", "objective": "Koleko the Fire Dog", "color": Color(0.17, 0.13, 0.12),
+		"special": "Lava Spit", "effect": "blaze", "fx": Color(1.0, 0.5, 0.12),
+		"summons": [49, 49, 49], "summon_text": "Koleko howls, and fire imps leap from the flames!",
+		"challenge": "Koleko the Fire Dog bares his burning fangs!",
 	},
 	"colossus": {
 		"title": "Magma Colossus", "objective": "the Magma Colossus", "color": Color(0.16, 0.13, 0.13),
@@ -66,6 +74,8 @@ func _build_model() -> Dictionary:
 			return BossModels.yeti_king(model, _material)
 		"lion":
 			return BossModels.desert_lion(model, _material)
+		"firedog":
+			return BossModels.fire_dog(model, _material)
 	return BossModels.sand_pharaoh(model, _material)
 
 
@@ -127,6 +137,8 @@ func _cast_special() -> void:
 						enemy.blind(4.0)
 				"burn":
 					enemy.health.add_venom(outgoing(attack_damage() * 0.3), 4.0, outgoing(attack_damage() * 0.3))
+				"blaze":
+					enemy.health.add_venom(outgoing(attack_damage() * 0.3), 4.0, outgoing(attack_damage() * 0.3))
 				"pounce":
 					if enemy.has_method("stun"):
 						enemy.stun(1.0)  # pets are knocked flat
@@ -135,7 +147,9 @@ func _cast_special() -> void:
 				"freeze":
 					if enemy.has_method("slow"):
 						enemy.slow(1.5, 0.0)
-		world.play_burst.rpc(spot, data.fx, special_radius))
+		world.play_burst.rpc(spot, data.fx, special_radius)
+		if data.effect == "blaze":  # the ground stays ablaze for a few seconds
+			world.add_zone(self, spot, special_radius, 3.0, outgoing(attack_damage() * 0.35), data.fx))
 
 
 func _summon() -> void:

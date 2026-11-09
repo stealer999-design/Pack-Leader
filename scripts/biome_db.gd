@@ -8,7 +8,7 @@ class_name BiomeDB
 ## species: indices into SpeciesDB that live in this biome.
 ## starter_species: if set, the first two creatures near the camp are always this one.
 ## boss: "rival" (a tamer with one pet), "titan", "wyrm", "witch", "fish",
-## "pharaoh", "lion", "colossus" or "yeti";
+## "pharaoh", "lion", "colossus", "firedog" or "yeti";
 ## champions: optional species of the Champions ending the act's first two levels.
 ## obstacles: which obstacle set dresses the level (default by position).
 ## boss_name: how the boss is named in objectives (rivals get a random name).
@@ -75,8 +75,8 @@ const BIOMES := [
 	{
 		"name": "Cinderpeak Caldera",
 		"species": [49, 50],  # fire imps and magma golems
-		"boss": "colossus",
-		"boss_name": "the Magma Colossus",
+		"boss": "firedog",
+		"boss_name": "Koleko the Fire Dog",
 		"obstacles": "volcano",
 		"floor_hue": Vector2(0.0, 0.04), "floor_sat": 0.3, "floor_val": 0.22,
 		"camp": Color(0.28, 0.24, 0.23), "arena": Color(0.3, 0.18, 0.14),
