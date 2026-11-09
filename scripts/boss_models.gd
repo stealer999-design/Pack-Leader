@@ -532,15 +532,18 @@ static func fire_dog(model: Node3D, main: StandardMaterial3D) -> Dictionary:
 	return {"legs": legs, "jaws": [jaw], "sway": [tail], "bob": [body, 0.0, 0.05, 1.6]}
 
 
-## Pie the Parrot: a giant scarlet macaw standing on two scaly legs, with
-## red feathers, yellow and blue wings, a long blue and red tail, a white face
-## patch round each eye and a big hooked beak (the lower half snaps).
+## Pye the Parrot: a giant grey parrot standing on two scaly legs: soft grey
+## feathers (paler on the head, darker on the wings), a bright red tail, a
+## white face patch round each eye and a big black hooked beak (the lower
+## half snaps).
 static func parrot(model: Node3D, main: StandardMaterial3D) -> Dictionary:
-	var yellow := _mat(Color(1.0, 0.8, 0.15))
-	var blue := _mat(Color(0.12, 0.35, 0.85))
+	var coverts := _mat(Color(0.26, 0.27, 0.3))  # darker grey wing feathers
+	var flight := _mat(Color(0.17, 0.18, 0.2))  # dark grey flight feathers
+	var red := _mat(Color(0.85, 0.1, 0.08))
+	var pale := _mat(Color(0.52, 0.53, 0.56))
 	var face := _mat(Color(0.97, 0.95, 0.92))
-	var beak := _mat(Color(0.92, 0.88, 0.8))
-	var beak_dark := _mat(Color(0.12, 0.1, 0.1))
+	var beak := _mat(Color(0.1, 0.1, 0.11))
+	var beak_dark := _mat(Color(0.18, 0.17, 0.18))
 	var scale_mat := _mat(Color(0.45, 0.42, 0.45))
 	var dark := _mat(Color(0.03, 0.03, 0.03))
 	var legs: Array = []
@@ -554,20 +557,20 @@ static func parrot(model: Node3D, main: StandardMaterial3D) -> Dictionary:
 	var body := _pivot(model, Vector3.ZERO)
 	_part(body, _sphere(0.75), main, Vector3(0, 1.85, 0.05), Vector3(-15, 0, 0), Vector3(0.9, 1.25, 0.85))  # plump upright body
 	_part(body, _sphere(0.55), main, Vector3(0, 2.7, -0.12))  # neck and chest
-	# The long tail, red over blue, hanging down behind.
+	# The tail: grey at the root, bright red below, hanging down behind.
 	var tail := _pivot(body, Vector3(0, 1.3, 0.55))
-	_part(tail, _box(Vector3(0.36, 1.6, 0.06)), blue, Vector3(0, -0.6, 0.35), Vector3(-25, 0, 0))
-	_part(tail, _box(Vector3(0.26, 1.3, 0.07)), main, Vector3(0, -0.4, 0.31), Vector3(-25, 0, 0))
-	# Wings folded at the sides: red shoulders, a yellow band, blue flight feathers.
+	_part(tail, _box(Vector3(0.4, 1.0, 0.06)), main, Vector3(0, -0.2, 0.18), Vector3(-25, 0, 0))
+	_part(tail, _box(Vector3(0.42, 0.75, 0.08)), red, Vector3(0, -0.95, 0.53), Vector3(-25, 0, 0))  # the red tail
+	# Wings folded at the sides: grey shoulders, darker coverts and flight feathers.
 	var arms: Array = []
 	for side in [-1.0, 1.0]:
 		var shoulder := _pivot(body, Vector3(side * 0.68, 2.5, 0.0))
 		_part(shoulder, _sphere(0.35), main, Vector3(0, -0.2, 0.05), Vector3.ZERO, Vector3(0.5, 1.0, 1.0))
-		_part(shoulder, _box(Vector3(0.12, 0.45, 0.6)), yellow, Vector3(0, -0.6, 0.1), Vector3(-10, 0, 0))
-		_part(shoulder, _box(Vector3(0.1, 0.9, 0.55)), blue, Vector3(0, -1.2, 0.25), Vector3(-15, 0, 0))
+		_part(shoulder, _box(Vector3(0.12, 0.45, 0.6)), coverts, Vector3(0, -0.6, 0.1), Vector3(-10, 0, 0))
+		_part(shoulder, _box(Vector3(0.1, 0.9, 0.55)), flight, Vector3(0, -1.2, 0.25), Vector3(-15, 0, 0))
 		arms.append(shoulder)
 	var head := _pivot(body, Vector3(0, 3.25, -0.2))
-	_part(head, _sphere(0.5), main, Vector3.ZERO, Vector3.ZERO, Vector3(0.95, 1.0, 1.05))
+	_part(head, _sphere(0.5), pale, Vector3.ZERO, Vector3.ZERO, Vector3(0.95, 1.0, 1.05))
 	for x in [-1.0, 1.0]:
 		_part(head, _sphere(0.22), face, Vector3(x * 0.38, 0.0, -0.18), Vector3.ZERO, Vector3(0.4, 1.0, 1.1))  # white face patch
 		_part(head, _sphere(0.08), dark, Vector3(x * 0.45, 0.06, -0.2))

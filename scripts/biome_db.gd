@@ -86,7 +86,7 @@ const BIOMES := [
 		"name": "Frostveil Expanse",
 		"species": [51, 52],  # frost wraiths and yetis
 		"boss": "parrot",
-		"boss_name": "Pie the Parrot",
+		"boss_name": "Pye the Parrot",
 		"obstacles": "frost",
 		"floor_hue": Vector2(0.54, 0.6), "floor_sat": 0.16, "floor_val": 0.55,
 		"camp": Color(0.42, 0.47, 0.55), "arena": Color(0.36, 0.42, 0.56),

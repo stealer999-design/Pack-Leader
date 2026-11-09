@@ -14,8 +14,8 @@ extends Rival
 ##   hurts anyone standing in it for a while);
 ## - Koleko, a huge fire dog: Lava Spit (a warning circle, then a burst of
 ##   fire that burns and leaves the ground ablaze) and fire imps;
-## - Pie the Parrot: Feather Flurry (a warning circle, then a storm of
-##   feathers: damage and a slow), wraiths and a yeti from the blizzard, and
+## - Pye the Parrot: Feather Flurry (a warning circle, then a storm of
+##   feathers: damage and a slow), a big grey parrot with a red tail,, wraiths and a yeti from the blizzard, and
 ##   he chatters in speech bubbles ("whatcha doin?", "Honk Honk");
 ## - the Yeti King: Ice Slam (a warning circle, then damage and a freeze) and
 ##   frost wraiths summoned out of the blizzard.
@@ -48,10 +48,10 @@ const VARIANTS := {
 		"challenge": "Koleko the Fire Dog bares his burning fangs!",
 	},
 	"parrot": {
-		"title": "Pie", "objective": "Pie the Parrot", "color": Color(0.85, 0.12, 0.1),
+		"title": "Pye", "objective": "Pye the Parrot", "color": Color(0.36, 0.37, 0.4),
 		"special": "Feather Flurry", "effect": "flurry", "fx": Color(1.0, 0.85, 0.3),
-		"summons": [51, 51, 52], "summon_text": "Pie squawks, and the blizzard brings wraiths!",
-		"challenge": "Pie the Parrot swoops down!",
+		"summons": [51, 51, 52], "summon_text": "Pye squawks, and the blizzard brings wraiths!",
+		"challenge": "Pye the Parrot swoops down!",
 		"phrases": ["whatcha doin?", "Honk Honk"],
 	},
 	"colossus": {
