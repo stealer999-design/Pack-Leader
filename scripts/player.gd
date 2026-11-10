@@ -1077,7 +1077,7 @@ func _first_friend(species_name: String) -> void:
 	if not is_inside_tree():
 		return
 	world.hud.show_tutorial("%s is your first friend!" % species_name,
-			"Now that you have your first friend, you can set him to aggressive or passive with T. They will fight along side you to defeat your next foe, or stand by while you befriend your next pet.",
+			"Now that you have your first friend, they will fight alongside you to defeat your next foe. Right-click an enemy to tell your pets to attack it. Press T to set your pets to passive, and they will stand by while you befriend your next pet.",
 			Callable(), "heart")
 
 

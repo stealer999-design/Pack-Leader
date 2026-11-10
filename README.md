@@ -122,9 +122,9 @@ played in the browser".
   throw the treat straight away, or click Got it (Enter and Esc close it too).
   It shows once per save. Then, a moment after your **first capture** (once
   its heart has popped up), a second tip pauses the game: *"Now that you have
-  your first friend, you can set him to aggressive or passive with T. They
-  will fight along side you to defeat your next foe, or stand by while you
-  befriend your next pet."* Also once per save. And the first time a capture
+  your first friend, they will fight alongside you to defeat your next foe.
+  Right-click an enemy to tell your pets to attack it. Press T to set your
+  pets to passive, and they will stand by while you befriend your next pet."* Also once per save. And the first time a capture
   goes to your **reserve** because your party is full (your 4th pet, in a new
   game), a third tip explains the reserve: it carries 3 more pets that level
   up too, you swap them in the inventory's Pets tab at any time (even
