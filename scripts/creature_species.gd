@@ -30,6 +30,10 @@ const VENOM_MAX := 1.2  ## stacking up to this much of its damage per second (3 
 const BASE_CRIT := 0.05
 const ARCHER_CRIT := 0.15
 const CRIT_MULTIPLIER := 2.0
+## Tamed venomancers (lizards) deal this share of their damage: bites, venom,
+## toxic blood and abilities. They cleared the game about 35% faster than the
+## other families in playtests. Wild lizards keep their full damage.
+const VENOMANCER_PET_DAMAGE := 0.65
 const TOXIC_BLOOD := 0.25  ## Poison per second (share of its damage) given to what hits it up close.
 const PALADIN_HEALTH := 1.35  ## Max health multiplier.
 const PALADIN_DAMAGE_TAKEN := 0.85  ## Damage taken multiplier.

@@ -274,8 +274,10 @@ func body_size() -> float:
 
 
 func get_damage() -> float:
+	var tamed_venomancer := owner_id != 0 and species.pet_class() == "venomancer"
 	return species.damage * _level_multiplier() * (ELITE_DAMAGE if elite else 1.0) * (1.0 + skill_bonus("damage")) \
-			* (_weaken_factor if _weaken_timer > 0.0 else 1.0)
+			* (_weaken_factor if _weaken_timer > 0.0 else 1.0) \
+			* (CreatureSpecies.VENOMANCER_PET_DAMAGE if tamed_venomancer else 1.0)
 
 
 ## The total boost to `stat` ("damage", "health" or "armor") from passive skills:
