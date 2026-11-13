@@ -698,7 +698,9 @@ func _rival_pet_ai(delta: float) -> Vector3:
 ## Moves into range of a queued ability, then casts it.
 func _tick_pending_cast(delta: float) -> Vector3:
 	var ability := species.ability
-	var cast_target: Creature = _pending_cast.target
+	# The target may have died (and been freed) while this pet ran into range.
+	var raw_target = _pending_cast.get("target")
+	var cast_target: Creature = raw_target if is_instance_valid(raw_target) else null
 	_pending_cast.time_left -= delta
 	if _pending_cast.time_left <= 0.0 or (ability.needs_target and not _is_valid_target(cast_target)):
 		_pending_cast = {}
