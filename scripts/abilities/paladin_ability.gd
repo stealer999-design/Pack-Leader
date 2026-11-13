@@ -54,9 +54,13 @@ func execute(pet: Creature, point: Vector3, target: Creature) -> void:
 		_effects(pet, at, target)
 
 
-func _effects(pet: Creature, at: Vector3, target: Creature) -> void:
-	if not is_instance_valid(pet):
+func _effects(pet_ref, at: Vector3, target_ref) -> void:
+	# Called later (an arrow landing, a leap ending): the pet or its target
+	# may have been freed by then, so they come in untyped and are checked.
+	if not is_instance_valid(pet_ref):
 		return
+	var pet: Creature = pet_ref
+	var target: Creature = target_ref if is_instance_valid(target_ref) else null
 	var world := pet.world
 	if not is_instance_valid(target) and smite_multiplier > 0.0:
 		target = world.nearest_enemy(pet, at, maxf(radius, 3.0))

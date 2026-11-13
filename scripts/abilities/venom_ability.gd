@@ -58,9 +58,12 @@ func execute(pet: Creature, point: Vector3, target: Creature) -> void:
 		world.play_burst.rpc(at, Color(0.6, 1.0, 0.6), 3.0)
 
 
-func _splash(pet: Creature, at: Vector3) -> void:
-	if not is_instance_valid(pet):
+func _splash(pet_ref, at: Vector3) -> void:
+	# Called later (an arrow landing, a leap ending): the pet or its target
+	# may have been freed by then, so they come in untyped and are checked.
+	if not is_instance_valid(pet_ref):
 		return
+	var pet: Creature = pet_ref
 	for enemy in pet.world.enemies_near(pet, at, radius):
 		_poison(pet, enemy)
 	pet.world.play_burst.rpc(at, VENOM, maxf(radius, 1.5))

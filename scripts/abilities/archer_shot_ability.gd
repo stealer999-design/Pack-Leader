@@ -95,18 +95,25 @@ func execute(pet: Creature, point: Vector3, target: Creature) -> void:
 
 
 ## An arrow from `from` to `to`; `on_land` runs when it gets there.
-func _fire(pet: Creature, from: Vector3, to: Vector3, on_land: Callable, tint := Color(0, 0, 0, 0)) -> void:
-	if not is_instance_valid(pet):
+func _fire(pet_ref, from: Vector3, to: Vector3, on_land: Callable, tint := Color(0, 0, 0, 0)) -> void:
+	# Called later (an arrow landing, a leap ending): the pet or its target
+	# may have been freed by then, so they come in untyped and are checked.
+	if not is_instance_valid(pet_ref):
 		return
+	var pet: Creature = pet_ref
 	var travel := maxf(from.distance_to(to) / ARROW_SPEED, 0.05)
 	pet.world.play_arrow.rpc(from, to, tint if tint.a > 0.0 else color, travel)
 	if on_land.is_valid():
 		pet.get_tree().create_timer(travel).timeout.connect(on_land)
 
 
-func _hit(pet: Creature, at: Vector3, damage: float, hit_radius: float, target: Creature) -> void:
-	if not is_instance_valid(pet):
+func _hit(pet_ref, at: Vector3, damage: float, hit_radius: float, target_ref) -> void:
+	# Called later (an arrow landing, a leap ending): the pet or its target
+	# may have been freed by then, so they come in untyped and are checked.
+	if not is_instance_valid(pet_ref):
 		return
+	var pet: Creature = pet_ref
+	var target: Creature = target_ref if is_instance_valid(target_ref) else null
 	var victims: Array[Node3D] = []
 	if is_instance_valid(target) and splash_radius <= 0.0:
 		if target.is_targetable():
@@ -121,16 +128,24 @@ func _hit(pet: Creature, at: Vector3, damage: float, hit_radius: float, target: 
 		pet.world.play_burst.rpc(at, color, splash_radius)
 
 
-func _mark(pet: Creature, at: Vector3) -> void:
-	if not is_instance_valid(pet):
+func _mark(pet_ref, at: Vector3) -> void:
+	# Called later (an arrow landing, a leap ending): the pet or its target
+	# may have been freed by then, so they come in untyped and are checked.
+	if not is_instance_valid(pet_ref):
 		return
+	var pet: Creature = pet_ref
 	for enemy in pet.world.enemies_near(pet, at, radius):
 		if enemy is Creature:
 			(enemy as Creature).mark(effect_duration)
 	pet.world.play_burst.rpc(at, Color(1.0, 0.3, 0.25), radius)
 
 
-func _hit_one(pet: Creature, enemy_id: int, damage: float) -> void:
+func _hit_one(pet_ref, enemy_id: int, damage: float) -> void:
+	# Called later (an arrow landing, a leap ending): the pet or its target
+	# may have been freed by then, so they come in untyped and are checked.
+	if not is_instance_valid(pet_ref):
+		return
+	var pet: Creature = pet_ref
 	var enemy := instance_from_id(enemy_id) as Node3D
 	if is_instance_valid(pet) and is_instance_valid(enemy) and enemy.is_targetable():
 		_apply(pet, enemy, damage)
@@ -148,7 +163,12 @@ func _apply(pet: Creature, enemy: Node3D, damage: float) -> void:
 		pet.envenom(enemy, pet.ability_damage() * dot_multiplier, 4.0, pet.ability_damage() * dot_multiplier)
 
 
-func _heal(pet: Creature, ally_id: int) -> void:
+func _heal(pet_ref, ally_id: int) -> void:
+	# Called later (an arrow landing, a leap ending): the pet or its target
+	# may have been freed by then, so they come in untyped and are checked.
+	if not is_instance_valid(pet_ref):
+		return
+	var pet: Creature = pet_ref
 	var ally := instance_from_id(ally_id) as Node3D
 	if not is_instance_valid(pet) or not is_instance_valid(ally) or not ally.is_targetable():
 		return

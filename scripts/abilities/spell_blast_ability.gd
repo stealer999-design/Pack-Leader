@@ -75,9 +75,12 @@ func execute(pet: Creature, point: Vector3, target: Creature) -> void:
 		pet.get_tree().create_timer(travel).timeout.connect(_land.bind(pet, impact, damage))
 
 
-func _land(pet: Creature, impact: Vector3, damage: float) -> void:
-	if not is_instance_valid(pet):
+func _land(pet_ref, impact: Vector3, damage: float) -> void:
+	# Called later (an arrow landing, a leap ending): the pet or its target
+	# may have been freed by then, so they come in untyped and are checked.
+	if not is_instance_valid(pet_ref):
 		return
+	var pet: Creature = pet_ref
 	var world := pet.world
 	var hit := world.enemies_near(pet, impact, radius)
 	for enemy in hit:
@@ -125,9 +128,12 @@ func _chain_from(pet: Creature, start: Vector3, already: Array[Node3D], damage: 
 		pet.world.play_lightning.rpc(points)
 
 
-func _storm_strike(pet: Creature, center: Vector3, damage: float) -> void:
-	if not is_instance_valid(pet):
+func _storm_strike(pet_ref, center: Vector3, damage: float) -> void:
+	# Called later (an arrow landing, a leap ending): the pet or its target
+	# may have been freed by then, so they come in untyped and are checked.
+	if not is_instance_valid(pet_ref):
 		return
+	var pet: Creature = pet_ref
 	var world := pet.world
 	var foes := world.enemies_near(pet, center, spread)
 	var spot: Vector3 = foes.pick_random().global_position if not foes.is_empty() \
