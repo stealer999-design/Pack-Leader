@@ -480,6 +480,8 @@ played in the browser".
   away (wild cats shoot at you too), and their ability is a spell, cast with a
   glowing magic circle. The spells are fireballs, meteors, a magma orb, a
   lightning bolt and rockfalls, plus healing, shielding and cursing spells.
+  Wizards are **glass cannons**: 30% less health than other pets, but their
+  spells hit 30% harder and recharge in **1.5 seconds** instead of 3.
   **Dogs are Paladins**: melee tanks that heal. They have 35% more health and
   take 15% less damage, every bite comes with a **Healing Kiss** that heals
   the most injured ally nearby (a pet or player, itself included) for 30% of
@@ -518,7 +520,7 @@ played in the browser".
   and a light that lights up the ground it flies over, so shots are easy to
   follow in a busy fight.
 - **Pet abilities:** every species has a signature ability (keys 1 2 3 for
-  party pets 1-3) on a **3-second cooldown** (shorter with the cooldown
+  party pets 1-3) on a **3-second cooldown** (1.5 seconds for cats; shorter with the cooldown
   skills), and every ability **lands where your
   mouse is**: the pet runs within range of that spot first, then casts. Each
   class has its own kind: **cats** cast damage spells in four elements (fire,

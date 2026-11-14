@@ -714,7 +714,8 @@ func _tick_pending_cast(delta: float) -> Vector3:
 	_pending_cast = {}
 	if _flat_distance(point) > 0.1:
 		model.rotation.y = atan2(-(point.x - global_position.x), -(point.z - global_position.z))
-	_ability_used.rpc(ability.cooldown * (1.0 - minf(skill_bonus("cooldown"), PetSkills.MAX_COOLDOWN)))
+	var base_cooldown := CreatureSpecies.WIZARD_COOLDOWN if species.is_wizard() else ability.cooldown
+	_ability_used.rpc(base_cooldown * (1.0 - minf(skill_bonus("cooldown"), PetSkills.MAX_COOLDOWN)))
 	if species.pet_class() == "wizard":
 		world.play_cast.rpc(global_position, species.color.lightened(0.3))
 	ability.execute(self, point, cast_target)
@@ -761,7 +762,8 @@ func _chase_and_attack(victim: Node3D) -> Vector3:
 
 ## Ability damage: attack damage plus spell power from the skill tree.
 func ability_damage() -> float:
-	return get_damage() * (1.0 + skill_bonus("spell_power"))
+	return get_damage() * (1.0 + skill_bonus("spell_power")) \
+			* (CreatureSpecies.WIZARD_SPELL_DAMAGE if species.is_wizard() else 1.0)
 
 
 ## Heals and shields this pet gives are multiplied by this (skill tree).
@@ -951,7 +953,8 @@ func _on_died() -> void:
 
 
 func _apply_level_stats() -> void:
-	var sturdy := CreatureSpecies.PALADIN_HEALTH if species.is_paladin() else 1.0
+	var sturdy := CreatureSpecies.PALADIN_HEALTH if species.is_paladin() \
+			else (CreatureSpecies.WIZARD_HEALTH if species.is_wizard() else 1.0)
 	health.max_health = roundf(species.max_health * _level_multiplier() * (1.0 + skill_bonus("health")) * sturdy \
 			* (ELITE_HEALTH if elite else 1.0))
 

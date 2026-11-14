@@ -36,6 +36,11 @@ const CRIT_MULTIPLIER := 2.0
 const VENOMANCER_PET_DAMAGE := 0.65
 const TOXIC_BLOOD := 0.25  ## Poison per second (share of its damage) given to what hits it up close.
 const PALADIN_HEALTH := 1.35  ## Max health multiplier.
+## Wizards (cats) are glass cannons: fragile, but their spells come back fast
+## and hit hard.
+const WIZARD_HEALTH := 0.7  ## Max health multiplier.
+const WIZARD_COOLDOWN := 1.5  ## Seconds between abilities (others: the ability's own, 3s).
+const WIZARD_SPELL_DAMAGE := 1.3  ## Ability damage multiplier.
 const PALADIN_DAMAGE_TAKEN := 0.85  ## Damage taken multiplier.
 const PALADIN_HEAL_ON_HIT := 0.3  ## Share of each hit's damage healed onto the most injured ally.
 const PALADIN_HEAL_RANGE := 8.0
@@ -77,6 +82,10 @@ const ARCHER_KITE_DISTANCE := 2.8
 ## The species' class ("wizard", "paladin", "archer", "venomancer", or "" for none).
 func pet_class() -> String:
 	return CLASS_BY_BODY.get(body_type, "")
+
+
+func is_wizard() -> bool:
+	return pet_class() == "wizard"
 
 
 func is_ranged() -> bool:
