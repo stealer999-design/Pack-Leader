@@ -42,7 +42,7 @@ var _hat: Node3D
 
 
 ## Dresses the tamer: `outfit` holds the level (0 = none) of the worn jacket,
-## pants, hat and boots (see ItemDB.KINDS for their colours).
+## pants, hat and boots: 1-5, see ItemDB.look_level (ItemDB.OUTFIT_COLORS for their colours).
 func set_outfit(outfit: PackedInt32Array) -> void:
 	if _jacket == null or outfit.size() < 4:
 		return
@@ -68,7 +68,7 @@ func set_jacket(color: Color) -> void:
 
 
 func _color(type: String, level: int) -> Color:
-	return ItemDB.KINDS[type].colors[level - 1] if level > 0 else Color(0, 0, 0, 0)
+	return ItemDB.OUTFIT_COLORS[type][level - 1] if level > 0 else Color(0, 0, 0, 0)
 
 
 ## A hat per level: straw hat, leather cap, wool hat with a bobble, iron helm,
@@ -80,7 +80,7 @@ func _set_hat(level: int) -> void:
 	if level <= 0:
 		return
 	_hat = _pivot(_head, Vector3.ZERO)
-	var mat := _mat(ItemDB.KINDS.hat.colors[level - 1])
+	var mat := _mat(ItemDB.OUTFIT_COLORS.hat[level - 1])
 	match level:
 		1:  # straw hat: a wide flat brim
 			_part(_hat, _cylinder(0.46, 0.46, 0.03), mat, Vector3(0, 0.2, 0))

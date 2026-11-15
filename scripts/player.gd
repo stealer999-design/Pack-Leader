@@ -996,7 +996,13 @@ func _regenerate(delta: float) -> void:
 
 
 func poison(dps: float, duration: float) -> void:
-	health.add_poison(dps * POISON_TAKEN, duration)
+	health.add_poison(dps * poison_taken(), duration)
+
+
+## Share of poison the tamer takes: POISON_TAKEN, less gear's poison
+## resistance (at most 75% off).
+func poison_taken() -> float:
+	return POISON_TAKEN * (1.0 - minf(ItemDB.total(equipment, "poison_resist"), 75) / 100.0)
 
 
 func add_shield(amount: float, duration: float) -> void:
@@ -1469,7 +1475,7 @@ static func _pickup_glow() -> ImageTexture:
 func _gear_changed() -> void:
 	var looks := PackedInt32Array()
 	for slot in ["chest", "pants", "hat", "boots"]:
-		looks.append(int(equipment[slot].level) if not equipment[slot].is_empty() else 0)
+		looks.append(ItemDB.look_level(equipment[slot]))
 	outfit = looks
 	# Hats: more max health (keeping the bar at the same fraction).
 	var new_max := _base_max_health + ItemDB.total(equipment, "health")

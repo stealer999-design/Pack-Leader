@@ -146,7 +146,7 @@ played in the browser".
   stance changes, **No potions left**, **Too far away**; over a creature
   **Broke free!** or **Monsters can't be tamed**. Several at once stack
   upwards. The feed on the right is kept for the big news only (the area and
-  its boss, boss summons, a boss beaten, legendary finds, teammates going
+  its boss, boss summons, a boss beaten, rare finds, teammates going
   down, captures and breeding by others, and replies to what you do in a shop
   or the stable window), holds at most 4 lines and fades after a few seconds.
   Saving is silent.
@@ -273,8 +273,8 @@ played in the browser".
   **Chain Bat** (36 damage, wrapped in a heavy chain) for 150 coins. Every bat
   still stops creatures at 1 HP (monsters it kills). Your bat is saved.
   The Bat Shop also **buys gear**: your bag is shown under the bats; click
-  items to mark them (or "Mark all") and sell them: **Common 1 coin, Fine 2,
-  Superior 3, Legendary 5**. Every item's tooltip says what it sells for.
+  items to mark them (or "Mark all") and sell them: **Normal 1 coin, Magic 3,
+  Rare 8**, plus 1 coin per 20 item levels. Every item's tooltip says what it sells for.
   The lemonade stand now sits on the stretch of path just before the village.
 - **Breeder (village):** press F at the pink stall with the hay pen. Pick two
   different pets **of the same kind** (from your party, reserve or stable, any level)
@@ -340,66 +340,63 @@ played in the browser".
   out lots at once, press **Select** (or right-click an item), click the junk to
   mark it (or **All**, then unmark keepers), and **Throw away** with one confirm. Click an
   item to see what it does; double-click is a shortcut. The weapon slot shows your bat (upgrade it at the Bat
-  Shop). Every kind of gear comes in five levels, one per area (areas past
-  level 5 drop level 5 gear), each Common, Fine or Superior:
+  Shop; bats are bought, never dropped).
 
-  | Gear | Helps | Levels 1-5 (Common) | Fine / Superior adds |
-  |---|---|---|---|
-  | Jacket (chest) | Tamer: less damage taken | Tattered, Leather, Padded, Studded, Ranger's: 4-16% | +2% / +4% |
-  | Pants | Tamer: less damage taken | Patched Trousers, Leather, Padded, Studded, Ranger's: 2-10% | +1% / +2% |
-  | Hat | Tamer: more max health | Straw Hat, Leather Cap, Wool Hat, Iron Helm, Ranger's Hat: +10-30 | +5 / +10 |
-  | Boots | Tamer: moves faster | Worn Sandals, Leather Boots, Fur Boots, Desert Striders, Ranger's Boots: 3-11% | +2% / +4% |
-  | Ring (x2) | Pets: more damage | Copper, Fang, Silver, Claw, Alpha Ring: 3-12% | +2% / +4% |
-  | Necklace | Pets: more max health | Bead Necklace, Tooth Necklace, Shell Pendant, Jade Amulet, Heart of the Pack: 5-18% | +3% / +6% |
-  | Spiked collar (pet) | That pet: more damage | Thorn, Spiked, Fang, Razor, Alpha Collar: 5-18% | +2% / +4% |
-  | Padded collar (pet) | That pet: more max health | Cloth, Padded, Fleece, Quilted, Guardian Collar: 6-22% | +3% / +6% |
-  | Studded collar (pet) | That pet: less damage taken | Leather, Studded, Iron, Steel, Warden Collar: 4-12% | +2% / +4% |
+  **Gear works like Diablo's:** every item is a **base type** plus rolled
+  **affixes**. Its **item level** is the level of the creature that dropped
+  it (vases and bosses: the area's top creature level), with no cap, so deeper
+  areas drop stronger gear. Bases come in three tiers, the better ones only
+  dropping from item level 21 and 51:
 
-  **Legendary items** (orange): from Act 2 on, every monster killed, vase
-  smashed and boss beaten has a **5%** chance to drop one (on top of the usual
-  loot), so a graveyard run usually turns up a few. Each kind of gear has one,
-  stronger than a Superior level 5 piece and with a second bonus. A legendary
-  drop shows a tall pulsing pillar of light marked LEGENDARY, and everyone is
-  told when it drops and who picks it up:
+  | Slot | Tier 1 | Tier 2 (ilvl 21+) | Tier 3 (ilvl 51+) | Base stat |
+  |---|---|---|---|---|
+  | Chest | Leather Jacket | Padded Coat | Ranger's Duster | Armor and tamer health |
+  | Pants | Work Trousers | Reinforced Pants | Trail Breeches | Armor |
+  | Hat | Cap | Hard Hat | Warden's Hat | Tamer health |
+  | Boots | Sneakers | Hiking Boots | Pathfinder Boots | Move speed |
+  | Ring (x2) | Band | Signet | Seal | None (always Magic or better) |
+  | Necklace | Cord | Pendant | Talisman | None (always Magic or better) |
+  | Collar (pet) | Strap | Studded Collar | Runed Collar | That pet's health |
 
-  | Legendary | Slot | Gives |
-  |---|---|---|
-  | Gravewarden's Coat | Chest | 22% armor, +25 health |
-  | Bonewoven Leggings | Pants | 14% armor, 5% speed |
-  | Crown of the Drowned | Hat | +45 health, 4% armor |
-  | Ghoststep Boots | Boots | 16% speed, 4% armor |
-  | Howard's Hook | Ring | Pets: 18% damage, 6% health |
-  | Soulbound Locket | Necklace | Pets: 25% health, 6% damage |
-  | Collar of the Restless Dead | Pet collar | That pet: 25% damage, 8% health |
-  | Gravedigger's Collar | Pet collar | That pet: 30% health, 6% armor |
-  | Bone Plate Collar | Pet collar | That pet: 16% armor, 8% damage |
+  **Rarity** sets how many affixes it rolls: **Normal** (white) none,
+  **Magic** (blue) 1-2, **Rare** (yellow) 3-5 and a random name ("Grim Fang
+  Talisman"). A Magic item is named by its affixes ("Savage Band of the
+  Leech"). Each affix rolls in a range that grows with item level, so two
+  items with the same name can differ a lot:
 
-  **Class rings and necklaces** (tamer gear for one class of pet): a Wizard,
-  Paladin, Archer or Venomancer ring or necklace boosts **every party pet of
-  that class** with random stats rolled the same way as class collars (1-3 by
-  colour, from the class's pool, at three quarters of a collar's strength).
-  Two Wizard rings and a Wizard necklace make a party of cats hit hard; mix
-  classes to spread the boosts. The inventory adds up what they give each
-  class under your gear. They replace the old rings and necklaces in the
-  drops (old ones still work, boosting every pet a little), and half of them
-  are made for the pets of the area you're in. Names run from Spark Ring and
-  Spark Pendant (Wizard), Prayer Ring and Prayer Beads (Paladin), Fletcher's
-  Ring and Feather Pendant (Archer) and Fang Ring and Fang Pendant
-  (Venomancer) at level 1 up to the Signets and Talismans at level 5.
+  | Affix | Does | At ilvl 1 | At ilvl 80 | On |
+  |---|---|---|---|---|
+  | Savage | Pets: more damage | 3-6% | 40-60% | Any |
+  | Hearty | Pets: more max health | 4-8% | 45-70% | Any |
+  | of Haste | Pets: abilities recharge faster | 2-4% | 10-15% | Necklace, collar |
+  | of the Leech | Pets: heal a share of the damage they deal | 1-2% | 4-6% | Ring, collar |
+  | of Vigor | Tamer: more max health | 5-10 | 120-180 | All but collars |
+  | Sturdy | Tamer: less damage taken (armor caps at 60%) | 2-4% | 15-20% | Chest, pants, hat, boots |
+  | of Warding | Tamer and pets: less poison | 5-10% | 30-50% | Any |
+  | Swift | Tamer: moves faster | 2-4% | 10-15% | Boots |
+  | of Fortune | Better odds of good items | 5-10% | 30-50% | Ring, necklace, hat |
+  | Gilded | More coins | 5-10% | 30-50% | Ring, necklace, hat |
 
-  **Class collars** (pet gear made for one class): Wizard collars for cats,
-  Paladin collars for dogs, Archer collars for birds and Venomancer collars
-  for lizards; only pets of that class can wear them. Each rolls **random
-  stats** from its class's pool, **one per colour step**: Common (white) 1,
-  Fine (green) 2, Superior (blue) 3, stronger at higher levels. The pools are
-  the skill-tree stats: Wizard (ability damage, faster cooldowns, attack
-  damage, crit chance, health), Paladin (healing and shields, armor, health,
-  faster cooldowns, attack damage), Archer (crit chance, crit damage, attack
-  speed, attack damage, ability damage), Venomancer (poison damage, poison
-  duration, toxic blood, armor, attack damage). Half of the class collars that
-  drop are made for the pets of the area you're in. (Legendary collars are
-  unchanged, and the older spiked, padded and studded collars still work on
-  any pet.)
+  On a collar, the pet affixes help only the pet wearing it.
+
+  **Class items:** about half the Magic and Rare rings, necklaces and collars
+  are made for one class of pet (half of those for the pets of the area
+  you're in). They roll that class's skill-tree stats: Wizard **Arcane**
+  (ability damage, faster cooldowns, attack damage, crit chance, health),
+  Paladin **Holy** (healing and shields, armor, health, faster cooldowns,
+  attack damage), Archer **Keen** (crit chance, crit damage, attack speed,
+  attack damage, ability damage) and Venomancer **Venomous** (poison damage,
+  poison duration, toxic blood, armor, attack damage). From item level 30
+  they can also roll **+1 to +3 to every skill rank** of that class ("of the
+  Archmage", "of the Crusader", "of the Hawkeye", "of the Basilisk"), which
+  even lifts skills past their top rank. A class ring or necklace boosts
+  every party pet of its class (at three quarters of a collar's strength); a
+  class collar fits only that class of pet.
+
+  Rare items drop with a tall pillar of light and a two-note chime, and
+  everyone is told who found one. Items from older saves are converted
+  (Common to Normal, Fine to Magic, Superior to Rare); the old legendary
+  items are retired.
 
   **Pet gear:** the inventory's **Pets** tab (next to **Tamer**) shows your
   party pets, each with one slot, for a **collar**. Drag a collar from the bag
@@ -512,7 +509,7 @@ played in the browser".
     a bell chord for paladins, an arrow being loosed for archers (Rain of
     Arrows has its own barrage of arrows, trimmed to last as long as the
     arrows take to land), a bubbling hiss for venomancers;
-  - an item dropping goes "bing" (a legendary rings two higher notes);
+  - an item dropping goes "bing" (a rare rings two higher notes);
   - tamers' footsteps patter as they walk.
 - **Glowing shots:** every ranged attack, yours and your enemies' alike
   (wizard bolts and spells, arrows, venom spit, fire imp and frost wraith
@@ -629,7 +626,7 @@ The host is the authoritative server and also plays.
 | `scripts/ground_textures.gd` | The ground textures, painted in code per biome: grass, snow and ice, sand ripples, swamp mud and puddles, graveyard soil, volcanic basalt with glowing lava cracks, plus camp dirt, arena flagstones and village cobblestones |
 | `scripts/building_textures.gd` | The buildings' shared textures, painted in code: clay shingle roofs, plaster walls, plank doors (and stall woodwork) |
 | `scenes/obstacles/*.tscn` (built by `scripts/tools/build_obstacles.gd`) | Four premade trees and rocks per biome (meadow: oak, pine, mossy boulder, berry bush; frost: frosted white spruce, ice crystals, snow boulder, frozen tree; desert: cactus, sandstone pillar, palm, boulders; swamp: willow, vine tree, mossy rock, old stump; graveyard: headstones, dead tree, crypt, grave cross; volcano: lava spire, charred tree, obsidian shards, smoking vent). Areas can name their set, so the Act 3 desert and Act 5 ice areas reuse the desert and frost sets, placed turned and sized differently from the level seed. Rebuild with `godot --headless --path . -s res://scripts/tools/build_obstacles.gd` |
-| `scripts/item_db.gd`, `scripts/inventory_window.gd`, `scripts/loot.gd` | Gear (items, slots, rarities, every kind of gear and its stats), the inventory window (I: the Tamer tab, and the Pets tab with collars and the reserve) and loot sacks on the ground |
+| `scripts/item_db.gd`, `scripts/inventory_window.gd`, `scripts/loot.gd` | Gear (items: base types and tiers, item level, rarities, affixes and their ranges, class items, converting old saves), the inventory window (I: the Tamer tab, and the Pets tab with collars and the reserve) and loot sacks on the ground |
 | `scripts/mini_map.gd` | The mini map (and the large map, M), drawn from the level layout, with fog of war on open fields |
 | `scripts/skill_window.gd`, `scripts/skill_icons.gd` | The skills screen (K) and its skill icons, drawn in code |
 | `scripts/creature_model.gd` | Builds each creature's body from simple meshes: a cat, bird, dog or lizard, depending on its biome, or a monster (skeleton, zombie, mummy, sand scorpion, fire imp, magma golem, frost wraith, yeti) |

@@ -285,13 +285,12 @@ func get_damage() -> float:
 func skill_bonus(stat: String) -> float:
 	if is_wild() or species == null:
 		return 0.0
-	var bonus := PetSkills.total(species_index, skill_ranks, stat)
+	var bonus := PetSkills.total(species_index, ranks_with_gear(), stat)
 	if world:
 		for ally in world.get_pets(owner_id):
 			if not ally.fainted:
-				bonus += PetSkills.total(ally.species_index, ally.skill_ranks, "pack_" + stat)
-		bonus += ItemDB.stats(collar).get("collar_" + stat, 0) / 100.0
-		bonus += ItemDB.pet_bonus(collar, stat) / 100.0  # a class collar's rolled stats
+				bonus += PetSkills.total(ally.species_index, ally.ranks_with_gear(), "pack_" + stat)
+		bonus += ItemDB.pet_bonus(collar, stat) / 100.0  # its collar: base health and affixes
 		# The tamer's rings and necklace.
 		var tamer := world.get_player(owner_id)
 		if tamer:
@@ -299,6 +298,37 @@ func skill_bonus(stat: String) -> float:
 			for slot in tamer.equipment:  # class rings and necklaces for this pet's class
 				bonus += ItemDB.class_bonus(tamer.equipment[slot], species.pet_class(), stat) / 100.0
 	return minf(bonus, PetSkills.MAX_ARMOR) if stat == "armor" else bonus
+
+
+## Share of poison this pet takes (gear's poison resistance; at most 75% off).
+func poison_taken() -> float:
+	return 1.0 - minf(skill_bonus("poison_resist"), 0.75)
+
+
+## Extra skill ranks from gear ("+N to every skill rank"): its collar, and
+## the tamer's class rings and necklace for its class.
+func gear_ranks() -> int:
+	if is_wild() or species == null or world == null:
+		return 0
+	var extra := int(ItemDB.pet_bonus(collar, "skills"))
+	var tamer := world.get_player(owner_id)
+	if tamer:
+		for slot in tamer.equipment:
+			extra += int(ItemDB.class_bonus(tamer.equipment[slot], species.pet_class(), "skills"))
+	return extra
+
+
+## The pet's skill ranks with gear's extra ranks on every skill it has unlocked
+## (they can go past the usual top rank).
+func ranks_with_gear() -> Array:
+	var extra := gear_ranks()
+	if extra == 0:
+		return skill_ranks
+	var out := skill_ranks.duplicate()
+	for i in out.size():
+		if level >= PetSkills.UNLOCK_LEVELS[i]:
+			out[i] = int(out[i]) + extra
+	return out
 
 
 func xp_to_next() -> int:
@@ -376,6 +406,7 @@ func receive_damage(amount: float, source: Node3D, knockback := Vector3.ZERO) ->
 		knockback = Vector3.ZERO
 	_knockback = knockback
 	health.take_damage(amount)
+	Combat.leech(source, amount)
 	_flash.rpc()
 	# Reflected damage has no source, so it can't bounce back again.
 	if _reflect_timer > 0.0 and source and is_instance_valid(source):
@@ -468,7 +499,7 @@ func weaken(duration: float, factor: float) -> void:
 
 
 func poison(dps: float, duration: float) -> void:
-	health.add_poison(dps, duration)
+	health.add_poison(dps * poison_taken(), duration)
 	_status_fx.rpc("poison", duration)
 
 
@@ -806,9 +837,9 @@ func envenom(victim: Node3D, stack_dps: float, duration: float, max_dps: float) 
 	if not is_instance_valid(victim) or victim.get("health") == null or not victim.is_targetable():
 		return
 	var fresh: bool = not victim.health.is_poisoned()
-	if victim is Player:  # tamers take much less poison (see Player.POISON_TAKEN)
-		stack_dps *= Player.POISON_TAKEN
-		max_dps *= Player.POISON_TAKEN
+	if victim.has_method("poison_taken"):  # tamers take much less; poison resistance from gear
+		stack_dps *= victim.poison_taken()
+		max_dps *= victim.poison_taken()
 	var power := 1.0 + skill_bonus("dot_power")  # skill tree: stronger, longer poison
 	duration *= 1.0 + skill_bonus("dot_duration")
 	victim.health.add_venom(stack_dps * power, duration, max_dps * power)
@@ -934,9 +965,7 @@ func _on_died() -> void:
 		if elite:
 			world.on_champion_defeated(self)
 		world.award_xp(self)
-		world.roll_loot(global_position, 0.08)
-		if is_monster():
-			world.roll_legendary(global_position)
+		world.roll_loot(global_position, 0.08, level)
 		world.play_burst.rpc(global_position, species.color, 2.5)
 		queue_free()
 	else:

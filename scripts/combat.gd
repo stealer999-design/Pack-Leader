@@ -18,5 +18,14 @@ static func faction_of(node: Node) -> Faction:
 	return Faction.TAMERS
 
 
+## Server: `source` just dealt `amount` damage. A pet with life per hit
+## (gear affix) heals that share of it.
+static func leech(source: Node, amount: float) -> void:
+	if source is Creature and is_instance_valid(source) and not source.fainted and amount > 0.0:
+		var share: float = source.skill_bonus("life_hit")
+		if share > 0.0:
+			source.health.heal(amount * share)
+
+
 static func are_enemies(a: Node, b: Node) -> bool:
 	return is_instance_valid(a) and is_instance_valid(b) and a != b and faction_of(a) != faction_of(b)

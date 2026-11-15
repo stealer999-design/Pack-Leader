@@ -194,6 +194,7 @@ func receive_damage(amount: float, source: Node3D, _knockback := Vector3.ZERO) -
 	if source and not Combat.are_enemies(source, self):
 		return
 	health.take_damage(amount)
+	Combat.leech(source, amount)
 	_flash.rpc()
 	if not engaged:
 		_engage()

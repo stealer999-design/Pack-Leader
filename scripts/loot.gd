@@ -13,7 +13,7 @@ var _time := 0.0
 
 
 func _ready() -> void:
-	SoundFX.play(self, "bing_rare" if ItemDB.is_legendary(item) else "bing", global_position, 0.02)
+	SoundFX.play(self, "bing_rare" if ItemDB.is_standout(item) else "bing", global_position, 0.02)
 	var color := ItemDB.rarity_color(item)
 	_sack = Node3D.new()
 	add_child(_sack)
@@ -42,7 +42,7 @@ func _ready() -> void:
 	var glow := StandardMaterial3D.new()
 	glow.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	glow.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	var legendary := ItemDB.is_legendary(item)
+	var legendary := ItemDB.is_standout(item)  # rare and better: a pillar of light
 	glow.albedo_color = Color(color, 0.45 if legendary else 0.25)
 	var beam := MeshInstance3D.new()
 	var shaft := CylinderMesh.new()
@@ -64,7 +64,7 @@ func _ready() -> void:
 	label.modulate = color
 	label.position.y = 1.5
 	if legendary:
-		label.text = "LEGENDARY\n" + label.text
+		label.text = ItemDB.RARITIES[int(item.rarity)].name.to_upper() + "\n" + label.text
 		label.font_size = 44
 		label.position.y = 1.9
 	add_child(label)

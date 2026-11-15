@@ -40,10 +40,6 @@ const OBSTACLES_PER_BIOME := 4
 @export var exit_radius := 2.5
 ## XP every pet gets for defeating a rival (x level number).
 @export var rival_defeat_xp := 40
-## Legendary items (see roll_legendary): the chance per monster, vase or boss,
-## and the first act they drop in.
-const LEGENDARY_CHANCE := 0.05
-const LEGENDARY_FROM_ACT := 2
 ## Creature levels per area (see area_levels).
 const AREA_LEVELS := 5
 ## A pet this many levels above what it beats still gets full experience.
@@ -659,7 +655,6 @@ func on_champion_defeated(champion: Creature) -> void:
 	announce.rpc("The %s is defeated! A portal has opened." % champion.title(), Color(1, 0.9, 0.5))
 	play_burst.rpc(champion.global_position, champion.species.color, 4.0)
 	roll_loot(champion.global_position, 1.0)  # Champions always drop gear
-	roll_legendary(champion.global_position)
 	cleared_level = maxi(cleared_level, level_number)
 	for p in get_players():
 		_give_team_xp(p, roundi(rival_defeat_xp * area_levels(level_number).y / 2.0), area_levels(level_number).y)
@@ -672,7 +667,6 @@ func on_rival_defeated(rival: Rival) -> void:
 			Color(1, 0.9, 0.5))
 	play_burst.rpc(rival.global_position, rival.color, 4.0)
 	roll_loot(rival.global_position, 1.0)  # bosses always drop gear
-	roll_legendary(rival.global_position)
 	for pet in _creatures_where(func(c: Creature) -> bool: return c.is_rival_pet()):
 		pet.release_to_wild()
 		announce.rpc("The rival's %s has gone wild. Capture it!" % pet.species.display_name, Color(0.6, 0.85, 1.0))
@@ -772,24 +766,16 @@ func _collect_coins() -> void:
 ## Server: with probability `chance`, drops a piece of gear at `at`, made for
 ## this area's level (any kind; levels past 5 drop level 5 gear; class collars, rings and
 ## necklaces lean towards the class of the area's pets).
-func roll_loot(at: Vector3, chance: float) -> void:
+## Server: an item drops at `at` with this `chance`. Its item level is the
+## creature's level (`ilvl`), or the top creature level of this area.
+func roll_loot(at: Vector3, chance: float, ilvl := -1) -> void:
 	if randf() < chance:
-		var item := ItemDB.make_item(level_number)
-		# Half the class collars are made for the pets of this area (birds in the peaks...).
+		if ilvl <= 0:
+			ilvl = area_levels(level_number).y
+		# Half the class items are made for the pets of this area (birds' gear in the peaks...).
 		var local_class := SpeciesDB.get_species(biome().species[0]).pet_class()
-		if ItemDB.is_rolled(item) and local_class != "" and randf() < 0.5:
-			item = ItemDB.make_rolled(item.type, level_number, int(item.rarity), local_class)
+		var item := ItemDB.make_item(ilvl, null, local_class)
 		loot_spawner.spawn({"pos": clamp_to_level(at), "item": item})
-
-
-## Server: the chance (LEGENDARY_CHANCE) of a legendary item, rolled for every
-## monster killed, vase smashed and boss beaten from Act 2 on (on top of the
-## ordinary loot roll). Everyone hears about it.
-func roll_legendary(at: Vector3) -> void:
-	if BiomeDB.act_of(level_number).act < LEGENDARY_FROM_ACT or randf() >= LEGENDARY_CHANCE:
-		return
-	var item := ItemDB.make_legendary()
-	loot_spawner.spawn({"pos": clamp_to_level(at + Vector3(randf_range(-0.6, 0.6), 0, randf_range(-0.6, 0.6))), "item": item})
 
 
 func _collect_loot() -> void:
@@ -800,9 +786,9 @@ func _collect_loot() -> void:
 			if p.downed or _flat_distance(p.global_position, loot.global_position) > coin_pickup_radius:
 				continue
 			if p.add_item(loot.item):
-				if ItemDB.is_legendary(loot.item):
-					announce.rpc("%s found %s, a legendary item!" % [p.display_name, ItemDB.display_name(loot.item)],
-							ItemDB.rarity_color(loot.item))
+				if ItemDB.is_standout(loot.item):
+					announce.rpc("%s found %s, a %s item!" % [p.display_name, ItemDB.display_name(loot.item),
+							ItemDB.RARITIES[int(loot.item.rarity)].name.to_lower()], ItemDB.rarity_color(loot.item))
 				else:
 					tell(p.peer_id, "You found a %s!  [I] inventory" % ItemDB.display_name(loot.item), ItemDB.rarity_color(loot.item))
 				show_pickup.rpc(p.peer_id, loot.item)
@@ -1110,7 +1096,7 @@ func _warm_up() -> void:
 	play_trap(-99, p, 2.0, color)
 	play_telegraph(p, 2.0, 0.4)
 	var samples: Array[Node3D] = []
-	for item in [ItemDB.make("jacket", 1, 0), ItemDB.make_legendary()]:
+	for item in [ItemDB.make("jacket", 1, ItemDB.NORMAL), ItemDB.make("ring", 30, ItemDB.RARE)]:
 		var sack := Loot.new()
 		sack.item = item
 		sack.position = p
@@ -1122,7 +1108,7 @@ func _warm_up() -> void:
 	samples.append(coin)
 	var me := get_player(multiplayer.get_unique_id())
 	if me:
-		samples.append(me.play_pickup(ItemDB.make("hat", 1, 1)))
+		samples.append(me.play_pickup(ItemDB.make("hat", 1, ItemDB.MAGIC)))
 		me._play_swing_fx()
 
 	# The whole level at once: pull the camera far back and wide for a few

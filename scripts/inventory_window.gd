@@ -273,12 +273,13 @@ func refresh() -> void:
 		for slot in gear:
 			var item: Dictionary = gear[slot]
 			if ItemDB.is_class_jewelry(item) and item["class"] == pet_class:
-				for stat in item.stats:
-					sums[stat] = sums.get(stat, 0) + int(item.stats[stat])
+				for id: String in item.affixes:
+					if id.begins_with("cls_"):
+						sums[id.substr(4)] = sums.get(id.substr(4), 0) + int(item.affixes[id])
 		if not sums.is_empty():
 			var parts := []
 			for stat in sums:
-				parts.append(PetSkills.STAT_TEXT[stat] % sums[stat])
+				parts.append(PetSkills.STAT_TEXT.get(stat, "+%d to every skill rank") % sums[stat])
 			_armor.text += "\n%s (%s):  %s" % [ItemDB.PET_GEAR[pet_class].title, ItemDB.PET_GEAR[pet_class].pets, " · ".join(parts)]
 	for index in _marked.keys():
 		if player.bag[index].is_empty():
@@ -643,10 +644,10 @@ class ItemSlot:
 		box.border_color = UiTheme.ACCENT if selected or _drop_hover else border
 		if selected or _drop_hover:
 			box.set_border_width_all(3)
-		elif ItemDB.is_legendary(item):  # legendary: a thick orange frame and a warm glow
+		elif ItemDB.is_standout(item):  # rare and better: a thick frame and a glow in its colour
 			box.set_border_width_all(3)
-			box.bg_color = Color(0.24, 0.14, 0.06)
-			box.shadow_color = Color(1.0, 0.5, 0.1, 0.45)
+			box.bg_color = ItemDB.rarity_color(item).darkened(0.8)
+			box.shadow_color = Color(ItemDB.rarity_color(item), 0.45)
 			box.shadow_size = 6
 		draw_style_box(box, rect)
 		var icon_size := int(minf(size.x, size.y) * 0.6)
@@ -665,11 +666,11 @@ class ItemSlot:
 			tint = ItemDB.item_color(item).lightened(0.45)
 		var texture := UiIcons.texture(icon_name, icon_size)
 		draw_texture(texture, (size - Vector2(icon_size, icon_size)) * 0.5, tint)
-		if item.has("level"):
+		if item.has("ilvl"):
 			var font := get_theme_default_font()
-			draw_string_outline(font, Vector2(5, size.y - 5), str(int(item.level)), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, 3,
+			draw_string_outline(font, Vector2(5, size.y - 5), str(int(item.ilvl)), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, 3,
 					Color(0, 0, 0, 0.8))
-			draw_string(font, Vector2(5, size.y - 5), str(int(item.level)), HORIZONTAL_ALIGNMENT_LEFT, -1, 12,
+			draw_string(font, Vector2(5, size.y - 5), str(int(item.ilvl)), HORIZONTAL_ALIGNMENT_LEFT, -1, 12,
 					ItemDB.rarity_color(item))
 		if marked:  # marked to throw away: red, with a cross in the corner
 			var mark := StyleBoxFlat.new()
