@@ -110,6 +110,8 @@ func refresh() -> void:
 	_title.modulate = pet.species.color.lightened(0.35)
 	var left := PetSkills.points_left(pet.level, pet.skill_ranks)
 	_points.text = "Skill points: %d to spend   (%d earned)" % [left, PetSkills.points_for_level(pet.level)]
+	if pet.gear_ranks() > 0:
+		_points.text += "   ·   Gear: +%d to every unlocked skill" % pet.gear_ranks()
 	_points.modulate = Color(1, 0.85, 0.4) if left > 0 else Color(1, 1, 1, 0.7)
 	_reset.disabled = PetSkills.points_spent(pet.skill_ranks) == 0
 	_tree.show_pet(pet.species_index, pet.level, pet.skill_ranks)

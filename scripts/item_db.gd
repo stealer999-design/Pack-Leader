@@ -49,9 +49,10 @@ const RARITIES := [
 ]
 ## How many affixes each rarity rolls: [fewest, most].
 const AFFIX_COUNT := [[0, 0], [1, 2], [3, 5], [4, 6], [2, 4]]
-## Chance of each rarity when an item drops (Normal, Magic, Rare). Uniques and
-## sets come later; until then their share rolls Rare.
-const RARITY_WEIGHTS := [0.62, 0.30, 0.08]
+## Chance of each rarity when an item drops (Normal, Magic, Rare, Unique-or-Set).
+## A Unique-or-Set roll is a Unique 60% of the time, else a set piece.
+const RARITY_WEIGHTS := [0.62, 0.30, 0.07, 0.01]
+const SET_SHARE := 0.4
 ## What the bat shop pays, by rarity, plus 1 coin per 20 item levels.
 const SELL_PRICES := [1, 3, 8, 20, 20]
 ## Armor from all gear is capped, so the tamer is never unhittable.
@@ -136,6 +137,87 @@ const RARE_FIRST := ["Grim", "Dusk", "Storm", "Bone", "Ember", "Frost", "Wild", 
 const RARE_SECOND := ["Fang", "Howl", "Mark", "Bond", "Ward", "Claw", "Heart", "Song", "Coil", "Snare", "Crest", "Brand",
 		"Veil", "Pact", "Spur", "Knot"]
 
+## Unique items: one of a kind, named, with fixed affixes that roll near the
+## top of their range for the item level (x the multiplier given).
+## id: [name, type, tier, class ("" = any), {affix: multiplier}]
+const UNIQUES := {
+	"gravewarden": ["Gravewarden's Coat", "jacket", 1, "", {"health": 1.3, "armor": 1.2, "poison_resist": 1.0}],
+	"strays_overcoat": ["Stray's Overcoat", "jacket", 1, "", {"pet_health": 1.3, "health": 1.0, "coin_find": 1.0}],
+	"bonewoven_mantle": ["Bonewoven Mantle", "jacket", 2, "", {"armor": 1.3, "pet_damage": 1.2, "health": 1.2}],
+	"pack_leaders_hide": ["Pack Leader's Hide", "jacket", 2, "", {"pet_damage": 1.4, "pet_health": 1.2, "armor": 1.0}],
+	"restless_coat": ["Coat of the Restless Dead", "jacket", 3, "", {"armor": 1.3, "health": 1.4, "poison_resist": 1.2, "pet_health": 1.2}],
+	"dragonscale": ["Dragonscale Duster", "jacket", 3, "", {"armor": 1.4, "pet_damage": 1.3, "health": 1.2}],
+	"mudrunners": ["Mudrunner Trousers", "pants", 1, "", {"armor": 1.2, "poison_resist": 1.3}],
+	"patchwork": ["Patchwork Pants of Plenty", "pants", 1, "", {"coin_find": 1.5, "armor": 1.0}],
+	"bonewoven_leggings": ["Bonewoven Leggings", "pants", 2, "", {"armor": 1.3, "health": 1.2, "pet_health": 1.1}],
+	"tidebreaker": ["Tidebreaker Breeches", "pants", 3, "", {"armor": 1.4, "health": 1.3, "pet_damage": 1.2}],
+	"drowned_crown": ["Crown of the Drowned", "hat", 1, "", {"health": 1.3, "magic_find": 1.3}],
+	"shepherds_cap": ["Old Shepherd's Cap", "hat", 1, "", {"pet_health": 1.3, "health": 1.1}],
+	"howlhelm": ["Howlhelm", "hat", 2, "", {"pet_damage": 1.3, "health": 1.2, "armor": 1.1}],
+	"fortunes_feather": ["Fortune's Feather", "hat", 2, "", {"magic_find": 1.5, "coin_find": 1.5, "health": 1.0}],
+	"wardens_crown": ["Warden's Crown", "hat", 3, "", {"health": 1.4, "armor": 1.3, "pet_damage": 1.2, "magic_find": 1.1}],
+	"ghoststep": ["Ghoststep Boots", "boots", 1, "", {"speed": 1.4, "armor": 1.0}],
+	"dunewalkers": ["Dunewalkers", "boots", 2, "", {"speed": 1.3, "poison_resist": 1.3, "health": 1.1}],
+	"hikers_blessing": ["Hiker's Blessing", "boots", 2, "", {"speed": 1.2, "pet_health": 1.2}],
+	"windrunner_stride": ["Windrunner's Stride", "boots", 3, "", {"speed": 1.5, "pet_damage": 1.2, "health": 1.2}],
+	"howards_hook": ["Howard's Hook", "ring", 1, "", {"pet_damage": 1.3, "life_hit": 1.2}],
+	"band_of_the_pack": ["Band of the Pack", "ring", 1, "", {"pet_damage": 1.2, "pet_health": 1.2}],
+	"lucky_penny": ["Lucky Penny", "ring", 2, "", {"magic_find": 1.5, "coin_find": 1.5}],
+	"soulbinder": ["Soulbinder", "ring", 2, "", {"pet_damage": 1.4, "life_hit": 1.4, "health": 1.0}],
+	"alphas_signet": ["Alpha's Signet", "ring", 3, "", {"pet_damage": 1.5, "pet_health": 1.3, "life_hit": 1.2}],
+	"thousand_fangs": ["Ring of a Thousand Fangs", "ring", 3, "", {"pet_damage": 1.6, "health": 1.2, "poison_resist": 1.1}],
+	"kaels_tooth": ["Kael's Tooth Necklace", "necklace", 1, "", {"pet_damage": 1.3, "health": 1.1}],
+	"soulbound_locket": ["Soulbound Locket", "necklace", 1, "", {"pet_health": 1.3, "pet_damage": 1.1}],
+	"heart_of_the_pack": ["Heart of the Pack", "necklace", 2, "", {"pet_health": 1.5, "cooldown": 1.2, "health": 1.0}],
+	"timekeepers_chain": ["Timekeeper's Chain", "necklace", 2, "", {"cooldown": 1.5, "pet_damage": 1.2}],
+	"eye_of_the_storm": ["Eye of the Storm", "necklace", 3, "", {"pet_damage": 1.5, "cooldown": 1.4, "pet_health": 1.2}],
+	"restless_collar": ["Collar of the Restless Dead", "collar", 1, "", {"pet_damage": 1.3, "pet_health": 1.2}],
+	"gravediggers_collar": ["Gravedigger's Collar", "collar", 2, "", {"pet_health": 1.5, "poison_resist": 1.2, "life_hit": 1.1}],
+	"bone_plate_collar": ["Bone Plate Collar", "collar", 3, "", {"pet_damage": 1.4, "pet_health": 1.4, "life_hit": 1.3}],
+	"emberheart": ["Emberheart", "collar", 2, "wizard", {"cls_spell_power": 1.4, "cls_cooldown": 1.2, "pet_damage": 1.1}],
+	"archmages_spark": ["Archmage's Spark", "ring", 3, "wizard", {"cls_skills": 1.0, "cls_spell_power": 1.3}],
+	"saints_halo": ["Saint's Halo", "collar", 2, "paladin", {"cls_heal_power": 1.4, "cls_armor": 1.2, "pet_health": 1.2}],
+	"crusaders_relic": ["Crusader's Relic", "necklace", 3, "paladin", {"cls_skills": 1.0, "cls_health": 1.3, "cls_heal_power": 1.2}],
+	"falconers_hood": ["Falconer's Hood", "collar", 2, "archer", {"cls_crit_chance": 1.4, "cls_crit_damage": 1.3}],
+	"hawkeye_loop": ["Hawkeye Loop", "ring", 3, "archer", {"cls_skills": 1.0, "cls_attack_speed": 1.3}],
+	"vipers_coil": ["Viper's Coil", "collar", 2, "venomancer", {"cls_dot_power": 1.4, "cls_toxic_blood": 1.3}],
+	"basilisk_fang": ["Basilisk Fang", "necklace", 3, "venomancer", {"cls_skills": 1.0, "cls_dot_duration": 1.3, "cls_dot_power": 1.2}],
+}
+## The four class sets: four pieces each (worn by the tamer, or the collar by
+## a party pet of the class), with bonuses for that class's pets at 2 and 4
+## pieces worn (skill-tree stats, percent).
+const SETS := {
+	"archmage": {"name": "Archmage's Regalia", "class": "wizard", "bonus": {2: {"spell_power": 20}, 4: {"cooldown": 25, "damage": 20}},
+		"pieces": {
+			"archmage_hood": ["Archmage's Hood", "hat", {"health": 1.1, "cls_spell_power": 1.2}],
+			"archmage_focus": ["Archmage's Focus", "necklace", {"cls_cooldown": 1.2, "pet_damage": 1.1}],
+			"archmage_seal": ["Archmage's Seal", "ring", {"cls_damage": 1.2, "magic_find": 1.0}],
+			"archmage_band": ["Archmage's Familiar Band", "collar", {"cls_spell_power": 1.3, "pet_health": 1.1}],
+		}},
+	"crusader": {"name": "Crusader's Oath", "class": "paladin", "bonus": {2: {"heal_power": 25}, 4: {"health": 30, "armor": 15}},
+		"pieces": {
+			"crusader_plate": ["Crusader's Tabard", "jacket", {"armor": 1.2, "cls_health": 1.2}],
+			"crusader_greaves": ["Crusader's Greaves", "pants", {"armor": 1.1, "cls_armor": 1.2}],
+			"crusader_beads": ["Crusader's Prayer Beads", "necklace", {"cls_heal_power": 1.3, "pet_health": 1.1}],
+			"crusader_collar": ["Crusader's Mantle Collar", "collar", {"cls_heal_power": 1.2, "cls_health": 1.2}],
+		}},
+	"hawkeye": {"name": "Hawkeye's Gear", "class": "archer", "bonus": {2: {"crit_chance": 10}, 4: {"crit_damage": 50, "attack_speed": 15}},
+		"pieces": {
+			"hawkeye_boots": ["Hawkeye's Treads", "boots", {"speed": 1.2, "cls_attack_speed": 1.2}],
+			"hawkeye_ring": ["Hawkeye's Loop", "ring", {"cls_crit_chance": 1.3, "pet_damage": 1.0}],
+			"hawkeye_pendant": ["Hawkeye's Feather", "necklace", {"cls_crit_damage": 1.3, "cooldown": 1.0}],
+			"hawkeye_hood": ["Hawkeye's Jesses", "collar", {"cls_crit_chance": 1.2, "cls_damage": 1.2}],
+		}},
+	"basilisk": {"name": "Basilisk's Coils", "class": "venomancer", "bonus": {2: {"dot_power": 25}, 4: {"dot_duration": 30, "toxic_blood": 50}},
+		"pieces": {
+			"basilisk_crown": ["Basilisk's Crest", "hat", {"health": 1.1, "cls_dot_power": 1.2}],
+			"basilisk_ring": ["Basilisk's Eye", "ring", {"cls_toxic_blood": 1.3, "poison_resist": 1.1}],
+			"basilisk_fang_set": ["Basilisk's Venom Sac", "necklace", {"cls_dot_duration": 1.3, "pet_damage": 1.0}],
+			"basilisk_collar": ["Basilisk's Scale Collar", "collar", {"cls_dot_power": 1.3, "cls_armor": 1.1}],
+		}},
+}
+
+
 ## Tamer stats: what they do, for descriptions ("%d" is the amount).
 const TAMER_TEXT := {
 	"armor": "Tamer: take %d%% less damage",
@@ -185,14 +267,65 @@ static func make_item(ilvl: int, rng: RandomNumberGenerator = null, local_class 
 			break
 	if rarity < 0:
 		rarity = roll_rarity(rng)
-	return make(type, ilvl, maxi(rarity, min_rarity), rng, local_class)
+	rarity = maxi(rarity, min_rarity)
+	if rarity >= UNIQUE:
+		return make_set_piece(ilvl, rng) if rng.randf() < SET_SHARE else make_unique(ilvl, rng)
+	return make(type, ilvl, rarity, rng, local_class)
+
+
+## A random unique item that can drop at `ilvl` (its tier must have started dropping).
+static func make_unique(ilvl: int, rng: RandomNumberGenerator = null, id := "") -> Dictionary:
+	rng = _rng(rng)
+	ilvl = clampi(ilvl, 1, MAX_ILVL)
+	if not UNIQUES.has(id):
+		var options := UNIQUES.keys().filter(func(k: String) -> bool: return UNIQUES[k][2] <= max_tier(ilvl))
+		id = options[rng.randi() % options.size()]
+	var spec: Array = UNIQUES[id]
+	var item := _fixed_item(spec[1], spec[2], ilvl, UNIQUE, spec[3], spec[4], rng)
+	item.unique = id
+	return item
+
+
+## A random set piece (sets drop from item level 30).
+static func make_set_piece(ilvl: int, rng: RandomNumberGenerator = null, piece := "") -> Dictionary:
+	rng = _rng(rng)
+	ilvl = clampi(maxi(ilvl, 30), 1, MAX_ILVL)
+	var set_id := ""
+	for sid: String in SETS:
+		if SETS[sid].pieces.has(piece):
+			set_id = sid
+	if set_id == "":
+		set_id = SETS.keys()[rng.randi() % SETS.size()]
+		var pieces: Array = SETS[set_id].pieces.keys()
+		piece = pieces[rng.randi() % pieces.size()]
+	var spec: Array = SETS[set_id].pieces[piece]
+	var item := _fixed_item(spec[1], max_tier(ilvl), ilvl, SET, SETS[set_id]["class"], spec[2], rng)
+	item.unique = piece
+	item.set = set_id
+	return item
+
+
+## A unique or set item's body: its base, class and fixed affixes, rolled near
+## the top of their range (x the multiplier, 90-100%).
+static func _fixed_item(type: String, tier: int, ilvl: int, rarity: int, pet_class: String, affix_mults: Dictionary,
+		rng: RandomNumberGenerator) -> Dictionary:
+	var base := {}
+	for stat: String in BASES[type].base:
+		var r: Array = BASES[type].base[stat][tier - 1]
+		base[stat] = r[1]
+	var affixes := {}
+	for id: String in affix_mults:
+		affixes[id] = maxi(1, roundi(affix_range(id, ilvl, type).y * float(affix_mults[id]) * rng.randf_range(0.9, 1.0)))
+	return {"v": VERSION, "type": type, "tier": tier, "ilvl": ilvl, "rarity": rarity, "class": pet_class,
+			"base": base, "affixes": affixes, "name": ""}
 
 
 ## A rarity for a drop. `magic_find` (percent, from gear) makes Rare items
 ## that much likelier and Magic items half that much.
 static func roll_rarity(rng: RandomNumberGenerator = null, magic_find := 0.0) -> int:
-	var weights := [RARITY_WEIGHTS[0], RARITY_WEIGHTS[1] * (1.0 + magic_find / 200.0), RARITY_WEIGHTS[2] * (1.0 + magic_find / 100.0)]
-	var total: float = weights[0] + weights[1] + weights[2]
+	var weights := [RARITY_WEIGHTS[0], RARITY_WEIGHTS[1] * (1.0 + magic_find / 200.0), RARITY_WEIGHTS[2] * (1.0 + magic_find / 100.0),
+			RARITY_WEIGHTS[3] * (1.0 + magic_find / 100.0)]
+	var total: float = weights[0] + weights[1] + weights[2] + weights[3]
 	var roll := _rng(rng).randf() * total
 	for i in weights.size():
 		roll -= weights[i]
@@ -352,6 +485,10 @@ static func display_name(item: Dictionary) -> String:
 		return ""
 	var base_name: String = BASES[item.type].names[clampi(int(item.tier), 1, 3) - 1]
 	var rarity := int(item.rarity)
+	if rarity == UNIQUE and UNIQUES.has(item.get("unique", "")):
+		return UNIQUES[item.unique][0]
+	if rarity == SET and SETS.has(item.get("set", "")) and SETS[item.set].pieces.has(item.get("unique", "")):
+		return SETS[item.set].pieces[item.unique][0]
 	if rarity >= RARE and str(item.get("name", "")) != "":
 		return "%s %s" % [item.name, base_name]
 	if rarity == NORMAL:
@@ -436,6 +573,24 @@ static func class_bonus(item: Dictionary, pet_class: String, stat: String) -> fl
 	return float(item.affixes.get("cls_" + stat, 0))
 
 
+## Set bonuses for a pet of `pet_class`: the pieces of that class's set worn
+## by the tamer (`equipment`) and by party pets (`collars`) are counted, and
+## each bonus whose piece count is reached adds its `stat` (percent).
+static func set_bonus(stat: String, pet_class: String, equipment: Dictionary, collars: Array) -> float:
+	var sum := 0.0
+	for set_id: String in SETS:
+		if SETS[set_id]["class"] != pet_class:
+			continue
+		var worn := {}
+		for item in equipment.values() + collars:
+			if item is Dictionary and item.get("set", "") == set_id and int(item.get("rarity", 0)) == SET:
+				worn[item.get("unique", "")] = true
+		for count: int in SETS[set_id].bonus:
+			if worn.size() >= count:
+				sum += float(SETS[set_id].bonus[count].get(stat, 0))
+	return sum
+
+
 ## How much of a skill-tree stat (or "skills") a collar gives the pet wearing it.
 static func pet_bonus(item: Dictionary, stat: String) -> float:
 	if not is_collar(item):
@@ -490,6 +645,15 @@ static func describe(item: Dictionary) -> String:
 	var fx := effect(item)
 	if fx != "":
 		lines.append(fx)
+	if int(item.rarity) == SET and SETS.has(item.get("set", "")):
+		var set_info: Dictionary = SETS[item.set]
+		var parts := []
+		for count: int in set_info.bonus:
+			var words := []
+			for stat: String in set_info.bonus[count]:
+				words.append(PetSkills.STAT_TEXT.get(stat, "+%d%%").replace("takes ", "take ") % int(set_info.bonus[count][stat]))
+			parts.append("%d pieces: %s" % [count, ", ".join(words)])
+		lines.append("%s (your %s): %s" % [set_info.name, PET_GEAR[set_info["class"]].pets, "; ".join(parts)])
 	return "\n".join(lines)
 
 
@@ -605,6 +769,9 @@ static func clean(item) -> Dictionary:
 	var type := str(item.get("type", ""))
 	if not BASES.has(type):
 		return {}
+	var fixed := int(item.get("rarity", 0))
+	if fixed == UNIQUE or fixed == SET:
+		return _clean_fixed(item)
 	var ilvl := clampi(int(item.get("ilvl", 1)), 1, MAX_ILVL)
 	var tier := clampi(int(item.get("tier", 1)), 1, 3)
 	var rarity := clampi(int(item.get("rarity", 0)), NORMAL, RARE)
@@ -628,6 +795,30 @@ static func clean(item) -> Dictionary:
 	var name := str(item.get("name", "")).left(32) if rarity == RARE else ""
 	return {"v": VERSION, "type": type, "tier": tier, "ilvl": ilvl, "rarity": rarity, "class": pet_class,
 			"base": base, "affixes": affixes, "name": name}
+
+
+## A unique or set item from a save or a client: rebuilt from its table entry,
+## keeping its rolls (none above the best possible).
+static func _clean_fixed(item: Dictionary) -> Dictionary:
+	var id := str(item.get("unique", ""))
+	var ilvl := clampi(int(item.get("ilvl", 1)), 1, MAX_ILVL)
+	var rng := RandomNumberGenerator.new()
+	var fresh: Dictionary
+	var mults: Dictionary
+	if int(item.rarity) == UNIQUE and UNIQUES.has(id):
+		fresh = make_unique(ilvl, rng, id)
+		mults = UNIQUES[id][4]
+	elif int(item.rarity) == SET and SETS.has(str(item.get("set", ""))) and SETS[str(item.set)].pieces.has(id):
+		fresh = make_set_piece(ilvl, rng, id)
+		mults = SETS[str(item.set)].pieces[id][2]
+	else:
+		return {}
+	var saved = item.get("affixes", {})
+	for affix: String in fresh.affixes:
+		var top := maxi(1, roundi(affix_range(affix, int(fresh.ilvl), fresh.type).y * float(mults[affix])))
+		if saved is Dictionary and saved.has(affix):
+			fresh.affixes[affix] = clampi(int(saved[affix]), 1, top)
+	return fresh
 
 
 ## Items from before version 2 (levels 1-5, one stat each): the same stats in

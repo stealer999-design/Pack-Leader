@@ -374,7 +374,7 @@ played in the browser".
 
   **Rarity** sets how many affixes it rolls: **Normal** (white) none,
   **Magic** (blue) 1-2, **Rare** (yellow) 3-5 and a random name ("Grim Fang
-  Talisman"). A Magic item is named by its affixes ("Savage Band of the
+  Talisman"), and the named **Unique** (gold) and **Set** (green) items below. A Magic item is named by its affixes ("Savage Band of the
   Leech"). Each affix rolls in a range that grows with item level, so two
   items with the same name can differ a lot:
 
@@ -406,6 +406,27 @@ played in the browser".
   even lifts skills past their top rank. A class ring or necklace boosts
   every party pet of its class (at three quarters of a collar's strength); a
   class collar fits only that class of pet.
+
+  **Uniques** (gold): about 40 named, one-of-a-kind items with fixed affixes
+  that roll near the top of their range for their item level, such as
+  Alpha's Signet (pets: much more damage, health and life per hit),
+  Fortune's Feather (magic and coin find) and Archmage's Spark (+2 to every
+  cat skill rank). Better ones only drop from the higher tiers.
+
+  **Sets** (green): four class sets of four pieces, from item level 30.
+  Pieces count when worn by the tamer or, for the collar, by a party pet; the
+  bonuses go to every party pet of that class:
+
+  | Set | Pieces | 2 pieces | 4 pieces |
+  |---|---|---|---|
+  | Archmage's Regalia (cats) | hat, necklace, ring, collar | +20% ability damage | abilities recharge 25% faster, +20% attack damage |
+  | Crusader's Oath (dogs) | jacket, pants, necklace, collar | +25% healing and shields | +30% health, 15% less damage taken |
+  | Hawkeye's Gear (birds) | boots, ring, necklace, collar | +10% crit chance | +50% crit damage, attacks 15% faster |
+  | Basilisk's Coils (lizards) | hat, ring, necklace, collar | +25% poison damage | poison lasts 30% longer, +50% toxic blood |
+
+  About 1 drop in 100 is a Unique or a set piece (more with magic find), and
+  each named boss has a 10% chance that its first drop is one (not in Act 1).
+  Extra skill ranks from gear show in the skills window (K).
 
   **Comparing:** a green arrow marks bag items that beat what you (or one of
   your pets) wear. Click one and the inventory shows, beside its description,

@@ -683,8 +683,8 @@ func on_rival_defeated(rival: Rival) -> void:
 	announce.rpc("%s is defeated! A portal has opened at the end of the path." % (boss_name[0].to_upper() + boss_name.substr(1)),
 			Color(1, 0.9, 0.5))
 	play_burst.rpc(rival.global_position, rival.color, 4.0)
-	# Named bosses: 3 items, the first Rare (Magic in Act 1).
-	roll_loot(rival.global_position, 1.0, -1, ItemDB.RARE, 3, 0.0, true)
+	# Named bosses: 3 items, the first Rare (10% Unique or Set; Magic in Act 1).
+	roll_loot(rival.global_position, 1.0, -1, ItemDB.RARE, 3, 0.0, true, 0.1)
 	for pet in _creatures_where(func(c: Creature) -> bool: return c.is_rival_pet()):
 		pet.release_to_wild()
 		announce.rpc("The rival's %s has gone wild. Capture it!" % pet.species.display_name, Color(0.6, 0.85, 1.0))
@@ -789,7 +789,7 @@ func _collect_coins() -> void:
 ## level (`ilvl`), or the area's top creature level. Act 1 drops nothing
 ## above Magic. Each player's magic find (gear) improves their own rolls.
 func roll_loot(at: Vector3, chance: float, ilvl := -1, min_rarity := ItemDB.NORMAL, count := 1,
-		rare_chance := 0.0, boss := false) -> void:
+		rare_chance := 0.0, boss := false, unique_chance := 0.0) -> void:
 	if ilvl <= 0:
 		ilvl = area_levels(level_number).y
 	var first_act: bool = BiomeDB.act_of(level_number).act == 1
@@ -804,6 +804,8 @@ func roll_loot(at: Vector3, chance: float, ilvl := -1, min_rarity := ItemDB.NORM
 				floor_rarity = ItemDB.RARE
 			if i == 0 and boss and p.rare_drought >= 3:
 				floor_rarity = ItemDB.RARE
+			if i == 0 and randf() < unique_chance:
+				floor_rarity = ItemDB.UNIQUE
 			var rarity := maxi(ItemDB.roll_rarity(null, p.magic_find()), floor_rarity)
 			if first_act:
 				rarity = mini(rarity, ItemDB.MAGIC)
