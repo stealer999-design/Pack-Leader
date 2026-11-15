@@ -1021,8 +1021,18 @@ func _show_collar() -> void:
 			ModelLook.apply(_collar_model)
 
 
+## Pets grow this much slower per level above PET_GROWTH_FROM than the
+## monsters they fight, so from Act 2 on gear has to make up the difference
+## (see ItemDB; the gear design doc's "Pet growth rebalance").
+const PET_GROWTH_LAG := 1.02
+const PET_GROWTH_FROM := 20
+
+
 func _level_multiplier() -> float:
-	return 1.0 + 0.15 * (level - 1)
+	var power := 1.0 + 0.15 * (level - 1)
+	if is_player_pet() and level > PET_GROWTH_FROM:
+		power /= pow(PET_GROWTH_LAG, level - PET_GROWTH_FROM)
+	return power
 
 
 static func _now() -> float:
