@@ -51,7 +51,7 @@ func hit(_damage: float) -> void:
 	if is_queued_for_deletion():
 		return
 	world.spill_coins(global_position, coin_value())
-	world.roll_loot(global_position, 0.4 if gold else 0.12)
+	world.roll_loot(global_position, 0.5 if gold else 0.12, -1, ItemDB.MAGIC if gold else ItemDB.NORMAL)
 	world.play_shatter.rpc(global_position, _material.albedo_color)
 	queue_free()
 

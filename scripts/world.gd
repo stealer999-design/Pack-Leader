@@ -562,6 +562,10 @@ func _flat_distance(a: Vector3, b: Vector3) -> float:
 
 func _start_level(number: int) -> void:
 	_advancing = false
+	if level_number > BiomeDB.CROSSROADS:  # bad-luck protection: count levels with no Rare find
+		for p in get_players():
+			p.rare_drought = 0 if p.found_rare_this_level else p.rare_drought + 1
+			p.found_rare_this_level = false
 	for c in _creatures_where(func(c: Creature) -> bool: return not c.is_player_pet()):
 		c.queue_free()
 	_zones.clear()
@@ -599,15 +603,17 @@ func _start_level(number: int) -> void:
 		# The first two creatures by the camp are the biome's starter species (if it has one).
 		var species: int = level_biome.starter_species if level_biome.has("starter_species") and i < 2 \
 				else SpeciesDB.pick_random_index(level_biome.species)
+		var leader := false
 		if spot.has("group"):
 			if not pack_species.has(spot.group):
 				pack_species[spot.group] = SpeciesDB.pick_random_index(level_biome.species)
+				leader = true  # the first of each pack leads it (a better drop)
 			species = pack_species[spot.group]
 		creature_spawner.spawn({
 			"species": species,
 			# Weakest by the camp, strongest near the boss.
 			"level": mini(base_level + int(spot.depth * 4.0) + randi() % 2, levels.y),
-			"pos": level_root.to_global(spot.pos),
+			"pos": level_root.to_global(spot.pos), "leader": leader,
 		})
 	for crate: Dictionary in layout.crate_spots:
 		crate_spawner.spawn({"pos": level_root.to_global(crate.pos), "gold": crate.gold, "level": number})
@@ -654,7 +660,8 @@ func get_champion() -> Creature:
 func on_champion_defeated(champion: Creature) -> void:
 	announce.rpc("The %s is defeated! A portal has opened." % champion.title(), Color(1, 0.9, 0.5))
 	play_burst.rpc(champion.global_position, champion.species.color, 4.0)
-	roll_loot(champion.global_position, 1.0)  # Champions always drop gear
+	# Champions: 2 items, the first at least Magic, 40% of the time Rare.
+	roll_loot(champion.global_position, 1.0, -1, ItemDB.MAGIC, 2, 0.4, true)
 	cleared_level = maxi(cleared_level, level_number)
 	for p in get_players():
 		_give_team_xp(p, roundi(rival_defeat_xp * area_levels(level_number).y / 2.0), area_levels(level_number).y)
@@ -666,7 +673,8 @@ func on_rival_defeated(rival: Rival) -> void:
 	announce.rpc("%s is defeated! A portal has opened at the end of the path." % (boss_name[0].to_upper() + boss_name.substr(1)),
 			Color(1, 0.9, 0.5))
 	play_burst.rpc(rival.global_position, rival.color, 4.0)
-	roll_loot(rival.global_position, 1.0)  # bosses always drop gear
+	# Named bosses: 3 items, the first Rare (Magic in Act 1).
+	roll_loot(rival.global_position, 1.0, -1, ItemDB.RARE, 3, 0.0, true)
 	for pet in _creatures_where(func(c: Creature) -> bool: return c.is_rival_pet()):
 		pet.release_to_wild()
 		announce.rpc("The rival's %s has gone wild. Capture it!" % pet.species.display_name, Color(0.6, 0.85, 1.0))
@@ -758,24 +766,43 @@ func _collect_coins() -> void:
 			continue
 		for p in get_players():
 			if not p.downed and _flat_distance(p.global_position, coin.global_position) <= coin_pickup_radius:
-				p.coins += coin.value
+				p.coins += roundi(coin.value * (1.0 + ItemDB.total(p.equipment, "coin_find") / 100.0))
 				coin.queue_free()
 				break
 
 
-## Server: with probability `chance`, drops a piece of gear at `at`, made for
-## this area's level (any kind; levels past 5 drop level 5 gear; class collars, rings and
-## necklaces lean towards the class of the area's pets).
-## Server: an item drops at `at` with this `chance`. Its item level is the
-## creature's level (`ilvl`), or the top creature level of this area.
-func roll_loot(at: Vector3, chance: float, ilvl := -1) -> void:
-	if randf() < chance:
-		if ilvl <= 0:
-			ilvl = area_levels(level_number).y
-		# Half the class items are made for the pets of this area (birds' gear in the peaks...).
-		var local_class := SpeciesDB.get_species(biome().species[0]).pet_class()
-		var item := ItemDB.make_item(ilvl, null, local_class)
-		loot_spawner.spawn({"pos": clamp_to_level(at), "item": item})
+## Server: loot at `at`, rolled separately for every player (personal loot:
+## each sees and picks up only their own). Up to `count` items, each dropping
+## with `chance`; the first is at least `min_rarity`, and Rare or better with
+## `rare_chance`. `boss` = a boss or Champion: bad-luck protection makes its
+## first item Rare after 3 levels without one. Item level = the creature's
+## level (`ilvl`), or the area's top creature level. Act 1 drops nothing
+## above Magic. Each player's magic find (gear) improves their own rolls.
+func roll_loot(at: Vector3, chance: float, ilvl := -1, min_rarity := ItemDB.NORMAL, count := 1,
+		rare_chance := 0.0, boss := false) -> void:
+	if ilvl <= 0:
+		ilvl = area_levels(level_number).y
+	var first_act: bool = BiomeDB.act_of(level_number).act == 1
+	# Half the class items are made for the pets of this area (birds' gear in the peaks...).
+	var local_class := SpeciesDB.get_species(biome().species[0]).pet_class()
+	for p in get_players():
+		for i in count:
+			if randf() >= chance:
+				continue
+			var floor_rarity := min_rarity if i == 0 else ItemDB.NORMAL
+			if i == 0 and randf() < rare_chance:
+				floor_rarity = ItemDB.RARE
+			if i == 0 and boss and p.rare_drought >= 3:
+				floor_rarity = ItemDB.RARE
+			var rarity := maxi(ItemDB.roll_rarity(null, p.magic_find()), floor_rarity)
+			if first_act:
+				rarity = mini(rarity, ItemDB.MAGIC)
+			if rarity >= ItemDB.RARE:
+				p.found_rare_this_level = true
+				p.rare_drought = 0
+			var item := ItemDB.make_item(ilvl, null, local_class, ItemDB.NORMAL, rarity)
+			var spread := Vector3(randf_range(-0.8, 0.8), 0.0, randf_range(-0.8, 0.8)) if count > 1 else Vector3.ZERO
+			loot_spawner.spawn({"pos": clamp_to_level(at + spread), "item": item, "owner": p.peer_id})
 
 
 func _collect_loot() -> void:
@@ -785,6 +812,8 @@ func _collect_loot() -> void:
 		for p in get_players():
 			if p.downed or _flat_distance(p.global_position, loot.global_position) > coin_pickup_radius:
 				continue
+			if loot.owner_id != 0 and loot.owner_id != p.peer_id:
+				continue  # someone else's loot
 			if p.add_item(loot.item):
 				if ItemDB.is_standout(loot.item):
 					announce.rpc("%s found %s, a %s item!" % [p.display_name, ItemDB.display_name(loot.item),
@@ -803,6 +832,7 @@ func _spawn_loot(data: Dictionary) -> Node:
 	var loot := Loot.new()
 	loot.position = data.pos
 	loot.item = data.item
+	loot.owner_id = data.get("owner", 0)
 	return loot
 
 
@@ -1873,6 +1903,7 @@ func _spawn_creature(data: Dictionary) -> Node:
 	creature.party_slot = data.get("slot", -1)
 	creature.nickname = Creature.clean_name(data.get("name", ""))
 	creature.elite = data.get("elite", false)
+	creature.pack_leader = data.get("leader", false)
 	creature.position = data.pos
 	creature.home = data.pos
 	if data.get("dead", false):

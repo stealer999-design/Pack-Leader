@@ -168,7 +168,8 @@ static func _rng(rng: RandomNumberGenerator) -> RandomNumberGenerator:
 ## A random item for item level `ilvl`. `local_class` (optional) makes half of
 ## the class items that drop made for that class (birds' gear in the peaks...).
 ## `min_rarity` raises the rarity to at least that.
-static func make_item(ilvl: int, rng: RandomNumberGenerator = null, local_class := "", min_rarity := NORMAL) -> Dictionary:
+static func make_item(ilvl: int, rng: RandomNumberGenerator = null, local_class := "", min_rarity := NORMAL,
+		rarity := -1) -> Dictionary:
 	rng = _rng(rng)
 	var total := 0.0
 	for kind in DROP_WEIGHTS:
@@ -180,15 +181,20 @@ static func make_item(ilvl: int, rng: RandomNumberGenerator = null, local_class 
 		if pick < 0.0:
 			type = kind
 			break
-	return make(type, ilvl, maxi(roll_rarity(rng), min_rarity), rng, local_class)
+	if rarity < 0:
+		rarity = roll_rarity(rng)
+	return make(type, ilvl, maxi(rarity, min_rarity), rng, local_class)
 
 
-static func roll_rarity(rng: RandomNumberGenerator = null) -> int:
-	var roll := _rng(rng).randf()
-	var acc := 0.0
-	for i in RARITY_WEIGHTS.size():
-		acc += RARITY_WEIGHTS[i]
-		if roll < acc:
+## A rarity for a drop. `magic_find` (percent, from gear) makes Rare items
+## that much likelier and Magic items half that much.
+static func roll_rarity(rng: RandomNumberGenerator = null, magic_find := 0.0) -> int:
+	var weights := [RARITY_WEIGHTS[0], RARITY_WEIGHTS[1] * (1.0 + magic_find / 200.0), RARITY_WEIGHTS[2] * (1.0 + magic_find / 100.0)]
+	var total: float = weights[0] + weights[1] + weights[2]
+	var roll := _rng(rng).randf() * total
+	for i in weights.size():
+		roll -= weights[i]
+		if roll < 0.0:
 			return i
 	return RARE
 

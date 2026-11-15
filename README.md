@@ -327,8 +327,22 @@ played in the browser".
   lizards paddle in a sprawl and swing their bodies and tails, winged hybrids
   flap, and everyone breathes a little standing still.
 - **Loot and inventory (I):** gear drops as glowing sacks (a beam of light in
-  the item's rarity colour, its name above it): from vases (12%, gold vases
-  40%), defeated wild creatures (8%) and every boss. Walk over a sack to put
+  the item's rarity colour, its name above it). **Loot is personal**: every
+  player rolls their own drops and sees only theirs. Drops come from:
+
+  | Source | Chance | At least |
+  |---|---|---|
+  | Wild creature or monster | 8% | |
+  | Pack Alpha (the first of each pack in the open fields; a little bigger) | 35% | Magic |
+  | Vase | 12% | |
+  | Gold vase | 50% | Magic |
+  | Champion | 2 items | the first Magic, 40% of the time Rare |
+  | Named boss | 3 items | the first Rare |
+
+  **Act 1 drops only Normal and Magic items**, so the first Rare comes in
+  Act 2. **Magic find** (from gear) makes Rare drops likelier, and **bad-luck
+  protection** makes the first item from a boss or Champion Rare if you've gone
+  3 levels without finding one. Walk over a sack to put
   it in your **bag** (24 places): a ring and a column of light in its rarity
   colour flash around your tamer, the item's icon and name float up over your
   head (everyone sees it), and the Inventory button shows how many new items

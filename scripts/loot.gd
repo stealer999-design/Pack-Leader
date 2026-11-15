@@ -6,6 +6,9 @@ extends Node3D
 
 # Set by the spawn function before entering the tree.
 var item := {}
+## Whose loot it is (personal loot): only that player sees it and can pick it
+## up. 0 = anyone's.
+var owner_id := 0
 
 var _sack: Node3D
 var _pulse: StandardMaterial3D  ## A legendary item's beam, which pulses.
@@ -13,6 +16,10 @@ var _time := 0.0
 
 
 func _ready() -> void:
+	if owner_id != 0 and multiplayer.has_multiplayer_peer() and owner_id != multiplayer.get_unique_id():
+		visible = false  # someone else's loot
+		set_process(false)
+		return
 	SoundFX.play(self, "bing_rare" if ItemDB.is_standout(item) else "bing", global_position, 0.02)
 	var color := ItemDB.rarity_color(item)
 	_sack = Node3D.new()

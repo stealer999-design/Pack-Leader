@@ -58,6 +58,10 @@ var party_slot := -1
 ## A Champion: a giant, much tougher wild monster that guards the end of the
 ## first two levels of Acts 2-5 (see World._start_level). Set at spawn.
 var elite := false
+## The leader of a pack in the open fields: a little bigger, and a better drop
+## (35%, at least Magic; see _on_died). Set at spawn.
+var pack_leader := false
+const LEADER_SIZE := 1.15
 const ELITE_SIZE := 1.9
 const ELITE_HEALTH := 8.0
 const ELITE_DAMAGE := 1.6
@@ -270,7 +274,7 @@ func radius() -> float:
 
 ## How big it is drawn (and how wide it is): its species' size, bigger for a Champion.
 func body_size() -> float:
-	return species.size * (ELITE_SIZE if elite else 1.0)
+	return species.size * (ELITE_SIZE if elite else (LEADER_SIZE if pack_leader else 1.0))
 
 
 func get_damage() -> float:
@@ -965,7 +969,10 @@ func _on_died() -> void:
 		if elite:
 			world.on_champion_defeated(self)
 		world.award_xp(self)
-		world.roll_loot(global_position, 0.08, level)
+		if pack_leader:
+			world.roll_loot(global_position, 0.35, level, ItemDB.MAGIC)
+		else:
+			world.roll_loot(global_position, 0.08, level)
 		world.play_burst.rpc(global_position, species.color, 2.5)
 		queue_free()
 	else:
@@ -1084,7 +1091,7 @@ func _apply_faint() -> void:
 func title() -> String:
 	if nickname != "":
 		return nickname
-	return species.display_name + (" Champion" if elite else "")
+	return species.display_name + (" Champion" if elite else (" Alpha" if pack_leader else ""))
 
 
 ## A name made safe: no control characters or line breaks, trimmed, at most

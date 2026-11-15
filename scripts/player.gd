@@ -111,6 +111,10 @@ var stable: Array[Dictionary] = []
 ## place. A dead pet's data has "dead": true. Server-authoritative, mirrored
 ## to the owner along with the stable.
 var reserve: Array[Dictionary] = []
+## Server: levels in a row this tamer has found no Rare item (bad-luck
+## protection: from 3, the next boss or Champion drops one; see World.roll_loot).
+var rare_drought := 0
+var found_rare_this_level := false
 
 ## Creature under the mouse cursor (local player only).
 var hovered_creature: Creature
@@ -993,6 +997,11 @@ func _regenerate(delta: float) -> void:
 	_since_hit += delta
 	if not downed and _since_hit >= regen_delay and health.current < health.max_health:
 		health.heal(health.max_health * regen_rate * delta)
+
+
+## Percent better odds of good items, from gear.
+func magic_find() -> float:
+	return float(ItemDB.total(equipment, "magic_find"))
 
 
 func poison(dps: float, duration: float) -> void:
