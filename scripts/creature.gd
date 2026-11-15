@@ -1025,7 +1025,7 @@ func _show_collar() -> void:
 ## its level multiplier is divided by 1 + PET_GROWTH_LAG per level above, so
 ## from Act 2 on gear has to make up the difference (see ItemDB; the gear
 ## design doc's "Pet growth rebalance").
-const PET_GROWTH_LAG := 0.10
+const PET_GROWTH_LAG := 0.15
 const PET_GROWTH_FROM := 20
 
 

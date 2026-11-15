@@ -393,6 +393,12 @@ played in the browser".
 
   On a collar, the pet affixes help only the pet wearing it.
 
+  **Why gear matters from Act 2:** monsters keep growing at the same rate,
+  but above level 20 your pets fall behind them (a pet's level bonus is
+  divided by 1 + 0.15 per level above 20). Gear makes up the difference: with
+  no gear, Act 2 gets hard and Act 3 is a slog; with the gear you find, every
+  act can be finished.
+
   **Class items:** about half the Magic and Rare rings, necklaces and collars
   are made for one class of pet (half of those for the pets of the area
   you're in). They roll that class's skill-tree stats: Wizard **Arcane**

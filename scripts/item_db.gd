@@ -108,7 +108,7 @@ const AFFIXES := {
 }
 ## Pet affixes (and class affixes) roll this many times their listed range:
 ## the main tuning knob for how much gear makes up for pets' slower growth.
-const PET_AFFIX_SCALE := 1.5
+const PET_AFFIX_SCALE := 1.0
 ## Kinds that can be class items.
 const CLASS_KINDS := ["ring", "necklace", "collar"]
 ## The four pet classes: their names and colours, and the skill-tree stats
