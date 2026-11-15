@@ -12,8 +12,8 @@ extends PanelContainer
 ## the moving (Player.request_*).
 
 const EQUIP_SIZE := Vector2(64, 64)
-const BAG_SIZE := Vector2(54, 54)
-const BAG_COLUMNS := 6
+const BAG_SIZE := Vector2(50, 50)
+const BAG_COLUMNS := 8
 
 var player: Player
 
@@ -21,7 +21,8 @@ var _equip_slots := {}  ## slot name -> ItemSlot
 var _bag_slots: Array[ItemSlot] = []
 var _armor: Label
 var _bag_title: Label
-var _details: Label
+var _details: RichTextLabel
+var _compare: RichTextLabel
 var _bin: ItemSlot
 var _discard_dialog: ConfirmationDialog
 var _discard_indices: Array[int] = []
@@ -194,11 +195,24 @@ func _init() -> void:
 	var bottom := HBoxContainer.new()
 	bottom.add_theme_constant_override("separation", 14)
 	box.add_child(bottom)
-	_details = Label.new()
+	_details = RichTextLabel.new()
+	_details.bbcode_enabled = true
+	_details.fit_content = true
+	_details.scroll_active = false
 	_details.custom_minimum_size = Vector2(0, 54)
 	_details.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_details.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_details.add_theme_font_size_override("normal_font_size", 13)
 	bottom.add_child(_details)
+	# Beside it: how a bag item compares with what it would replace.
+	_compare = RichTextLabel.new()
+	_compare.bbcode_enabled = true
+	_compare.fit_content = true
+	_compare.scroll_active = false
+	_compare.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_compare.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_compare.add_theme_font_size_override("normal_font_size", 13)
+	bottom.add_child(_compare)
 	_select_button = _small_button("Select", "close", "Mark items to throw away together (or right-click an item)")
 	_select_button.toggle_mode = true
 	_select_button.toggled.connect(_set_selecting)
@@ -258,6 +272,7 @@ func refresh() -> void:
 	var used := 0
 	for item_slot in _bag_slots:
 		item_slot.item = player.bag[item_slot.bag_index] if item_slot.bag_index < player.bag.size() else {}
+		item_slot.upgrade = is_upgrade(item_slot.item)
 		if not item_slot.item.is_empty():
 			used += 1
 	_bag_title.text = "Bag   %d / %d" % [used, ItemDB.BAG_SIZE]
@@ -505,6 +520,7 @@ func _small_button(text: String, icon: String, tip: String) -> Button:
 
 
 func _update_details() -> void:
+	_compare.text = ""
 	if _selecting:
 		_details.text = "%d marked" % _marked.size()
 		return
@@ -515,13 +531,62 @@ func _update_details() -> void:
 	if item.type == "bat":
 		_details.text = "%s\nHits for %d. Upgrade it at the Bat Shop in the village." % [item.name, roundi(item.damage)]
 		return
-	_details.text = ItemDB.describe(item)
-	if _selected.bag_index >= 0 and ItemDB.is_collar(item) and not _pets_column.visible:
-		_details.text += "\n(Open the Pets tab to put it on a pet.)"
-	elif _selected.bag_index >= 0:
-		var worn: Dictionary = player.equipment.get(ItemDB.default_slot(item), {})
-		if not worn.is_empty():
-			_details.text += "\n(wearing: %s, %s)" % [ItemDB.display_name(worn), ItemDB.effect(worn, ", ")]
+	_details.text = "[color=#%s]%s[/color]" % [ItemDB.rarity_color(item).to_html(false), ItemDB.describe(item)]
+	if _selected.bag_index >= 0:
+		var against := worn_to_compare(item)
+		if not against.is_empty():
+			_compare.text = compare_text(item, against.item, against.name)
+		if ItemDB.is_collar(item) and not _pets_column.visible:
+			_details.text += "\n(Open the Pets tab to put it on a pet.)"
+
+
+## What a bag item would replace, to compare it with: {item, name} (the worn
+## piece in its slot, the weaker ring, or the worst collar among the pets who
+## can wear it), or {} if nothing is worn there.
+func worn_to_compare(item: Dictionary) -> Dictionary:
+	if ItemDB.is_collar(item):
+		var worst := {}
+		for pet in player.world.get_pets(player.peer_id):
+			if ItemDB.fits_pet(item, pet.species) and (worst.is_empty()
+					or ItemDB.power(pet.collar) < ItemDB.power(worst.item)):
+				worst = {"item": pet.collar, "name": "%s's collar" % pet.title()}
+		return worst
+	var slot := ItemDB.default_slot(item)
+	var worn: Dictionary = player.equipment.get(slot, {})
+	if slot == "ring1":
+		var other: Dictionary = player.equipment.get("ring2", {})
+		if other.is_empty() or (not worn.is_empty() and ItemDB.power(other, _party_classes()) < ItemDB.power(worn, _party_classes())):
+			worn = other
+	return {"item": worn, "name": ItemDB.display_name(worn) if not worn.is_empty() else "nothing"}
+
+
+## "Compared with your Leather Jacket:" and a green or red line per stat that changes.
+static func compare_text(item: Dictionary, worn: Dictionary, worn_name: String) -> String:
+	var lines := ["[color=#9aa4b2]Instead of %s:[/color]" % worn_name]
+	var changes := ItemDB.compare(item, worn)
+	if changes.is_empty():
+		lines.append("[color=#9aa4b2]no change[/color]")
+	for change in changes:
+		lines.append("[color=%s]%s[/color]" % ["#6fdc7a" if change[1] > 0.0 else "#ff7a6e", change[0]])
+	return "\n".join(lines)
+
+
+## True if a bag item would be an upgrade for the tamer or one of the pets.
+func is_upgrade(item: Dictionary) -> bool:
+	if not ItemDB.is_item(item):
+		return false
+	var classes := _party_classes()
+	var against := worn_to_compare(item)
+	if against.is_empty():
+		return false
+	return ItemDB.power(item, classes) > ItemDB.power(against.item, classes) + 0.5
+
+
+func _party_classes() -> Array:
+	var out := []
+	for pet in player.world.get_pets(player.peer_id):
+		out.append(pet.species.pet_class())
+	return out
 
 
 func _heading(text: String) -> Label:
@@ -565,6 +630,12 @@ class ItemSlot:
 		set(v):
 			if v != selected:
 				selected = v
+				queue_redraw()
+	## A green arrow in the corner: better than what's worn (see InventoryWindow.is_upgrade).
+	var upgrade := false:
+		set(v):
+			if v != upgrade:
+				upgrade = v
 				queue_redraw()
 
 	func _ready() -> void:
@@ -672,6 +743,10 @@ class ItemSlot:
 					Color(0, 0, 0, 0.8))
 			draw_string(font, Vector2(5, size.y - 5), str(int(item.ilvl)), HORIZONTAL_ALIGNMENT_LEFT, -1, 12,
 					ItemDB.rarity_color(item))
+		if upgrade and not marked:  # better than what's worn: a green arrow, top right
+			var tip := Vector2(size.x - 9, 4)
+			draw_colored_polygon(PackedVector2Array([tip, tip + Vector2(6, 8), tip + Vector2(-6, 8)]), Color(0.45, 0.95, 0.5))
+			draw_rect(Rect2(tip + Vector2(-2.5, 8), Vector2(5, 6)), Color(0.45, 0.95, 0.5))
 		if marked:  # marked to throw away: red, with a cross in the corner
 			var mark := StyleBoxFlat.new()
 			mark.bg_color = Color(0.8, 0.15, 0.1, 0.3)

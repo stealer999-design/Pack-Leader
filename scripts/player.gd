@@ -111,6 +111,9 @@ var stable: Array[Dictionary] = []
 ## place. A dead pet's data has "dead": true. Server-authoritative, mirrored
 ## to the owner along with the stable.
 var reserve: Array[Dictionary] = []
+## Items kept in the stash chest in town (ItemDB.STASH_SIZE places, {} = empty):
+## saved, and reached only at a stash chest (request_stash_move).
+var stash: Array[Dictionary] = []
 ## Server: levels in a row this tamer has found no Rare item (bad-luck
 ## protection: from 3, the next boss or Champion drops one; see World.roll_loot).
 var rare_drought := 0
@@ -171,6 +174,8 @@ func _ready() -> void:
 		reserve.append({})
 	for i in ItemDB.BAG_SIZE:
 		bag.append({})
+	for i in ItemDB.STASH_SIZE:
+		stash.append({})
 	for slot in ItemDB.SLOTS:
 		equipment[slot] = {}
 	_material.albedo_color = color
@@ -266,6 +271,8 @@ func _physics_process(delta: float) -> void:
 			world.hud.open_bat_shop()
 		elif world.is_near_breeder(global_position):
 			world.hud.open_breeder()
+		elif world.is_near_stash(global_position):
+			world.hud.open_stash()
 	if world.hud.is_window_open():
 		return  # mouse is busy with the stable or shop window
 
@@ -798,6 +805,10 @@ func request_restore(data: Dictionary) -> void:
 	if saved_bag is Array:
 		for i in mini(saved_bag.size(), bag.size()):
 			bag[i] = ItemDB.clean(saved_bag[i])
+	var saved_stash = data.get("stash", [])
+	if saved_stash is Array:
+		for i in mini(saved_stash.size(), stash.size()):
+			stash[i] = ItemDB.clean(saved_stash[i])
 	var saved_gear = data.get("equipment", {})
 	if saved_gear is Dictionary:
 		for slot in ItemDB.SLOTS:
@@ -1501,16 +1512,40 @@ func _gear_changed() -> void:
 
 
 func _push_inventory() -> void:
-	_sync_inventory.rpc_id(peer_id, bag, equipment)
+	_sync_inventory.rpc_id(peer_id, bag, equipment, stash)
+
+
+## Moves an item between the bag and the stash (at a stash chest): place
+## `index` of `from_kind` ("bag" or "stash") to the first empty place of the other.
+@rpc("any_peer", "call_local", "reliable")
+func request_stash_move(from_kind: String, index: int) -> void:
+	if not _sent_by_owner() or not world.is_near_stash(global_position):
+		return
+	var from: Array[Dictionary] = bag if from_kind == "bag" else stash
+	var to: Array[Dictionary] = stash if from_kind == "bag" else bag
+	if index < 0 or index >= from.size() or from[index].is_empty():
+		return
+	var free := -1
+	for i in to.size():
+		if to[i].is_empty():
+			free = i
+			break
+	if free < 0:
+		notify("The %s is full" % ("stash" if from_kind == "bag" else "bag"), "warn")
+		return
+	to[free] = from[index]
+	from[index] = {}
+	_push_inventory()
 
 
 @rpc("any_peer", "call_local", "reliable")
-func _sync_inventory(new_bag: Array, new_equipment: Dictionary) -> void:
+func _sync_inventory(new_bag: Array, new_equipment: Dictionary, new_stash: Array) -> void:
 	if not _sent_by_server():
 		return
 	if not multiplayer.is_server():  # the server already holds the real ones
 		bag.assign(new_bag)
 		equipment = new_equipment
+		stash.assign(new_stash)
 	inventory_changed.emit()
 
 

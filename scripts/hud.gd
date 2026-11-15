@@ -12,6 +12,7 @@ var skill_window: SkillWindow
 var mini_map: MiniMap
 var bat_shop_panel: PanelContainer
 var breeder_window: BreederWindow
+var stash_window: StashWindow
 var pause_menu: PauseMenu
 var inventory_window: InventoryWindow
 ## The action bar along the bottom (health, potion, capture, bat, pets, buttons).
@@ -72,6 +73,10 @@ func _ready() -> void:
 	breeder_window.theme = shop_panel.theme
 	breeder_window.add_theme_stylebox_override("panel", shop_panel.get_theme_stylebox("panel"))
 	add_child(breeder_window)
+	stash_window = StashWindow.new()
+	stash_window.theme = shop_panel.theme
+	stash_window.add_theme_stylebox_override("panel", shop_panel.get_theme_stylebox("panel"))
+	add_child(stash_window)
 	inventory_window = InventoryWindow.new()
 	add_child(inventory_window)
 	_build_travel_window()
@@ -97,6 +102,7 @@ func bind(player: Player) -> void:
 	mini_map.player = player
 	breeder_window.player = player
 	inventory_window.bind(player)
+	stash_window.bind(player)
 	action_bar.player = player
 	name_label.text = player.display_name
 	name_label.modulate = player.color.lightened(0.3)
@@ -128,15 +134,20 @@ func _process(delta: float) -> void:
 	var near_breeder := _player.world.is_near_breeder(_player.global_position)
 	if breeder_window.visible and not near_breeder:
 		breeder_window.hide()
-	interact_label.visible = (near_stable or near_shop or near_bat_shop or near_breeder) and not is_window_open()
+	var near_stash := _player.world.is_near_stash(_player.global_position)
+	if stash_window.visible and not near_stash:
+		stash_window.hide()
+	interact_label.visible = (near_stable or near_shop or near_bat_shop or near_breeder or near_stash) and not is_window_open()
 	if near_stable:
 		interact_label.text = "[F]  Open stable"
 	elif near_shop:
 		interact_label.text = "[F]  Visit the lemonade stand"
 	elif near_bat_shop:
 		interact_label.text = "[F]  Visit the bat shop"
-	else:
+	elif near_breeder:
 		interact_label.text = "[F]  Visit the breeder"
+	else:
+		interact_label.text = "[F]  Open your stash"
 	if shop_panel.visible:
 		_update_shop()
 	if bat_shop_panel.visible:
@@ -315,7 +326,8 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func is_window_open() -> bool:
 	return stable_panel.visible or shop_panel.visible or skill_window.visible or bat_shop_panel.visible \
-			or breeder_window.visible or pause_menu.visible or inventory_window.visible or travel_window.visible
+			or breeder_window.visible or pause_menu.visible or inventory_window.visible or travel_window.visible \
+			or stash_window.visible
 
 
 func close_windows() -> void:
@@ -324,6 +336,7 @@ func close_windows() -> void:
 	skill_window.hide()
 	bat_shop_panel.hide()
 	breeder_window.hide()
+	stash_window.hide()
 	inventory_window.hide()
 	travel_window.hide()
 
@@ -369,6 +382,10 @@ func toggle_skills() -> void:
 
 func open_breeder() -> void:
 	breeder_window.open()
+
+
+func open_stash() -> void:
+	stash_window.open()
 
 
 func open_bat_shop() -> void:
@@ -465,7 +482,7 @@ func _build_bat_shop_panel() -> void:
 	box.add_child(_bat_buy_button)
 	# Selling gear: the bag, click items to mark them, then sell.
 	var sell_title := Label.new()
-	sell_title.text = "Sell gear: click items in your bag to mark them   (Common 1, Fine 2, Superior 3, Legendary 5 coins)"
+	sell_title.text = "Sell gear: click items in your bag to mark them   (Normal 1, Magic 3, Rare 8 coins, +1 per 20 item levels)"
 	sell_title.add_theme_font_size_override("font_size", 14)
 	box.add_child(sell_title)
 	var grid := GridContainer.new()
@@ -477,7 +494,7 @@ func _build_bat_shop_panel() -> void:
 		var slot := InventoryWindow.ItemSlot.new()
 		slot.bag_index = i
 		slot.no_drag = true
-		slot.custom_minimum_size = Vector2(58, 58)
+		slot.custom_minimum_size = Vector2(50, 50)
 		slot.clicked.connect(func(s, _double: bool) -> void:
 			if s.item.is_empty():
 				return

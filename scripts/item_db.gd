@@ -19,7 +19,9 @@ class_name ItemDB
 ## Items saved by older versions are converted by clean() (see _convert_v1).
 
 const VERSION := 2
-const BAG_SIZE := 24
+const BAG_SIZE := 40
+## Places in the stash chest in town (kept between runs, see Player.stash).
+const STASH_SIZE := 40
 const MAX_ILVL := 80
 ## Equipment slots, in display order.
 const SLOTS := ["weapon", "chest", "pants", "hat", "boots", "ring1", "ring2", "necklace"]
@@ -489,6 +491,103 @@ static func describe(item: Dictionary) -> String:
 	if fx != "":
 		lines.append(fx)
 	return "\n".join(lines)
+
+
+# --- Comparing items ---------------------------------------------------------------
+
+## Everything an item gives, as {key: amount}, for comparing two items of the
+## same slot. Tamer gear: its stats() keys, plus "cls:<class>:<stat>" for class
+## affixes. Collars: skill-tree stats for the pet wearing it (and "skills").
+static func summary(item: Dictionary) -> Dictionary:
+	if not is_item(item):
+		return {}
+	if is_collar(item):
+		var out := {}
+		for stat: String in item.base:
+			out[stat] = out.get(stat, 0) + int(item.base[stat])
+		for id: String in item.affixes:
+			var stat: String = PET_AFFIX_STAT.get(id, id.substr(4) if id.begins_with("cls_") else "")
+			if stat != "":
+				out[stat] = out.get(stat, 0) + int(item.affixes[id])
+		return out
+	var out := stats(item)
+	out.erase("pet_poison_resist")  # shown once, as "Tamer and pets"
+	for id: String in item.affixes:
+		if id.begins_with("cls_") and is_rolled(item):
+			out["cls:%s:%s" % [item["class"], id.substr(4)]] = int(item.affixes[id])
+	return out
+
+
+## Words for one summary() entry ("Pets: deal 7% more damage"); a negative
+## value reads "Lose: ..." with the amount lost.
+static func summary_text(key: String, value: int, collar: bool) -> String:
+	if value < 0:
+		return "Lose: " + _summary_words(key, -value, collar)
+	return _summary_words(key, value, collar)
+
+
+static func _summary_words(key: String, value: int, collar: bool) -> String:
+	if collar:
+		if key == "skills":
+			return "This pet: +%d to every skill rank" % value
+		if PET_TEXT.has(key):
+			return PET_TEXT[key] % ["This pet", value]
+		return "This pet: " + PetSkills.STAT_TEXT.get(key, key + " %d") % value
+	if key.begins_with("cls:"):
+		var bits := key.split(":")
+		var pets: String = PET_GEAR.get(bits[1], {}).get("pets", "pets")
+		if bits[2] == "skills":
+			return "Your %s: +%d to every skill rank" % [pets, value]
+		var words: String = PetSkills.STAT_TEXT.get(bits[2], bits[2] + " %d").replace("takes ", "take ")
+		return "Your %s: %s" % [pets, words % value]
+	if key.begins_with("pet_") and PET_TEXT.has(key.substr(4)):
+		return PET_TEXT[key.substr(4)] % ["Pets", value]
+	return TAMER_TEXT.get(key, key + " %d") % value
+
+
+## What changes if `new` replaces `old`: one line per stat that differs, as
+## [words, change] (change > 0 = better), biggest gains first.
+static func compare(new: Dictionary, old: Dictionary) -> Array:
+	var a := summary(new)
+	var b := summary(old)
+	var collar := is_collar(new)
+	var out := []
+	for key in a.keys() + b.keys().filter(func(k): return not a.has(k)):
+		var delta := int(a.get(key, 0)) - int(b.get(key, 0))
+		if delta != 0:
+			out.append([summary_text(key, delta, collar), delta * _weight(key, collar)])
+	out.sort_custom(func(x: Array, y: Array) -> bool: return x[1] > y[1])
+	return out
+
+
+## How good an item is, roughly, as one number (for the upgrade arrow).
+## `pet_classes`: the classes in the party (class affixes for others count little).
+static func power(item: Dictionary, pet_classes: Array = []) -> float:
+	var sum := 0.0
+	var collar := is_collar(item)
+	for key: String in summary(item):
+		var weight := _weight(key, collar)
+		if key.begins_with("cls:") and not key.split(":")[1] in pet_classes:
+			weight *= 0.1
+		sum += weight * float(summary(item)[key])
+	return sum
+
+
+const _WEIGHTS := {
+	"armor": 1.5, "health": 0.12, "speed": 0.8, "poison_resist": 0.3, "magic_find": 0.25, "coin_find": 0.1,
+	"pet_damage": 1.0, "pet_health": 0.8, "pet_cooldown": 1.2, "pet_life_hit": 3.0,
+	"damage": 1.0, "cooldown": 1.2, "life_hit": 3.0, "skills": 12.0,
+}
+
+
+static func _weight(key: String, collar := false) -> float:
+	if collar and key == "health":
+		return 0.8  # a pet's health, in percent
+	if key.begins_with("cls:"):
+		return 12.0 if key.ends_with(":skills") else 0.8
+	if _WEIGHTS.has(key):
+		return _WEIGHTS[key]
+	return 0.8  # a class collar's skill-tree stats
 
 
 # --- Saves and the network ------------------------------------------------------------

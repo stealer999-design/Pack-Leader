@@ -377,6 +377,8 @@ static func _village(seg: Dictionary, index: int) -> Dictionary:
 		"stable_point": Vector3(plaza.end.x - 5.0, 0.0, plaza.end.y - 4.5),
 		# Against the screen-right side of the square, facing into it, with its hay pen.
 		"breeder_point": Vector3(plaza.get_center().x + 1.0, 0.0, plaza.position.y + 3.0),
+		# The stash chest: in the middle of the square, clear of the stalls.
+		"stash_point": Vector3(plaza.get_center().x, 0.0, plaza.get_center().y + 5.0),
 		"houses": [
 			{"pos": Vector3(plaza.position.x + 5.0, 0.0, plaza.position.y + 5.0), "size": Vector3(6.0, 3.2, 5.0)},
 			{"pos": Vector3(plaza.position.x + 5.0, 0.0, plaza.end.y - 5.0), "size": Vector3(6.0, 3.6, 5.0)},
@@ -642,6 +644,7 @@ static func _village_open(plaza: Rect2) -> Dictionary:
 	v.bat_shop_point = Vector3(plaza.position.x + 4.0, 0.0, plaza.get_center().y)
 	v.stable_point = Vector3(plaza.end.x - 5.0, 0.0, plaza.end.y - 4.5)
 	v.breeder_point = Vector3(plaza.get_center().x + 1.0, 0.0, plaza.position.y + 3.0)
+	v.stash_point = Vector3(plaza.get_center().x - 5.0, 0.0, plaza.get_center().y + 6.0)  # clear of the lemonade stand
 	v.houses = [
 		{"pos": Vector3(plaza.position.x + 5.0, 0.0, plaza.position.y + 5.0), "size": Vector3(6.0, 3.2, 5.0)},
 		{"pos": Vector3(plaza.position.x + 5.0, 0.0, plaza.end.y - 5.0), "size": Vector3(6.0, 3.6, 5.0)},

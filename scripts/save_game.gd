@@ -191,6 +191,7 @@ func save_now(_announce := false) -> void:
 		"bat": _player.bat_tier,
 		"bag": _player.bag.duplicate(true),
 		"equipment": _player.equipment.duplicate(true),
+		"stash": _player.stash.duplicate(true),
 		"party": party,
 		"stable": _player.stable.duplicate(true),
 		"reserve": _player.reserve.duplicate(true),

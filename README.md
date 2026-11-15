@@ -343,7 +343,7 @@ played in the browser".
   Act 2. **Magic find** (from gear) makes Rare drops likelier, and **bad-luck
   protection** makes the first item from a boss or Champion Rare if you've gone
   3 levels without finding one. Walk over a sack to put
-  it in your **bag** (24 places): a ring and a column of light in its rarity
+  it in your **bag** (40 places): a ring and a column of light in its rarity
   colour flash around your tamer, the item's icon and name float up over your
   head (everyone sees it), and the Inventory button shows how many new items
   you have until you open it. The inventory shows your **eight gear slots**
@@ -406,6 +406,16 @@ played in the browser".
   even lifts skills past their top rank. A class ring or necklace boosts
   every party pet of its class (at three quarters of a collar's strength); a
   class collar fits only that class of pet.
+
+  **Comparing:** a green arrow marks bag items that beat what you (or one of
+  your pets) wear. Click one and the inventory shows, beside its description,
+  every stat that would change if it replaced what's worn there (the weaker
+  ring, or the worst collar among the pets who can wear it): gains in green,
+  losses in red.
+
+  **Stash:** every village and town has a **stash chest** in its square. Press
+  F at it to open the stash (40 places) beside your bag and click items to
+  move them across. The stash is saved, so it keeps gear between runs.
 
   Rare items drop with a tall pillar of light and a two-note chime, and
   everyone is told who found one. Items from older saves are converted

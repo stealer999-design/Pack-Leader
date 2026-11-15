@@ -396,6 +396,16 @@ func shop_position() -> Vector3:
 	return level_root.to_global(layout.shop_point) if not layout.is_empty() else Vector3.INF
 
 
+## The stash chest in the village or town (see Player.stash).
+func stash_position() -> Vector3:
+	return level_root.to_global(layout.village.frame * layout.village.stash_point) \
+			if not layout.is_empty() and layout.has("village") else Vector3.INF
+
+
+func is_near_stash(point: Vector3) -> bool:
+	return _flat_distance(point, stash_position()) <= shop_range
+
+
 func breeder_position() -> Vector3:
 	return level_root.to_global(layout.village.frame * layout.village.breeder_point) if not layout.is_empty() else Vector3.INF
 
@@ -1426,6 +1436,7 @@ func _build_village_contents(v: Dictionary) -> void:
 	heart.modulate = Color(1.0, 0.5, 0.65)
 	heart.position = Vector3(0.0, 1.4, 0.0)
 	pen.add_child(heart)
+	_build_stash_chest(v.stash_point)
 
 	var sign := Label3D.new()
 	sign.text = "Village"
@@ -1604,6 +1615,52 @@ func _build_stall(stall_name: String, point: Vector3, rot_y: float, stripe: Colo
 	sign.position = Vector3(0.0, 3.5, 0.6)
 	stall.add_child(sign)
 	return stall
+
+
+## The stash: a big iron-bound wooden chest on the square, its lid open a crack
+## with a warm glow inside, and a sign. F opens it (HUD.open_stash).
+func _build_stash_chest(point: Vector3) -> void:
+	var chest := Node3D.new()
+	chest.name = "Stash"
+	level_root.add_child(chest)
+	chest.position = point
+	chest.rotation.y = -PI / 2.0  # facing into the square
+	var body := StaticBody3D.new()
+	var shape := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = Vector3(1.9, 1.2, 1.2)
+	shape.shape = box
+	shape.position = Vector3(0.0, 0.6, 0.0)
+	body.add_child(shape)
+	chest.add_child(body)
+	var wood := BuildingTextures.door()
+	var iron := _material(Color(0.25, 0.25, 0.28))
+	var gold := _material(Color(0.95, 0.78, 0.35))
+	_add_mesh(chest, Vector3(0.0, 0.42, 0.0), Vector3(1.8, 0.84, 1.1), wood)
+	var lid := Node3D.new()
+	lid.position = Vector3(0.0, 0.84, 0.55)
+	lid.rotation.x = 0.35  # open a crack
+	chest.add_child(lid)
+	_add_mesh(lid, Vector3(0.0, 0.12, -0.55), Vector3(1.84, 0.24, 1.14), wood)
+	for x in [-0.7, 0.0, 0.7]:  # iron bands
+		_add_mesh(chest, Vector3(x, 0.42, 0.0), Vector3(0.1, 0.86, 1.14), iron)
+		_add_mesh(lid, Vector3(x, 0.12, -0.55), Vector3(0.1, 0.26, 1.18), iron)
+	_add_mesh(chest, Vector3(0.0, 0.62, -0.57), Vector3(0.24, 0.3, 0.06), gold)  # the lock
+	var glow := OmniLight3D.new()
+	glow.light_color = Color(1.0, 0.8, 0.45)
+	glow.light_energy = 0.8
+	glow.omni_range = 2.5
+	glow.position = Vector3(0.0, 1.0, 0.0)
+	chest.add_child(glow)
+	var sign := Label3D.new()
+	sign.text = "Stash"
+	sign.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	sign.pixel_size = 0.01
+	sign.font_size = 40
+	sign.outline_size = 10
+	sign.modulate = Color(1.0, 0.85, 0.5)
+	sign.position = Vector3(0.0, 1.9, 0.0)
+	chest.add_child(sign)
 
 
 func _add_mesh(parent: Node3D, pos: Vector3, size: Vector3, mat: Material) -> MeshInstance3D:
