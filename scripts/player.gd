@@ -1427,9 +1427,8 @@ func play_pickup(item: Dictionary) -> Node3D:
 	fx.add_child(badge)
 	var disc := _pickup_sprite(_pickup_glow(), Color(rarity, 0.95), 0)
 	badge.add_child(disc)
-	var icon := _pickup_sprite(UiIcons.texture(ItemDB.SLOT_ICONS[ItemDB.default_slot(item)], 64),
-			ItemDB.item_color(item).lightened(0.55), 1)
-	icon.pixel_size = 0.018
+	var icon := _pickup_sprite(ItemIcons.texture(item, 96), Color.WHITE, 1)
+	icon.pixel_size = 0.012
 	badge.add_child(icon)
 	var label := Label3D.new()
 	label.text = ItemDB.display_name(item)

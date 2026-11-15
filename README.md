@@ -434,6 +434,14 @@ played in the browser".
   each named boss has a 10% chance that its first drop is one (not in Act 1).
   Extra skill ranks from gear show in the skills window (K).
 
+  **Item pictures:** every base item has its own full-colour picture (a Leather
+  Jacket with lapels and a zip, a quilted Padded Coat, a long belted Ranger's
+  Duster; a cap, a hard hat with a lamp, a feathered Warden's Hat; and so
+  on), with bronze, silver or gold fittings by tier. Its gem, badge or stripe
+  shows the item's main bonus (red for pet damage, green for pet health,
+  cyan for cooldowns, gold for magic find...) or, on class items, the class
+  colour. Uniques get a gold star and set pieces a green leaf.
+
   **Comparing:** a green arrow marks bag items that beat what you (or one of
   your pets) wear. Click one and the inventory shows, beside its description,
   every stat that would change if it replaced what's worn there (the weaker
@@ -677,7 +685,7 @@ The host is the authoritative server and also plays.
 | `scripts/ground_textures.gd` | The ground textures, painted in code per biome: grass, snow and ice, sand ripples, swamp mud and puddles, graveyard soil, volcanic basalt with glowing lava cracks, plus camp dirt, arena flagstones and village cobblestones |
 | `scripts/building_textures.gd` | The buildings' shared textures, painted in code: clay shingle roofs, plaster walls, plank doors (and stall woodwork) |
 | `scenes/obstacles/*.tscn` (built by `scripts/tools/build_obstacles.gd`) | Four premade trees and rocks per biome (meadow: oak, pine, mossy boulder, berry bush; frost: frosted white spruce, ice crystals, snow boulder, frozen tree; desert: cactus, sandstone pillar, palm, boulders; swamp: willow, vine tree, mossy rock, old stump; graveyard: headstones, dead tree, crypt, grave cross; volcano: lava spire, charred tree, obsidian shards, smoking vent). Areas can name their set, so the Act 3 desert and Act 5 ice areas reuse the desert and frost sets, placed turned and sized differently from the level seed. Rebuild with `godot --headless --path . -s res://scripts/tools/build_obstacles.gd` |
-| `scripts/item_db.gd`, `scripts/inventory_window.gd`, `scripts/loot.gd` | Gear (items: base types and tiers, item level, rarities, affixes and their ranges, class items, converting old saves), the inventory window (I: the Tamer tab, and the Pets tab with collars and the reserve) and loot sacks on the ground |
+| `scripts/item_db.gd`, `scripts/item_icons.gd`, `scripts/inventory_window.gd`, `scripts/loot.gd` | Gear (items: base types and tiers, item level, rarities, affixes and their ranges, class items, converting old saves), the inventory window (I: the Tamer tab, and the Pets tab with collars and the reserve) and loot sacks on the ground |
 | `scripts/mini_map.gd` | The mini map (and the large map, M), drawn from the level layout, with fog of war on open fields |
 | `scripts/skill_window.gd`, `scripts/skill_icons.gd` | The skills screen (K) and its skill icons, drawn in code |
 | `scripts/creature_model.gd` | Builds each creature's body from simple meshes: a cat, bird, dog or lizard, depending on its biome, or a monster (skeleton, zombie, mummy, sand scorpion, fire imp, magma golem, frost wraith, yeti) |

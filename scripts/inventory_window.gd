@@ -732,11 +732,13 @@ class ItemSlot:
 		elif item.type == "bat":
 			icon_name = "bat"
 			tint = Color(0.85, 0.65, 0.42)
-		else:
-			icon_name = ItemDB.SLOT_ICONS[ItemDB.default_slot(item)]
-			tint = ItemDB.item_color(item).lightened(0.45)
-		var texture := UiIcons.texture(icon_name, icon_size)
-		draw_texture(texture, (size - Vector2(icon_size, icon_size)) * 0.5, tint)
+		else:  # gear: its own full-colour picture (ItemIcons), a little bigger
+			var art_size := int(minf(size.x, size.y) * 0.86)
+			draw_texture(ItemIcons.texture(item, art_size), (size - Vector2(art_size, art_size)) * 0.5)
+			icon_name = ""
+		if icon_name != "":
+			var texture := UiIcons.texture(icon_name, icon_size)
+			draw_texture(texture, (size - Vector2(icon_size, icon_size)) * 0.5, tint)
 		if item.has("ilvl"):
 			var font := get_theme_default_font()
 			draw_string_outline(font, Vector2(5, size.y - 5), str(int(item.ilvl)), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, 3,
