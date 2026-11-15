@@ -106,6 +106,9 @@ const AFFIXES := {
 	"magic_find": {"word": "of Fortune", "prefix": false, "kinds": ["ring", "necklace", "hat"], "range": [5, 10, 30, 50]},
 	"coin_find": {"word": "Gilded", "prefix": true, "kinds": ["ring", "necklace", "hat"], "range": [5, 10, 30, 50]},
 }
+## Pet affixes (and class affixes) roll this many times their listed range:
+## the main tuning knob for how much gear makes up for pets' slower growth.
+const PET_AFFIX_SCALE := 1.5
 ## Kinds that can be class items.
 const CLASS_KINDS := ["ring", "necklace", "collar"]
 ## The four pet classes: their names and colours, and the skill-tree stats
@@ -406,6 +409,8 @@ static func affix_range(id: String, ilvl: int, type: String) -> Vector2i:
 		scale = 1.0 if type == "collar" else JEWELRY_SCALE
 	else:
 		r = AFFIXES.get(id, {}).get("range", [0, 0, 0, 0])
+	if id != "cls_skills" and (id.begins_with("cls_") or PET_AFFIX_STAT.has(id) and id != "poison_resist"):
+		scale *= PET_AFFIX_SCALE
 	var t := clampf((ilvl - 1) / float(MAX_ILVL - 1), 0.0, 1.0)
 	var lo := maxi(1, roundi(lerpf(r[0], r[2], t) * scale))
 	var hi := maxi(lo, roundi(lerpf(r[1], r[3], t) * scale))
