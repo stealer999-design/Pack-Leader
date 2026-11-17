@@ -10,26 +10,15 @@ class_name BossModels
 ## `main` is the boss's own material (hit flashes recolour it).
 
 
-## The rival tamer: a person like the players, in a wide-brimmed hat and a
-## cape in the rival's colour.
+## The rival tamer: a realistic cowboy with a bat (RivalTamerModel), modelled
+## on a reference picture. He walks and swings like the players.
 static func rival(model: Node3D, main: StandardMaterial3D, color: Color) -> Dictionary:
-	var person := PersonModel.new()
+	var person := RivalTamerModel.new()
 	person.name = "Person"
 	model.add_child(person)
-	person.build(main, Color(0.12, 0.1, 0.1))
-	person.scale = Vector3.ONE * 1.08
-	var dark := _mat(color.darkened(0.55))
-	var hat := _pivot(person._head, Vector3.ZERO)
-	_part(hat, _cylinder(0.5, 0.5, 0.04), dark, Vector3(0, 0.18, 0))
-	_part(hat, _cylinder(0.22, 0.27, 0.3), dark, Vector3(0, 0.33, 0))
-	_part(hat, _cylinder(0.275, 0.275, 0.07), _mat(color.lightened(0.2)), Vector3(0, 0.22, 0))  # band
-	# A cape hanging from the shoulders, flaring out at the bottom.
-	var cape := _pivot(person._body, Vector3(0, 1.45, 0.17))
-	_part(cape, _box(Vector3(0.62, 0.06, 0.08)), dark, Vector3.ZERO)
-	_part(cape, _box(Vector3(0.7, 1.15, 0.05)), _mat(color.darkened(0.25)), Vector3(0, -0.58, 0.06), Vector3(8, 0, 0))
-	ModelLook.apply(hat, 0.03)
-	ModelLook.apply(cape, 0.03)
-	return {"person": person, "sway": [cape]}
+	person.build(main, Color(0.1, 0.07, 0.05))
+	person.scale = Vector3.ONE * 1.12
+	return {"person": person}
 
 
 ## The Glacier Titan: a hulking golem of packed ice, with crystal spikes on

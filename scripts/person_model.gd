@@ -38,6 +38,10 @@ var _pants_mat: StandardMaterial3D
 var _boots: Array[Node3D] = []
 var _boots_mat := StandardMaterial3D.new()
 var _head: Node3D
+## The bat arm's resting pose (shoulder lift, elbow bend); a model can hold its
+## bat differently (see RivalTamerModel).
+var rest_arm := REST_ARM
+var rest_elbow := REST_ELBOW
 var _hat: Node3D
 
 
@@ -285,8 +289,8 @@ func _process(delta: float) -> void:
 		_shoulders[0].rotation.z = lerpf(_shoulders[0].rotation.z, -0.08, blend)
 	_elbows[0].rotation.x = lerpf(_elbows[0].rotation.x, 0.3 + (0.35 + 0.4 * maxf(free_arm, 0.0)) * stride, blend)
 	if not _swinging:
-		_bat_arm.rotation = _bat_arm.rotation.lerp(Vector3(REST_ARM - free_arm * 0.35, 0.0, 0.1), blend)
-		_elbows[1].rotation = _elbows[1].rotation.lerp(Vector3(REST_ELBOW, 0.0, 0.0), blend)
+		_bat_arm.rotation = _bat_arm.rotation.lerp(Vector3(rest_arm - free_arm * 0.35, 0.0, 0.1), blend)
+		_elbows[1].rotation = _elbows[1].rotation.lerp(Vector3(rest_elbow, 0.0, 0.0), blend)
 	if stride <= 0.03:
 		_walk_phase = lerpf(_walk_phase, roundf(_walk_phase / PI) * PI, blend)  # settle with both feet down
 
@@ -301,7 +305,7 @@ func swing(duration := 0.32) -> void:
 	_pose(tween, duration * 0.3, Vector3(2.5, -0.5, 0.3), 1.3, 0.55, Vector3(0.2, 0, -0.25), Tween.EASE_OUT)  # wind up
 	_pose(tween, duration * 0.18, Vector3(1.45, 0.35, 0.15), 0.25, -0.45, Vector3(1.0, 0, -0.1), Tween.EASE_IN)  # strike
 	_pose(tween, duration * 0.2, Vector3(1.1, 1.3, 0.1), 0.5, -0.75, Vector3(0.6, 0, 0.0), Tween.EASE_OUT)  # follow through
-	_pose(tween, duration * 0.32, Vector3(REST_ARM, 0.0, 0.1), REST_ELBOW, 0.0, Vector3(0.05, 0, -0.08), Tween.EASE_IN_OUT)
+	_pose(tween, duration * 0.32, Vector3(rest_arm, 0.0, 0.1), rest_elbow, 0.0, Vector3(0.05, 0, -0.08), Tween.EASE_IN_OUT)
 	tween.tween_callback(func() -> void: _swinging = false)
 
 
@@ -330,8 +334,8 @@ func _pose(tween: Tween, time: float, shoulder: Vector3, elbow: float, turn: flo
 
 
 func _rest_bat() -> void:
-	_bat_arm.rotation = Vector3(REST_ARM, 0.0, 0.1)
-	_elbows[1].rotation = Vector3(REST_ELBOW, 0.0, 0.0)
+	_bat_arm.rotation = Vector3(rest_arm, 0.0, 0.1)
+	_elbows[1].rotation = Vector3(rest_elbow, 0.0, 0.0)
 
 
 # --- Mesh helpers -------------------------------------------------------------------
