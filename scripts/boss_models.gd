@@ -43,6 +43,14 @@ const TITAN_ANIMS := {"walk": "Walking", "run": "Running", "attack": "Heavy_Hamm
 		"special": ["Heavy_Hammer_Swing", 0.0, 1.25],
 		"in_place": ["Heavy_Hammer_Swing"],
 		"walk_pace": 3.2, "run_pace": 4.2}
+## The Bog Witch as a Meshy model: an idle, a walk (she never runs) and a spell
+## cast for her poison bolts and her toxic puddles.
+const WITCH_MODEL := "res://models/bog_witch.glb"
+const WITCH_HEIGHT := 2.1
+const WITCH_ANIMS := {"walk": "Walking", "run": "Walking", "attack": "Cast",
+		"attack_from": 0.5, "attack_speed": 1.6, "idle": "Idle", "run_from": 99.0,
+		"special": ["Cast", 0.0, 1.8], "in_place": ["Cast"],
+		"walk_pace": 2.4, "run_pace": 2.4}
 
 
 static func rival(model: Node3D, main: StandardMaterial3D, color: Color) -> Dictionary:
@@ -227,6 +235,8 @@ static func wyrm(model: Node3D, main: StandardMaterial3D) -> Dictionary:
 ## crooked pointed hat and a gnarled staff topped with a glowing orb. She
 ## floats a little above the bog.
 static func witch(model: Node3D, main: StandardMaterial3D) -> Dictionary:
+	if ResourceLoader.exists(WITCH_MODEL):
+		return meshy_model(model, WITCH_MODEL, WITCH_HEIGHT, WITCH_ANIMS)
 	var skin := _mat(Color(0.55, 0.72, 0.4))
 	var dark := _mat(Color(0.16, 0.12, 0.2))
 	var hair := _mat(Color(0.62, 0.62, 0.58))

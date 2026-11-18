@@ -87,6 +87,11 @@ func _blink() -> void:
 
 func _drop_puddles() -> void:
 	var victims := world.enemies_near(self, home, leash_range + 6.0)
+	if victims.is_empty():
+		return
+	if _parts.has("anim"):  # a rigged witch stops to cast the puddles
+		_taunt_left = puddle_warning
+		_special_anim.rpc()
 	victims.shuffle()
 	for victim in victims.slice(0, 2):
 		var spot := world.clamp_to_level(victim.global_position)
