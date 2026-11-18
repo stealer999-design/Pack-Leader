@@ -43,6 +43,13 @@ const TITAN_ANIMS := {"walk": "Walking", "run": "Running", "attack": "Heavy_Hamm
 		"special": ["Heavy_Hammer_Swing", 0.0, 1.25],
 		"in_place": ["Heavy_Hammer_Swing"],
 		"walk_pace": 3.2, "run_pace": 4.2}
+## The Sand Wyrm as a Meshy model: a worm rearing out of its sand mound with a
+## round, toothed maw. Meshy can't rig a worm, so rig_worm.py gives it a bone
+## chain and the game animates it in code: a swaying wave up the body, a rear
+## back and lunge to bite with the maw gaping.
+const WYRM_MODEL := "res://models/sand_wyrm.glb"
+const WYRM_HEIGHT := 3.0
+
 ## The Bog Witch as a Meshy model: an idle, a walk (she never runs) and a spell
 ## cast for her poison bolts and her toxic puddles.
 const WITCH_MODEL := "res://models/bog_witch.glb"
@@ -181,6 +188,16 @@ static func titan(model: Node3D, main: StandardMaterial3D) -> Dictionary:
 ## The Sand Wyrm: a giant armoured worm rearing out of a sand mound, with a
 ## round toothy maw ringed by mandibles and humps of its body in the sand behind.
 static func wyrm(model: Node3D, main: StandardMaterial3D) -> Dictionary:
+	if ResourceLoader.exists(WYRM_MODEL):
+		var parts := meshy_model(model, WYRM_MODEL, WYRM_HEIGHT, {"walk": ""})
+		var skeleton: Skeleton3D = (parts.flash as Node).find_children("*", "Skeleton3D", true, false).pop_front()
+		if skeleton:
+			# Rigged by scripts/tools/meshy_skin/rig_worm.py; animated in code (Rival._animate_worm).
+			var bones: Array = []
+			for bone_name in ["Body1", "Body2", "Body3", "Body4", "Head"]:
+				bones.append(skeleton.find_bone(bone_name))
+			return {"worm": skeleton, "bones": bones, "mouth": skeleton.find_bone("Mouth"), "flash": parts.flash}
+		return parts
 	var plate := _mat(Color(0.42, 0.27, 0.14))
 	var belly := _mat(Color(0.86, 0.7, 0.48))
 	var sand := _mat(Color(0.82, 0.68, 0.45))

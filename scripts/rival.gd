@@ -38,6 +38,7 @@ var _phase := 0.0
 var _rest := {}  ## node -> its rest position, for swaying parts
 var _attacking := false
 var _one_shot_left := 0.0  ## seconds left of a rigged rival's swing or challenge
+var _strike := 0.0  ## a rigged worm's bite: -1 rearing back .. 1 lunging
 var _taunt_left := 0.0  ## server: seconds he stands still (a challenge, or a rigged boss's special move)
 
 ## How long a rigged rival stands and throws out his arms when he challenges.
@@ -325,6 +326,12 @@ func _special_anim() -> void:
 
 @rpc("authority", "call_local", "unreliable")
 func _swing() -> void:
+	if _parts.has("worm"):  # rear back, then lunge with the maw wide
+		var strike := create_tween()
+		strike.tween_property(self, "_strike", -1.0, 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		strike.tween_property(self, "_strike", 1.0, 0.12).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		strike.tween_property(self, "_strike", 0.0, 0.4).set_trans(Tween.TRANS_SINE)
+		return
 	if _parts.has("anim"):
 		# Meshy's attack (Kael's skips the wind-up so the bat lands just after the hit).
 		var anims: Dictionary = _parts.anims
@@ -359,6 +366,21 @@ func _swing() -> void:
 		strike.tween_property(jaw, "rotation:x", 0.25, 0.08).set_delay(0.12)
 		strike.tween_property(jaw, "rotation:x", 0.0, 0.2).set_delay(0.25)
 	strike.chain().tween_callback(func() -> void: _attacking = false)
+
+
+## A rigged worm (the Sand Wyrm): a wave sways up the body, faster and wider
+## while it moves; a strike (-1 rearing back .. 1 lunging) bends the whole
+## chain, and the maw breathes and gapes.
+func _animate_worm() -> void:
+	var skeleton: Skeleton3D = _parts.worm
+	var bones: Array = _parts.bones
+	var stride := clampf(_speed / 3.0, 0.0, 1.0)
+	for i in bones.size():
+		var yaw := sin(_time * (1.3 + stride * 2.0) - i * 0.7) * (0.05 + 0.1 * stride)
+		var pitch := sin(_time * 1.1 - i * 0.6) * 0.035 + _strike * (0.16 if _strike > 0.0 else 0.12)
+		skeleton.set_bone_pose_rotation(bones[i], Quaternion.from_euler(Vector3(pitch, yaw, 0.0)))
+	var gape := 1.0 + (sin(_time * 2.2) * 0.5 + 0.5) * 0.06 + absf(_strike) * 0.3
+	skeleton.set_bone_pose_scale(_parts.mouth, Vector3(gape, gape, 1.0))
 
 
 ## A rigged model (Rival Kael): run, walk or stand ready, between one-off moves.
@@ -407,6 +429,9 @@ func _animate(delta: float) -> void:
 	var stride := clampf(_speed / 3.0, 0.0, 1.0)
 	if _parts.has("anim"):
 		_animate_rigged(delta)
+		return
+	if _parts.has("worm"):
+		_animate_worm()
 		return
 	_phase += delta * (2.5 + _speed * 1.2)
 	var legs: Array = _parts.get("legs", [])
