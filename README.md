@@ -244,7 +244,11 @@ played in the browser".
   exports merged into one file with `scripts/tools/meshy_skin/merge_anims.py`):
   a hag in tattered purple robes who idles, walks (never runs) and throws out
   her arms to cast each poison bolt, stopping to cast her toxic puddles; the
-  floating witch built in code is the fallback. In the code-built set, the Glacier Titan a hulking ice golem with crystal
+  floating witch built in code is the fallback. The Meshy models' textures
+  are extracted next to each .glb (`models/*_texture_0.png`, `*_normal.png`,
+  `*_metallic_roughness.png`) and imported GPU-compressed (S3TC, which desktop
+  browsers also read), with the normal and roughness maps capped at 1024 px,
+  so each boss adds about 6 MB to the download instead of 25. In the code-built set, the Glacier Titan a hulking ice golem with crystal
   shoulders and huge fists, the Sand Wyrm an armoured worm rearing out of a
   sand mound with a toothy maw and snapping mandibles, and the Bog Witch a
   hunched, floating witch with a crooked hat and a glowing staff.
