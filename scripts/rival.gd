@@ -43,12 +43,6 @@ var _taunt_left := 0.0  ## server: seconds he stands still issuing the challenge
 ## How long a rigged rival stands and throws out his arms when he challenges.
 const TAUNT_TIME := 1.6
 
-## The rigged rival's swing starts this far into Meshy's attack, sped up.
-const ATTACK_ANIM_FROM := 0.6
-const ATTACK_ANIM_SPEED := 2.5
-## How fast (units/s) Meshy's walk and run cycles move at normal speed.
-const WALK_ANIM_PACE := 1.7
-const RUN_ANIM_PACE := 4.2
 
 @onready var world: World = get_tree().get_first_node_in_group("world")
 @onready var health: Health = $Health
@@ -220,7 +214,7 @@ func receive_damage(amount: float, source: Node3D, _knockback := Vector3.ZERO) -
 
 func _engage() -> void:
 	engaged = true
-	if _parts.has("anim"):
+	if _parts.has("anim") and _parts.anims.has("cast"):
 		_taunt_left = TAUNT_TIME
 		_taunt.rpc()
 	world.announce.rpc(_challenge_text(), color.lightened(0.3))
@@ -305,9 +299,9 @@ func _flash() -> void:
 ## The challenge: a rigged rival throws out his arms (the spell-cast animation).
 @rpc("authority", "call_local", "reliable")
 func _taunt() -> void:
-	if _parts.has("anim"):
-		var anim: Animation = (_parts.anim as AnimationPlayer).get_animation(BossModels.RIVAL_ANIMS.cast)
-		_play_once(BossModels.RIVAL_ANIMS.cast, 0.0, anim.length / TAUNT_TIME)
+	if _parts.has("anim") and _parts.anims.has("cast"):
+		var anim: Animation = (_parts.anim as AnimationPlayer).get_animation(_parts.anims.cast)
+		_play_once(_parts.anims.cast, 0.0, anim.length / TAUNT_TIME)
 
 
 ## Plays a one-off animation (a swing, the challenge) from `from` seconds in;
@@ -324,8 +318,9 @@ func _play_once(anim_name: String, from: float, speed: float) -> void:
 @rpc("authority", "call_local", "unreliable")
 func _swing() -> void:
 	if _parts.has("anim"):
-		# Meshy's attack: skip the wind-up so the bat lands just after the hit.
-		_play_once(BossModels.RIVAL_ANIMS.attack, ATTACK_ANIM_FROM, ATTACK_ANIM_SPEED)
+		# Meshy's attack (Kael's skips the wind-up so the bat lands just after the hit).
+		var anims: Dictionary = _parts.anims
+		_play_once(anims.attack, anims.attack_from, anims.attack_speed)
 		return
 	if _parts.has("person"):
 		_parts.person.swing()  # the rival swings a bat like the players
@@ -366,16 +361,16 @@ func _animate_rigged(delta: float) -> void:
 		if _one_shot_left > 0.0:
 			return
 		_attacking = false
-	var anims: Dictionary = BossModels.RIVAL_ANIMS
+	var anims: Dictionary = _parts.anims
 	if _speed > 2.6:
-		_loop(player, anims.run, clampf(_speed / RUN_ANIM_PACE, 0.7, 1.5))
+		_loop(player, anims.run, clampf(_speed / anims.run_pace, 0.7, 1.5))
 	elif _speed > 0.4:
-		_loop(player, anims.walk, clampf(_speed / WALK_ANIM_PACE, 0.6, 1.6))
-	elif player.current_animation != anims.attack or player.get_playing_speed() != 0.0:
-		# No idle in the set: hold the attack's opening stance, bat at the ready.
+		_loop(player, anims.walk, clampf(_speed / anims.walk_pace, 0.6, 1.6))
+	elif player.current_animation != anims.idle[0] or player.get_playing_speed() != 0.0:
+		# No idle in Meshy's sets: hold one pose (Kael: the attack's opening stance).
 		player.speed_scale = 1.0
-		player.play(anims.attack, 0.25, 0.0)
-		player.seek(0.0, true)
+		player.play(anims.idle[0], 0.25, 0.0)
+		player.seek(anims.idle[1], true)
 
 
 func _loop(player: AnimationPlayer, anim_name: String, speed: float) -> void:

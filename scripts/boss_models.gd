@@ -18,37 +18,75 @@ class_name BossModels
 ## is missing.
 const RIVAL_MODEL := "res://models/rival_kael.glb"
 const RIVAL_HEIGHT := 2.05  ## How tall he stands, in world units (the players are about 1.95).
-## Turns the model to face -Z like everything else (Meshy models face +Z).
-const RIVAL_FACING := PI
-## The rigged rival's animations, as Meshy named them.
-const RIVAL_ANIMS := {"walk": "Walking", "run": "Running", "attack": "Attack", "cast": "mage_soell_cast_1"}
+## Turns Meshy models to face -Z like everything else (they face +Z).
+const MESHY_FACING := PI
+## The rigged rival's animations, as Meshy named them (no idle: he holds the
+## attack's opening stance).
+const RIVAL_ANIMS := {"walk": "Walking", "run": "Running", "attack": "Attack", "attack_from": 0.6,
+		"attack_speed": 2.5, "cast": "mage_soell_cast_1", "idle": ["Attack", 0.0],
+		"walk_pace": 1.7, "run_pace": 4.2}
+## Pye the Parrot as a Meshy model (rigged: a waddling penguin walk, a run and
+## a head-down charge for his peck). Falls back to the parrot built in code.
+const PYE_MODEL := "res://models/pye.glb"
+const PYE_HEIGHT := 3.2
+const PYE_ANIMS := {"walk": "penguin_walk", "run": "Running", "attack": "Male_Head_Down_Charge",
+		"attack_from": 0.0, "attack_speed": 1.0, "idle": ["penguin_walk", 0.0],
+		"in_place": ["Male_Head_Down_Charge"],
+		"walk_pace": 1.7, "run_pace": 3.0}
 
 
 static func rival(model: Node3D, main: StandardMaterial3D, color: Color) -> Dictionary:
 	if not ResourceLoader.exists(RIVAL_MODEL):
 		return rival_legacy(model, main, color)
+	return meshy_model(model, RIVAL_MODEL, RIVAL_HEIGHT, RIVAL_ANIMS)
+
+
+## A Meshy model (.glb) loaded into Model: scaled to `height` with its feet on
+## the ground, turned to face -Z. Rigged and animated, it returns its
+## AnimationPlayer ("anim") and which of its animations does what ("anims":
+## walk, run, attack, and optionally cast and idle, an [animation, time] to hold
+## while standing). A solid mesh with no skeleton moves as a whole instead:
+## a bounce and a rock while walking (bob, rock) and a lunge with a twist when
+## it attacks (lunge).
+static func meshy_model(model: Node3D, path: String, height: float, anims: Dictionary) -> Dictionary:
 	var body := _pivot(model, Vector3.ZERO)  # bobs and rocks while walking
 	var turn := _pivot(body, Vector3.ZERO)  # twists and leans into a swing
-	var scene: Node3D = (load(RIVAL_MODEL) as PackedScene).instantiate()
+	var scene: Node3D = (load(path) as PackedScene).instantiate()
 	turn.add_child(scene)
-	# Scale to RIVAL_HEIGHT with the feet on the ground, whatever size it was made at.
+	# Scale to `height` with the feet on the ground, whatever size it was made at.
 	var box := AABB()
 	var first := true
 	for mesh: MeshInstance3D in scene.find_children("*", "MeshInstance3D", true, false):
 		var b := mesh.transform * mesh.get_aabb()
 		box = b if first else box.merge(b)
 		first = false
-	var k := RIVAL_HEIGHT / maxf(box.size.y, 0.01)
+	var k := height / maxf(box.size.y, 0.01)
 	scene.scale = Vector3.ONE * k
 	scene.position = Vector3(-box.get_center().x * k, -box.position.y * k, -box.get_center().z * k)
-	turn.rotation.y = RIVAL_FACING
+	turn.rotation.y = MESHY_FACING
 	var player: AnimationPlayer = scene.find_children("*", "AnimationPlayer", true, false).pop_front()
-	if player and player.has_animation(RIVAL_ANIMS.walk):
-		# Rigged and animated (Meshy): the skeleton does the walking and swinging.
-		for anim_name in [RIVAL_ANIMS.walk, RIVAL_ANIMS.run]:
+	if player and player.has_animation(anims.walk):
+		# Rigged and animated: the skeleton does the walking and attacking.
+		for anim_name in [anims.walk, anims.run]:
 			player.get_animation(anim_name).loop_mode = Animation.LOOP_LINEAR
-		return {"anim": player, "flash": scene}
+		for anim_name in anims.get("in_place", []):
+			_keep_in_place(player.get_animation(anim_name))
+		return {"anim": player, "anims": anims, "flash": scene}
 	return {"bob": [body, 0.0, 0.015, 1.4], "rock": body, "lunge": turn, "flash": scene}
+
+
+## Takes out an animation's travel across the ground (the hips' forward and
+## sideways movement), so a charge plays on the spot and the game moves the body.
+static func _keep_in_place(anim: Animation) -> void:
+	for track in anim.get_track_count():
+		if anim.track_get_type(track) != Animation.TYPE_POSITION_3D:
+			continue
+		if not String(anim.track_get_path(track)).ends_with("Hips"):
+			continue
+		var start: Vector3 = anim.track_get_key_value(track, 0)
+		for key in anim.track_get_key_count(track):
+			var at: Vector3 = anim.track_get_key_value(track, key)
+			anim.track_set_key_value(track, key, Vector3(start.x, at.y, start.z))
 
 
 ## The rival tamer as he first was (kept for now): a person like the players,
@@ -578,6 +616,8 @@ static func fire_dog(model: Node3D, main: StandardMaterial3D) -> Dictionary:
 ## white face patch round each eye and a big black hooked beak (the lower
 ## half snaps).
 static func parrot(model: Node3D, main: StandardMaterial3D) -> Dictionary:
+	if ResourceLoader.exists(PYE_MODEL):
+		return meshy_model(model, PYE_MODEL, PYE_HEIGHT, PYE_ANIMS)
 	var coverts := _mat(Color(0.26, 0.27, 0.3))  # darker grey wing feathers
 	var flight := _mat(Color(0.17, 0.18, 0.2))  # dark grey flight feathers
 	var red := _mat(Color(0.85, 0.1, 0.08))

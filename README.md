@@ -231,7 +231,10 @@ played in the browser".
   skinning tied the bat to his thigh and the jeans to his hands, so the model
   was repaired with `scripts/tools/meshy_skin/fix_rival_skin.py` (run it again
   on a fresh Meshy export). The older hat-and-cape model built in code is kept
-  as a fallback. The Glacier Titan a hulking ice golem with crystal
+  as a fallback. Pye the Parrot is a rigged Meshy model too (`models/pye.glb`):
+  he waddles (a penguin walk), runs, and lowers his head to charge for each
+  peck (played on the spot), standing still between moves; the grey parrot
+  built in code is the fallback. The Glacier Titan a hulking ice golem with crystal
   shoulders and huge fists, the Sand Wyrm an armoured worm rearing out of a
   sand mound with a toothy maw and snapping mandibles, and the Bog Witch a
   hunched, floating witch with a crooked hat and a glowing staff.
@@ -676,7 +679,7 @@ The host is the authoritative server and also plays.
 | `scenes/main.tscn` + `scripts/main.gd` | Menu + `LevelSpawner` that replicates the world to joining clients |
 | `scenes/world.tscn` + `scripts/world.gd` | Level flow (start → rival → portal → next level), level geometry, spawners, XP sharing, FX |
 | `scripts/level_generator.gd` | Deterministic layout of a level from a seed: paths are laid out unrolled, then bent along a curved centre line (1-3 curves); open fields of Acts 2-5 (`generate_open`) are a wavy rounded box with a fenced town, using the path layout's counts; rocks, creature spots, boss, exit; mapping between path space and the level |
-| `scripts/boss_models.gd`, `models/rival_kael.glb`, `scripts/tools/meshy_skin/` | The bosses' models (Rival Kael, loaded from the Meshy model, with the old code-built rival kept as a fallback, Glacier Titan, Sand Wyrm, Bog Witch, Howard the Zombie Fish, Sand Pharaoh, Sunmane the Desert Lion, Magma Colossus and Yeti King (unused for now), Dom the House Cat, Koleko the Fire Dog, Pye the Parrot) and what animates |
+| `scripts/boss_models.gd`, `models/rival_kael.glb`, `models/pye.glb`, `scripts/tools/meshy_skin/` | The bosses' models (Rival Kael, loaded from the Meshy model, with the old code-built rival kept as a fallback, Glacier Titan, Sand Wyrm, Bog Witch, Howard the Zombie Fish, Sand Pharaoh, Sunmane the Desert Lion, Magma Colossus and Yeti King (unused for now), Dom the House Cat, Koleko the Fire Dog, Pye the Parrot (a Meshy model, with the code-built parrot as a fallback)) and what animates |
 | `scripts/biome_db.gd` | The biomes levels cycle through: their creatures, boss and colours, and the 16-level cycle of acts (which levels end with a named boss or a Champion) |
 | `scenes/rival.tscn` + `scripts/rival.gd` | The AI rival tamer boss (and the base class for every boss) |
 | `scenes/titan.tscn` + `scripts/titan.gd` | The Glacier Titan boss: Avalanche and Frostfinch summons |
