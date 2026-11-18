@@ -269,12 +269,34 @@ func _on_health_changed(current: float, maximum: float) -> void:
 func _flash() -> void:
 	_material.albedo_color = Color.WHITE
 	create_tween().tween_property(_material, "albedo_color", color, 0.15)
+	if _parts.has("flash"):  # a textured model: a white overlay that fades
+		var overlay := StandardMaterial3D.new()
+		overlay.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		overlay.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		overlay.albedo_color = Color(1, 1, 1, 0.55)
+		for mesh: MeshInstance3D in (_parts.flash as Node).find_children("*", "MeshInstance3D", true, false):
+			mesh.material_overlay = overlay
+		var fade := create_tween()
+		fade.tween_property(overlay, "albedo_color:a", 0.0, 0.15)
+		fade.tween_callback(func() -> void:
+			for mesh: MeshInstance3D in (_parts.flash as Node).find_children("*", "MeshInstance3D", true, false):
+				mesh.material_overlay = null)
 
 
 @rpc("authority", "call_local", "unreliable")
 func _swing() -> void:
 	if _parts.has("person"):
 		_parts.person.swing()  # the rival swings a bat like the players
+		return
+	if _parts.has("lunge"):  # a solid model: lean in and twist through the swing, then recover
+		var turn: Node3D = _parts.lunge
+		var rest_y := turn.rotation.y
+		var lunge := create_tween()
+		lunge.tween_property(turn, "rotation", Vector3(-0.12, rest_y + 0.45, 0.0), 0.1).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		lunge.tween_property(turn, "rotation", Vector3(0.22, rest_y - 0.6, 0.0), 0.12).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		lunge.tween_property(turn, "rotation", Vector3(0.0, rest_y, 0.0), 0.25).set_trans(Tween.TRANS_SINE)
+		lunge.parallel().tween_property(turn, "position:z", 0.0, 0.25)
+		turn.position.z = -0.25  # a step into it
 		return
 	var tween := create_tween()
 	tween.tween_property(model, "scale", Vector3(1.08, 0.94, 1.08), 0.06)
@@ -325,6 +347,10 @@ func _animate(delta: float) -> void:
 	if _parts.has("bob"):
 		var bob: Array = _parts.bob
 		bob[0].position.y = bob[1] + sin(_time * bob[3]) * bob[2] + absf(sin(_phase)) * 0.06 * stride
+	if _parts.has("rock"):  # a solid model: rock side to side with each step, leaning into the walk
+		var rock: Node3D = _parts.rock
+		rock.rotation.z = lerpf(rock.rotation.z, sin(_phase) * 0.07 * stride, 1.0 - exp(-10.0 * delta))
+		rock.rotation.x = lerpf(rock.rotation.x, -0.08 * stride, 1.0 - exp(-6.0 * delta))
 	var sway: Array = _parts.get("sway", [])
 	for i in sway.size():
 		var node: Node3D = sway[i]

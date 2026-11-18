@@ -10,9 +10,42 @@ class_name BossModels
 ## `main` is the boss's own material (hit flashes recolour it).
 
 
-## The rival tamer: a person like the players, in a wide-brimmed hat and a
-## cape in the rival's colour.
+## Rival Kael: the textured 3D model (models/rival_kael.glb, made with Meshy
+## from a reference picture): a cowboy in a red hat and shirt, dark jeans and
+## boots, holding a bat. It's one solid mesh with no skeleton, so it moves as
+## a whole: a bounce and a rock while walking (bob, rock) and a lunge with a
+## twist when it attacks (lunge). Falls back to the legacy model if the file
+## is missing.
+const RIVAL_MODEL := "res://models/rival_kael.glb"
+const RIVAL_HEIGHT := 2.05  ## How tall he stands, in world units (the players are about 1.95).
+## Turns the model to face -Z like everything else (Meshy models face +Z).
+const RIVAL_FACING := PI
+
+
 static func rival(model: Node3D, main: StandardMaterial3D, color: Color) -> Dictionary:
+	if not ResourceLoader.exists(RIVAL_MODEL):
+		return rival_legacy(model, main, color)
+	var body := _pivot(model, Vector3.ZERO)  # bobs and rocks while walking
+	var turn := _pivot(body, Vector3.ZERO)  # twists and leans into a swing
+	var scene: Node3D = (load(RIVAL_MODEL) as PackedScene).instantiate()
+	turn.add_child(scene)
+	# Scale to RIVAL_HEIGHT with the feet on the ground, whatever size it was made at.
+	var box := AABB()
+	var first := true
+	for mesh: MeshInstance3D in scene.find_children("*", "MeshInstance3D", true, false):
+		var b := mesh.transform * mesh.get_aabb()
+		box = b if first else box.merge(b)
+		first = false
+	var k := RIVAL_HEIGHT / maxf(box.size.y, 0.01)
+	scene.scale = Vector3.ONE * k
+	scene.position = Vector3(-box.get_center().x * k, -box.position.y * k, -box.get_center().z * k)
+	turn.rotation.y = RIVAL_FACING
+	return {"bob": [body, 0.0, 0.015, 1.4], "rock": body, "lunge": turn, "flash": scene}
+
+
+## The rival tamer as he first was (kept for now): a person like the players,
+## in a wide-brimmed hat and a cape in the rival's colour.
+static func rival_legacy(model: Node3D, main: StandardMaterial3D, color: Color) -> Dictionary:
 	var person := PersonModel.new()
 	person.name = "Person"
 	model.add_child(person)
