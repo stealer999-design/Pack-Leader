@@ -117,8 +117,21 @@ func _enter_tree() -> void:
 	add_to_group("world")
 
 
+## The browser build is much slower than the desktop one: one shadow cascade
+## instead of four, drawn nearer (with project.godot's web-only overrides: no
+## MSAA, 3D at 75% resolution), on a smaller shadow map with cheaper blur.
+func _lighten_for_web() -> void:
+	var sun: DirectionalLight3D = $Sun
+	sun.directional_shadow_mode = DirectionalLight3D.SHADOW_ORTHOGONAL
+	sun.directional_shadow_max_distance = 80.0
+	RenderingServer.directional_shadow_atlas_set_size(2048, true)
+	RenderingServer.directional_soft_shadow_filter_set_quality(RenderingServer.SHADOW_QUALITY_SOFT_LOW)
+
+
 func _ready() -> void:
 	level_root.rotation.y = PATH_YAW
+	if OS.has_feature("web"):
+		_lighten_for_web()
 	_texture_stable()
 	player_spawner.spawn_function = _spawn_player
 	creature_spawner.spawn_function = _spawn_creature
