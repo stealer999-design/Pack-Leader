@@ -50,6 +50,17 @@ const TITAN_ANIMS := {"walk": "Walking", "run": "Running", "attack": "Heavy_Hamm
 const WYRM_MODEL := "res://models/sand_wyrm.glb"
 const WYRM_HEIGHT := 3.0
 
+## Howard the Zombie Fish as a Meshy model (Mixamo-rigged): he walks (never
+## runs), high-kicks for his hit, casts his Rotten Splash and screams to raise
+## the dead. No idle in the set: he holds the walk's first pose.
+const FISH_MODEL := "res://models/zombie_fish.glb"
+const FISH_HEIGHT := 3.0
+const FISH_ANIMS := {"walk": "Walking", "run": "Running", "attack": "Step_in_High_Kick",
+		"attack_from": 0.0, "attack_speed": 1.0, "idle": ["Walking", 0.0], "run_from": 99.0,
+		"special": ["mage_soell_cast_8", 0.0, 1.2], "scream": ["Zombie_Scream", 0.0, 1.4],
+		"in_place": ["Step_in_High_Kick", "mage_soell_cast_8", "Zombie_Scream"],
+		"walk_pace": 2.4, "run_pace": 4.2}
+
 ## The Bog Witch as a Meshy model: an idle, a walk (she never runs) and a spell
 ## cast for her poison bolts and her toxic puddles.
 const WITCH_MODEL := "res://models/bog_witch.glb"
@@ -365,6 +376,8 @@ static func _cylinder(top: float, bottom: float, height: float) -> CylinderMesh:
 ## One bulging eye, one crossed out, ribs showing through a torn flank, a row
 ## of stitches, a ragged fin down his back, and an old fishhook in his lip.
 static func zombie_fish(model: Node3D, main: StandardMaterial3D) -> Dictionary:
+	if ResourceLoader.exists(FISH_MODEL):
+		return meshy_model(model, FISH_MODEL, FISH_HEIGHT, FISH_ANIMS)
 	var belly := _mat(Color(0.72, 0.76, 0.62))
 	var rot := _mat(Color(0.3, 0.36, 0.28))
 	var fin := _mat(Color(0.36, 0.48, 0.42))

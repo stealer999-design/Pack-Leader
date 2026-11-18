@@ -68,6 +68,9 @@ func _rotten_splash() -> void:
 		return
 	var spot: Vector3 = victims.pick_random().global_position
 	world.play_telegraph.rpc(spot, splash_radius, splash_warning)
+	if _parts.has("anim"):  # a rigged Howard stops to cast it
+		_taunt_left = splash_warning
+		_special_anim.rpc("special")
 	get_tree().create_timer(splash_warning).timeout.connect(func() -> void:
 		if not is_instance_valid(self) or health.is_dead():
 			return
@@ -80,6 +83,9 @@ func _rotten_splash() -> void:
 
 func _raise_dead() -> void:
 	world.announce.rpc("Howard the Zombie Fish calls up the dead!", Color(0.65, 1.0, 0.65))
+	if _parts.has("anim"):  # a rigged Howard stands and screams them up
+		_taunt_left = 2.0
+		_special_anim.rpc("scream")
 	for i in raise_count:
 		var offset := Vector3.FORWARD.rotated(Vector3.UP, TAU * i / raise_count + randf() * 0.5) * 3.5
 		var spot := world.clamp_to_level(global_position + offset)

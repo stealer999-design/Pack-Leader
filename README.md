@@ -240,7 +240,7 @@ played in the browser".
   slams both fists down from overhead; for an Avalanche he plants his feet and
   winds up from the start, so the fists land as the warning circle runs out.
   The ice golem built in code is the fallback. The Bog Witch is a rigged Meshy
-  model (`models/bog_witch.glb`, `models/sand_wyrm.glb`, Meshy's separate walk, idle and spell-cast
+  model (`models/bog_witch.glb`, `models/sand_wyrm.glb`, `models/zombie_fish.glb`, Meshy's separate walk, idle and spell-cast
   exports merged into one file with `scripts/tools/meshy_skin/merge_anims.py`):
   a hag in tattered purple robes who idles, walks (never runs) and throws out
   her arms to cast each poison bolt, stopping to cast her toxic puddles; the
@@ -251,7 +251,14 @@ played in the browser".
   game animates it in code: a wave sways up the body (faster and wider while
   it slithers), it rears back and lunges to bite with its round maw gaping,
   and it sinks into the sand to burrow; the worm built in code is the
-  fallback. The Meshy models' textures
+  fallback. Howard the Zombie Fish is a Mixamo-rigged Meshy model
+  (`models/zombie_fish.glb`): he walks on his zombie legs, high-kicks for his
+  hit, stops to cast each Rotten Splash and screams to raise the dead. A fish
+  has no arms, but the rig did: his body was tied to the left shoulder and
+  his side fins to the arm bones, which pulled them into long blades, so
+  `scripts/tools/meshy_skin/fix_fish.py` moves all of that onto the upper
+  spine and `fix_skin.py --generic` mends the few points that still tore. The
+  fish built in code is the fallback. The Meshy models' textures
   are extracted next to each .glb (`models/*_texture_0.png`, `*_normal.png`,
   `*_metallic_roughness.png`) and imported GPU-compressed (S3TC, which desktop
   browsers also read), with the normal and roughness maps capped at 1024 px,
@@ -700,7 +707,7 @@ The host is the authoritative server and also plays.
 | `scenes/main.tscn` + `scripts/main.gd` | Menu + `LevelSpawner` that replicates the world to joining clients |
 | `scenes/world.tscn` + `scripts/world.gd` | Level flow (start → rival → portal → next level), level geometry, spawners, XP sharing, FX |
 | `scripts/level_generator.gd` | Deterministic layout of a level from a seed: paths are laid out unrolled, then bent along a curved centre line (1-3 curves); open fields of Acts 2-5 (`generate_open`) are a wavy rounded box with a fenced town, using the path layout's counts; rocks, creature spots, boss, exit; mapping between path space and the level |
-| `scripts/boss_models.gd`, `models/rival_kael.glb`, `models/pye.glb`, `models/glacier_titan.glb`, `models/bog_witch.glb`, `scripts/tools/meshy_skin/` | The bosses' models (Rival Kael, loaded from the Meshy model, with the old code-built rival kept as a fallback, Glacier Titan (a Meshy model, with a code-built fallback), Sand Wyrm (a Meshy model rigged in code, with a code-built fallback), Bog Witch (a Meshy model, with a code-built fallback), Howard the Zombie Fish, Sand Pharaoh, Sunmane the Desert Lion, Magma Colossus and Yeti King (unused for now), Dom the House Cat, Koleko the Fire Dog, Pye the Parrot (a Meshy model, with the code-built parrot as a fallback)) and what animates |
+| `scripts/boss_models.gd`, `models/rival_kael.glb`, `models/pye.glb`, `models/glacier_titan.glb`, `models/bog_witch.glb`, `scripts/tools/meshy_skin/` | The bosses' models (Rival Kael, loaded from the Meshy model, with the old code-built rival kept as a fallback, Glacier Titan (a Meshy model, with a code-built fallback), Sand Wyrm (a Meshy model rigged in code, with a code-built fallback), Bog Witch (a Meshy model, with a code-built fallback), Howard the Zombie Fish (a Meshy model, with a code-built fallback), Sand Pharaoh, Sunmane the Desert Lion, Magma Colossus and Yeti King (unused for now), Dom the House Cat, Koleko the Fire Dog, Pye the Parrot (a Meshy model, with the code-built parrot as a fallback)) and what animates |
 | `scripts/biome_db.gd` | The biomes levels cycle through: their creatures, boss and colours, and the 16-level cycle of acts (which levels end with a named boss or a Champion) |
 | `scenes/rival.tscn` + `scripts/rival.gd` | The AI rival tamer boss (and the base class for every boss) |
 | `scenes/titan.tscn` + `scripts/titan.gd` | The Glacier Titan boss: Avalanche and Frostfinch summons |

@@ -316,11 +316,12 @@ func _play_once(anim_name: String, from: float, speed: float) -> void:
 	_one_shot_left = (player.get_animation(anim_name).length - from) / speed
 
 
-## A rigged boss's special-move animation (BossModels "special"), if it has one.
+## A rigged boss's animation for a special move (BossModels "special", or
+## another [animation, from, speed] entry such as Howard's "scream"), if it has one.
 @rpc("authority", "call_local", "reliable")
-func _special_anim() -> void:
-	if _parts.has("anim") and _parts.anims.has("special"):
-		var special: Array = _parts.anims.special
+func _special_anim(key := "special") -> void:
+	if _parts.has("anim") and _parts.anims.has(key):
+		var special: Array = _parts.anims[key]
 		_play_once(special[0], special[1], special[2])
 
 
@@ -406,7 +407,8 @@ func _animate_rigged(delta: float) -> void:
 
 
 func _loop(player: AnimationPlayer, anim_name: String, speed: float) -> void:
-	if player.current_animation != anim_name:
+	# (also restarts it when it's the held standing pose: same animation, frozen)
+	if player.current_animation != anim_name or is_zero_approx(player.get_playing_speed()):
 		player.play(anim_name, 0.2)
 	player.speed_scale = speed
 
