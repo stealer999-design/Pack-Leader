@@ -37,6 +37,18 @@ var _time := 0.0
 var _phase := 0.0
 var _rest := {}  ## node -> its rest position, for swaying parts
 var _attacking := false
+var _one_shot_left := 0.0  ## seconds left of a rigged rival's swing or challenge
+var _taunt_left := 0.0  ## server: seconds he stands still issuing the challenge
+
+## How long a rigged rival stands and throws out his arms when he challenges.
+const TAUNT_TIME := 1.6
+
+## The rigged rival's swing starts this far into Meshy's attack, sped up.
+const ATTACK_ANIM_FROM := 0.6
+const ATTACK_ANIM_SPEED := 2.5
+## How fast (units/s) Meshy's walk and run cycles move at normal speed.
+const WALK_ANIM_PACE := 1.7
+const RUN_ANIM_PACE := 4.2
 
 @onready var world: World = get_tree().get_first_node_in_group("world")
 @onready var health: Health = $Health
@@ -82,6 +94,10 @@ func _physics_process(delta: float) -> void:
 	_blind_timer -= delta
 	_weaken_timer -= delta
 	var desired := Vector3.ZERO
+	_taunt_left -= delta
+	if _taunt_left > 0.0:
+		velocity = Vector3.ZERO  # a rigged rival plants his feet for the challenge
+		return
 	if _is_busy():
 		_boss_tick(delta)
 		return  # mid special move (e.g. burrowed): the move drives the position
@@ -204,6 +220,9 @@ func receive_damage(amount: float, source: Node3D, _knockback := Vector3.ZERO) -
 
 func _engage() -> void:
 	engaged = true
+	if _parts.has("anim"):
+		_taunt_left = TAUNT_TIME
+		_taunt.rpc()
 	world.announce.rpc(_challenge_text(), color.lightened(0.3))
 
 
@@ -283,8 +302,31 @@ func _flash() -> void:
 				mesh.material_overlay = null)
 
 
+## The challenge: a rigged rival throws out his arms (the spell-cast animation).
+@rpc("authority", "call_local", "reliable")
+func _taunt() -> void:
+	if _parts.has("anim"):
+		var anim: Animation = (_parts.anim as AnimationPlayer).get_animation(BossModels.RIVAL_ANIMS.cast)
+		_play_once(BossModels.RIVAL_ANIMS.cast, 0.0, anim.length / TAUNT_TIME)
+
+
+## Plays a one-off animation (a swing, the challenge) from `from` seconds in;
+## walking and standing resume once it ends (see _animate).
+func _play_once(anim_name: String, from: float, speed: float) -> void:
+	var player: AnimationPlayer = _parts.anim
+	player.speed_scale = 1.0
+	player.play(anim_name, 0.08, speed)
+	player.seek(from, true)
+	_attacking = true
+	_one_shot_left = (player.get_animation(anim_name).length - from) / speed
+
+
 @rpc("authority", "call_local", "unreliable")
 func _swing() -> void:
+	if _parts.has("anim"):
+		# Meshy's attack: skip the wind-up so the bat lands just after the hit.
+		_play_once(BossModels.RIVAL_ANIMS.attack, ATTACK_ANIM_FROM, ATTACK_ANIM_SPEED)
+		return
 	if _parts.has("person"):
 		_parts.person.swing()  # the rival swings a bat like the players
 		return
@@ -316,6 +358,32 @@ func _swing() -> void:
 	strike.chain().tween_callback(func() -> void: _attacking = false)
 
 
+## A rigged model (Rival Kael): run, walk or stand ready, between one-off moves.
+func _animate_rigged(delta: float) -> void:
+	var player: AnimationPlayer = _parts.anim
+	if _attacking:
+		_one_shot_left -= delta
+		if _one_shot_left > 0.0:
+			return
+		_attacking = false
+	var anims: Dictionary = BossModels.RIVAL_ANIMS
+	if _speed > 2.6:
+		_loop(player, anims.run, clampf(_speed / RUN_ANIM_PACE, 0.7, 1.5))
+	elif _speed > 0.4:
+		_loop(player, anims.walk, clampf(_speed / WALK_ANIM_PACE, 0.6, 1.6))
+	elif player.current_animation != anims.attack or player.get_playing_speed() != 0.0:
+		# No idle in the set: hold the attack's opening stance, bat at the ready.
+		player.speed_scale = 1.0
+		player.play(anims.attack, 0.25, 0.0)
+		player.seek(0.0, true)
+
+
+func _loop(player: AnimationPlayer, anim_name: String, speed: float) -> void:
+	if player.current_animation != anim_name:
+		player.play(anim_name, 0.2)
+	player.speed_scale = speed
+
+
 ## Builds the boss's body into Model; returns its animated parts (BossModels).
 ## The rival tamer is a person; other bosses override this.
 func _build_model() -> Dictionary:
@@ -332,6 +400,9 @@ func _animate(delta: float) -> void:
 	_last_position = pos
 	_time += delta
 	var stride := clampf(_speed / 3.0, 0.0, 1.0)
+	if _parts.has("anim"):
+		_animate_rigged(delta)
+		return
 	_phase += delta * (2.5 + _speed * 1.2)
 	var legs: Array = _parts.get("legs", [])
 	for i in legs.size():

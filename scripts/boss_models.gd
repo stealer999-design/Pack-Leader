@@ -20,6 +20,8 @@ const RIVAL_MODEL := "res://models/rival_kael.glb"
 const RIVAL_HEIGHT := 2.05  ## How tall he stands, in world units (the players are about 1.95).
 ## Turns the model to face -Z like everything else (Meshy models face +Z).
 const RIVAL_FACING := PI
+## The rigged rival's animations, as Meshy named them.
+const RIVAL_ANIMS := {"walk": "Walking", "run": "Running", "attack": "Attack", "cast": "mage_soell_cast_1"}
 
 
 static func rival(model: Node3D, main: StandardMaterial3D, color: Color) -> Dictionary:
@@ -40,6 +42,12 @@ static func rival(model: Node3D, main: StandardMaterial3D, color: Color) -> Dict
 	scene.scale = Vector3.ONE * k
 	scene.position = Vector3(-box.get_center().x * k, -box.position.y * k, -box.get_center().z * k)
 	turn.rotation.y = RIVAL_FACING
+	var player: AnimationPlayer = scene.find_children("*", "AnimationPlayer", true, false).pop_front()
+	if player and player.has_animation(RIVAL_ANIMS.walk):
+		# Rigged and animated (Meshy): the skeleton does the walking and swinging.
+		for anim_name in [RIVAL_ANIMS.walk, RIVAL_ANIMS.run]:
+			player.get_animation(anim_name).loop_mode = Animation.LOOP_LINEAR
+		return {"anim": player, "flash": scene}
 	return {"bob": [body, 0.0, 0.015, 1.4], "rock": body, "lunge": turn, "flash": scene}
 
 
