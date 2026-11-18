@@ -38,7 +38,7 @@ var _phase := 0.0
 var _rest := {}  ## node -> its rest position, for swaying parts
 var _attacking := false
 var _one_shot_left := 0.0  ## seconds left of a rigged rival's swing or challenge
-var _taunt_left := 0.0  ## server: seconds he stands still issuing the challenge
+var _taunt_left := 0.0  ## server: seconds he stands still (a challenge, or a rigged boss's special move)
 
 ## How long a rigged rival stands and throws out his arms when he challenges.
 const TAUNT_TIME := 1.6
@@ -315,6 +315,14 @@ func _play_once(anim_name: String, from: float, speed: float) -> void:
 	_one_shot_left = (player.get_animation(anim_name).length - from) / speed
 
 
+## A rigged boss's special-move animation (BossModels "special"), if it has one.
+@rpc("authority", "call_local", "reliable")
+func _special_anim() -> void:
+	if _parts.has("anim") and _parts.anims.has("special"):
+		var special: Array = _parts.anims.special
+		_play_once(special[0], special[1], special[2])
+
+
 @rpc("authority", "call_local", "unreliable")
 func _swing() -> void:
 	if _parts.has("anim"):
@@ -362,10 +370,12 @@ func _animate_rigged(delta: float) -> void:
 			return
 		_attacking = false
 	var anims: Dictionary = _parts.anims
-	if _speed > 2.6:
+	if _speed > anims.get("run_from", 2.6):
 		_loop(player, anims.run, clampf(_speed / anims.run_pace, 0.7, 1.5))
 	elif _speed > 0.4:
 		_loop(player, anims.walk, clampf(_speed / anims.walk_pace, 0.6, 1.6))
+	elif anims.idle is String:
+		_loop(player, anims.idle, 1.0)
 	elif player.current_animation != anims.idle[0] or player.get_playing_speed() != 0.0:
 		# No idle in Meshy's sets: hold one pose (Kael: the attack's opening stance).
 		player.speed_scale = 1.0

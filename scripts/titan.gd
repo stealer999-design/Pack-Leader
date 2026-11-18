@@ -66,6 +66,9 @@ func _cast_avalanche() -> void:
 		return
 	var spot: Vector3 = victims.pick_random().global_position
 	world.play_telegraph.rpc(spot, avalanche_radius, avalanche_warning)
+	if _parts.has("anim"):  # a rigged Titan plants his feet, winds up and slams as the warning runs out
+		_taunt_left = avalanche_warning
+		_special_anim.rpc()
 	get_tree().create_timer(avalanche_warning).timeout.connect(func() -> void:
 		if not is_instance_valid(self) or health.is_dead():
 			return

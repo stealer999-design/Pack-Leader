@@ -33,6 +33,16 @@ const PYE_ANIMS := {"walk": "penguin_walk", "run": "Running", "attack": "Male_He
 		"attack_from": 0.0, "attack_speed": 1.0, "idle": ["penguin_walk", 0.0],
 		"in_place": ["Male_Head_Down_Charge"],
 		"walk_pace": 1.7, "run_pace": 3.0}
+## The Glacier Titan as a Meshy model: an ice golem with a real idle, a heavy
+## walk (never runs) and an overhead two-fisted slam: from the top for a hit,
+## from the full wind-up for his Avalanche (the fists land as the warning ends).
+const TITAN_MODEL := "res://models/glacier_titan.glb"
+const TITAN_HEIGHT := 3.8
+const TITAN_ANIMS := {"walk": "Walking", "run": "Running", "attack": "Heavy_Hammer_Swing",
+		"attack_from": 0.9, "attack_speed": 1.6, "idle": "Idle_5", "run_from": 99.0,
+		"special": ["Heavy_Hammer_Swing", 0.0, 1.25],
+		"in_place": ["Heavy_Hammer_Swing"],
+		"walk_pace": 3.2, "run_pace": 4.2}
 
 
 static func rival(model: Node3D, main: StandardMaterial3D, color: Color) -> Dictionary:
@@ -44,8 +54,10 @@ static func rival(model: Node3D, main: StandardMaterial3D, color: Color) -> Dict
 ## A Meshy model (.glb) loaded into Model: scaled to `height` with its feet on
 ## the ground, turned to face -Z. Rigged and animated, it returns its
 ## AnimationPlayer ("anim") and which of its animations does what ("anims":
-## walk, run, attack, and optionally cast and idle, an [animation, time] to hold
-## while standing). A solid mesh with no skeleton moves as a whole instead:
+## walk, run, attack, and optionally cast and special, an [animation, from,
+## speed] for a boss's special move; idle is an animation to loop while
+## standing, or an [animation, time] pose to hold when there is none; run_from
+## is the speed it starts running at). A solid mesh with no skeleton moves as a whole instead:
 ## a bounce and a rock while walking (bob, rock) and a lunge with a twist when
 ## it attacks (lunge).
 static func meshy_model(model: Node3D, path: String, height: float, anims: Dictionary) -> Dictionary:
@@ -67,8 +79,9 @@ static func meshy_model(model: Node3D, path: String, height: float, anims: Dicti
 	var player: AnimationPlayer = scene.find_children("*", "AnimationPlayer", true, false).pop_front()
 	if player and player.has_animation(anims.walk):
 		# Rigged and animated: the skeleton does the walking and attacking.
-		for anim_name in [anims.walk, anims.run]:
-			player.get_animation(anim_name).loop_mode = Animation.LOOP_LINEAR
+		for anim_name in [anims.walk, anims.run, anims.idle]:
+			if anim_name is String:
+				player.get_animation(anim_name).loop_mode = Animation.LOOP_LINEAR
 		for anim_name in anims.get("in_place", []):
 			_keep_in_place(player.get_animation(anim_name))
 		return {"anim": player, "anims": anims, "flash": scene}
@@ -114,6 +127,8 @@ static func rival_legacy(model: Node3D, main: StandardMaterial3D, color: Color) 
 ## The Glacier Titan: a hulking golem of packed ice, with crystal spikes on
 ## its shoulders and back, glowing eyes, and huge fists.
 static func titan(model: Node3D, main: StandardMaterial3D) -> Dictionary:
+	if ResourceLoader.exists(TITAN_MODEL):
+		return meshy_model(model, TITAN_MODEL, TITAN_HEIGHT, TITAN_ANIMS)
 	var crystal := _mat(Color(0.75, 0.92, 1.0))
 	crystal.emission_enabled = true
 	crystal.emission = Color(0.35, 0.65, 0.95)
