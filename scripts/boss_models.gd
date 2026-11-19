@@ -17,14 +17,14 @@ class_name BossModels
 ## twist when it attacks (lunge). Falls back to the legacy model if the file
 ## is missing.
 const RIVAL_MODEL := "res://models/rival_kael.glb"
-const RIVAL_HEIGHT := 2.05  ## How tall he stands, in world units (the players are about 1.95).
+const RIVAL_HEIGHT := 2.46  ## How tall he stands, in world units (the players are about 1.95).
 ## Turns Meshy models to face -Z like everything else (they face +Z).
 const MESHY_FACING := PI
 ## The rigged rival's animations, as Meshy named them (no idle: he holds the
 ## attack's opening stance).
 const RIVAL_ANIMS := {"walk": "Walking", "run": "Running", "attack": "Attack", "attack_from": 0.6,
 		"attack_speed": 2.5, "cast": "mage_soell_cast_1", "idle": ["Attack", 0.0],
-		"walk_pace": 1.7, "run_pace": 4.2}
+		"walk_pace": 2.04, "run_pace": 5.04}
 ## Pye the Parrot as a Meshy model (rigged: a waddling penguin walk, a run and
 ## a head-down charge for his peck). His wings are the rig's arms; in the walk
 ## and run they're held spread wide like a goose squaring up (fold_wings.py
@@ -86,11 +86,11 @@ const KOLEKO_ANIMS := {"walk": "Trot", "run": "Run", "attack": "Bite", "attack_f
 ## The Bog Witch as a Meshy model: an idle, a walk (she never runs) and a spell
 ## cast for her poison bolts and her toxic puddles.
 const WITCH_MODEL := "res://models/bog_witch.glb"
-const WITCH_HEIGHT := 2.1
+const WITCH_HEIGHT := 2.835
 const WITCH_ANIMS := {"walk": "Walking", "run": "Walking", "attack": "Cast",
 		"attack_from": 0.5, "attack_speed": 1.6, "idle": "Idle", "run_from": 99.0,
 		"special": ["Cast", 0.0, 1.8], "in_place": ["Cast"],
-		"walk_pace": 2.4, "run_pace": 2.4}
+		"walk_pace": 3.24, "run_pace": 3.24}
 
 
 static func rival(model: Node3D, main: StandardMaterial3D, color: Color) -> Dictionary:
