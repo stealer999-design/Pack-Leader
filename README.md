@@ -263,10 +263,15 @@ played in the browser".
   `scripts/tools/meshy_skin/rig_quad.py` (settings and animations in
   `scripts/tools/meshy_skin/dom/`) straightens him, gives him a four-legged
   skeleton (hips, spine, chest, neck, head, jaw, a four-bone tail and three
-  bones a leg), weights him by body part and bakes keyframed animations: an
-  idle with a swishing tail, a walk, a bounding run, a paw swipe (his hit), a
-  crouch-wiggle-pounce (Pounce and Swipe), a hunched retch (Hairball, which he
-  stops for) and an arched-back hiss (his summons); `fix_skin.py --generic`
+  bones a leg, plus shoulder blades and ears), weights him by body part and
+  bakes keyframed animations in which a paw on the ground stays planted (two-
+  bone IK), the shoulder blades roll, the head stays steady while the body
+  sways and the tail follows through: an idle (breathing, looking about, ear
+  flicks, a slow S-curving tail), a four-beat walk, a bounding run whose spine
+  gathers and stretches, a paw swipe (his hit: weight back, paw cocked, a fast
+  strike and a raking drag), a stalk-wiggle-pounce (Pounce and Swipe), a
+  heaving hairball retch (which he stops for) and an arched-back, ears-flat,
+  tail-up hiss (his summons); `fix_skin.py --generic`
   then mends the points that stretched. The cat built in code is the
   fallback. The Meshy models' textures
   are extracted next to each .glb (`models/*_texture_0.png`, `*_normal.png`,

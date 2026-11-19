@@ -62,14 +62,15 @@ const FISH_ANIMS := {"walk": "Walking", "run": "Running", "attack": "Step_in_Hig
 		"walk_pace": 2.4, "run_pace": 4.2}
 
 ## Dom as a Meshy model. Meshy only rigs humanoids, so rig_quad.py gives him
-## a four-legged skeleton and keyframed animations: an idle with a swishing
-## tail, a walk, a run, a paw swipe, a crouch-wiggle-pounce, a hunched hairball
-## retch and an arched-back hiss (his summons).
+## a four-legged skeleton and keyframed animations with planted paws: an idle
+## (breathing, looking about, ear flicks, a slow tail), a walk, a bounding run,
+## a paw swipe, a stalk-wiggle-pounce, a heaving hairball retch and an
+## arched-back, ears-flat hiss (his summons).
 const DOM_MODEL := "res://models/dom.glb"
 const DOM_HEIGHT := 3.0  ## to the tip of his raised tail (his ears are about 2.6)
 const DOM_ANIMS := {"walk": "Walk", "run": "Run", "attack": "Swipe", "attack_from": 0.0, "attack_speed": 1.0,
 		"idle": "Idle", "pounce": ["Pounce", 0.0, 1.0], "retch": ["Retch", 0.0, 1.3], "summon": ["Hiss", 0.0, 1.0],
-		"walk_pace": 1.6, "run_pace": 4.0}
+		"run_from": 1.8, "walk_pace": 0.97, "run_pace": 4.27}  # paces: Meshy units travelled per second x his scale
 
 ## The Bog Witch as a Meshy model: an idle, a walk (she never runs) and a spell
 ## cast for her poison bolts and her toxic puddles.

@@ -18,8 +18,16 @@
     -0.1
    ]
   ],
-  "Chest": [
+  "Spine2": [
    "Spine1",
+   [
+    0,
+    -0.03,
+    0.1
+   ]
+  ],
+  "Chest": [
+   "Spine2",
    [
     0,
     -0.02,
@@ -48,6 +56,22 @@
     -0.1,
     0.22,
     0.78
+   ]
+  ],
+  "EarL": [
+   "Head",
+   [
+    -0.22,
+    0.46,
+    0.63
+   ]
+  ],
+  "EarR": [
+   "Head",
+   [
+    -0.01,
+    0.46,
+    0.73
    ]
   ],
   "Tail1": [
@@ -82,8 +106,16 @@
     -0.96
    ]
   ],
-  "FL_Upper": [
+  "FL_Scap": [
    "Chest",
+   [
+    -0.091,
+    0.06,
+    0.36
+   ]
+  ],
+  "FL_Upper": [
+   "FL_Scap",
    [
     -0.13,
     -0.15,
@@ -106,8 +138,16 @@
     0.45
    ]
   ],
-  "FR_Upper": [
+  "FR_Scap": [
    "Chest",
+   [
+    0.08399999999999999,
+    0.06,
+    0.36
+   ]
+  ],
+  "FR_Upper": [
+   "FR_Scap",
    [
     0.12,
     -0.15,
@@ -182,6 +222,7 @@
  "spine": [
   "Hips",
   "Spine1",
+  "Spine2",
   "Chest",
   "Neck"
  ],
@@ -193,6 +234,7 @@
  "legs": [
   {
    "bones": [
+    "FL_Scap",
     "FL_Upper",
     "FL_Lower",
     "FL_Paw"
@@ -203,10 +245,11 @@
     0.56
    ],
    "radius": 0.14,
-   "top": -0.26
+   "top": -0.08
   },
   {
    "bones": [
+    "FR_Scap",
     "FR_Upper",
     "FR_Lower",
     "FR_Paw"
@@ -217,7 +260,7 @@
     0.52
    ],
    "radius": 0.14,
-   "top": -0.26
+   "top": -0.08
   },
   {
    "bones": [
@@ -280,5 +323,27 @@
   "y1": 0.26
  },
  "smooth": 3,
- "anims": "dom/cat_anims.py"
+ "anims": "dom/cat_anims.py",
+ "ears": [
+  {
+   "bone": "EarL",
+   "center": [
+    -0.24,
+    0.52,
+    0.63
+   ],
+   "radius": 0.11,
+   "min_y": 0.46
+  },
+  {
+   "bone": "EarR",
+   "center": [
+    0.0,
+    0.52,
+    0.73
+   ],
+   "radius": 0.11,
+   "min_y": 0.46
+  }
+ ]
 }

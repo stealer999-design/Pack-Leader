@@ -65,6 +65,10 @@ Wh = np.zeros((N, NB)); Wh[:, idx['Head']] = 1
 jw = cfg['jaw']; jm = ss(jw['z0'], jw['z1'], z) * ss(jw['y1'], jw['y0'], y)
 Wh[:, idx['Head']] -= jm; Wh[:, idx['Jaw']] += jm
 W = W * (1 - m)[:, None] + Wh * m[:, None]
+for ear in cfg.get('ears', []):  # ears ride their own bones
+	m = ss(ear['radius'] + 0.03, ear['radius'] - 0.03, np.linalg.norm(P - np.array(ear['center']), axis=1)) * ss(ear['min_y'] - 0.02, ear['min_y'] + 0.03, y)
+	We = np.zeros((N, NB)); We[:, idx[ear['bone']]] = 1
+	W = W * (1 - m)[:, None] + We * m[:, None]
 # smooth over the mesh a little (welded neighbours)
 I = acc(j, bn, p['indices']).reshape(-1, 3).astype(np.int64)
 _, wid = np.unique(np.round(P, 5), axis=0, return_inverse=True); wid = wid.ravel(); nW = wid.max() + 1
@@ -98,7 +102,7 @@ mesh_node = next(i for i, n in enumerate(j['nodes']) if 'mesh' in n); j['nodes']
 j['scenes'][j.get('scene', 0)]['nodes'] = [mesh_node] + [first + i for i in range(NB) if par[i] < 0]
 # --- animations: python functions of t returning {bone: (rx, ry, rz)} and optional root offset ---
 anims = {}
-exec(open(cfg['anims']).read(), {'np': np, 'anims': anims, 'cfg': cfg})
+exec(open(cfg['anims']).read(), {'np': np, 'anims': anims, 'cfg': cfg, 'names': names, 'JP': JP, 'par': par, 'idx': idx})
 def quat(e):
 	cx, sx = np.cos(e[0] / 2), np.sin(e[0] / 2); cy, sy = np.cos(e[1] / 2), np.sin(e[1] / 2); cz, sz = np.cos(e[2] / 2), np.sin(e[2] / 2)
 	qx = np.array([sx, 0, 0, cx]); qy = np.array([0, sy, 0, cy]); qz = np.array([0, 0, sz, cz])
