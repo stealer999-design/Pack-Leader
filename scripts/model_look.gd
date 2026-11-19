@@ -21,7 +21,9 @@ static var _bumps: Texture2D
 static func apply(root: Node, _unused := 0.0) -> void:
 	for node in _meshes(root):
 		var part := node as MeshInstance3D
-		part.material_overlay = null  # no cartoon outlines
+		var overlay := part.material_overlay as BaseMaterial3D
+		if overlay == null or overlay.blend_mode != BaseMaterial3D.BLEND_MODE_ADD:
+			part.material_overlay = null  # no cartoon outlines (glow layers, which add light, stay)
 		var mat := part.material_override as StandardMaterial3D
 		if mat == null and part.mesh:
 			mat = part.mesh.surface_get_material(0) as StandardMaterial3D if part.mesh.get_surface_count() > 0 else null

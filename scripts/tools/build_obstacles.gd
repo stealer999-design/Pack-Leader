@@ -43,7 +43,7 @@ func _init() -> void:
 func _use_model(path: String) -> void:
 	if not ResourceLoader.exists(path):
 		return
-	var old := _bounds(_root)
+	var old := _bounds(_root, true)
 	for child in _root.get_children():
 		if child is MeshInstance3D:
 			_root.remove_child(child)
@@ -62,14 +62,89 @@ func _use_model(path: String) -> void:
 	for child in _root.get_children():
 		if child is CollisionShape3D and child.shape is CylinderShape3D and child.shape.radius > reach:
 			child.shape.radius = reach
+	var glow_path := path.get_basename() + "_emit.png"
+	if ResourceLoader.exists(glow_path):
+		_glow_model(model, load(glow_path))
+	if path.get_file() == "volcano_3.glb":  # the smoking vent
+		_add_smoke(Vector3(0, box.size.y * k * 0.85, 0))
 	print("  model ", path, ": ", (box.size * k).snapped(Vector3.ONE * 0.01), " (was ", old.size.snapped(Vector3.ONE * 0.01), ")")
 
 
-## The combined box of every mesh under `node` (in `node`'s space).
-func _bounds(node: Node3D) -> AABB:
+## Lava glows: an additive, unlit layer of the glow map over the model (only
+## the lava-coloured parts of the texture are bright in it). Done as an overlay
+## rather than the material's emission so it looks the same in every renderer.
+func _glow_model(model: Node3D, glow: Texture2D) -> void:
+	_root.set_editable_instance(model, true)  # so the overlay is saved with the scene
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	mat.albedo_texture = glow
+	mat.albedo_color = Color(1.6, 1.6, 1.6)
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	for mesh: MeshInstance3D in model.find_children("*", "MeshInstance3D", true, false):
+		mesh.material_overlay = mat
+
+
+## Smoke drifting up out of a vent: soft grey puffs that rise, swell and fade.
+func _add_smoke(at: Vector3) -> void:
+	var smoke := CPUParticles3D.new()
+	smoke.name = "Smoke"
+	smoke.position = at
+	smoke.amount = 22
+	smoke.lifetime = 3.5
+	smoke.preprocess = 3.5  # already smoking when the level appears
+	smoke.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
+	smoke.emission_sphere_radius = 0.25
+	smoke.direction = Vector3.UP
+	smoke.spread = 14.0
+	smoke.initial_velocity_min = 0.5
+	smoke.initial_velocity_max = 0.8
+	smoke.gravity = Vector3(0.05, 0.12, 0.0)  # rises a little faster, drifts a touch sideways
+	smoke.angle_min = 0.0
+	smoke.angle_max = 360.0
+	smoke.scale_amount_min = 0.7
+	smoke.scale_amount_max = 1.0
+	var grow := Curve.new()
+	grow.add_point(Vector2(0.0, 0.45))
+	grow.add_point(Vector2(1.0, 1.6))
+	smoke.scale_amount_curve = grow
+	var fade := Gradient.new()
+	fade.set_color(0, Color(0.6, 0.57, 0.55, 0.0))
+	fade.set_color(1, Color(0.72, 0.7, 0.68, 0.0))
+	fade.add_point(0.12, Color(0.58, 0.55, 0.53, 0.85))
+	fade.add_point(0.55, Color(0.68, 0.66, 0.64, 0.6))
+	smoke.color_ramp = fade
+	var puff := QuadMesh.new()
+	puff.size = Vector2(1.3, 1.3)
+	var mat := StandardMaterial3D.new()
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
+	mat.vertex_color_use_as_albedo = true
+	var soft := GradientTexture2D.new()  # a round puff, soft at the edge
+	soft.fill = GradientTexture2D.FILL_RADIAL
+	soft.fill_from = Vector2(0.5, 0.5)
+	soft.fill_to = Vector2(1.0, 0.5)
+	var edge := Gradient.new()
+	edge.set_color(0, Color(1, 1, 1, 1))
+	edge.set_color(1, Color(1, 1, 1, 0))
+	soft.gradient = edge
+	mat.albedo_texture = soft
+	puff.material = mat
+	smoke.mesh = puff
+	smoke.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_add(smoke)
+
+
+## The combined box of every mesh under `node` (in `node`'s space); with
+## `solid_only`, leaving out see-through parts (smoke).
+func _bounds(node: Node3D, solid_only := false) -> AABB:
 	var box := AABB()
 	var first := true
 	for mesh: MeshInstance3D in node.find_children("*", "MeshInstance3D", true, false):
+		var mat := mesh.material_override as BaseMaterial3D
+		if solid_only and mat and mat.transparency != BaseMaterial3D.TRANSPARENCY_DISABLED:
+			continue  # smoke and the like: not part of the shape
 		var xf := Transform3D.IDENTITY
 		var n: Node = mesh
 		while n != node:
