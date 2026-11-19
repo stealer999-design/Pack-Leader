@@ -279,7 +279,8 @@ played in the browser".
   (`models/koleko.glb`, settings and animations in
   `scripts/tools/meshy_skin/koleko/`; both animals share the planted-paw
   library `quad_lib.py`): a black, gold-spined hellhound that pants while he
-  stands, walks heavily with his head low, gallops, lunges to bite and shakes
+  stands and trots everywhere (diagonal pairs striking together, a bounce on
+  each beat; at speed 4.2 he is quicker than the other bosses' 3.0), lunges to bite and shakes
   his head (his hit), rears back and heaves forward to spit his Lava Spit
   (which he stops for) and settles back to howl at the sky when he calls his
   fire imps. He has no separate ears, but his mouth really opens. The dog

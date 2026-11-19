@@ -121,11 +121,16 @@ def ears(f, back=0.0, out=0.0, twitch_l=0.0, twitch_r=0.0):
 		f['EarL'] = (-back + twitch_l, 0, out); f['EarR'] = (-back + twitch_r, 0, -out)
 
 
-def walk_like(t, T, offsets, travel, duty, lift, f):
+def walk_like(t, T, offsets, travel, duty, lift, f, fore_reach=None):
+	"""steps all four paws. `fore_reach`: the furthest (Meshy units) a fore paw may land
+	ahead of where it stands, for legs that are nearly straight at rest (the rest of
+	its stroke moves behind instead)"""
 	sweep = travel * duty
 	for leg in LEGS:
 		u = (t / T + offsets[leg]) % 1.0
 		foot, up = gait_foot(leg, u, sweep, lift, duty)
+		if fore_reach is not None and leg[0] == 'F':
+			foot[2] -= max(0.0, sweep / 2 - fore_reach)
 		if leg[0] == 'F':  # the shoulder blade rolls with the leg
 			reach = (foot[2] - END[leg][2]) / max(sweep, 1e-3)
 			f[leg + '_Scap'] = (-0.35 * reach, 0, 0)

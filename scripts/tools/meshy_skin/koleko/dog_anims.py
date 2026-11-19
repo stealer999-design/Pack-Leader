@@ -19,6 +19,27 @@ def walk(t):
 	return finish(f)
 
 
+def trot(t):
+	"""a dog's trot: diagonal pairs (left fore with right hind, then right fore with left
+	hind) strike together, with a moment of float between; back level, head steady"""
+	T = TROT_T; ph = TAU * t / T; f = {}; planted(f)
+	walk_like(t, T, {'FL': 0.0, 'RR': 0.0, 'FR': 0.5, 'RL': 0.5}, TROT_TRAVEL, 0.44, 0.13, f, fore_reach=0.1)
+	for leg in ('FL', 'FR'):  # the fore paws flick up and fold as they swing through
+		foot, flex = f['_feet'][leg]; f['_feet'][leg] = (foot, flex * 1.8)
+	f['Hips'] = (0, 0.04 * np.sin(ph), 0.04 * np.sin(ph)); f['Chest'] = (0, -0.04 * np.sin(ph), -0.04 * np.sin(ph))
+	f['Spine1'] = (0.015 * np.sin(2 * ph), 0, 0)
+	f['Neck'] = (0.1, 0, 0)
+	steady_head(f, 0.9)
+	f['Jaw'] = (0.14 + 0.05 * np.sin(2 * ph), 0, 0)
+	tail(f, t, 0.12, 1 / T, lift=0.05, curl=0.1)
+	f['_offset'] = (0, -0.05 + 0.02 * np.cos(2 * ph), 0)  # carried a little low, a bounce on each diagonal beat
+	return finish(f)
+
+
+TROT_T = 0.6  # one full cycle (two diagonal beats)
+TROT_TRAVEL = 1.18  # Meshy units covered per cycle; x his scale / TROT_T = his speed (4.2)
+
+
 def run(t):
 	T = 0.55; ph = TAU * t / T; f = {}; planted(f)
 	walk_like(t, T, {'FL': 0.0, 'FR': 0.1, 'RL': 0.5, 'RR': 0.6}, 1.25, 0.32, 0.17, f)
@@ -93,5 +114,5 @@ def howl(t):
 	return finish(f)
 
 
-anims.update({'Idle': (4.0, idle), 'Walk': (1.1, walk), 'Run': (0.55, run), 'Bite': (0.7, bite),
+anims.update({'Idle': (4.0, idle), 'Walk': (1.1, walk), 'Trot': (TROT_T, trot), 'Run': (0.55, run), 'Bite': (0.7, bite),
 			  'Spit': (1.2, spit), 'Howl': (1.6, howl)})

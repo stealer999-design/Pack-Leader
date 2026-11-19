@@ -46,6 +46,7 @@ const VARIANTS := {
 		"special": "Lava Spit", "effect": "blaze", "fx": Color(1.0, 0.5, 0.12),
 		"summons": [49, 49, 49], "summon_text": "Koleko howls, and fire imps leap from the flames!",
 		"challenge": "Koleko the Fire Dog bares his burning fangs!",
+		"speed": 4.2,  # trots: quicker than the other bosses (3.0)
 	},
 	"parrot": {
 		"title": "Pye", "objective": "Pye the Parrot", "color": Color(0.36, 0.37, 0.4),
@@ -77,6 +78,7 @@ var variant := "pharaoh":
 	set(v):
 		variant = v if VARIANTS.has(v) else "pharaoh"
 		color = VARIANTS[variant].color
+		move_speed = VARIANTS[variant].get("speed", move_speed)
 
 var _special_timer := 3.0
 var _vomit_next := false  ## Dom: alternates Pounce and Swipe with Hairball.
