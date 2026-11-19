@@ -152,6 +152,9 @@ func _cast_special() -> void:
 		return
 	var spot: Vector3 = victims.pick_random().global_position
 	world.play_telegraph.rpc(spot, special_radius, special_warning)
+	if _parts.has("anim") and _parts.anims.has("special"):  # e.g. Koleko stops and spits his lava
+		_taunt_left = special_warning * 0.7
+		_special_anim.rpc("special")
 	if variant == "lion":  # crouches, then springs to land as the warning runs out
 		var leap := create_tween()
 		leap.tween_interval(special_warning * 0.55)

@@ -2,7 +2,8 @@
 ## straightens it to face +Z, builds a skeleton (hips, spine, chest, neck, head,
 ## jaw, tail chain, three bones per leg), weights the mesh by body part with
 ## smooth blends, and bakes keyframed animations (idle, walk, run, swipe,
-## pounce, retch, hiss). python3 rig_quad.py config.json in.glb out.glb
+## pounce, retch, hiss for Dom; see each animal's folder).
+## python3 rig_quad.py <animal>/config.json in.glb out.glb
 import sys, json, struct, numpy as np
 sys.path.insert(0, '.')
 from glb import load, acc
@@ -102,7 +103,12 @@ mesh_node = next(i for i, n in enumerate(j['nodes']) if 'mesh' in n); j['nodes']
 j['scenes'][j.get('scene', 0)]['nodes'] = [mesh_node] + [first + i for i in range(NB) if par[i] < 0]
 # --- animations: python functions of t returning {bone: (rx, ry, rz)} and optional root offset ---
 anims = {}
-exec(open(cfg['anims']).read(), {'np': np, 'anims': anims, 'cfg': cfg, 'names': names, 'JP': JP, 'par': par, 'idx': idx})
+import os
+base = os.path.dirname(os.path.abspath(sys.argv[1]))  # animation files sit beside the config
+env = {'np': np, 'anims': anims, 'cfg': cfg, 'names': names, 'JP': JP, 'par': par, 'idx': idx}
+if cfg.get('lib'):
+	exec(open(os.path.join(base, cfg['lib'])).read(), env)
+exec(open(os.path.join(base, cfg['anims'])).read(), env)
 def quat(e):
 	cx, sx = np.cos(e[0] / 2), np.sin(e[0] / 2); cy, sy = np.cos(e[1] / 2), np.sin(e[1] / 2); cz, sz = np.cos(e[2] / 2), np.sin(e[2] / 2)
 	qx = np.array([sx, 0, 0, cx]); qy = np.array([0, sy, 0, cy]); qz = np.array([0, 0, sz, cz])

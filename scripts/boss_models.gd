@@ -72,6 +72,15 @@ const DOM_ANIMS := {"walk": "Walk", "run": "Run", "attack": "Swipe", "attack_fro
 		"idle": "Idle", "pounce": ["Pounce", 0.0, 1.0], "retch": ["Retch", 0.0, 1.3], "summon": ["Hiss", 0.0, 1.0],
 		"run_from": 1.8, "walk_pace": 0.97, "run_pace": 4.27}  # paces: Meshy units travelled per second x his scale
 
+## Koleko as a Meshy model, rigged and animated by rig_quad.py like Dom: a
+## panting idle, a heavy walk, a gallop, a lunging bite with a head shake (his
+## hit), a rear-back-and-heave Lava Spit, and a howl to the sky (his summons).
+const KOLEKO_MODEL := "res://models/koleko.glb"
+const KOLEKO_HEIGHT := 3.4
+const KOLEKO_ANIMS := {"walk": "Walk", "run": "Run", "attack": "Bite", "attack_from": 0.0, "attack_speed": 1.0,
+		"idle": "Idle", "special": ["Spit", 0.0, 1.0], "summon": ["Howl", 0.0, 1.0],
+		"run_from": 1.8, "walk_pace": 1.07, "run_pace": 4.86}  # Meshy units travelled per second x his scale
+
 ## The Bog Witch as a Meshy model: an idle, a walk (she never runs) and a spell
 ## cast for her poison bolts and her toxic puddles.
 const WITCH_MODEL := "res://models/bog_witch.glb"
@@ -634,6 +643,8 @@ static func desert_lion(model: Node3D, main: StandardMaterial3D) -> Dictionary:
 ## the cracks, a crest of flames down his neck and back, tall pointed ears,
 ## a long snout full of glowing fangs, burning eyes and a tail of fire.
 static func fire_dog(model: Node3D, main: StandardMaterial3D) -> Dictionary:
+	if ResourceLoader.exists(KOLEKO_MODEL):
+		return meshy_model(model, KOLEKO_MODEL, KOLEKO_HEIGHT, KOLEKO_ANIMS)
 	var lava := _mat(Color(1.0, 0.45, 0.08), true)
 	var flame := _mat(Color(1.0, 0.62, 0.15), true)
 	var hot := _mat(Color(1.0, 0.9, 0.5), true)

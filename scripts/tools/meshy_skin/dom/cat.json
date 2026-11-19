@@ -323,7 +323,7 @@
   "y1": 0.26
  },
  "smooth": 3,
- "anims": "dom/cat_anims.py",
+ "anims": "cat_anims.py",
  "ears": [
   {
    "bone": "EarL",
@@ -345,5 +345,6 @@
    "radius": 0.11,
    "min_y": 0.46
   }
- ]
+ ],
+ "lib": "../quad_lib.py"
 }
