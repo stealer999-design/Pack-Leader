@@ -730,6 +730,7 @@ The host is the authoritative server and also plays.
 
 | Path | What it is |
 |---|---|
+| `scripts/perf_overlay.gd` | F3: a performance overlay (frame rate, script and physics time, draw calls, creatures on screen and chasing you) that also logs to `perf_log.csv` in the game's user folder, for tracking down slowdowns |
 | `scripts/save_game.gd` | Autoload `SaveGame`: save slots, autosave, and handing a save to the server to restore |
 | `scripts/network.gd` | Autoload `Network`: WebSocket host/join, solo mode, player registry (names, colours) |
 | `scenes/main.tscn` + `scripts/main.gd` | Menu + `LevelSpawner` that replicates the world to joining clients |

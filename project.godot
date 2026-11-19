@@ -117,6 +117,7 @@ inventory={
 
 Network="*res://scripts/network.gd"
 SaveGame="*res://scripts/save_game.gd"
+PerfOverlay="*res://scripts/perf_overlay.gd"
 
 [layer_names]
 
