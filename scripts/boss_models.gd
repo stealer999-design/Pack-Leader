@@ -61,6 +61,16 @@ const FISH_ANIMS := {"walk": "Walking", "run": "Running", "attack": "Step_in_Hig
 		"in_place": ["Step_in_High_Kick", "mage_soell_cast_8", "Zombie_Scream"],
 		"walk_pace": 2.4, "run_pace": 4.2}
 
+## Dom as a Meshy model. Meshy only rigs humanoids, so rig_quad.py gives him
+## a four-legged skeleton and keyframed animations: an idle with a swishing
+## tail, a walk, a run, a paw swipe, a crouch-wiggle-pounce, a hunched hairball
+## retch and an arched-back hiss (his summons).
+const DOM_MODEL := "res://models/dom.glb"
+const DOM_HEIGHT := 3.0  ## to the tip of his raised tail (his ears are about 2.6)
+const DOM_ANIMS := {"walk": "Walk", "run": "Run", "attack": "Swipe", "attack_from": 0.0, "attack_speed": 1.0,
+		"idle": "Idle", "pounce": ["Pounce", 0.0, 1.0], "retch": ["Retch", 0.0, 1.3], "summon": ["Hiss", 0.0, 1.0],
+		"walk_pace": 1.6, "run_pace": 4.0}
+
 ## The Bog Witch as a Meshy model: an idle, a walk (she never runs) and a spell
 ## cast for her poison bolts and her toxic puddles.
 const WITCH_MODEL := "res://models/bog_witch.glb"
@@ -724,6 +734,8 @@ static func parrot(model: Node3D, main: StandardMaterial3D) -> Dictionary:
 ## muzzle), with green eyes, pointed ears, whiskers and a tall curling tail.
 ## Four legs that trot, a jaw that opens to hiss (and to be sick).
 static func house_cat(model: Node3D, main: StandardMaterial3D) -> Dictionary:
+	if ResourceLoader.exists(DOM_MODEL):
+		return meshy_model(model, DOM_MODEL, DOM_HEIGHT, DOM_ANIMS)
 	var stripe := _mat(Color(0.62, 0.28, 0.05))
 	var white := _mat(Color(0.96, 0.94, 0.9))
 	var pink := _mat(Color(0.95, 0.55, 0.6))

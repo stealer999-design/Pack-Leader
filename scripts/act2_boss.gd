@@ -191,6 +191,9 @@ func _cast_special() -> void:
 func _summon() -> void:
 	var data := _data()
 	world.announce.rpc(data.summon_text, data.fx.lightened(0.2))
+	if _parts.has("anim") and _parts.anims.has("summon"):  # e.g. Dom arches his back and hisses
+		_taunt_left = 1.0
+		_special_anim.rpc("summon")
 	var count: int = data.summons.size()
 	for i in count:
 		var offset := Vector3.FORWARD.rotated(Vector3.UP, TAU * i / count + randf() * 0.5) * 3.5
@@ -286,6 +289,7 @@ func _cat_special(victims: Array) -> void:
 	var land := world.clamp_to_level(spot + (start - spot).normalized() * 0.8)
 	land.y = start.y
 	world.play_telegraph.rpc(spot, SWIPE_RADIUS, SWIPE_WARNING)
+	_special_anim.rpc("pounce")  # a rigged Dom crouches, wiggles and springs (then swipes on landing)
 	var facing := spot - start
 	model.rotation.y = atan2(-facing.x, -facing.z)  # eyes on the prey, all the way there and back
 	_leaping = true
@@ -311,7 +315,11 @@ func _cat_special(victims: Array) -> void:
 func _hairball(spot: Vector3) -> void:
 	world.announce.rpc("Dom coughs up a hairball!", Color(0.6, 0.95, 0.4))
 	world.play_telegraph.rpc(spot, VOMIT_RADIUS, special_warning)
-	_swing.rpc()
+	if _parts.has("anim"):  # a rigged Dom stops, hunches and retches it up
+		_taunt_left = special_warning
+		_special_anim.rpc("retch")
+	else:
+		_swing.rpc()
 	get_tree().create_timer(special_warning).timeout.connect(func() -> void:
 		if not is_instance_valid(self) or health.is_dead():
 			return
