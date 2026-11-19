@@ -26,7 +26,8 @@ const RIVAL_ANIMS := {"walk": "Walking", "run": "Running", "attack": "Attack", "
 		"attack_speed": 2.5, "cast": "mage_soell_cast_1", "idle": ["Attack", 0.0],
 		"walk_pace": 1.7, "run_pace": 4.2}
 ## Pye the Parrot as a Meshy model (rigged: a waddling penguin walk, a run and
-## a head-down charge for his peck). Falls back to the parrot built in code.
+## a head-down charge for his peck). His wings are the rig's arms; in the walk
+## and run they're held folded back (fold_wings.py) so they don't swing. Falls back to the parrot built in code.
 const PYE_MODEL := "res://models/pye.glb"
 const PYE_HEIGHT := 3.2
 const PYE_ANIMS := {"walk": "penguin_walk", "run": "Running", "attack": "Male_Head_Down_Charge",
