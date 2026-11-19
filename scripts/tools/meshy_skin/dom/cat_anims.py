@@ -5,16 +5,32 @@ TAU = 2 * np.pi
 # --- the animations ---------------------------------------------------------------
 
 def walk(t):
-	T = 1.0; ph = TAU * t / T; f = {}; planted(f)
-	walk_like(t, T, {'RL': 0.0, 'FL': 0.25, 'RR': 0.5, 'FR': 0.75}, 0.5, 0.64, 0.08, f)
-	f['Hips'] = (0, 0.06 * np.sin(ph), 0.02 * np.sin(ph))
+	"""a cat's walk: lateral sequence (hind, same-side fore, other hind, other fore) and
+	direct registering - each hind paw lands on the print its fore paw has just left,
+	and the hind legs tuck in to step in line with the fore legs"""
+	T = WALK_T; ph = TAU * t / T; f = {}; planted(f)
+	offsets = {'FL': 0.25, 'FR': 0.75}
+	for side in 'LR':  # each hind paw lands as its fore paw's print reaches it
+		gap = END['F' + side][2] - END['R' + side][2]
+		offsets['R' + side] = (offsets['F' + side] - gap / WALK_TRAVEL) % 1.0
+	walk_like(t, T, offsets, WALK_TRAVEL, WALK_DUTY, 0.09, f)
+	for side, sign in (('L', 1), ('R', -1)):  # hind paws in line with the fore paws
+		foot, flex = f['_feet']['R' + side]
+		dx = END['F' + side][0] - END['R' + side][0]
+		f['_feet']['R' + side] = (foot, flex, sign * abs(np.arcsin(np.clip(dx / 0.66, -0.5, 0.5))))
+	f['Hips'] = (0, 0.07 * np.sin(ph), 0.03 * np.sin(ph))
 	f['Spine1'] = (0, -0.03 * np.sin(ph), 0); f['Spine2'] = (0, -0.03 * np.sin(ph + 0.4), 0)
-	f['Chest'] = (0, -0.05 * np.sin(ph + 0.8), -0.02 * np.sin(ph + 0.8))
-	f['Neck'] = (0.03 * np.sin(2 * ph), 0, 0)
+	f['Chest'] = (0, -0.06 * np.sin(ph + 0.8), -0.03 * np.sin(ph + 0.8))
+	f['Neck'] = (0.05 + 0.03 * np.sin(2 * ph), 0, 0)
 	steady_head(f); ears(f, 0.05)
-	tail(f, t, 0.22, 1 / T, lift=-0.05, curl=0.1)
-	f['_offset'] = (0, -0.01 + 0.012 * np.cos(2 * ph), 0)
+	tail(f, t, 0.18, 1 / T, lift=-0.05, curl=0.12)
+	f['_offset'] = (0, -0.035 + 0.012 * np.cos(2 * ph), 0)  # a little low, prowling
 	return finish(f)
+
+
+WALK_T = 0.85  # one full cycle of all four paws
+WALK_TRAVEL = 1.28  # how far he moves per cycle (Meshy units): sets where the hind paws land
+WALK_DUTY = 0.62  # share of the cycle each paw is on the ground
 
 
 def run(t):
@@ -123,5 +139,5 @@ def hiss(t):
 	return finish(f)
 
 
-anims.update({'Idle': (4.0, idle), 'Walk': (1.0, walk), 'Run': (0.5, run), 'Swipe': (0.75, swipe),
+anims.update({'Idle': (4.0, idle), 'Walk': (WALK_T, walk), 'Run': (0.5, run), 'Swipe': (0.75, swipe),
 			  'Pounce': (1.0, pounce), 'Retch': (1.6, retch), 'Hiss': (1.4, hiss)})

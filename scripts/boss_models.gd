@@ -70,7 +70,7 @@ const DOM_MODEL := "res://models/dom.glb"
 const DOM_HEIGHT := 3.0  ## to the tip of his raised tail (his ears are about 2.6)
 const DOM_ANIMS := {"walk": "Walk", "run": "Run", "attack": "Swipe", "attack_from": 0.0, "attack_speed": 1.0,
 		"idle": "Idle", "pounce": ["Pounce", 0.0, 1.0], "retch": ["Retch", 0.0, 1.3], "summon": ["Hiss", 0.0, 1.0],
-		"run_from": 1.8, "walk_pace": 0.97, "run_pace": 4.27}  # paces: Meshy units travelled per second x his scale
+		"run_from": 99.0, "walk_pace": 2.92, "run_pace": 4.27}  # paces: Meshy units a second x his scale; he always walks
 
 ## Koleko as a Meshy model, rigged and animated by rig_quad.py like Dom: a
 ## panting idle, a heavy walk, a gallop, a lunging bite with a head shake (his

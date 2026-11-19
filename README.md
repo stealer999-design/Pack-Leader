@@ -267,8 +267,10 @@ played in the browser".
   bakes keyframed animations in which a paw on the ground stays planted (two-
   bone IK), the shoulder blades roll, the head stays steady while the body
   sways and the tail follows through: an idle (breathing, looking about, ear
-  flicks, a slow S-curving tail), a four-beat walk, a bounding run whose spine
-  gathers and stretches, a paw swipe (his hit: weight back, paw cocked, a fast
+  flicks, a slow S-curving tail), a cat's walk that he uses at every speed
+  (lateral sequence with direct registering: each hind paw lands in the print
+  its fore paw just left), a bounding run whose spine gathers and stretches
+  (unused for now), a paw swipe (his hit: weight back, paw cocked, a fast
   strike and a raking drag), a stalk-wiggle-pounce (Pounce and Swipe), a
   heaving hairball retch (which he stops for) and an arched-back, ears-flat,
   tail-up hiss (his summons); `fix_skin.py --generic`

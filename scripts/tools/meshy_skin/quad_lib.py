@@ -46,9 +46,9 @@ def wrap(a):
 	return (a + np.pi) % TAU - np.pi
 
 
-def solve_leg(pose, leg, foot, flex=0.0):
+def solve_leg(pose, leg, foot, flex=0.0, roll=0.0):
 	"""sets the leg's upper and lower bones so its paw lands on `foot` (a ground point in
-	model space), and keeps the paw level (plus `flex`)"""
+	model space), and keeps the paw level (plus `flex`); `roll` tips the leg in or out (rz)"""
 	up, lo, paw = idx[leg + '_Upper'], idx[leg + '_Lower'], idx[leg + '_Paw']
 	GR, GP = fk(pose)
 	Rp = GR[par[up]]
@@ -66,7 +66,7 @@ def solve_leg(pose, leg, foot, flex=0.0):
 	p2 = np.arctan2(tt[1] - knee[1], tt[0] - knee[0])
 	a2 = wrap(p2 - np.arctan2(s2[2], s2[1]) - a1)
 	parent_pitch = np.arctan2(Rp[2, 1], Rp[1, 1])
-	pose[leg + '_Upper'] = (a1, 0, 0)
+	pose[leg + '_Upper'] = (a1, 0, roll)
 	pose[leg + '_Lower'] = (a2, 0, 0)
 	pose[leg + '_Paw'] = (wrap(flex - parent_pitch - a1 - a2), 0, 0)
 
@@ -134,8 +134,8 @@ def walk_like(t, T, offsets, travel, duty, lift, f):
 
 def finish(f):
 	"""plants (or places) every paw last, once the body pose is known"""
-	for leg, (foot, flex) in f.pop('_feet', {}).items():
-		solve_leg(f, leg, foot, flex)
+	for leg, spec in f.pop('_feet', {}).items():
+		solve_leg(f, leg, *spec)  # (foot, flex[, roll])
 	return f
 
 
