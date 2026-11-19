@@ -232,8 +232,9 @@ played in the browser".
   was repaired with `scripts/tools/meshy_skin/fix_rival_skin.py` (run it again
   on a fresh Meshy export). The older hat-and-cape model built in code is kept
   as a fallback. Pye the Parrot is a rigged Meshy model too (`models/pye.glb`):
-  he waddles (a penguin walk) and runs with his wings folded back against his
-  sides (`scripts/tools/meshy_skin/fold_wings.py` holds the wing bones still), and lowers his head to charge for each
+  he waddles (a penguin walk) and runs with his wings spread wide like a goose
+  squaring up (`scripts/tools/meshy_skin/fold_wings.py --spread` holds the wing
+  bones still), and lowers his head to charge for each
   peck (played on the spot), standing still between moves; the grey parrot
   built in code is the fallback. The Glacier Titan is a rigged Meshy model as
   well (`models/glacier_titan.glb`): a hulking golem of blue ice that breathes

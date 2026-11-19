@@ -1,12 +1,15 @@
 ## Pye: in the named animations, hold the arm (wing) bones in a folded pose,
 ## (run on the Meshy merged export; skin.py and glb.py sit beside it)
 ## tucked back along the body, instead of swinging them.
-## python3 fold_wings.py in.glb out.glb Anim1 [Anim2 ...]
+## python3 fold_wings.py in.glb out.glb [--spread] Anim1 [Anim2 ...]
+## --spread: held open instead, like a goose squaring up (raised out to the
+## sides, the outer feathers sweeping down)
 import sys, json, struct, numpy as np
 sys.path.insert(0, '.')
 from glb import load, acc
 from skin import q2m, trs
 src, dst, names = sys.argv[1], sys.argv[2], sys.argv[3:]
+SPREAD = '--spread' in names; names = [n for n in names if n != '--spread']
 j, bn = load(src); bn = bytearray(bn)
 N = j['nodes']; parent = {c: i for i, n in enumerate(N) for c in n.get('children', [])}
 G = {}
@@ -29,6 +32,8 @@ def align(a, b):  # rotation taking direction a to b
 	return np.eye(3) + K + K @ K * (1 / (1 + c))
 # targets in model space (Meshy faces +Z; the bird's left wing is +X): down-back, then back
 TARGET = {'Arm': np.array([0.25, -0.75, -0.6]), 'ForeArm': np.array([0.08, -0.4, -0.92]), 'Hand': np.array([0.04, -0.25, -0.97])}
+if SPREAD:
+	TARGET = {'Arm': np.array([0.8, 0.5, -0.15]), 'ForeArm': np.array([0.9, -0.15, -0.1]), 'Hand': np.array([0.6, -0.75, 0.0])}
 fold = {}  # node -> local quaternion
 for side, sx in (('Left', 1), ('Right', -1)):
 	chain = [side + 'Arm', side + 'ForeArm', side + 'Hand']
