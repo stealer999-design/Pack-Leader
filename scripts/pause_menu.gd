@@ -7,6 +7,7 @@ extends Control
 var _title: Label
 var _note: Label
 var _quit_game: Button
+var _resolution: Button
 
 
 func _init() -> void:
@@ -45,6 +46,9 @@ func _init() -> void:
 	box.add_child(_note)
 	box.add_child(_button("Resume", close, "play"))
 	box.add_child(_button("Save game", _save, "save"))
+	_resolution = _button("", _next_resolution, "menu")
+	_resolution.visible = not OS.has_feature("web")  # the browser build has its own fixed settings
+	box.add_child(_resolution)
 	box.add_child(_button("Quit to main menu", _quit_to_menu, "home"))
 	_quit_game = _button("Quit game", _quit_game_pressed, "power")
 	_quit_game.visible = not OS.has_feature("web")  # a browser tab can't close itself
@@ -60,6 +64,7 @@ func open() -> void:
 	var solo := multiplayer.multiplayer_peer is OfflineMultiplayerPeer
 	_title.text = "Paused" if solo else "Menu"
 	_note.text = _slot_text() + ("" if solo else "\nThe game keeps running for the other players.")
+	_resolution.text = Graphics.label()
 	show()
 	get_tree().paused = solo
 
@@ -78,6 +83,11 @@ func _unhandled_input(event: InputEvent) -> void:
 func _save() -> void:
 	SaveGame.save_now(true)
 	_note.text = "Saved to slot %d at %s." % [SaveGame.slot + 1, Time.get_time_string_from_system().substr(0, 5)]
+
+
+## Cycles the 3D resolution (Graphics): Auto, Full, Performance.
+func _next_resolution() -> void:
+	_resolution.text = Graphics.next_mode()
 
 
 func _quit_to_menu() -> void:
