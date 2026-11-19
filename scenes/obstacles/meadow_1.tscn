@@ -1,75 +1,16 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=3 format=3]
 
-[sub_resource type="CylinderShape3D" id="CylinderShape3D_dk5hv"]
+[ext_resource type="PackedScene" path="res://models/scenery/meadow_1.glb" id="1_7dgqq"]
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_swosw"]
 height = 3.4
 radius = 0.55
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_7dgqq"]
-albedo_color = Color(0.38, 0.25, 0.15, 1)
-roughness = 0.85
-
-[sub_resource type="CylinderMesh" id="CylinderMesh_swosw"]
-top_radius = 0.16
-bottom_radius = 0.2
-height = 1.0
-radial_segments = 10
-rings = 1
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_b17kr"]
-albedo_color = Color(0.17, 0.4, 0.25, 1)
-roughness = 0.85
-
-[sub_resource type="CylinderMesh" id="CylinderMesh_01pwi"]
-top_radius = 0.0
-bottom_radius = 1.25
-height = 1.4
-radial_segments = 10
-rings = 1
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hj61k"]
-albedo_color = Color(0.2198, 0.436, 0.295, 1)
-roughness = 0.85
-
-[sub_resource type="CylinderMesh" id="CylinderMesh_6uyk3"]
-top_radius = 0.0
-bottom_radius = 0.95
-height = 1.2
-radial_segments = 10
-rings = 1
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_3dxu3"]
-albedo_color = Color(0.2696, 0.472, 0.34, 1)
-roughness = 0.85
-
-[sub_resource type="CylinderMesh" id="CylinderMesh_sufsx"]
-top_radius = 0.0
-bottom_radius = 0.62
-height = 1.0
-radial_segments = 10
-rings = 1
 
 [node name="Meadow_1" type="StaticBody3D"]
 
 [node name="@CollisionShape3D@8" type="CollisionShape3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.7, 0)
-shape = SubResource("CylinderShape3D_dk5hv")
+shape = SubResource("CylinderShape3D_swosw")
 
-[node name="@MeshInstance3D@9" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
-material_override = SubResource("StandardMaterial3D_7dgqq")
-mesh = SubResource("CylinderMesh_swosw")
-
-[node name="@MeshInstance3D@10" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.1, 0)
-material_override = SubResource("StandardMaterial3D_b17kr")
-mesh = SubResource("CylinderMesh_01pwi")
-
-[node name="@MeshInstance3D@11" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.8, 0)
-material_override = SubResource("StandardMaterial3D_hj61k")
-mesh = SubResource("CylinderMesh_6uyk3")
-
-[node name="@MeshInstance3D@12" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.4, 0)
-material_override = SubResource("StandardMaterial3D_3dxu3")
-mesh = SubResource("CylinderMesh_sufsx")
+[node name="Model" type="Node3D" parent="." instance=ExtResource("1_7dgqq")]
+transform = Transform3D(4.0939, 0, 0, 0, 4.0939, 0, 0, 0, 4.0939, -0.00499866, 1.95, 0.00199782)

@@ -730,6 +730,7 @@ The host is the authoritative server and also plays.
 
 | Path | What it is |
 |---|---|
+| `models/scenery/<set>_<n>.glb` | Meshy models for the scenery (trees, rocks, props). `scripts/tools/build_obstacles.gd` uses one in place of the simple shapes when it exists: as tall as the old design, keeping its collision (narrowed to the model's footprint). Before adding one, run `scripts/tools/meshy_skin/pad_texture.py in.glb out.glb` (add `--fill-grey` for foliage) to fill the grey triangles Meshy leaves unpainted and pad the texture's edges; the extracted textures import VRAM-compressed at up to 1024 px |
 | `scripts/graphics.gd` | Autoload `Graphics`: the 3D resolution (pause menu: Auto draws 3D at no more than 1440p's worth of pixels and upscales it with AMD FSR, so a 4K screen renders 3D at 67%; Full is native; Performance caps at 1080p), saved in `user://settings.cfg`; menus and text stay at full resolution |
 | `scripts/perf_overlay.gd` | F3: a performance overlay (frame rate, script and physics time, draw calls, creatures on screen and chasing you) that also logs to `perf_log.csv` in the game's user folder, for tracking down slowdowns |
 | `scripts/save_game.gd` | Autoload `SaveGame`: save slots, autosave, and handing a save to the server to restore |

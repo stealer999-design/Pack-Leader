@@ -3,7 +3,10 @@ extends SceneTree
 ## scenes/obstacles/<biome>_<n>.tscn, so levels just place copies of them
 ## (turned and sized differently) instead of building them at load time.
 ## Each is a StaticBody3D with one collision cylinder and simple meshes, about
-## 2.4 units across. Run after changing a design:
+## 2.4 units across. When a Meshy model exists for one (models/scenery/
+## <biome>_<n>.glb), it replaces the simple meshes: scaled to the same height,
+## standing on the ground, keeping the design's collision. Run after changing a
+## design or adding a model:
 ##   godot --headless --path . -s res://scripts/tools/build_obstacles.gd
 
 const OUT := "res://scenes/obstacles"
@@ -26,12 +29,56 @@ func _init() -> void:
 			_root = StaticBody3D.new()
 			_root.name = "%s_%d" % [biome.capitalize(), i]
 			designs[biome][i].call()
+			_use_model("res://models/scenery/%s_%d.glb" % [biome, i])
 			var packed := PackedScene.new()
 			packed.pack(_root)
 			var path := "%s/%s_%d.tscn" % [OUT, biome, i]
 			print(path, ": ", error_string(ResourceSaver.save(packed, path)))
 			_root.free()
 	quit()
+
+
+## Swaps the design's simple meshes for a Meshy model, if there is one: as tall
+## as the design was, centred on it, standing on the ground.
+func _use_model(path: String) -> void:
+	if not ResourceLoader.exists(path):
+		return
+	var old := _bounds(_root)
+	for child in _root.get_children():
+		if child is MeshInstance3D:
+			_root.remove_child(child)
+			child.free()
+	var model: Node3D = (load(path) as PackedScene).instantiate()
+	var box := _bounds(model)
+	var k := old.size.y / maxf(box.size.y, 0.001)
+	model.scale = Vector3.ONE * k
+	var centre := box.get_center()
+	model.position = Vector3(-centre.x * k, -box.position.y * k, -centre.z * k)
+	model.name = "Model"
+	_root.add_child(model)
+	model.owner = _root  # saved as an instance of the .glb
+	# Never block further out than the model reaches (a slimmer model than the design).
+	var reach := minf(box.size.x, box.size.z) * k * 0.45
+	for child in _root.get_children():
+		if child is CollisionShape3D and child.shape is CylinderShape3D and child.shape.radius > reach:
+			child.shape.radius = reach
+	print("  model ", path, ": ", (box.size * k).snapped(Vector3.ONE * 0.01), " (was ", old.size.snapped(Vector3.ONE * 0.01), ")")
+
+
+## The combined box of every mesh under `node` (in `node`'s space).
+func _bounds(node: Node3D) -> AABB:
+	var box := AABB()
+	var first := true
+	for mesh: MeshInstance3D in node.find_children("*", "MeshInstance3D", true, false):
+		var xf := Transform3D.IDENTITY
+		var n: Node = mesh
+		while n != node:
+			xf = (n as Node3D).transform * xf
+			n = n.get_parent()
+		var b := xf * mesh.get_aabb()
+		box = b if first else box.merge(b)
+		first = false
+	return box
 
 
 # --- Greenmeadow -----------------------------------------------------------------
