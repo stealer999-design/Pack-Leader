@@ -76,10 +76,10 @@ const DOM_ANIMS := {"walk": "Walk", "run": "Run", "attack": "Swipe", "attack_fro
 ## panting idle, a trot (his only gait: diagonal pairs, a moment of float), a lunging bite with a head shake (his
 ## hit), a rear-back-and-heave Lava Spit, and a howl to the sky (his summons).
 const KOLEKO_MODEL := "res://models/koleko.glb"
-const KOLEKO_HEIGHT := 3.4
+const KOLEKO_HEIGHT := 2.72  ## (3.4 made him a little too big)
 const KOLEKO_ANIMS := {"walk": "Trot", "run": "Run", "attack": "Bite", "attack_from": 0.0, "attack_speed": 1.0,
 		"idle": "Idle", "special": ["Spit", 0.0, 1.0], "summon": ["Howl", 0.0, 1.0],
-		"run_from": 99.0, "walk_pace": 4.21, "run_pace": 4.86}  # Meshy units a second x his scale; he always trots
+		"run_from": 99.0, "walk_pace": 3.37, "run_pace": 3.89}  # Meshy units a second x his scale; he always trots
 
 ## The Bog Witch as a Meshy model: an idle, a walk (she never runs) and a spell
 ## cast for her poison bolts and her toxic puddles.
