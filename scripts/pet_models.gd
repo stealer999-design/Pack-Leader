@@ -11,7 +11,8 @@ const HEIGHT := {"cat": 1.25, "dog": 1.25}
 ## Per species: a colour multiplied into the model's texture (pale Meshy textures
 ## wash out in the bright sun).
 const TINT := {"bloomling": Color(0.92, 0.6, 0.68), "voltwing": Color(0.62, 0.74, 0.95)}
-## Per species with models/pets/<species>_core.json (from core_shapes.py): a
+## Per species with models/pets/<species>_emit.png: those parts of its texture
+## glow (an additive layer). Per species with models/pets/<species>_core.json (from core_shapes.py): a
 ## core of flickering fire inside the model, capsules riding its bones, seen
 ## through any gaps in its fur (Cinderhorn: it burns inside).
 static var _fire_mat: ShaderMaterial
@@ -57,6 +58,15 @@ static func build(body: MeshInstance3D, species: CreatureSpecies) -> AnimationPl
 				var mat := mesh.get_active_material(i).duplicate() as StandardMaterial3D
 				mat.albedo_color = TINT[key]
 				mesh.set_surface_override_material(i, mat)
+	var glow_path := DIR + key + "_emit.png"
+	if ResourceLoader.exists(glow_path):  # glowing parts (Magmashell's lava cracks): an additive layer
+		var glow := StandardMaterial3D.new()
+		glow.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		glow.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+		glow.albedo_texture = load(glow_path)
+		glow.albedo_color = Color(2.2, 1.6, 1.2)
+		for mesh: MeshInstance3D in scene.find_children("*", "MeshInstance3D", true, false):
+			mesh.material_overlay = glow
 	var core_path := DIR + key + "_core.json"
 	if FileAccess.file_exists(core_path):
 		_add_fire_core(scene, core_path)

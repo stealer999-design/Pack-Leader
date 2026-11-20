@@ -1153,6 +1153,10 @@ func _flash() -> void:
 		overlay.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 		overlay.albedo_color = Color(1, 1, 1, 0.55)
 		var meshes := body.find_children("*", "MeshInstance3D", true, false)
+		var kept := {}  # a model's own overlay (a glow layer) comes back after the flash
+		for mesh: MeshInstance3D in meshes:
+			if mesh.material_overlay != overlay:
+				kept[mesh] = mesh.material_overlay
 		for mesh: MeshInstance3D in meshes:
 			mesh.material_overlay = overlay
 		var fade := create_tween()
@@ -1160,7 +1164,7 @@ func _flash() -> void:
 		fade.tween_callback(func() -> void:
 			for mesh in meshes:
 				if is_instance_valid(mesh):
-					mesh.material_overlay = null)
+					mesh.material_overlay = kept.get(mesh))
 		return
 	_material.albedo_color = Color.WHITE
 	create_tween().tween_property(_material, "albedo_color", _body_color, 0.15)
