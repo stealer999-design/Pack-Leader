@@ -11,6 +11,9 @@ const HEIGHT := {"cat": 1.25, "dog": 1.25}
 ## Per species: a colour multiplied into the model's texture (pale Meshy textures
 ## wash out in the bright sun).
 const TINT := {"bloomling": Color(0.92, 0.6, 0.68)}
+## Per species: a glowing colour for the inside of the model, seen through any
+## gaps in it (Cinderhorn: molten red, as if it burns inside).
+const INNER_GLOW := {"cinderhorn": Color(0.85, 0.06, 0.02)}
 ## How far (Meshy units, x the model's scale) the walk cycle carries the body in a second.
 const WALK_PACE := 2.92
 
@@ -52,6 +55,17 @@ static func build(body: MeshInstance3D, species: CreatureSpecies) -> AnimationPl
 			for i in mesh.mesh.get_surface_count():
 				var mat := mesh.get_active_material(i).duplicate() as StandardMaterial3D
 				mat.albedo_color = TINT[key]
+				mesh.set_surface_override_material(i, mat)
+	if INNER_GLOW.has(key):  # the outside as usual, its inner faces drawn glowing
+		var glow := StandardMaterial3D.new()
+		glow.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		glow.cull_mode = BaseMaterial3D.CULL_FRONT
+		glow.albedo_color = INNER_GLOW[key]
+		for mesh: MeshInstance3D in scene.find_children("*", "MeshInstance3D", true, false):
+			for i in mesh.mesh.get_surface_count():
+				var mat := mesh.get_active_material(i).duplicate() as StandardMaterial3D
+				mat.cull_mode = BaseMaterial3D.CULL_BACK
+				mat.next_pass = glow
 				mesh.set_surface_override_material(i, mat)
 	var player: AnimationPlayer = scene.find_children("*", "AnimationPlayer", true, false).pop_front()
 	if player:
