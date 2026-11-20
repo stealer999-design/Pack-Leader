@@ -5,4 +5,4 @@ sand   ambientCG Ground097 (CC0, https://ambientcg.com/a/Ground097)
 graveyard  ambientCG Ground042 (CC0, https://ambientcg.com/a/Ground042)
 grass      ambientCG Ground037 (CC0, https://ambientcg.com/a/Ground037)
 snow       ambientCG Snow014 (CC0, https://ambientcg.com/a/Snow014)
-lava       ambientCG Lava002 (CC0, https://ambientcg.com/a/Lava002), with its emission map
+lava       ambientCG Rock035 (CC0, https://ambientcg.com/a/Rock035): black rock for Cinderpeak Caldera
