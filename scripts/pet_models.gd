@@ -10,7 +10,7 @@ const DIR := "res://models/pets/"
 const HEIGHT := {"cat": 1.25, "dog": 1.25}
 ## Per species: a colour multiplied into the model's texture (pale Meshy textures
 ## wash out in the bright sun).
-const TINT := {"bloomling": Color(0.92, 0.6, 0.68)}
+const TINT := {"bloomling": Color(0.92, 0.6, 0.68), "voltwing": Color(0.62, 0.74, 0.95)}
 ## Per species with models/pets/<species>_core.json (from core_shapes.py): a
 ## core of flickering fire inside the model, capsules riding its bones, seen
 ## through any gaps in its fur (Cinderhorn: it burns inside).
