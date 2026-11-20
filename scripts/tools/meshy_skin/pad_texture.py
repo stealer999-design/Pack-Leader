@@ -23,7 +23,7 @@ m = np.asarray(mask) > 0
 if '--resaturate' in sys.argv:  # pale, washed-out greens back to leaf green (bark browns untouched)
 	hsv = np.asarray(pic.convert('HSV')).astype(np.float32)
 	green = (hsv[..., 0] > 38) & (hsv[..., 0] < 110)
-	weak = green & (hsv[..., 1] < 160)
+	weak = green & (hsv[..., 1] < 160) & (hsv[..., 1] >= 70)  # the greyest are left for --fill-grey
 	hsv[..., 1] = np.where(weak, np.maximum(hsv[..., 1], 175), hsv[..., 1])
 	hsv[..., 2] = np.where(weak, hsv[..., 2] * 0.88, hsv[..., 2])
 	print('resaturated %.1f%%' % (weak.mean() * 100))

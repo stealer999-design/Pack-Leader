@@ -2,14 +2,14 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://0mlankucvpd"
+uid="uid://bppitv4xaanst"
 path.s3tc="res://.godot/imported/meadow_1_0.png-5129cc4ffaa907958c669377491bcf64.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
 }
 generator_parameters={
-"md5": "27e4a69a80f892cf2323fd2066126b1b"
+"md5": "0a0f19c2413a266c76933f2031811ce8"
 }
 
 [deps]
