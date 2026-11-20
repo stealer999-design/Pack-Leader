@@ -5,42 +5,309 @@
  "lib": "../quad_lib.py",
  "anims": "../dom/cat_anims.py",
  "bones": {
-  "Hips": ["", [0, -0.25, -0.3]],
-  "Spine1": ["Hips", [0, -0.22, -0.1]],
-  "Spine2": ["Spine1", [0, -0.2, 0.1]],
-  "Chest": ["Spine2", [0, -0.2, 0.3]],
-  "Neck": ["Chest", [0, 0.0, 0.55]],
-  "Head": ["Neck", [0, 0.25, 0.68]],
-  "Jaw": ["Head", [0, 0.23, 0.86]],
-  "Tail1": ["Hips", [0, 0.18, -0.48]],
-  "Tail2": ["Tail1", [0, 0.24, -0.62]],
-  "Tail3": ["Tail2", [0, 0.28, -0.76]],
-  "Tail4": ["Tail3", [0, 0.3, -0.86]],
-  "FL_Scap": ["Chest", [-0.14, -0.1, 0.28]],
-  "FL_Upper": ["FL_Scap", [-0.17, -0.32, 0.3]],
-  "FL_Lower": ["FL_Upper", [-0.13, -0.5, 0.38]],
-  "FL_Paw": ["FL_Lower", [-0.07, -0.65, 0.48]],
-  "FR_Scap": ["Chest", [0.14, -0.1, 0.28]],
-  "FR_Upper": ["FR_Scap", [0.17, -0.32, 0.3]],
-  "FR_Lower": ["FR_Upper", [0.13, -0.5, 0.38]],
-  "FR_Paw": ["FR_Lower", [0.07, -0.65, 0.48]],
-  "RL_Upper": ["Hips", [-0.17, -0.3, -0.24]],
-  "RL_Lower": ["RL_Upper", [-0.14, -0.48, -0.29]],
-  "RL_Paw": ["RL_Lower", [-0.11, -0.65, -0.32]],
-  "RR_Upper": ["Hips", [0.17, -0.3, -0.24]],
-  "RR_Lower": ["RR_Upper", [0.14, -0.48, -0.29]],
-  "RR_Paw": ["RR_Lower", [0.11, -0.65, -0.32]]
+  "Hips": [
+   "",
+   [
+    0,
+    -0.06,
+    -0.2
+   ]
+  ],
+  "Spine1": [
+   "Hips",
+   [
+    0,
+    -0.02,
+    0.0
+   ]
+  ],
+  "Spine2": [
+   "Spine1",
+   [
+    0,
+    0.0,
+    0.2
+   ]
+  ],
+  "Chest": [
+   "Spine2",
+   [
+    0,
+    0.02,
+    0.42
+   ]
+  ],
+  "Neck": [
+   "Chest",
+   [
+    0,
+    0.2,
+    0.64
+   ]
+  ],
+  "Head": [
+   "Neck",
+   [
+    0,
+    0.32,
+    0.8
+   ]
+  ],
+  "Jaw": [
+   "Head",
+   [
+    0,
+    0.2,
+    0.92
+   ]
+  ],
+  "Tail1": [
+   "Hips",
+   [
+    0,
+    -0.06,
+    -0.36
+   ]
+  ],
+  "Tail2": [
+   "Tail1",
+   [
+    0,
+    -0.22,
+    -0.54
+   ]
+  ],
+  "Tail3": [
+   "Tail2",
+   [
+    0,
+    -0.28,
+    -0.72
+   ]
+  ],
+  "Tail4": [
+   "Tail3",
+   [
+    0,
+    -0.28,
+    -0.86
+   ]
+  ],
+  "FL_Scap": [
+   "Chest",
+   [
+    -0.12,
+    0.0,
+    0.44
+   ]
+  ],
+  "FL_Upper": [
+   "FL_Scap",
+   [
+    -0.14,
+    -0.14,
+    0.44
+   ]
+  ],
+  "FL_Lower": [
+   "FL_Upper",
+   [
+    -0.11,
+    -0.3,
+    0.46
+   ]
+  ],
+  "FL_Paw": [
+   "FL_Lower",
+   [
+    -0.09,
+    -0.44,
+    0.5
+   ]
+  ],
+  "FR_Scap": [
+   "Chest",
+   [
+    0.12,
+    0.0,
+    0.44
+   ]
+  ],
+  "FR_Upper": [
+   "FR_Scap",
+   [
+    0.14,
+    -0.14,
+    0.44
+   ]
+  ],
+  "FR_Lower": [
+   "FR_Upper",
+   [
+    0.11,
+    -0.3,
+    0.46
+   ]
+  ],
+  "FR_Paw": [
+   "FR_Lower",
+   [
+    0.09,
+    -0.44,
+    0.5
+   ]
+  ],
+  "RL_Upper": [
+   "Hips",
+   [
+    -0.1,
+    -0.18,
+    -0.4
+   ]
+  ],
+  "RL_Lower": [
+   "RL_Upper",
+   [
+    -0.1,
+    -0.34,
+    -0.36
+   ]
+  ],
+  "RL_Paw": [
+   "RL_Lower",
+   [
+    -0.18,
+    -0.44,
+    -0.18
+   ]
+  ],
+  "RR_Upper": [
+   "Hips",
+   [
+    0.1,
+    -0.18,
+    -0.4
+   ]
+  ],
+  "RR_Lower": [
+   "RR_Upper",
+   [
+    0.1,
+    -0.34,
+    -0.36
+   ]
+  ],
+  "RR_Paw": [
+   "RR_Lower",
+   [
+    0.18,
+    -0.44,
+    -0.18
+   ]
+  ]
  },
- "spine": ["Hips", "Spine1", "Spine2", "Chest", "Neck"],
- "spine_end": [0, 0.25, 0.68],
- "legs": [
-  {"bones": ["FL_Scap", "FL_Upper", "FL_Lower", "FL_Paw"], "end": [-0.06, -0.7, 0.53], "radius": 0.1, "top": -0.36},
-  {"bones": ["FR_Scap", "FR_Upper", "FR_Lower", "FR_Paw"], "end": [0.06, -0.7, 0.53], "radius": 0.1, "top": -0.36},
-  {"bones": ["RL_Upper", "RL_Lower", "RL_Paw"], "end": [-0.1, -0.7, -0.3], "radius": 0.1, "top": -0.36},
-  {"bones": ["RR_Upper", "RR_Lower", "RR_Paw"], "end": [0.1, -0.7, -0.3], "radius": 0.1, "top": -0.36}
+ "spine": [
+  "Hips",
+  "Spine1",
+  "Spine2",
+  "Chest",
+  "Neck"
  ],
- "tail": {"bones": ["Tail1", "Tail2", "Tail3", "Tail4"], "end": [0, 0.32, -0.95], "radius": 0.14, "start_z": -0.47},
- "head": {"center": [0, 0.3, 0.72], "radius": 0.36, "min_y": 0.0, "front_z": 0.9},
- "jaw": {"z0": 0.86, "z1": 0.9, "y0": 0.2, "y1": 0.26},
+ "spine_end": [
+  0,
+  0.32,
+  0.8
+ ],
+ "legs": [
+  {
+   "bones": [
+    "FL_Scap",
+    "FL_Upper",
+    "FL_Lower",
+    "FL_Paw"
+   ],
+   "end": [
+    -0.092,
+    -0.52,
+    0.53
+   ],
+   "radius": 0.1,
+   "top": -0.2
+  },
+  {
+   "bones": [
+    "FR_Scap",
+    "FR_Upper",
+    "FR_Lower",
+    "FR_Paw"
+   ],
+   "end": [
+    0.09,
+    -0.52,
+    0.53
+   ],
+   "radius": 0.1,
+   "top": -0.2
+  },
+  {
+   "bones": [
+    "RL_Upper",
+    "RL_Lower",
+    "RL_Paw"
+   ],
+   "end": [
+    -0.194,
+    -0.52,
+    -0.16
+   ],
+   "radius": 0.1,
+   "top": -0.2
+  },
+  {
+   "bones": [
+    "RR_Upper",
+    "RR_Lower",
+    "RR_Paw"
+   ],
+   "end": [
+    0.194,
+    -0.52,
+    -0.16
+   ],
+   "radius": 0.1,
+   "top": -0.2
+  }
+ ],
+ "tail": {
+  "bones": [
+   "Tail1",
+   "Tail2",
+   "Tail3",
+   "Tail4"
+  ],
+  "end": [
+   0,
+   -0.24,
+   -0.96
+  ],
+  "radius": 0.1,
+  "start_z": -0.34
+ },
+ "head": {
+  "center": [
+   0,
+   0.32,
+   0.82
+  ],
+  "radius": 0.32,
+  "min_y": -0.05,
+  "front_z": 0.94
+ },
+ "jaw": {
+  "z0": 0.92,
+  "z1": 0.97,
+  "y0": 0.16,
+  "y1": 0.22
+ },
  "smooth": 3
 }

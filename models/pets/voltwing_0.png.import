@@ -2,14 +2,14 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bqtbj8d4kbo0l"
+uid="uid://cew0vkafnldew"
 path.s3tc="res://.godot/imported/voltwing_0.png-f9b3e0108c89c39d35c93bd6754b8e32.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
 }
 generator_parameters={
-"md5": "ffa633e4629c1c47e608008f3c8ba090"
+"md5": "94bbf0a1aac0e26cc91f6049b89e4e37"
 }
 
 [deps]
