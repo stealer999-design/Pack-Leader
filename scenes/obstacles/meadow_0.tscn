@@ -12,4 +12,4 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 0)
 shape = SubResource("CylinderShape3D_qeqo3")
 
 [node name="Model" type="Node3D" parent="." instance=ExtResource("1_okgf0")]
-transform = Transform3D(3.93216, 0, 0, 0, 3.93216, 0, 0, 0, 3.93216, -0.00671813, 1.81152, -0.0115193)
+transform = Transform3D(3.95537, 0, 0, 0, 3.95537, 0, 0, 0, 3.95537, 0.00772485, 1.79324, -0.0144846)
