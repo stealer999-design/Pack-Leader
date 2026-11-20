@@ -26,7 +26,13 @@ var _phase := 0.0
 var _time := 0.0
 
 
-func setup(owner_creature: Creature, model_body: Node3D, kind: String) -> void:
+## A Meshy model's animations (PetModels): played instead of moving the shapes.
+var anim: AnimationPlayer
+var _one_shot_left := 0.0
+
+
+func setup(owner_creature: Creature, model_body: Node3D, kind: String, player: AnimationPlayer = null) -> void:
+	anim = player
 	creature = owner_creature
 	body = model_body
 	body_type = kind
@@ -58,6 +64,9 @@ func _process(delta: float) -> void:
 	_last_position = pos
 	_time += delta
 	var settle := 1.0 - exp(-10.0 * delta)
+	if anim:
+		_animate_meshy(delta)
+		return
 	if creature.fainted:
 		for pivot in _legs + _wings:
 			pivot.rotation = pivot.rotation.lerp(Vector3.ZERO, settle)
@@ -82,6 +91,34 @@ func _process(delta: float) -> void:
 			_walk_upright(step, stride, breathe)
 		_:
 			_walk_four_legs(step, stride, breathe)
+
+
+## A Meshy model: walk at the pace it moves, stand idle, and play one-off moves.
+func _animate_meshy(delta: float) -> void:
+	if creature.fainted:
+		anim.pause()
+		return
+	if _one_shot_left > 0.0:
+		_one_shot_left -= delta
+		return
+	if _speed > 0.3:
+		var scale_k: float = body.get_node("Meshy").get_meta("scale", 1.0) * creature.body_size()
+		var pace := PetModels.WALK_PACE * scale_k
+		if anim.current_animation != "Walk":
+			anim.play("Walk", 0.2)
+		anim.speed_scale = clampf(_speed / maxf(pace, 0.01), 0.4, 2.5)
+	elif anim.current_animation != "Idle" or not anim.is_playing():
+		anim.speed_scale = 1.0
+		anim.play("Idle", 0.25)
+
+
+## A one-off animation (an attack, an ability), if the model has it.
+func play_once(anim_name: String, speed := 1.0) -> void:
+	if anim == null or not anim.has_animation(anim_name) or creature.fainted:
+		return
+	anim.speed_scale = 1.0
+	anim.play(anim_name, 0.08, speed)
+	_one_shot_left = anim.get_animation(anim_name).length / speed
 
 
 func _walk_four_legs(step: float, stride: float, breathe: float) -> void:

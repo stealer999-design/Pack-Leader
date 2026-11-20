@@ -132,6 +132,7 @@ var _anime_style := false
 @onready var health: Health = $Health
 @onready var model: Node3D = $Model
 @onready var body: MeshInstance3D = $Model/Body
+var _meshy: AnimationPlayer  ## a Meshy model's animations (PetModels), or null
 @onready var collision: CollisionShape3D = $CollisionShape3D
 @onready var ring: MeshInstance3D = $Ring
 @onready var overhead: Node3D = $Overhead
@@ -1061,11 +1062,15 @@ func _build_body() -> void:
 	_anime_style = is_player_pet()
 	_material = StandardMaterial3D.new()  # a fresh one: each look changes it
 	_material.albedo_color = species.color
-	CreatureModel.build(body, species.body_type, _material, species.color, species.feature, _anime_style)
-	if _anime_style:
-		AnimeLook.apply(body, 0.035)
+	_meshy = null
+	if PetModels.has_model(species):  # a Meshy model: textured, so no anime or realistic restyle
+		_meshy = PetModels.build(body, species)
 	else:
-		ModelLook.apply(body)
+		CreatureModel.build(body, species.body_type, _material, species.color, species.feature, _anime_style)
+		if _anime_style:
+			AnimeLook.apply(body, 0.035)
+		else:
+			ModelLook.apply(body)
 	_body_color = _material.albedo_color
 	if fainted:
 		_material.albedo_color = _body_color.darkened(0.6)
@@ -1077,7 +1082,7 @@ func _build_body() -> void:
 	var animator := CreatureAnimator.new()
 	animator.name = "Animator"
 	add_child(animator)
-	animator.setup(self, body, species.body_type)
+	animator.setup(self, body, species.body_type, _meshy)
 
 
 func _apply_ownership() -> void:
@@ -1142,12 +1147,30 @@ func _on_health_changed(current: float, maximum: float) -> void:
 func _flash() -> void:
 	if fainted:
 		return
+	if _meshy:  # a textured model: a white layer that fades
+		var overlay := StandardMaterial3D.new()
+		overlay.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		overlay.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		overlay.albedo_color = Color(1, 1, 1, 0.55)
+		var meshes := body.find_children("*", "MeshInstance3D", true, false)
+		for mesh: MeshInstance3D in meshes:
+			mesh.material_overlay = overlay
+		var fade := create_tween()
+		fade.tween_property(overlay, "albedo_color:a", 0.0, 0.15)
+		fade.tween_callback(func() -> void:
+			for mesh in meshes:
+				if is_instance_valid(mesh):
+					mesh.material_overlay = null)
+		return
 	_material.albedo_color = Color.WHITE
 	create_tween().tween_property(_material, "albedo_color", _body_color, 0.15)
 
 
 @rpc("authority", "call_local", "unreliable")
 func _lunge() -> void:
+	var animator := get_node_or_null("Animator") as CreatureAnimator
+	if animator:
+		animator.play_once("Swipe")
 	if owner_id != 0:  # pets' attacks make a sound (wild creatures' don't, to keep fights readable)
 		var sound := "arrow_swish" if species.is_archer() else "zap" if species.is_ranged() else "hit"
 		SoundFX.play(self, sound, global_position)
@@ -1165,6 +1188,9 @@ func _ability_used(cooldown: float) -> void:
 	if species.ability is ArcherShotAbility and (species.ability as ArcherShotAbility).mode == "rain":
 		sound = "arrow_rain"  # a barrage the length of the rain
 	SoundFX.play(self, sound, global_position, 0.03)
+	var animator := get_node_or_null("Animator") as CreatureAnimator
+	if animator:
+		animator.play_once("Hiss", 1.4)
 	var tween := create_tween()
 	tween.tween_property(model, "scale", Vector3.ONE * body_size() * 1.25, 0.08)
 	tween.tween_property(model, "scale", Vector3.ONE * body_size(), 0.15)
