@@ -31,8 +31,8 @@ const PHOTO := {
 	"snow": {"tile": 5.0, "tint": Color(0.8, 0.83, 0.88), "bumps": 1.5},
 	# Brick paving at every start camp ("dirt") and town square ("cobble"). A
 	# regular pattern: one size only (two would blur the bricks into each other).
-	"dirt": {"files": "brick", "tile": 4.5, "tint": Color(0.58, 0.52, 0.5), "bumps": 1.6, "regular": true},
-	"cobble": {"files": "brick", "tile": 4.5, "tint": Color(0.58, 0.52, 0.5), "bumps": 1.6, "regular": true},
+	"dirt": {"files": "brick", "tile": 9.0, "tint": Color(0.58, 0.52, 0.5), "bumps": 1.6, "regular": true},
+	"cobble": {"files": "brick", "tile": 9.0, "tint": Color(0.58, 0.52, 0.5), "bumps": 1.6, "regular": true},
 	"lava": {"tile": 5.0, "tint": Color(1.35, 1.0, 0.85), "bumps": 1.3},  # black rock (the props glow against it)
 	"graveyard": {"tile": 4.0, "tint": Color(0.58, 0.58, 0.64), "bumps": 1.2},  # gloomier than the photo
 }
