@@ -44,6 +44,7 @@ static func build(body: MeshInstance3D, species: CreatureSpecies) -> AnimationPl
 	scene.position = Vector3(-box.get_center().x * k, -box.position.y * k, -box.get_center().z * k)
 	scene.rotation.y = PI  # Meshy models face +Z
 	scene.position = scene.position.rotated(Vector3.UP, PI)
+	scene.position.y -= body.position.y  # Body sits raised (for the code-built shapes); feet back on the ground
 	scene.set_meta("scale", k)
 	var key := species.display_name.to_lower().replace(" ", "_")
 	if TINT.has(key):
