@@ -26,7 +26,7 @@ void vertex() {
 
 void fragment() {
 	vec2 uv_a = world_pos.xz / tile_a;
-	vec2 uv_b = world_pos.xz / tile_b + vec2(0.37, 0.71);
+	vec2 uv_b = world_pos.xz / tile_b + (tile_b == tile_a ? vec2(0.0) : vec2(0.37, 0.71));  // equal sizes: one pattern
 	float b = smoothstep(0.38, 0.62, texture(blend_noise, world_pos.xz / blend_size).r);
 	ALBEDO = mix(texture(albedo_tex, uv_a).rgb, texture(albedo_tex, uv_b).rgb, b) * tint;
 	EMISSION = mix(texture(emission_tex, uv_a).rgb, texture(emission_tex, uv_b).rgb, b) * emission_strength;

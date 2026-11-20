@@ -22,13 +22,17 @@ const BIOME_STYLES := ["grass", "snow", "sand", "swamp", "graveyard", "sand", "l
 
 ## Styles with a photo-scanned set in textures/ground/ (<style>_albedo.png,
 ## _normal.png, _roughness.png, and optionally _emission.png for parts that
-## glow): drawn with ground_photo.gdshader instead of
+## glow; "files" names a set another style already uses): drawn with ground_photo.gdshader instead of
 ## being painted. Per style: tile size in world units and a colour tint.
 const PHOTO_DIR := "res://textures/ground/"
 const PHOTO := {
 	"sand": {"tile": 5.0, "tint": Color(0.8, 0.72, 0.62), "bumps": 1.6},
 	"grass": {"tile": 4.0, "tint": Color(0.6, 0.72, 0.48), "bumps": 1.2},  # darker and greener in the bright sun
 	"snow": {"tile": 5.0, "tint": Color(0.8, 0.83, 0.88), "bumps": 1.5},
+	# Brick paving at every start camp ("dirt") and town square ("cobble"). A
+	# regular pattern: one size only (two would blur the bricks into each other).
+	"dirt": {"files": "brick", "tile": 4.5, "tint": Color(0.58, 0.52, 0.5), "bumps": 1.6, "regular": true},
+	"cobble": {"files": "brick", "tile": 4.5, "tint": Color(0.58, 0.52, 0.5), "bumps": 1.6, "regular": true},
 	"lava": {"tile": 5.0, "tint": Color(1.35, 1.0, 0.85), "bumps": 1.3},  # black rock (the props glow against it)
 	"graveyard": {"tile": 4.0, "tint": Color(0.58, 0.58, 0.64), "bumps": 1.2},  # gloomier than the photo
 }
@@ -39,7 +43,7 @@ static var _blend_noise: Texture2D
 
 ## A floor material in `style`, built around `color`.
 static func material(style: String, color: Color) -> Material:
-	if PHOTO.has(style) and ResourceLoader.exists(PHOTO_DIR + style + "_albedo.png"):
+	if PHOTO.has(style) and ResourceLoader.exists(PHOTO_DIR + PHOTO[style].get("files", style) + "_albedo.png"):
 		return photo_material(style)
 	var key := "%s/%s" % [style, color.to_html(false)]
 	if not _cache.has(key):
@@ -60,19 +64,20 @@ static func material(style: String, color: Color) -> Material:
 static func photo_material(style: String) -> ShaderMaterial:
 	var key := "photo/" + style
 	if not _cache.has(key):
+		var spec: Dictionary = PHOTO[style]
+		var files: String = spec.get("files", style)
 		var mat := ShaderMaterial.new()
 		mat.shader = load("res://scripts/ground_photo.gdshader")
-		mat.set_shader_parameter("albedo_tex", load(PHOTO_DIR + style + "_albedo.png"))
-		mat.set_shader_parameter("normal_tex", load(PHOTO_DIR + style + "_normal.png"))
-		mat.set_shader_parameter("rough_tex", load(PHOTO_DIR + style + "_roughness.png"))
+		mat.set_shader_parameter("albedo_tex", load(PHOTO_DIR + files + "_albedo.png"))
+		mat.set_shader_parameter("normal_tex", load(PHOTO_DIR + files + "_normal.png"))
+		mat.set_shader_parameter("rough_tex", load(PHOTO_DIR + files + "_roughness.png"))
 		mat.set_shader_parameter("blend_noise", _noise())
-		var spec: Dictionary = PHOTO[style]
 		mat.set_shader_parameter("tile_a", spec.tile)
-		mat.set_shader_parameter("tile_b", spec.tile * 2.66)
+		mat.set_shader_parameter("tile_b", spec.tile if spec.get("regular", false) else spec.tile * 2.66)
 		mat.set_shader_parameter("tint", spec.tint)
 		mat.set_shader_parameter("normal_strength", spec.get("bumps", 1.0))
-		if ResourceLoader.exists(PHOTO_DIR + style + "_emission.png"):
-			mat.set_shader_parameter("emission_tex", load(PHOTO_DIR + style + "_emission.png"))
+		if ResourceLoader.exists(PHOTO_DIR + files + "_emission.png"):
+			mat.set_shader_parameter("emission_tex", load(PHOTO_DIR + files + "_emission.png"))
 			mat.set_shader_parameter("emission_strength", spec.get("glow", 2.0))
 		_cache[key] = mat
 	return _cache[key]
