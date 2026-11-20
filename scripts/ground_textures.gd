@@ -34,6 +34,7 @@ const PHOTO := {
 	"dirt": {"files": "brick", "tile": 9.0, "tint": Color(0.58, 0.52, 0.5), "bumps": 1.6, "regular": true},
 	"cobble": {"files": "brick", "tile": 9.0, "tint": Color(0.58, 0.52, 0.5), "bumps": 1.6, "regular": true},
 	"lava": {"tile": 5.0, "tint": Color(1.35, 1.0, 0.85), "bumps": 1.3},  # black rock (the props glow against it)
+	"swamp": {"tile": 4.0, "tint": Color(0.8, 0.85, 0.66), "bumps": 1.8, "wet": 1.0},  # slimy: glossy and wet
 	"graveyard": {"tile": 4.0, "tint": Color(0.58, 0.58, 0.64), "bumps": 1.2},  # gloomier than the photo
 }
 
@@ -76,6 +77,7 @@ static func photo_material(style: String) -> ShaderMaterial:
 		mat.set_shader_parameter("tile_b", spec.tile if spec.get("regular", false) else spec.tile * 2.66)
 		mat.set_shader_parameter("tint", spec.tint)
 		mat.set_shader_parameter("normal_strength", spec.get("bumps", 1.0))
+		mat.set_shader_parameter("wetness", spec.get("wet", 0.0))
 		if ResourceLoader.exists(PHOTO_DIR + files + "_emission.png"):
 			mat.set_shader_parameter("emission_tex", load(PHOTO_DIR + files + "_emission.png"))
 			mat.set_shader_parameter("emission_strength", spec.get("glow", 2.0))

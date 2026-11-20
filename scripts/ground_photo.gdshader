@@ -15,6 +15,7 @@ uniform float tile_b = 13.3;  // the second, larger copy
 uniform float blend_size = 45.0;
 uniform vec3 tint : source_color = vec3(1.0);
 uniform float normal_strength = 1.0;
+uniform float wetness = 0.0;  // 0 dry .. 1 slick: lowers roughness so it shines (the bog's slime)
 
 varying vec3 world_pos;
 varying vec3 world_normal;
@@ -30,7 +31,12 @@ void fragment() {
 	float b = smoothstep(0.38, 0.62, texture(blend_noise, world_pos.xz / blend_size).r);
 	ALBEDO = mix(texture(albedo_tex, uv_a).rgb, texture(albedo_tex, uv_b).rgb, b) * tint;
 	EMISSION = mix(texture(emission_tex, uv_a).rgb, texture(emission_tex, uv_b).rgb, b) * emission_strength;
-	ROUGHNESS = mix(texture(rough_tex, uv_a).r, texture(rough_tex, uv_b).r, b);
+	float rough = mix(texture(rough_tex, uv_a).r, texture(rough_tex, uv_b).r, b);
+	// Wet ground: glossier, slicker in patches (the slow noise), a touch darker.
+	float wet = wetness * mix(0.7, 1.0, texture(blend_noise, world_pos.xz / (blend_size * 0.4)).r);
+	ROUGHNESS = mix(rough, 0.04, wet);
+	SPECULAR = mix(0.5, 1.0, wet);
+	ALBEDO *= mix(1.0, 0.7, wet);
 	// Normal map (OpenGL: red along +x, green along +z of the ground), in world space.
 	vec2 n = mix(texture(normal_tex, uv_a).rg, texture(normal_tex, uv_b).rg, b) * 2.0 - 1.0;
 	n *= normal_strength;
