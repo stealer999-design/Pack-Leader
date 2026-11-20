@@ -29,7 +29,7 @@ const PHOTO := {
 	"sand": {"tile": 5.0, "tint": Color(0.8, 0.72, 0.62), "bumps": 1.6},
 	"grass": {"tile": 4.0, "tint": Color(0.6, 0.72, 0.48), "bumps": 1.2},  # darker and greener in the bright sun
 	"snow": {"tile": 5.0, "tint": Color(0.8, 0.83, 0.88), "bumps": 1.5},
-	"lava": {"tile": 8.0, "tint": Color(0.42, 0.38, 0.38), "bumps": 1.0, "glow": 1.1},  # dark rock, glowing seams
+	"lava": {"tile": 4.0, "tint": Color(0.42, 0.38, 0.38), "bumps": 1.0, "glow": 1.1},  # dark rock, glowing seams
 	"graveyard": {"tile": 4.0, "tint": Color(0.58, 0.58, 0.64), "bumps": 1.2},  # gloomier than the photo
 }
 
