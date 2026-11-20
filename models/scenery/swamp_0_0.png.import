@@ -2,14 +2,14 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b5p1dmn1mryh0"
+uid="uid://bcwptnn03xhsl"
 path.s3tc="res://.godot/imported/swamp_0_0.png-2737b60e0244979a9ca5bbf8d28206bc.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
 }
 generator_parameters={
-"md5": "e41f81b374be6d487db1156963efb0f9"
+"md5": "7bd41ca4e5a81a3f433421f034e20ea5"
 }
 
 [deps]
