@@ -13,7 +13,7 @@ p = j['meshes'][0]['primitives'][0]; a = p['attributes']
 P0 = acc(j, bn, a['POSITION']).astype(float)
 yaw = np.radians(cfg['yaw_deg']); c, s = np.cos(-yaw), np.sin(-yaw)
 R = np.array([[c, 0, s], [0, 1, 0], [-s, 0, c]])
-P = P0 @ R.T
+P = P0 @ R.T * cfg.get('scale', 1.0)  # scale: so a small model takes the Dom-sized animations
 def put(i, arr):
 	ac = j['accessors'][i]; v = j['bufferViews'][ac['bufferView']]; off = v.get('byteOffset', 0) + ac.get('byteOffset', 0)
 	b = arr.tobytes(); bn[off:off + len(b)] = b
