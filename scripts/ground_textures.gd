@@ -20,11 +20,22 @@ const TILE_UNITS := 8.0  ## World units one tile covers.
 ## Biome index (BiomeDB) -> the path's style.
 const BIOME_STYLES := ["grass", "snow", "sand", "swamp", "graveyard", "sand", "lava", "snow"]
 
+## Styles with a photo-scanned set in textures/ground/ (<style>_albedo.png,
+## _normal.png, _roughness.png): drawn with ground_photo.gdshader instead of
+## being painted. Per style: tile size in world units and a colour tint.
+const PHOTO_DIR := "res://textures/ground/"
+const PHOTO := {
+	"sand": {"tile": 5.0, "tint": Color(0.8, 0.72, 0.62), "bumps": 1.6},
+}
+
 static var _cache := {}
+static var _blend_noise: Texture2D
 
 
 ## A floor material in `style`, built around `color`.
-static func material(style: String, color: Color) -> StandardMaterial3D:
+static func material(style: String, color: Color) -> Material:
+	if PHOTO.has(style) and ResourceLoader.exists(PHOTO_DIR + style + "_albedo.png"):
+		return photo_material(style)
 	var key := "%s/%s" % [style, color.to_html(false)]
 	if not _cache.has(key):
 		var mat := StandardMaterial3D.new()
@@ -38,6 +49,41 @@ static func material(style: String, color: Color) -> StandardMaterial3D:
 		mat.roughness = 0.95
 		_cache[key] = mat
 	return _cache[key]
+
+
+## A photo-scanned ground (one per style, shared by every level using it).
+static func photo_material(style: String) -> ShaderMaterial:
+	var key := "photo/" + style
+	if not _cache.has(key):
+		var mat := ShaderMaterial.new()
+		mat.shader = load("res://scripts/ground_photo.gdshader")
+		mat.set_shader_parameter("albedo_tex", load(PHOTO_DIR + style + "_albedo.png"))
+		mat.set_shader_parameter("normal_tex", load(PHOTO_DIR + style + "_normal.png"))
+		mat.set_shader_parameter("rough_tex", load(PHOTO_DIR + style + "_roughness.png"))
+		mat.set_shader_parameter("blend_noise", _noise())
+		var spec: Dictionary = PHOTO[style]
+		mat.set_shader_parameter("tile_a", spec.tile)
+		mat.set_shader_parameter("tile_b", spec.tile * 2.66)
+		mat.set_shader_parameter("tint", spec.tint)
+		mat.set_shader_parameter("normal_strength", spec.get("bumps", 1.0))
+		_cache[key] = mat
+	return _cache[key]
+
+
+## A soft, seamless noise that decides where the two sizes of a photo ground show.
+static func _noise() -> Texture2D:
+	if _blend_noise == null:
+		var noise := FastNoiseLite.new()
+		noise.frequency = 0.02
+		noise.fractal_octaves = 3
+		var tex := NoiseTexture2D.new()
+		tex.width = 256
+		tex.height = 256
+		tex.seamless = true
+		tex.generate_mipmaps = true
+		tex.noise = noise
+		_blend_noise = tex
+	return _blend_noise
 
 
 ## Gives a painted material bumps from its own paint (darker = lower), so the
