@@ -11,9 +11,10 @@ const HEIGHT := {"cat": 1.25, "dog": 1.25}
 ## Per species: a colour multiplied into the model's texture (pale Meshy textures
 ## wash out in the bright sun).
 const TINT := {"bloomling": Color(0.92, 0.6, 0.68)}
-## Per species: a glowing colour for the inside of the model, seen through any
-## gaps in it (Cinderhorn: molten red, as if it burns inside).
-const INNER_GLOW := {"cinderhorn": Color(0.85, 0.06, 0.02)}
+## Per species with models/pets/<species>_core.json (from core_shapes.py): a
+## core of flickering fire inside the model, capsules riding its bones, seen
+## through any gaps in its fur (Cinderhorn: it burns inside).
+static var _fire_mat: ShaderMaterial
 ## How far (Meshy units, x the model's scale) the walk cycle carries the body in a second.
 const WALK_PACE := 2.92
 
@@ -56,20 +57,61 @@ static func build(body: MeshInstance3D, species: CreatureSpecies) -> AnimationPl
 				var mat := mesh.get_active_material(i).duplicate() as StandardMaterial3D
 				mat.albedo_color = TINT[key]
 				mesh.set_surface_override_material(i, mat)
-	if INNER_GLOW.has(key):  # the outside as usual, its inner faces drawn glowing
-		var glow := StandardMaterial3D.new()
-		glow.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-		glow.cull_mode = BaseMaterial3D.CULL_FRONT
-		glow.albedo_color = INNER_GLOW[key]
-		for mesh: MeshInstance3D in scene.find_children("*", "MeshInstance3D", true, false):
-			for i in mesh.mesh.get_surface_count():
-				var mat := mesh.get_active_material(i).duplicate() as StandardMaterial3D
-				mat.cull_mode = BaseMaterial3D.CULL_BACK
-				mat.next_pass = glow
-				mesh.set_surface_override_material(i, mat)
+	var core_path := DIR + key + "_core.json"
+	if FileAccess.file_exists(core_path):
+		_add_fire_core(scene, core_path)
 	var player: AnimationPlayer = scene.find_children("*", "AnimationPlayer", true, false).pop_front()
 	if player:
 		for anim_name in ["Walk", "Idle", "Run"]:
 			if player.has_animation(anim_name):
 				player.get_animation(anim_name).loop_mode = Animation.LOOP_LINEAR
 	return player
+
+
+## Capsules (and a sphere for the head) of flickering fire, each attached to its
+## bone so it moves with the body.
+static func _add_fire_core(scene: Node3D, path: String) -> void:
+	var skeleton: Skeleton3D = scene.find_children("*", "Skeleton3D", true, false).pop_front()
+	if skeleton == null:
+		return
+	if _fire_mat == null:
+		_fire_mat = ShaderMaterial.new()
+		_fire_mat.shader = load("res://scripts/pet_fire.gdshader")
+		var noise := NoiseTexture2D.new()
+		noise.seamless = true
+		noise.noise = FastNoiseLite.new()
+		(noise.noise as FastNoiseLite).frequency = 0.03
+		_fire_mat.set_shader_parameter("noise", noise)
+	var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(path))
+	for shape: Dictionary in data.shapes:
+		var bone := skeleton.find_bone(shape.bone)
+		if bone < 0:
+			continue
+		var attach := BoneAttachment3D.new()
+		attach.bone_idx = bone
+		skeleton.add_child(attach)
+		var a := Vector3(shape.a[0], shape.a[1], shape.a[2])
+		var b := Vector3(shape.b[0], shape.b[1], shape.b[2])
+		var r: float = shape.r
+		var part := MeshInstance3D.new()
+		var mid := (a + b) * 0.5
+		var length := a.distance_to(b)
+		if length < 0.001:
+			var sphere := SphereMesh.new()
+			sphere.radius = r
+			sphere.height = r * 2.0
+			part.mesh = sphere
+			part.transform = Transform3D(Basis(), mid)
+		else:
+			var capsule := CapsuleMesh.new()
+			capsule.radius = r
+			capsule.height = length + r * 2.0
+			part.mesh = capsule
+			var up := (b - a) / length
+			var side := up.cross(Vector3.FORWARD if absf(up.z) < 0.9 else Vector3.RIGHT).normalized()
+			part.transform = Transform3D(Basis(side, up, side.cross(up)), mid)
+		part.material_override = _fire_mat
+		part.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		# from model space into the bone's own space
+		part.transform = skeleton.get_bone_global_rest(bone).affine_inverse() * part.transform
+		attach.add_child(part)
