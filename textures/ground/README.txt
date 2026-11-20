@@ -4,3 +4,4 @@ Each set: <style>_albedo.png, <style>_normal.png (OpenGL convention), <style>_ro
 sand   ambientCG Ground097 (CC0, https://ambientcg.com/a/Ground097)
 graveyard  ambientCG Ground042 (CC0, https://ambientcg.com/a/Ground042)
 grass      ambientCG Ground037 (CC0, https://ambientcg.com/a/Ground037)
+snow       ambientCG Snow014 (CC0, https://ambientcg.com/a/Snow014)

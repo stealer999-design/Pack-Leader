@@ -27,6 +27,7 @@ const PHOTO_DIR := "res://textures/ground/"
 const PHOTO := {
 	"sand": {"tile": 5.0, "tint": Color(0.8, 0.72, 0.62), "bumps": 1.6},
 	"grass": {"tile": 4.0, "tint": Color(0.6, 0.72, 0.48), "bumps": 1.2},  # darker and greener in the bright sun
+	"snow": {"tile": 5.0, "tint": Color(0.8, 0.83, 0.88), "bumps": 1.5},
 	"graveyard": {"tile": 4.0, "tint": Color(0.58, 0.58, 0.64), "bumps": 1.2},  # gloomier than the photo
 }
 
