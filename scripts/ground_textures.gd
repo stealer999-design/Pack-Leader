@@ -21,13 +21,15 @@ const TILE_UNITS := 8.0  ## World units one tile covers.
 const BIOME_STYLES := ["grass", "snow", "sand", "swamp", "graveyard", "sand", "lava", "snow"]
 
 ## Styles with a photo-scanned set in textures/ground/ (<style>_albedo.png,
-## _normal.png, _roughness.png): drawn with ground_photo.gdshader instead of
+## _normal.png, _roughness.png, and optionally _emission.png for parts that
+## glow): drawn with ground_photo.gdshader instead of
 ## being painted. Per style: tile size in world units and a colour tint.
 const PHOTO_DIR := "res://textures/ground/"
 const PHOTO := {
 	"sand": {"tile": 5.0, "tint": Color(0.8, 0.72, 0.62), "bumps": 1.6},
 	"grass": {"tile": 4.0, "tint": Color(0.6, 0.72, 0.48), "bumps": 1.2},  # darker and greener in the bright sun
 	"snow": {"tile": 5.0, "tint": Color(0.8, 0.83, 0.88), "bumps": 1.5},
+	"lava": {"tile": 8.0, "tint": Color(0.42, 0.38, 0.38), "bumps": 1.0, "glow": 1.1},  # dark rock, glowing seams
 	"graveyard": {"tile": 4.0, "tint": Color(0.58, 0.58, 0.64), "bumps": 1.2},  # gloomier than the photo
 }
 
@@ -69,6 +71,9 @@ static func photo_material(style: String) -> ShaderMaterial:
 		mat.set_shader_parameter("tile_b", spec.tile * 2.66)
 		mat.set_shader_parameter("tint", spec.tint)
 		mat.set_shader_parameter("normal_strength", spec.get("bumps", 1.0))
+		if ResourceLoader.exists(PHOTO_DIR + style + "_emission.png"):
+			mat.set_shader_parameter("emission_tex", load(PHOTO_DIR + style + "_emission.png"))
+			mat.set_shader_parameter("emission_strength", spec.get("glow", 2.0))
 		_cache[key] = mat
 	return _cache[key]
 

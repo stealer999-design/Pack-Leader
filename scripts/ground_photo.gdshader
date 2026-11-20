@@ -7,6 +7,8 @@ shader_type spatial;
 uniform sampler2D albedo_tex : source_color, filter_linear_mipmap_anisotropic, repeat_enable;
 uniform sampler2D normal_tex : hint_normal, filter_linear_mipmap_anisotropic, repeat_enable;
 uniform sampler2D rough_tex : hint_roughness_gray, filter_linear_mipmap_anisotropic, repeat_enable;
+uniform sampler2D emission_tex : source_color, hint_default_black, filter_linear_mipmap_anisotropic, repeat_enable;
+uniform float emission_strength = 0.0;  // glowing parts (lava), when the set has an _emission.png
 uniform sampler2D blend_noise : filter_linear_mipmap, repeat_enable;
 uniform float tile_a = 5.0;   // world units one tile covers
 uniform float tile_b = 13.3;  // the second, larger copy
@@ -27,6 +29,7 @@ void fragment() {
 	vec2 uv_b = world_pos.xz / tile_b + vec2(0.37, 0.71);
 	float b = smoothstep(0.38, 0.62, texture(blend_noise, world_pos.xz / blend_size).r);
 	ALBEDO = mix(texture(albedo_tex, uv_a).rgb, texture(albedo_tex, uv_b).rgb, b) * tint;
+	EMISSION = mix(texture(emission_tex, uv_a).rgb, texture(emission_tex, uv_b).rgb, b) * emission_strength;
 	ROUGHNESS = mix(texture(rough_tex, uv_a).r, texture(rough_tex, uv_b).r, b);
 	// Normal map (OpenGL: red along +x, green along +z of the ground), in world space.
 	vec2 n = mix(texture(normal_tex, uv_a).rg, texture(normal_tex, uv_b).rg, b) * 2.0 - 1.0;
