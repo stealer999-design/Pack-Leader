@@ -48,7 +48,14 @@ share. From the command line:
 godot --headless --path . --export-release "Windows Desktop" export/windows/PackLeader.exe
 ```
 
-## Playing in a browser
+## Playing in a browser (legacy)
+**Retired:** Windows is the only supported build from here on. The browser
+version loaded too slowly and couldn't show the game well (it uses Godot's
+lighter Compatibility renderer, at reduced resolution and shadows). The Web
+export preset and the browser-only code paths (`.web` settings in
+`project.godot`, `OS.has_feature("web")` checks) are left in place but are no
+longer built, tested or released; the notes below describe it as it was.
+
 Export the **Web** preset (or use a release zip): it produces `index.html` plus a
 few files. It needs no special server headers (it is built without threads), so
 any static host works. The easiest is [itch.io](https://itch.io): create an
