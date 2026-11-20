@@ -2,7 +2,8 @@
 ## shrunk or mipmapped texture doesn't pull the background colour into the
 ## edges of leaves and other small pieces. With --fill-grey, flat grey patches
 ## (triangles Meshy left unpainted, common on foliage) are filled from around
-## them too. python3 pad_texture.py in.glb out.glb [--fill-grey]
+## them too; with --resaturate, washed-out pale green leaves are brought back to
+## the full leaf colour. python3 pad_texture.py in.glb out.glb [--fill-grey] [--resaturate]
 import sys, io, json, struct, numpy as np
 import os; sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from glb import load, acc
@@ -19,9 +20,20 @@ mask = Image.new('L', (W, H), 0); d = ImageDraw.Draw(mask)
 for t in I:
 	d.polygon([(UV[k][0] * W, UV[k][1] * H) for k in t], fill=255, outline=255)
 m = np.asarray(mask) > 0
+if '--resaturate' in sys.argv:  # pale, washed-out greens back to leaf green (bark browns untouched)
+	hsv = np.asarray(pic.convert('HSV')).astype(np.float32)
+	green = (hsv[..., 0] > 38) & (hsv[..., 0] < 110)
+	weak = green & (hsv[..., 1] < 160)
+	hsv[..., 1] = np.where(weak, np.maximum(hsv[..., 1], 175), hsv[..., 1])
+	hsv[..., 2] = np.where(weak, hsv[..., 2] * 0.88, hsv[..., 2])
+	print('resaturated %.1f%%' % (weak.mean() * 100))
+	pic = Image.fromarray(hsv.clip(0, 255).astype(np.uint8), 'HSV').convert('RGB')
 a = np.asarray(pic).astype(np.float32)
 if '--fill-grey' in sys.argv:
 	grey = (np.ptp(a, axis=2) < 10) & (a.mean(2) > 90) & (a.mean(2) < 175)
+	# and pale, washed-out smears (a little tinted, so not pure grey): low saturation, mid-bright
+	hsv = np.asarray(pic.convert('HSV')).astype(np.float32)
+	grey |= (hsv[..., 1] < 70) & (hsv[..., 2] > 100) & (hsv[..., 2] < 200)
 	print('unpainted grey %.1f%%' % (grey.mean() * 100))
 	m &= ~grey
 bg = a[~m].mean(0) if (~m).any() else None
