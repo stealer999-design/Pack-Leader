@@ -3,6 +3,8 @@ extends PetAbility
 ## A wizard's damage spell, aimed at the mouse (fire, lightning, air or water).
 ## `style` is its shape:
 ## - "orb": a ball of magic flies from the caster and bursts where it lands;
+## - "fireball": the same, drawn as a blazing fireball with spiralling flame
+##   tendrils that explodes where it lands (FireballFX);
 ## - "meteor": burning rocks (or hail) fall out of the sky onto the spot;
 ## - "lightning": a bolt strikes down from the sky, instantly;
 ## - "storm": `count` lightning bolts strike enemies around the spot, one
@@ -15,7 +17,7 @@ extends PetAbility
 ## Hits can also stun, slow, knock back, set burning (damage over time),
 ## leave a burning patch, or arc on as chain lightning to `chain` more enemies.
 
-@export_enum("orb", "meteor", "lightning", "storm", "wave", "vortex") var style := "orb"
+@export_enum("orb", "fireball", "meteor", "lightning", "storm", "wave", "vortex") var style := "orb"
 @export var color := Color(1.0, 0.5, 0.2)
 @export var stun_duration := 0.0
 @export var slow_duration := 0.0
@@ -67,12 +69,15 @@ func execute(pet: Creature, point: Vector3, target: Creature) -> void:
 		var from := pet.global_position + Vector3.UP * 0.8
 		var travel := 0.05
 		match style:
-			"orb":
+			"orb", "fireball":
 				travel = maxf(from.distance_to(impact) / ORB_SPEED, 0.1)
 			"meteor":
 				from = impact + Vector3(2.5, 14.0, 1.5)
 				travel = METEOR_FALL + i * 0.15
-		world.play_spell.rpc(style, from, impact + Vector3.UP * 0.4, color, travel)
+		if style == "fireball":
+			world.play_fireball.rpc(from, impact + Vector3.UP * 0.5, travel, radius)
+		else:
+			world.play_spell.rpc(style, from, impact + Vector3.UP * 0.4, color, travel)
 		pet.get_tree().create_timer(travel).timeout.connect(_land.bind(pet, impact, damage))
 
 
