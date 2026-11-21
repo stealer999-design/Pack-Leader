@@ -20,37 +20,34 @@ static func baby_level(a_level: int, b_level: int) -> int:
 
 ## "a+b" (species indices, smaller first) -> the hybrid's species index.
 const HYBRIDS := {
-	"0+1": 17,  # Mossback + Emberfox = Magmashell
-	"0+2": 18,  # Mossback + Voltwing = Thundershell
-	"0+3": 19,  # Mossback + Gloomhorn = Stonehorn
-	"0+8": 20,  # Mossback + Bloomling = Mossbloom
-	"1+2": 21,  # Emberfox + Voltwing = Blitzfox
-	"1+3": 22,  # Emberfox + Gloomhorn = Cinderhorn
-	"1+8": 23,  # Emberfox + Bloomling = Sunpetal
-	"2+3": 24,  # Voltwing + Gloomhorn = Stormhorn
-	"2+8": 25,  # Voltwing + Bloomling = Sparkblossom
-	"3+8": 26,  # Gloomhorn + Bloomling = Duskbloom
+	# Cats
+	"0+1": 16,  # Mossback + Emberfox = Magmashell
+	"0+2": 17,  # Mossback + Voltwing = Thundershell
+	"0+3": 18,  # Mossback + Gloomhorn = Stonehorn
+	"1+2": 19,  # Emberfox + Voltwing = Blitzfox
+	"1+3": 21,  # Emberfox + Gloomhorn = Duskbloom
+	"2+3": 20,  # Voltwing + Gloomhorn = Stormhorn
 	# Birds
-	"4+5": 27,  # Glacipuff
-	"4+6": 28,  # Shimmerwing
-	"4+7": 29,  # Rimeowl
-	"5+6": 30,  # Prismpuff
-	"5+7": 31,  # Quillowl
-	"6+7": 32,  # Dawnowl
+	"4+5": 22,  # Glacipuff
+	"4+6": 23,  # Shimmerwing
+	"4+7": 24,  # Rimeowl
+	"5+6": 25,  # Prismpuff
+	"5+7": 26,  # Quillowl
+	"6+7": 27,  # Dawnowl
 	# Dogs
-	"9+10": 33,  # Duneripper
-	"9+11": 34,  # Thornjackal
-	"9+12": 35,  # Solarjackal
-	"10+11": 36,  # Cactihound
-	"10+12": 37,  # Sunhound
-	"11+12": 38,  # Bloomfennec
+	"8+9": 28,  # Duneripper
+	"8+10": 29,  # Thornjackal
+	"8+11": 30,  # Solarjackal
+	"9+10": 31,  # Cactihound
+	"9+11": 32,  # Sunhound
+	"10+11": 33,  # Bloomfennec
 	# Lizards
-	"13+14": 39,  # Swampdrake
-	"13+15": 40,  # Glowleon
-	"13+16": 41,  # Toxileon
-	"14+15": 42,  # Wraithlurk
-	"14+16": 43,  # Mossdrake
-	"15+16": 44,  # Sporewisp
+	"12+13": 34,  # Swampdrake
+	"12+14": 35,  # Glowleon
+	"12+15": 36,  # Toxileon
+	"13+14": 37,  # Wraithlurk
+	"13+15": 38,  # Mossdrake
+	"14+15": 39,  # Sporewisp
 }
 
 

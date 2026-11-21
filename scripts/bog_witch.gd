@@ -6,7 +6,7 @@ extends Rival
 ## when someone gets close, drops toxic puddles (with a warning circle first)
 ## under players and pets, and summons Bogleons at 60% and 30% health.
 
-const BOGLEON := 13  ## SpeciesDB index.
+const BOGLEON := 12  ## SpeciesDB index.
 
 @export var blink_cooldown := 5.0
 @export var blink_trigger_range := 3.5

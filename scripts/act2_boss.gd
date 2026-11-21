@@ -26,45 +26,45 @@ const VARIANTS := {
 	"pharaoh": {
 		"title": "Sand Pharaoh", "objective": "the Sand Pharaoh", "color": Color(0.88, 0.75, 0.42),
 		"special": "Curse of the Sands", "effect": "blind", "fx": Color(0.95, 0.8, 0.4),
-		"summons": [47, 48, 48], "summon_text": "The Sand Pharaoh raises his servants from the sand!",
+		"summons": [42, 43, 43], "summon_text": "The Sand Pharaoh raises his servants from the sand!",
 		"challenge": "The Sand Pharaoh wakes from his tomb!",
 	},
 	"lion": {
 		"title": "Sunmane", "objective": "Sunmane the Desert Lion", "color": Color(0.78, 0.52, 0.24),
 		"special": "Pounce", "effect": "pounce", "fx": Color(0.95, 0.75, 0.35),
-		"summons": [48, 48, 47], "summon_text": "Sunmane roars, and the desert answers!",
+		"summons": [43, 43, 42], "summon_text": "Sunmane roars, and the desert answers!",
 		"challenge": "Sunmane the Desert Lion roars!",
 	},
 	"cat": {
 		"title": "Dom", "objective": "Dom the House Cat", "color": Color(0.98, 0.42, 0.04),
 		"special": "Pounce and Swipe", "effect": "swipe", "fx": Color(1.0, 0.75, 0.4),
-		"summons": [48, 48, 47], "summon_text": "Dom hisses, and the desert answers!",
+		"summons": [43, 43, 42], "summon_text": "Dom hisses, and the desert answers!",
 		"challenge": "Dom the House Cat stretches, yawns... and pounces!",
 	},
 	"firedog": {
 		"title": "Koleko", "objective": "Koleko the Fire Dog", "color": Color(0.17, 0.13, 0.12),
 		"special": "Lava Spit", "effect": "blaze", "fx": Color(1.0, 0.5, 0.12),
-		"summons": [49, 49, 49], "summon_text": "Koleko howls, and fire imps leap from the flames!",
+		"summons": [44, 44, 44], "summon_text": "Koleko howls, and fire imps leap from the flames!",
 		"challenge": "Koleko the Fire Dog bares his burning fangs!",
 		"speed": 4.2,  # trots: quicker than the other bosses (3.0)
 	},
 	"parrot": {
 		"title": "Pye", "objective": "Pye the Parrot", "color": Color(0.36, 0.37, 0.4),
 		"special": "Feather Flurry", "effect": "flurry", "fx": Color(1.0, 0.85, 0.3),
-		"summons": [51, 51, 52], "summon_text": "Pye squawks, and the blizzard brings wraiths!",
+		"summons": [46, 46, 47], "summon_text": "Pye squawks, and the blizzard brings wraiths!",
 		"challenge": "Pye the Parrot swoops down!",
 		"phrases": ["whatcha doin?", "Honk Honk"],
 	},
 	"colossus": {
 		"title": "Magma Colossus", "objective": "the Magma Colossus", "color": Color(0.16, 0.13, 0.13),
 		"special": "Eruption", "effect": "burn", "fx": Color(1.0, 0.45, 0.1),
-		"summons": [49, 49, 50], "summon_text": "The Magma Colossus calls its children out of the lava!",
+		"summons": [44, 44, 45], "summon_text": "The Magma Colossus calls its children out of the lava!",
 		"challenge": "The Magma Colossus rises from the caldera!",
 	},
 	"yeti": {
 		"title": "Yeti King", "objective": "the Yeti King", "color": Color(0.9, 0.93, 0.98),
 		"special": "Ice Slam", "effect": "freeze", "fx": Color(0.6, 0.9, 1.0),
-		"summons": [51, 51, 52], "summon_text": "The Yeti King howls, and the blizzard brings wraiths!",
+		"summons": [46, 46, 47], "summon_text": "The Yeti King howls, and the blizzard brings wraiths!",
 		"challenge": "The Yeti King roars!",
 	},
 }

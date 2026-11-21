@@ -16,8 +16,8 @@ class_name BiomeDB
 const BIOMES := [
 	{
 		"name": "Greenmeadow",
-		"species": [0, 1, 2, 3, 8],
-		"starter_species": 8,
+		"species": [0, 1, 2, 3],
+		"starter_species": 0,
 		"boss": "rival",
 		"floor_hue": Vector2(0.22, 0.36), "floor_sat": 0.25, "floor_val": 0.38,
 		"camp": Color(0.45, 0.43, 0.38), "arena": Color(0.36, 0.3, 0.3),
@@ -34,7 +34,7 @@ const BIOMES := [
 	},
 	{
 		"name": "Sunscorch Dunes",
-		"species": [9, 10, 11, 12],
+		"species": [8, 9, 10, 11],
 		"boss": "wyrm",
 		"boss_name": "the Sand Wyrm",
 		"floor_hue": Vector2(0.08, 0.11), "floor_sat": 0.5, "floor_val": 0.42,
@@ -43,7 +43,7 @@ const BIOMES := [
 	},
 	{
 		"name": "Mirewood Bog",
-		"species": [13, 14, 15, 16],
+		"species": [12, 13, 14, 15],
 		"boss": "witch",
 		"boss_name": "the Bog Witch",
 		"floor_hue": Vector2(0.2, 0.28), "floor_sat": 0.4, "floor_val": 0.3,
@@ -52,7 +52,7 @@ const BIOMES := [
 	},
 	{
 		"name": "Hollowmere Graveyard",
-		"species": [45, 46],  # skeletons and zombies: monsters, not pets
+		"species": [40, 41],  # skeletons and zombies: monsters, not pets
 		"boss": "fish",
 		"boss_name": "Howard the Zombie Fish",
 		"floor_hue": Vector2(0.18, 0.26), "floor_sat": 0.16, "floor_val": 0.3,
@@ -61,12 +61,12 @@ const BIOMES := [
 	},
 	{
 		"name": "Scorchsand Ruins",
-		"species": [47, 48],  # mummies and sand scorpions
+		"species": [42, 43],  # mummies and sand scorpions
 		"boss": "cat",
 		"boss_name": "Dom the House Cat",
 		# The Champions at the end of the act's first two levels, in order
 		# (default: a random monster of the biome).
-		"champions": [45, 47],  # a skeleton, then a mummy
+		"champions": [40, 42],  # a skeleton, then a mummy
 		"obstacles": "desert",
 		"floor_hue": Vector2(0.09, 0.12), "floor_sat": 0.45, "floor_val": 0.46,
 		"camp": Color(0.5, 0.42, 0.3), "arena": Color(0.48, 0.36, 0.22),
@@ -74,7 +74,7 @@ const BIOMES := [
 	},
 	{
 		"name": "Cinderpeak Caldera",
-		"species": [49, 50],  # fire imps and magma golems
+		"species": [44, 45],  # fire imps and magma golems
 		"boss": "firedog",
 		"boss_name": "Koleko the Fire Dog",
 		"obstacles": "volcano",
@@ -84,7 +84,7 @@ const BIOMES := [
 	},
 	{
 		"name": "Frostveil Expanse",
-		"species": [51, 52],  # frost wraiths and yetis
+		"species": [46, 47],  # frost wraiths and yetis
 		"boss": "parrot",
 		"boss_name": "Pye the Parrot",
 		"obstacles": "frost",

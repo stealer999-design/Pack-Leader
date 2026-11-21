@@ -8,8 +8,8 @@ extends Rival
 ## - calls up the dead at 66% and 33% health: skeletons and a zombie climb out
 ##   of the graves around him.
 
-const SKELETON := 45  ## SpeciesDB indices.
-const ZOMBIE := 46
+const SKELETON := 40  ## SpeciesDB indices.
+const ZOMBIE := 41
 
 @export var splash_interval := 4.5
 @export var splash_radius := 3.2

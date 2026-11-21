@@ -13,7 +13,11 @@ extends Node
 
 const MAX_SLOTS := 3
 const SAVE_DIR := "user://saves"
-const VERSION := 1
+const VERSION := 2
+## Version 2 retired five cats (Bloomling and four hybrids), which shifted the
+## species indices after them. Older saves are converted as they're read: each
+## old index -> its new one; a retired species becomes its nearest kept cat.
+const V1_RETIRED := {8: 0, 20: 16, 22: 21, 23: 19, 25: 19}  # Bloomling -> Mossback, Mossbloom -> Magmashell, Cinderhorn -> Duskbloom, Sunpetal and Sparkblossom -> Blitzfox
 const AUTOSAVE_INTERVAL := 20.0  ## Seconds of real time.
 
 ## The slot being played (or about to be). -1 = none chosen.
@@ -61,7 +65,29 @@ func read_slot(index: int) -> Dictionary:
 	if not has_save(index):
 		return {}
 	var parsed = JSON.parse_string(FileAccess.get_file_as_string(slot_path(index)))
-	return parsed if parsed is Dictionary else {}
+	return upgrade(parsed) if parsed is Dictionary else {}
+
+
+## Brings a save from an older version up to date (see V1_RETIRED).
+static func upgrade(data: Dictionary) -> Dictionary:
+	if int(data.get("version", 1)) < 2:
+		for key in ["party", "stable", "reserve"]:
+			for pet in data.get(key, []):
+				if pet is Dictionary and pet.has("species"):
+					pet["species"] = v1_species(int(pet["species"]))
+		data["version"] = 2
+	return data
+
+
+## A version 1 species index -> today's.
+static func v1_species(old: int) -> int:
+	if V1_RETIRED.has(old):
+		return V1_RETIRED[old]
+	var shift := 0
+	for gone in V1_RETIRED:
+		if gone < old:
+			shift += 1
+	return old - shift
 
 
 func delete_slot(index: int) -> void:

@@ -148,7 +148,7 @@ played in the browser".
   pops up as a small badge (an icon and a few words) over the head it's
   about, rises and fades: **Level 5!** with a gold arrow over a pet that
   levels up, **+1 skill point (K)**, **Dead: rest at a stable**, **Revived!**,
-  **Over-levelled: less XP**; over your tamer **Caught a Bloomling!**, where a
+  **Over-levelled: less XP**; over your tamer **Caught a Mossback!**, where a
   capture went (reserve or stable), **Checkpoint!**, reserve pets levelling,
   stance changes, **No potions left**, **Too far away**; over a creature
   **Broke free!** or **Monsters can't be tamed**. Several at once stack
@@ -304,7 +304,7 @@ played in the browser".
 
   | Area | Biome | Creatures | Boss |
   |---|---|---|---|
-  | Act 1 (your choice of order) | Greenmeadow | Cats: Mossback, Emberfox, Voltwing, Gloomhorn, Bloomling (the first two creatures by the camp are always Bloomlings) | **Rival Tamer** with one pet. The pet fights and uses its ability; when the rival is beaten the pet goes wild, weakened, so you can capture it |
+  | Act 1 (your choice of order) | Greenmeadow | Cats: Mossback, Emberfox, Voltwing, Gloomhorn (the first two creatures by the camp are always Mossbacks) | **Rival Tamer** with one pet. The pet fights and uses its ability; when the rival is beaten the pet goes wild, weakened, so you can capture it |
   | Act 1 | Frostfang Peaks | Birds: Frostfinch, Quillpuff, Aurora Swift, Snowl | **Glacier Titan**: drops Avalanches (a red warning circle, then a slam that damages and slows) and summons capturable Frostfinches at 66% and 33% health |
   | Act 1 | Sunscorch Dunes (desert) | Dogs: Fangjackal, Dunehound, Cactipup, Sunfennec | **Sand Wyrm**: burrows underground (it can't be hit there), tunnels under a player or pet behind a warning circle and erupts; at half health it whips up sandstorms |
   | Act 1 | Mirewood Bog (swamp) | Lizards: Bogleon, Mirelurk, Wisp Gecko, Sporeguana | **Bog Witch**: a ranged caster whose bolts poison; she blinks away when you get close, drops toxic puddles and summons Bogleons at 60% and 30% health |
@@ -316,8 +316,7 @@ played in the browser".
   time (even mid-fight), unless they're dead (see Death below).
 - **Tamer health:** after 5 seconds without taking damage you regenerate 3% of
   your max health per second. You carry up to **2 potions** (Q heals 50%),
-  and start every level with a full pair. Bloomlings and Aurora Swifts can heal
-  you too.
+  and start every level with a full pair. Aurora Swifts can heal you too.
 - **Lemonade stand:** halfway along every level there is a lemonade stand in
   a safe clearing. Press F there to buy from the vendor:
   - **Potion** (10 coins), up to the 2 you can carry.
@@ -355,8 +354,8 @@ played in the browser".
   different pets **of the same kind** (from your party, reserve or stable, any level)
   and pay 25 coins: they have a **hybrid** baby, a new species that only
   comes from breeding. No cross-breeding: cats only breed with cats, birds
-  with birds, dogs with dogs and lizards with lizards. Each of the 28 pairings
-  (10 cat, 6 bird, 6 dog, 6 lizard) makes its own hybrid, stronger than
+  with birds, dogs with dogs and lizards with lizards. Each of the 24 pairings
+  (6 of each: cat, bird, dog, lizard) makes its own hybrid, stronger than
   either parent (20% more health and attack than the better one), bigger,
   with a horn, mane (a frill or ruff), crown or wings (leathery on lizards)
   and a powered-up ability. The parents stay with you; the baby
@@ -372,13 +371,9 @@ played in the browser".
   | Mossback + Emberfox | Magmashell | Magma Orb: (Fire) Lobs a ball of magma at the spot: it bursts for 2x damage and leaves a pool of fire burning for 4s. |
   | Mossback + Voltwing | Thundershell | Thunderstorm: (Lightning) A storm over the spot for 3s: 6 bolts strike enemies within 4 units, each for 1.4x damage and a short stun. |
   | Mossback + Gloomhorn | Stonehorn | Hailstorm: (Water) Six hailstones crash down around the spot, each 1.3x damage where it lands, slowing enemies for 2s. |
-  | Mossback + Bloomling | Mossbloom | Gale Blades: (Air) Slicing winds fan out towards where you aim: 2.2x damage in a wide 6.5-unit cone, hurling enemies back. |
   | Emberfox + Voltwing | Blitzfox | Lightning Bolt: (Lightning) Strikes the spot with a bolt from the sky: 4x damage and a short stun around it. |
-  | Emberfox + Gloomhorn | Cinderhorn | Meteor Shower: (Fire) Rains three blazing meteors around the spot, each 2.2x damage and a 1.5s stun. |
-  | Emberfox + Bloomling | Sunpetal | Flame Wave: (Fire) A wave of fire rolls out towards where you aim: 2x damage in a 7-unit cone, sets enemies burning, and scorches the ground for 4s. |
+  | Emberfox + Gloomhorn | Duskbloom | Meteor Shower: (Fire) Rains three blazing meteors around the spot, each 2.2x damage and a 1.5s stun. |
   | Voltwing + Gloomhorn | Stormhorn | Thunder Chain: (Lightning) A huge bolt strikes the spot for 2.2x, then lightning jumps on to 5 more enemies. |
-  | Voltwing + Bloomling | Sparkblossom | Ball Lightning: (Lightning) A crackling ball flies to the spot and bursts for 1.8x damage, then arcs on to 4 more enemies. |
-  | Gloomhorn + Bloomling | Duskbloom | Void Cyclone: (Air) A dark whirlwind at the spot for 5s: pulls enemies in, slows them to 40% and tears at them. |
   | Frostfinch + Quillpuff | Glacipuff | Hail Volley: Fires 5 frozen arrows in a cone towards where you aim, each 1.3x damage and slowing to 40% for 3s. |
   | Frostfinch + Aurora Swift | Shimmerwing | Eagle Eye: A rallying cry: every pet within 6 units of the spot gets +50% crit chance for 8s (crits do double damage). |
   | Frostfinch + Snowl | Rimeowl | Snipe: A long-range shot at the enemy nearest where you aim (up to 16 units): 4.5x damage and a 1s stun. |
@@ -672,7 +667,6 @@ played in the browser".
   | Emberfox | Fireball | (Fire) Hurls a fireball at the spot you aim at: it explodes for 2.5x damage around it and sets enemies burning. |
   | Voltwing | Static Arc | (Lightning) Calls lightning down where you aim (1.8x), then it arcs on to 3 more enemies. |
   | Gloomhorn | Cyclone | (Air) A howling cyclone at the spot for 4s: enemies inside are pulled in, slowed to half speed and battered. |
-  | Bloomling | Bubble Burst | (Water) A giant bubble floats to the spot and bursts: 1.8x damage around it and enemies are slowed to half speed for 3s. |
   | Frostfinch | Frost Arrow | An icy arrow at the spot: 2x damage to anything close to where it lands, slowing them to half speed for 3s. |
   | Quillpuff | Arrow Cone | Fires 7 arrows in a wide cone towards where you aim, each hitting for 1.1x damage. |
   | Aurora Swift | Hunter's Mark | Shoots a red flare at the spot: every enemy within 3.5 units is marked for 6s, and your pets crit them with every hit. |
@@ -739,7 +733,7 @@ The host is the authoritative server and also plays.
 |---|---|
 | `models/scenery/<set>_<n>.glb` | Meshy models for the scenery (trees, rocks, props). `scripts/tools/build_obstacles.gd` uses one in place of the simple shapes when it exists: as tall as the old design, keeping its collision (narrowed to the model's footprint). Before adding one, run `scripts/tools/meshy_skin/pad_texture.py in.glb out.glb` (add `--fill-grey` for foliage, and `--resaturate` if leaves look washed out) to fill the grey triangles Meshy leaves unpainted and pad the texture's edges; the extracted textures import VRAM-compressed at up to 1024 px. Lava glows where a `<set>_<n>_emit.png` glow map sits beside the model (made with `scripts/tools/meshy_skin/glow_map.py model.glb out.png [--yellow]`, which keeps only the lava-coloured parts of the texture), drawn as an additive overlay that `ModelLook` leaves in place; the smoking vent also gets drifting smoke particles |
 | `textures/ground/`, `scripts/ground_photo.gdshader` | Photo-scanned ground for the biome floors (CC0, sources in `textures/ground/README.txt`): a style listed in `GroundTextures.PHOTO` with `<style>_albedo/_normal/_roughness.png` here is drawn with the shader instead of painted: laid by world position, two sizes blended by slow noise so the tile never shows as a grid, with a per-style tile size, tint and bump strength. So far: grass (Greenmeadow), swamp (Mirewood Bog, made slimy with the shader's `wet` setting: glossy, slicker in patches), snow (Frostfang Peaks, Frostveil Expanse), black rock (Cinderpeak Caldera; a set may also add an `_emission.png` to glow), sand (Sunscorch Dunes, Scorchsand Ruins) and graveyard (Hollowmere Graveyard). Start camps and town squares use brick (one size only, as a regular pattern blurs if blended); boss arenas stay painted |
-| `scripts/pet_models.gd`, `models/pets/<species>.glb` | Meshy models for pets and wild creatures: a species with a model file is drawn with it instead of CreatureModel's shapes (scaled to its body type's height, an optional colour tint for pale textures, glowing parts from a `<species>_emit.png` (an additive layer that survives the hit flash, as on Magmashell's lava cracks), and an optional core of animated fire inside the body, `models/pets/<species>_core.json` made by `scripts/tools/meshy_skin/core_shapes.py`: capsules riding the spine and head bones, drawn with `scripts/pet_fire.gdshader`, so gaps in the fur show flickering fire, as on Cinderhorn) and animated by CreatureAnimator from its own animations: Walk paced to its speed, Idle, Swipe on its attack, Hiss on its ability, frozen when fainted; hits flash it white. Cats are rigged with `scripts/tools/meshy_skin/rig_quad.py` (settings in `meshy_skin/pets/`) using Dom's animations. So far: Bloomling, Voltwing, Mossback, Mossbloom, Gloomhorn, Cinderhorn, Emberfox, Magmashell, Thundershell, Stonehorn, Stormhorn, Sunpetal, Blitzfox, Sparkblossom, Duskbloom: all 15 cats (all but Bloomling are small models: their configs scale them up, usually 2x, so the Dom-sized animations fit) |
+| `scripts/pet_models.gd`, `models/pets/<species>.glb` | Meshy models for pets and wild creatures: a species with a model file is drawn with it instead of CreatureModel's shapes (scaled to its body type's height, an optional colour tint for pale textures, glowing parts from a `<species>_emit.png` (an additive layer that survives the hit flash, as on Magmashell's lava cracks), and an optional core of animated fire inside the body, `models/pets/<species>_core.json` made by `scripts/tools/meshy_skin/core_shapes.py`: capsules riding the spine and head bones, drawn with `scripts/pet_fire.gdshader`, so gaps in the fur show flickering fire, as on Cinderhorn) and animated by CreatureAnimator from its own animations: Walk paced to its speed, Idle, Swipe on its attack, Hiss on its ability, frozen when fainted; hits flash it white. Cats are rigged with `scripts/tools/meshy_skin/rig_quad.py` (settings in `meshy_skin/pets/`) using Dom's animations. So far: all 10 cats: Mossback, Emberfox, Voltwing, Gloomhorn, Magmashell, Thundershell, Stonehorn, Blitzfox, Stormhorn, Duskbloom (small models: their configs scale them up, usually 2x, so the Dom-sized animations fit) |
 | `scripts/graphics.gd` | Autoload `Graphics`: the 3D resolution (pause menu: Auto draws 3D at no more than 1440p's worth of pixels and upscales it with AMD FSR, so a 4K screen renders 3D at 67%; Full is native; Performance caps at 1080p), saved in `user://settings.cfg`; menus and text stay at full resolution |
 | `scripts/perf_overlay.gd` | F3: a performance overlay (frame rate, script and physics time, draw calls, creatures on screen and chasing you) that also logs to `perf_log.csv` in the game's user folder, for tracking down slowdowns |
 | `scripts/save_game.gd` | Autoload `SaveGame`: save slots, autosave, and handing a save to the server to restore |
