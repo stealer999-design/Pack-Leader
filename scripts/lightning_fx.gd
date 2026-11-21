@@ -22,12 +22,23 @@ var _mesh := ImmediateMesh.new()
 var _t := 0.0
 var _next_strike := 0.0
 var _alpha := 1.0
+var _width := 1.0  ## bolt thickness (bolts from the sky are thicker)
 
 
 ## Lightning from points[0] through each following point in turn.
-static func play(parent: Node, points: PackedVector3Array) -> void:
+static func play(parent: Node, points: PackedVector3Array, width := 1.0) -> void:
 	if points.size() < 2:
 		return
+	ensure_materials()
+	var fx := LightningFX.new()
+	fx._points = points
+	fx._width = width
+	parent.add_child(fx)
+	fx._build()
+
+
+## The bolts' material (vertex colours) and the soft dot for glows and sparks.
+static func ensure_materials() -> void:
 	if _mat == null:
 		_mat = StandardMaterial3D.new()
 		_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
@@ -35,10 +46,6 @@ static func play(parent: Node, points: PackedVector3Array) -> void:
 		_mat.vertex_color_use_as_albedo = true
 		_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 		_dot_mat = _make_dot_material()
-	var fx := LightningFX.new()
-	fx._points = points
-	parent.add_child(fx)
-	fx._build()
 
 
 func _build() -> void:
@@ -94,7 +101,7 @@ func _strike() -> void:
 		if a.distance_to(b) < 0.05:
 			continue
 		for s in STRANDS:
-			var main := _jagged(a, b, 0.22 if s == 0 else 0.34)
+			var main := jagged(a, b, 0.22 if s == 0 else 0.34)
 			paths.append([main, 1.0 if s == 0 else 0.6])
 			# forks splitting off and dying out
 			for f in randi_range(1, 3):
@@ -103,20 +110,20 @@ func _strike() -> void:
 				var ahead := (b - a).normalized()
 				var off := ahead.cross(Vector3.UP).normalized() * randf_range(-1.0, 1.0) + Vector3.UP * randf_range(-0.4, 0.6)
 				var reach := a.distance_to(b) * randf_range(0.12, 0.3)
-				paths.append([_jagged(from, from + (ahead + off * 0.8).normalized() * reach, 0.3), 0.4])
+				paths.append([jagged(from, from + (ahead + off * 0.8).normalized() * reach, 0.3), 0.4])
 	_mesh.surface_begin(Mesh.PRIMITIVE_TRIANGLES, _mat)
 	for p in paths:  # haze, then glow, then the white core over it
 		if p[1] >= 1.0:
-			_strip(p[0], 0.9, Color(HAZE, HAZE.a * _alpha), eye)
+			strip(_mesh, p[0], 0.9 * _width, Color(HAZE, HAZE.a * _alpha), eye)
 	for p in paths:
-		_strip(p[0], 0.36 * p[1], Color(GLOW, GLOW.a * _alpha), eye)
+		strip(_mesh, p[0], 0.36 * p[1] * _width, Color(GLOW, GLOW.a * _alpha), eye)
 	for p in paths:
-		_strip(p[0], 0.09 * p[1] + 0.03, Color(CORE, _alpha), eye)
+		strip(_mesh, p[0], (0.09 * p[1] + 0.03) * _width, Color(CORE, _alpha), eye)
 	_mesh.surface_end()
 
 
 ## A jagged line from a to b: the midpoints pushed out sideways, again and again.
-func _jagged(a: Vector3, b: Vector3, rough: float) -> PackedVector3Array:
+static func jagged(a: Vector3, b: Vector3, rough: float) -> PackedVector3Array:
 	var pts := PackedVector3Array([a, b])
 	var amount := a.distance_to(b) * rough
 	for level in 4:
@@ -139,7 +146,7 @@ func _jagged(a: Vector3, b: Vector3, rough: float) -> PackedVector3Array:
 
 
 ## A ribbon along `pts`, `width` wide, turned to face the camera at `eye`.
-func _strip(pts: PackedVector3Array, width: float, color: Color, eye: Vector3) -> void:
+static func strip(mesh: ImmediateMesh, pts: PackedVector3Array, width: float, color: Color, eye: Vector3) -> void:
 	for i in pts.size() - 1:
 		var a := pts[i]
 		var b := pts[i + 1]
@@ -148,8 +155,8 @@ func _strip(pts: PackedVector3Array, width: float, color: Color, eye: Vector3) -
 		var side_b := along.cross(eye - b).normalized() * width * 0.5
 		var taper := 1.0 - float(i) / pts.size() * 0.3
 		for v in [a - side_a * taper, a + side_a * taper, b + side_b * taper, a - side_a * taper, b + side_b * taper, b - side_b * taper]:
-			_mesh.surface_set_color(color)
-			_mesh.surface_add_vertex(v)
+			mesh.surface_set_color(color)
+			mesh.surface_add_vertex(v)
 
 
 func _halo(at: Vector3, size: float, color: Color) -> MeshInstance3D:

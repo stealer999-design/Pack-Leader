@@ -13,8 +13,9 @@ extends PetAbility
 ## - "lightning": a bolt strikes down from the sky, instantly;
 ## - "arc": crackling lightning leaps from the caster to the spot, instantly
 ##   (LightningFX; its chain lightning is drawn the same way);
-## - "storm": `count` lightning bolts strike enemies around the spot, one
-##   after another over `duration` seconds;
+## - "storm": a storm cloud wheels over the spot for `duration` seconds,
+##   electricity crackling over the ground (StormFX), while `count` bolts strike
+##   down from it at enemies around the spot, one after another;
 ## - "wave": a curling wall of water (TidalWaveFX) rolls out from the caster
 ##   towards the spot across a cone (`cone_degrees` wide, `radius` long),
 ##   hitting everything in it as it reaches them;
@@ -70,7 +71,7 @@ func execute(pet: Creature, point: Vector3, target: Creature) -> void:
 			for i in count:
 				pet.get_tree().create_timer(duration * i / maxf(count, 1)).timeout.connect(
 						_storm_strike.bind(pet, center, damage))
-			world.play_zone.rpc(center, spread, duration, Color(color, 0.5))
+			world.play_storm.rpc(center, spread, duration)
 			return
 	for i in count:
 		var impact := center
@@ -171,7 +172,7 @@ func _storm_strike(pet_ref, center: Vector3, damage: float) -> void:
 	var foes := world.enemies_near(pet, center, spread)
 	var spot: Vector3 = foes.pick_random().global_position if not foes.is_empty() \
 			else world.clamp_to_level(center + Vector3.FORWARD.rotated(Vector3.UP, randf() * TAU) * spread * randf())
-	world.play_spell.rpc("lightning", spot, spot, color, 0.05)
+	world.play_arc.rpc(PackedVector3Array([StormFX.sky_point(center), spot + Vector3.UP * 0.05]), 1.6)
 	_land(pet, spot, damage)
 
 
