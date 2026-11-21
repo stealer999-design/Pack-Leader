@@ -1,6 +1,7 @@
 class_name FireballFX
 extends Node3D
-## Fireball's look: a blazing ball (white-hot heart, boiling flames, a halo)
+## Fireball's look (and Magma Orb's, with `magma`: a bigger swirling ball of
+## molten rock and no trail): a blazing ball (white-hot heart, boiling flames, a halo)
 ## with flame tendrils spiralling back from it and embers streaming off,
 ## flying from the caster to the spot; there it explodes in a ball of fire
 ## that burns out, flinging sparks, with a flash of light. Purely visual: the
@@ -11,6 +12,7 @@ const TRAIL_SHADER := preload("res://scripts/fire_trail.gdshader")
 const BALL_RADIUS := 0.55
 const TRAIL_LENGTH := 3.4
 const EXPLODE_TIME := 0.55
+const MAGMA_RADIUS := 0.8
 
 static var _ribbon_mesh: ArrayMesh
 static var _dot_mat: StandardMaterial3D
@@ -18,15 +20,17 @@ static var _dot_mat: StandardMaterial3D
 var _trails: Array[ShaderMaterial] = []
 var _embers: CPUParticles3D
 var _blast_radius := 2.5
+var _magma := false
 
 
 ## Throws a fireball from `from` to `to`, arriving after `travel` seconds.
-static func play(parent: Node, from: Vector3, to: Vector3, travel: float, blast_radius: float) -> void:
+static func play(parent: Node, from: Vector3, to: Vector3, travel: float, blast_radius: float, magma := false) -> void:
 	if _ribbon_mesh == null:
 		_ribbon_mesh = _make_ribbon()
 		_dot_mat = _make_dot_material()
 	var fx := FireballFX.new()
 	fx._blast_radius = blast_radius
+	fx._magma = magma
 	parent.add_child(fx)
 	fx.global_position = from
 	var flat := to - from
@@ -39,6 +43,9 @@ static func play(parent: Node, from: Vector3, to: Vector3, travel: float, blast_
 
 
 func _build() -> void:
+	if _magma:
+		_build_magma()
+		return
 	# the ball: an outer shell of flame round a white-hot heart
 	for layer in [[BALL_RADIUS * 1.45, 0.75, 0.7], [BALL_RADIUS, 1.25, 1.0]]:
 		var mat := ShaderMaterial.new()
@@ -81,6 +88,38 @@ func _build() -> void:
 	light.light_color = Color(1.0, 0.55, 0.2)
 	light.light_energy = 1.2
 	light.omni_range = 3.5
+	light.shadow_enabled = false
+	add_child(light)
+
+
+## Magma Orb: a big churning sphere of lava, molten arms swirling over dark
+## crust inside a thin skin of flame. Just the orb, no trail.
+func _build_magma() -> void:
+	for layer in [[MAGMA_RADIUS * 1.12, 0.6, 0.4, 0.0], [MAGMA_RADIUS, 0.95, 1.0, 1.0]]:
+		var mat := ShaderMaterial.new()
+		mat.shader = BALL_SHADER
+		mat.set_shader_parameter("heat", layer[1])
+		mat.set_shader_parameter("strength", layer[2])
+		mat.set_shader_parameter("magma", layer[3])
+		mat.set_shader_parameter("flicker", 4.0)
+		var ball := MeshInstance3D.new()
+		var sphere := SphereMesh.new()
+		sphere.radius = layer[0]
+		sphere.height = layer[0] * 2.0
+		sphere.radial_segments = 32
+		sphere.rings = 16
+		ball.mesh = sphere
+		ball.material_override = mat
+		ball.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		add_child(ball)
+	add_child(_halo(MAGMA_RADIUS * 3.6, Color(1.0, 0.35, 0.06, 0.3)))
+	_embers = _make_embers()  # kept for _explode, but never emits: no trail
+	_embers.emitting = false
+	add_child(_embers)
+	var light := OmniLight3D.new()
+	light.light_color = Color(1.0, 0.45, 0.15)
+	light.light_energy = 1.5
+	light.omni_range = 4.0
 	light.shadow_enabled = false
 	add_child(light)
 

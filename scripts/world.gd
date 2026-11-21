@@ -2432,10 +2432,11 @@ func play_spell(style: String, from: Vector3, to: Vector3, color: Color, travel:
 	tween.tween_callback(fx.queue_free)
 
 
-## Fireball: a blazing ball with spiralling flame tendrils, exploding on arrival.
+## Fireball (a blazing ball with spiralling flame tendrils) or, with `magma`,
+## Magma Orb (a swirling ball of lava): it flies to `to` and explodes.
 @rpc("authority", "call_local", "unreliable")
-func play_fireball(from: Vector3, to: Vector3, travel: float, blast_radius: float) -> void:
-	FireballFX.play(self, from, to, travel, blast_radius)
+func play_fireball(from: Vector3, to: Vector3, travel: float, blast_radius: float, magma := false) -> void:
+	FireballFX.play(self, from, to, travel, blast_radius, magma)
 
 
 ## Tidal Wave: a wall of water rolling out from `origin` towards `forward`.
