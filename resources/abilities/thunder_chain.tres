@@ -5,12 +5,12 @@
 [resource]
 script = ExtResource("1_ability")
 display_name = "Thunder Chain"
-description = "(Lightning) A huge bolt strikes the spot for 2.2x, then lightning jumps on to 5 more enemies."
+description = "(Lightning) Chains of lightning lash the spot for 2.2x, then whip on to 5 more enemies."
 cooldown = 3.0
 cast_range = 11
 needs_target = false
 damage_multiplier = 2.2
 radius = 2.0
-style = "lightning"
-color = Color(1, 0.95, 0.45, 1)
+style = "chains"
+color = Color(0.7, 0.85, 1, 1)
 chain = 5

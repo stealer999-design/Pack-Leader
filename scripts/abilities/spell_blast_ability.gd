@@ -13,6 +13,9 @@ extends PetAbility
 ## - "lightning": a bolt strikes down from the sky, instantly;
 ## - "bolt": Lightning Bolt's look: a massive forking bolt from the sky, an arc
 ##   from the caster's paw to the spot, electricity bursting out along the ground;
+## - "chains": Thunder Chain's look: chains of lightning from the caster to the
+##   spot, a ring of chain round it and chains lashing out to every enemy
+##   struck (ChainFX), drawn when it lands;
 ## - "arc": crackling lightning leaps from the caster to the spot, instantly
 ##   (LightningFX; its chain lightning is drawn the same way);
 ## - "storm": a storm cloud wheels over the spot for `duration` seconds,
@@ -26,7 +29,7 @@ extends PetAbility
 ## Hits can also stun, slow, knock back, set burning (damage over time),
 ## leave a burning patch, or arc on as chain lightning to `chain` more enemies.
 
-@export_enum("orb", "fireball", "magma", "meteor", "meteors", "lightning", "bolt", "arc", "storm", "wave", "vortex") var style := "orb"
+@export_enum("orb", "fireball", "magma", "meteor", "meteors", "lightning", "bolt", "arc", "chains", "storm", "wave", "vortex") var style := "orb"
 @export var color := Color(1.0, 0.5, 0.2)
 @export var stun_duration := 0.0
 @export var slow_duration := 0.0
@@ -93,6 +96,8 @@ func execute(pet: Creature, point: Vector3, target: Creature) -> void:
 		if style == "bolt":
 			var paw := pet.global_position + Vector3.UP * 0.75 + (impact - pet.global_position).normalized() * 0.4
 			world.play_thunderbolt.rpc(StormFX.sky_point(impact) + Vector3.UP * 3.0, impact + Vector3.UP * 0.05, paw, radius)
+		elif style == "chains":
+			pass  # drawn when it lands (_chain_from), once the struck enemies are known
 		elif style == "arc":
 			var hand := pet.global_position + Vector3.UP * 0.75
 			hand += (impact - pet.global_position).normalized() * 0.4
@@ -160,7 +165,15 @@ func _chain_from(pet: Creature, start: Vector3, already: Array[Node3D], damage: 
 		_hit(pet, next, damage, last)
 		last = next.global_position
 		points.append(last + Vector3.UP * 0.6)
-	if points.size() > 1:
+	if style == "chains":
+		var targets := PackedVector3Array()
+		for enemy in already:
+			if is_instance_valid(enemy):
+				targets.append(enemy.global_position + Vector3.UP * 0.6)
+		targets.append_array(points.slice(1))
+		var paw := pet.global_position + Vector3.UP * 0.75 + (start - pet.global_position).normalized() * 0.4
+		pet.world.play_chains.rpc(paw, start + Vector3.UP * 0.6, targets)
+	elif points.size() > 1:
 		if style == "arc":
 			pet.world.play_arc.rpc(points)
 		else:

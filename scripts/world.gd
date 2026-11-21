@@ -2456,6 +2456,13 @@ func play_thunderbolt(sky: Vector3, impact: Vector3, paw: Vector3, radius: float
 	StormFX.play(self, impact, radius * 1.3, 0.3, true)
 
 
+## Thunder Chain: chains of lightning from the caster's `paw` to `center`, a
+## ring of chain round it, and chains out to each of `targets`.
+@rpc("authority", "call_local", "unreliable")
+func play_chains(paw: Vector3, center: Vector3, targets: PackedVector3Array) -> void:
+	ChainFX.play(self, paw, center, targets)
+
+
 ## Thunderstorm: a storm cloud over `center`, electricity crackling beneath it.
 @rpc("authority", "call_local", "unreliable")
 func play_storm(center: Vector3, radius: float, duration: float) -> void:
