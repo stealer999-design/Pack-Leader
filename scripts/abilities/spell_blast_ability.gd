@@ -11,6 +11,8 @@ extends PetAbility
 ##   streak down at a slant, throw out rocks and leave the ground burning
 ##   (FireballFX), with smaller ones raining around them for show;
 ## - "lightning": a bolt strikes down from the sky, instantly;
+## - "bolt": Lightning Bolt's look: a massive forking bolt from the sky, an arc
+##   from the caster's paw to the spot, electricity bursting out along the ground;
 ## - "arc": crackling lightning leaps from the caster to the spot, instantly
 ##   (LightningFX; its chain lightning is drawn the same way);
 ## - "storm": a storm cloud wheels over the spot for `duration` seconds,
@@ -24,7 +26,7 @@ extends PetAbility
 ## Hits can also stun, slow, knock back, set burning (damage over time),
 ## leave a burning patch, or arc on as chain lightning to `chain` more enemies.
 
-@export_enum("orb", "fireball", "magma", "meteor", "meteors", "lightning", "arc", "storm", "wave", "vortex") var style := "orb"
+@export_enum("orb", "fireball", "magma", "meteor", "meteors", "lightning", "bolt", "arc", "storm", "wave", "vortex") var style := "orb"
 @export var color := Color(1.0, 0.5, 0.2)
 @export var stun_duration := 0.0
 @export var slow_duration := 0.0
@@ -88,7 +90,10 @@ func execute(pet: Creature, point: Vector3, target: Creature) -> void:
 			"meteors":
 				from = impact + METEOR_SLANT
 				travel = METEOR_FALL + 0.15 + i * 0.22
-		if style == "arc":
+		if style == "bolt":
+			var paw := pet.global_position + Vector3.UP * 0.75 + (impact - pet.global_position).normalized() * 0.4
+			world.play_thunderbolt.rpc(StormFX.sky_point(impact) + Vector3.UP * 3.0, impact + Vector3.UP * 0.05, paw, radius)
+		elif style == "arc":
 			var hand := pet.global_position + Vector3.UP * 0.75
 			hand += (impact - pet.global_position).normalized() * 0.4
 			world.play_arc.rpc(PackedVector3Array([hand, impact + Vector3.UP * 0.6]))

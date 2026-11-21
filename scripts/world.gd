@@ -2447,6 +2447,15 @@ func play_arc(points: PackedVector3Array, width := 1.0) -> void:
 	LightningFX.play(self, points, width)
 
 
+## Lightning Bolt: a massive bolt from `sky` to `impact`, an arc from the
+## caster's `paw`, and electricity bursting out along the ground.
+@rpc("authority", "call_local", "unreliable")
+func play_thunderbolt(sky: Vector3, impact: Vector3, paw: Vector3, radius: float) -> void:
+	LightningFX.play(self, PackedVector3Array([sky, impact]), 2.6)
+	LightningFX.play(self, PackedVector3Array([paw, impact + Vector3.UP * 0.6]), 0.8)
+	StormFX.play(self, impact, radius * 1.3, 0.3, true)
+
+
 ## Thunderstorm: a storm cloud over `center`, electricity crackling beneath it.
 @rpc("authority", "call_local", "unreliable")
 func play_storm(center: Vector3, radius: float, duration: float) -> void:

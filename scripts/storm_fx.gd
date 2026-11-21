@@ -5,6 +5,8 @@ extends Node3D
 ## crackles across the ground beneath it (jagged forks re-struck many times a
 ## second) and the air flickers blue. The bolts themselves strike down from
 ## the cloud one by one (sky_point, drawn by LightningFX).
+## With `burst` (Lightning Bolt's impact) there's no cloud: forks of
+## electricity race outwards along the ground from the middle and die away.
 
 const CLOUD_HEIGHT := 3.8
 const CLOUD_SHADER := preload("res://scripts/storm_cloud.gdshader")
@@ -18,6 +20,7 @@ var _next := 0.0
 var _cloud_mat: ShaderMaterial
 var _ground := ImmediateMesh.new()
 var _light: OmniLight3D
+var _burst := false
 
 
 ## Where a bolt from the storm at `center` starts: in the cloud, near its middle.
@@ -25,9 +28,10 @@ static func sky_point(center: Vector3) -> Vector3:
 	return center + Vector3(randf_range(-0.8, 0.8), CLOUD_HEIGHT - 0.2, randf_range(-0.8, 0.8))
 
 
-static func play(parent: Node, center: Vector3, radius: float, duration: float) -> void:
+static func play(parent: Node, center: Vector3, radius: float, duration: float, burst := false) -> void:
 	LightningFX.ensure_materials()
 	var fx := StormFX.new()
+	fx._burst = burst
 	fx._radius = radius
 	fx._duration = duration
 	parent.add_child(fx)
@@ -36,17 +40,8 @@ static func play(parent: Node, center: Vector3, radius: float, duration: float) 
 
 
 func _build() -> void:
-	var cloud := MeshInstance3D.new()
-	var plane := PlaneMesh.new()
-	plane.size = Vector2.ONE * _radius * 1.7
-	cloud.mesh = plane
-	_cloud_mat = ShaderMaterial.new()
-	_cloud_mat.shader = CLOUD_SHADER
-	_cloud_mat.set_shader_parameter("seed", randf() * 40.0)
-	cloud.material_override = _cloud_mat
-	cloud.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	cloud.position.y = CLOUD_HEIGHT
-	add_child(cloud)
+	if not _burst:
+		_build_cloud()
 	var ground := MeshInstance3D.new()
 	ground.mesh = _ground
 	ground.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -60,6 +55,20 @@ func _build() -> void:
 	_update()
 
 
+func _build_cloud() -> void:
+	var cloud := MeshInstance3D.new()
+	var plane := PlaneMesh.new()
+	plane.size = Vector2.ONE * _radius * 1.7
+	cloud.mesh = plane
+	_cloud_mat = ShaderMaterial.new()
+	_cloud_mat.shader = CLOUD_SHADER
+	_cloud_mat.set_shader_parameter("seed", randf() * 40.0)
+	cloud.material_override = _cloud_mat
+	cloud.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	cloud.position.y = CLOUD_HEIGHT
+	add_child(cloud)
+
+
 func _process(delta: float) -> void:
 	_t += delta
 	if _t >= _duration + FADE:
@@ -69,11 +78,15 @@ func _process(delta: float) -> void:
 
 
 func _update() -> void:
-	var fade := minf(clampf(_t / 0.35, 0.0, 1.0), 1.0 - clampf((_t - _duration) / FADE, 0.0, 1.0))
-	_cloud_mat.set_shader_parameter("fade", fade)
+	var fade := 1.0 - clampf((_t - _duration) / FADE, 0.0, 1.0)
 	var flicker := randf() if randf() < 0.3 else 0.0
-	_cloud_mat.set_shader_parameter("flash", flicker)
-	_light.light_energy = (0.6 + flicker * 1.6) * fade
+	if _burst:
+		_light.light_energy = 3.0 * fade
+	else:
+		fade = minf(clampf(_t / 0.35, 0.0, 1.0), fade)
+		_cloud_mat.set_shader_parameter("fade", fade)
+		_cloud_mat.set_shader_parameter("flash", flicker)
+		_light.light_energy = (0.6 + flicker * 1.6) * fade
 	if _t >= _next:
 		_next = _t + RESTRIKE
 		_crackle(fade)
@@ -90,6 +103,9 @@ func _crackle(fade: float) -> void:
 	for i in randi_range(7, 11):
 		var a := global_position + Vector3.FORWARD.rotated(Vector3.UP, randf() * TAU) * _radius * sqrt(randf()) * 0.9
 		var b := a + Vector3.FORWARD.rotated(Vector3.UP, randf() * TAU) * randf_range(0.8, 2.2)
+		if _burst:  # racing outwards from the strike
+			a = global_position
+			b = a + Vector3.FORWARD.rotated(Vector3.UP, TAU * (i + randf()) / 9.0) * _radius * randf_range(0.7, 1.25)
 		var pts := LightningFX.jagged(a, b, 0.3)
 		for k in pts.size():
 			pts[k].y = 0.06  # lying on the floor
