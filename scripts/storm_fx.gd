@@ -21,6 +21,7 @@ var _cloud_mat: ShaderMaterial
 var _ground := ImmediateMesh.new()
 var _light: OmniLight3D
 var _burst := false
+var _ice := false  ## Hailstorm: a pale frosty vortex, no lightning
 
 
 ## Where a bolt from the storm at `center` starts: in the cloud, near its middle.
@@ -28,10 +29,11 @@ static func sky_point(center: Vector3) -> Vector3:
 	return center + Vector3(randf_range(-0.8, 0.8), CLOUD_HEIGHT - 0.2, randf_range(-0.8, 0.8))
 
 
-static func play(parent: Node, center: Vector3, radius: float, duration: float, burst := false) -> void:
+static func play(parent: Node, center: Vector3, radius: float, duration: float, burst := false, ice := false) -> void:
 	LightningFX.ensure_materials()
 	var fx := StormFX.new()
 	fx._burst = burst
+	fx._ice = ice
 	fx._radius = radius
 	fx._duration = duration
 	parent.add_child(fx)
@@ -63,6 +65,7 @@ func _build_cloud() -> void:
 	_cloud_mat = ShaderMaterial.new()
 	_cloud_mat.shader = CLOUD_SHADER
 	_cloud_mat.set_shader_parameter("seed", randf() * 40.0)
+	_cloud_mat.set_shader_parameter("ice", 1.0 if _ice else 0.0)
 	cloud.material_override = _cloud_mat
 	cloud.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	cloud.position.y = CLOUD_HEIGHT
@@ -85,9 +88,9 @@ func _update() -> void:
 	else:
 		fade = minf(clampf(_t / 0.35, 0.0, 1.0), fade)
 		_cloud_mat.set_shader_parameter("fade", fade)
-		_cloud_mat.set_shader_parameter("flash", flicker)
+		_cloud_mat.set_shader_parameter("flash", 0.0 if _ice else flicker)
 		_light.light_energy = (0.6 + flicker * 1.6) * fade
-	if _t >= _next:
+	if _t >= _next and not _ice:
 		_next = _t + RESTRIKE
 		_crackle(fade)
 

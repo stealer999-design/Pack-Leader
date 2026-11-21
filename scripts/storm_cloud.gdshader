@@ -7,6 +7,7 @@ render_mode blend_mix, unshaded, cull_disabled, depth_draw_never, shadows_disabl
 uniform float fade : hint_range(0.0, 1.0) = 1.0;
 uniform float flash = 0.0;
 uniform float seed = 0.0;
+uniform float ice = 0.0;  // 1 = Hailstorm: a pale, frosty vortex instead of a dark storm
 
 float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 float noise(vec2 p) {
@@ -31,6 +32,9 @@ void fragment() {
 	vec3 cloud = mix(vec3(0.07, 0.08, 0.11), vec3(0.32, 0.36, 0.45), arms);
 	cloud = mix(cloud, vec3(0.03, 0.03, 0.05), smoothstep(0.35, 0.0, r));  // the dark eye
 	cloud += vec3(0.5, 0.7, 1.0) * flash * arms * (1.0 - r) * 1.2;  // lightning inside
+	vec3 frost = mix(vec3(0.42, 0.55, 0.68), vec3(0.93, 0.97, 1.0), arms);
+	frost = mix(frost, vec3(0.3, 0.42, 0.55), smoothstep(0.35, 0.0, r));
+	cloud = mix(cloud, frost, ice);
 	float edge = 1.0 - smoothstep(0.55, 1.0, r + (n - 0.5) * 0.35);
 	ALBEDO = cloud;
 	ALPHA = clamp(edge * (0.75 + 0.25 * arms) * fade, 0.0, 1.0);

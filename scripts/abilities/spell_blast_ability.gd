@@ -10,6 +10,8 @@ extends PetAbility
 ## - "meteors": Meteor Shower's look: blazing meteors on long tails of fire
 ##   streak down at a slant, throw out rocks and leave the ground burning
 ##   (FireballFX), with smaller ones raining around them for show;
+## - "hail": Hailstorm's look: a frosty vortex (StormFX) drops chunks of ice
+##   that shatter into shards and snow, frosting the ground (HailFX);
 ## - "lightning": a bolt strikes down from the sky, instantly;
 ## - "bolt": Lightning Bolt's look: a massive forking bolt from the sky, an arc
 ##   from the caster's paw to the spot, electricity bursting out along the ground;
@@ -29,7 +31,7 @@ extends PetAbility
 ## Hits can also stun, slow, knock back, set burning (damage over time),
 ## leave a burning patch, or arc on as chain lightning to `chain` more enemies.
 
-@export_enum("orb", "fireball", "magma", "meteor", "meteors", "lightning", "bolt", "arc", "chains", "storm", "wave", "vortex") var style := "orb"
+@export_enum("orb", "fireball", "magma", "meteor", "meteors", "hail", "lightning", "bolt", "arc", "chains", "storm", "wave", "vortex") var style := "orb"
 @export var color := Color(1.0, 0.5, 0.2)
 @export var stun_duration := 0.0
 @export var slow_duration := 0.0
@@ -78,6 +80,8 @@ func execute(pet: Creature, point: Vector3, target: Creature) -> void:
 						_storm_strike.bind(pet, center, damage))
 			world.play_storm.rpc(center, spread, duration)
 			return
+	if style == "hail":
+		world.play_storm.rpc(center, spread + 0.6, METEOR_FALL * 0.7 + 0.2 + count * 0.15 + 0.2, false, true)
 	for i in count:
 		var impact := center
 		if count > 1:
@@ -90,10 +94,15 @@ func execute(pet: Creature, point: Vector3, target: Creature) -> void:
 			"meteor":
 				from = impact + Vector3(2.5, 14.0, 1.5)
 				travel = METEOR_FALL + i * 0.15
+			"hail":
+				from = center + Vector3(randf_range(-1.0, 1.0), StormFX.CLOUD_HEIGHT - 0.2, randf_range(-1.0, 1.0))
+				travel = METEOR_FALL * 0.7 + 0.2 + i * 0.15
 			"meteors":
 				from = impact + METEOR_SLANT
 				travel = METEOR_FALL + 0.15 + i * 0.22
-		if style == "bolt":
+		if style == "hail":
+			world.play_hail.rpc(from, impact + Vector3.UP * 0.15, travel, radius)
+		elif style == "bolt":
 			var paw := pet.global_position + Vector3.UP * 0.75 + (impact - pet.global_position).normalized() * 0.4
 			world.play_thunderbolt.rpc(StormFX.sky_point(impact) + Vector3.UP * 3.0, impact + Vector3.UP * 0.05, paw, radius)
 		elif style == "chains":

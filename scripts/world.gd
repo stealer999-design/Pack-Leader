@@ -2463,10 +2463,17 @@ func play_chains(paw: Vector3, center: Vector3, targets: PackedVector3Array) -> 
 	ChainFX.play(self, paw, center, targets)
 
 
-## Thunderstorm: a storm cloud over `center`, electricity crackling beneath it.
+## Thunderstorm: a storm cloud over `center`, electricity crackling beneath it
+## (with `ice`, Hailstorm's frosty vortex).
 @rpc("authority", "call_local", "unreliable")
-func play_storm(center: Vector3, radius: float, duration: float) -> void:
-	StormFX.play(self, center, radius, duration)
+func play_storm(center: Vector3, radius: float, duration: float, burst := false, ice := false) -> void:
+	StormFX.play(self, center, radius, duration, burst, ice)
+
+
+## One of Hailstorm's hailstones, falling from `from` to `to` and shattering.
+@rpc("authority", "call_local", "unreliable")
+func play_hail(from: Vector3, to: Vector3, travel: float, radius: float) -> void:
+	HailFX.play(self, from, to, travel, radius)
 
 
 ## Tidal Wave: a wall of water rolling out from `origin` towards `forward`.
