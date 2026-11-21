@@ -2432,6 +2432,12 @@ func play_spell(style: String, from: Vector3, to: Vector3, color: Color, travel:
 	tween.tween_callback(fx.queue_free)
 
 
+## Tidal Wave: a wall of water rolling out from `origin` towards `forward`.
+@rpc("authority", "call_local", "unreliable")
+func play_wave(origin: Vector3, forward: Vector3, radius: float, cone_degrees: float, color: Color) -> void:
+	TidalWaveFX.play(self, origin, forward, radius, cone_degrees, color)
+
+
 ## A short beam between two points (e.g. a heal).
 @rpc("authority", "call_local", "unreliable")
 func play_beam(from: Vector3, to: Vector3, color: Color) -> void:

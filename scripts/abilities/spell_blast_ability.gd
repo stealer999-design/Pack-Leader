@@ -7,8 +7,9 @@ extends PetAbility
 ## - "lightning": a bolt strikes down from the sky, instantly;
 ## - "storm": `count` lightning bolts strike enemies around the spot, one
 ##   after another over `duration` seconds;
-## - "wave": a cone (`cone_degrees` wide, `radius` long) sweeps out from the
-##   caster towards the spot, hitting everything in it;
+## - "wave": a curling wall of water (TidalWaveFX) rolls out from the caster
+##   towards the spot across a cone (`cone_degrees` wide, `radius` long),
+##   hitting everything in it as it reaches them;
 ## - "vortex": a whirlwind spins at the spot for `duration` seconds, hurting
 ##   and slowing what's inside.
 ## Hits can also stun, slow, knock back, set burning (damage over time),
@@ -154,13 +155,18 @@ func _wave(pet: Creature, toward: Vector3, damage: float) -> void:
 		var to := enemy.global_position - origin
 		to.y = 0.0
 		if to.length() < 0.5 or forward.angle_to(to.normalized()) <= half + 0.15:
-			_hit(pet, enemy, damage, origin)
-	for i in 7:  # a fan of magic rolling outwards
-		var dir := forward.rotated(Vector3.UP, half * (i / 3.0 - 1.0))
-		world.play_spell.rpc("orb", origin + Vector3.UP * 0.6, origin + dir * radius + Vector3.UP * 0.6, color, 0.35)
+			# hit when the wave rolls over it
+			pet.get_tree().create_timer(TidalWaveFX.reach_time(to.length(), radius)).timeout.connect(
+					_wave_hit.bind(pet, enemy, damage, origin))
+	world.play_wave.rpc(origin, forward, radius, cone_degrees, color)
 	if burn_duration > 0.0:
 		world.add_zone(pet, world.clamp_to_level(origin + forward * radius * 0.6), radius * 0.4, burn_duration,
 				pet.ability_damage() * burn_dps_multiplier, color)
+
+
+func _wave_hit(pet_ref, enemy_ref, damage: float, origin: Vector3) -> void:
+	if is_instance_valid(pet_ref) and is_instance_valid(enemy_ref) and not enemy_ref.is_queued_for_deletion():
+		_hit(pet_ref, enemy_ref, damage, origin)
 
 
 ## A whirlwind at `center`: damage and a slow now, then damage every half second.

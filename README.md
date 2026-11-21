@@ -766,6 +766,7 @@ The host is the authoritative server and also plays.
 | `scripts/creature_species.gd`, `resources/species/*.tres`, `scripts/species_db.gd` | Species data. Add a `.tres` and list it in `SpeciesDB` to add a species |
 | `scripts/combat.gd` | Faction rule (`Combat.are_enemies`) that enforces no friendly fire |
 | `scripts/abilities/*.gd`, `resources/abilities/*.tres` | `PetAbility` base class and one subclass per ability; tune values in the `.tres` files |
+| `scripts/tidal_wave_fx.gd`, `scripts/tidal_wave.gdshader`, `scripts/tidal_foam.gdshader` | Tidal Wave's look: a curling wall of dark water with glowing streaks, a foam crest, spray and a second swell, rolling out over the cone (each enemy is hit as the wave reaches it), leaving churned foam behind |
 | `scenes/crate.tscn` + `scripts/crate.gd`, `scenes/coin.tscn` + `scripts/coin.gd` | Breakable vases (still called crates in the code) and the coins they spill |
 | `scripts/components/health.gd` | Health with setter-driven signals (works with replication), plus poison and damage-absorbing shields |
 | `scripts/pet_slot.gd` | A drag-and-drop place in the stable window (hay bed, party cushion, reserve place or release gate), drawn in code |
