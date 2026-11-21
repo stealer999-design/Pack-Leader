@@ -665,7 +665,7 @@ played in the browser".
   |---|---|---|
   | Mossback | Tidal Wave | (Water) A wave crashes out towards where you aim: 2x damage to everything in a 7-unit cone, knocking them back and slowing them for 2s. |
   | Emberfox | Fireball | (Fire) Hurls a fireball at the spot you aim at: it explodes for 2.5x damage around it and sets enemies burning. |
-  | Voltwing | Static Arc | (Lightning) Calls lightning down where you aim (1.8x), then it arcs on to 3 more enemies. |
+  | Voltwing | Static Arc | (Lightning) Lightning leaps from your pet to where you aim (1.8x), then arcs on to 3 more enemies. |
   | Gloomhorn | Cyclone | (Air) A howling cyclone at the spot for 4s: enemies inside are pulled in, slowed to half speed and battered. |
   | Frostfinch | Frost Arrow | An icy arrow at the spot: 2x damage to anything close to where it lands, slowing them to half speed for 3s. |
   | Quillpuff | Arrow Cone | Fires 7 arrows in a wide cone towards where you aim, each hitting for 1.1x damage. |
@@ -767,6 +767,7 @@ The host is the authoritative server and also plays.
 | `scripts/combat.gd` | Faction rule (`Combat.are_enemies`) that enforces no friendly fire |
 | `scripts/abilities/*.gd`, `resources/abilities/*.tres` | `PetAbility` base class and one subclass per ability; tune values in the `.tres` files |
 | `scripts/fireball_fx.gd`, `scripts/fire_ball.gdshader`, `scripts/fire_trail.gdshader` | Fireball's look: a blazing ball (white-hot heart, boiling flames) with two flame tendrils spiralling round a plume behind it and embers streaming off; it explodes in a torn ball of fire, flinging sparks. Magma Orb uses it too, as a bigger swirling ball of lava (molten spiral arms over dark crust) with no trail, and Meteor Shower (`scripts/scorch.gdshader` too): meteors on long tails of fire streaking in from the top right of the screen, throwing out rocks and leaving burning ground, with smaller ones raining round them for show |
+| `scripts/lightning_fx.gd` | Static Arc's look: crackling lightning from the pet to the spot and on along its chain, several jagged strands with forks, re-struck every few hundredths of a second so it writhes (white core, blue glow), with sparks and a flash at each hit |
 | `scripts/tidal_wave_fx.gd`, `scripts/tidal_wave.gdshader`, `scripts/tidal_foam.gdshader` | Tidal Wave's look: a curling wall of dark water with glowing streaks, a foam crest, spray and a second swell, rolling out over the cone (each enemy is hit as the wave reaches it), leaving churned foam behind |
 | `scenes/crate.tscn` + `scripts/crate.gd`, `scenes/coin.tscn` + `scripts/coin.gd` | Breakable vases (still called crates in the code) and the coins they spill |
 | `scripts/components/health.gd` | Health with setter-driven signals (works with replication), plus poison and damage-absorbing shields |

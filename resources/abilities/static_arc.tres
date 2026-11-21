@@ -5,12 +5,12 @@
 [resource]
 script = ExtResource("1_ability")
 display_name = "Static Arc"
-description = "(Lightning) Calls lightning down where you aim (1.8x), then it arcs on to 3 more enemies."
+description = "(Lightning) Lightning leaps from your pet to where you aim (1.8x), then arcs on to 3 more enemies."
 cooldown = 3.0
 cast_range = 11
 needs_target = false
 damage_multiplier = 1.8
 radius = 1.8
-style = "lightning"
-color = Color(1, 0.95, 0.45, 1)
+style = "arc"
+color = Color(0.7, 0.85, 1, 1)
 chain = 3

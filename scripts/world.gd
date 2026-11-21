@@ -2440,6 +2440,12 @@ func play_fireball(from: Vector3, to: Vector3, travel: float, blast_radius: floa
 	FireballFX.play(self, from, to, travel, blast_radius, magma, meteor)
 
 
+## Static Arc: crackling, forking lightning from points[0] through each point after.
+@rpc("authority", "call_local", "unreliable")
+func play_arc(points: PackedVector3Array) -> void:
+	LightningFX.play(self, points)
+
+
 ## Tidal Wave: a wall of water rolling out from `origin` towards `forward`.
 @rpc("authority", "call_local", "unreliable")
 func play_wave(origin: Vector3, forward: Vector3, radius: float, cone_degrees: float, color: Color) -> void:
