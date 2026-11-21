@@ -2433,10 +2433,11 @@ func play_spell(style: String, from: Vector3, to: Vector3, color: Color, travel:
 
 
 ## Fireball (a blazing ball with spiralling flame tendrils) or, with `magma`,
-## Magma Orb (a swirling ball of lava): it flies to `to` and explodes.
+## Magma Orb (a swirling ball of lava), or with `meteor` (its size) one of
+## Meteor Shower's meteors: it flies to `to` and explodes.
 @rpc("authority", "call_local", "unreliable")
-func play_fireball(from: Vector3, to: Vector3, travel: float, blast_radius: float, magma := false) -> void:
-	FireballFX.play(self, from, to, travel, blast_radius, magma)
+func play_fireball(from: Vector3, to: Vector3, travel: float, blast_radius: float, magma := false, meteor := 0.0) -> void:
+	FireballFX.play(self, from, to, travel, blast_radius, magma, meteor)
 
 
 ## Tidal Wave: a wall of water rolling out from `origin` towards `forward`.

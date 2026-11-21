@@ -7,6 +7,9 @@ extends PetAbility
 ##   tendrils that explodes where it lands (FireballFX);
 ## - "magma": the same, drawn as a big swirling orb of lava, no trail (FireballFX);
 ## - "meteor": burning rocks (or hail) fall out of the sky onto the spot;
+## - "meteors": Meteor Shower's look: blazing meteors on long tails of fire
+##   streak down at a slant, throw out rocks and leave the ground burning
+##   (FireballFX), with smaller ones raining around them for show;
 ## - "lightning": a bolt strikes down from the sky, instantly;
 ## - "storm": `count` lightning bolts strike enemies around the spot, one
 ##   after another over `duration` seconds;
@@ -18,7 +21,7 @@ extends PetAbility
 ## Hits can also stun, slow, knock back, set burning (damage over time),
 ## leave a burning patch, or arc on as chain lightning to `chain` more enemies.
 
-@export_enum("orb", "fireball", "magma", "meteor", "lightning", "storm", "wave", "vortex") var style := "orb"
+@export_enum("orb", "fireball", "magma", "meteor", "meteors", "lightning", "storm", "wave", "vortex") var style := "orb"
 @export var color := Color(1.0, 0.5, 0.2)
 @export var stun_duration := 0.0
 @export var slow_duration := 0.0
@@ -44,6 +47,10 @@ extends PetAbility
 const ORB_SPEED := 16.0
 const METEOR_FALL := 0.55
 const CHAIN_RANGE := 6.0
+## Where Meteor Shower's meteors come from, relative to where they land (a slant, not straight down).
+const METEOR_SLANT := Vector3(5.0, 12.0, 3.0)
+## Smaller meteors that rain around Meteor Shower's real ones, for show (they do no damage).
+const SHOW_METEORS := 4
 
 
 func execute(pet: Creature, point: Vector3, target: Creature) -> void:
@@ -75,11 +82,21 @@ func execute(pet: Creature, point: Vector3, target: Creature) -> void:
 			"meteor":
 				from = impact + Vector3(2.5, 14.0, 1.5)
 				travel = METEOR_FALL + i * 0.15
-		if style == "fireball" or style == "magma":
+			"meteors":
+				from = impact + METEOR_SLANT
+				travel = METEOR_FALL + 0.15 + i * 0.22
+		if style == "meteors":
+			world.play_fireball.rpc(from, impact + Vector3.UP * 0.3, travel, radius, false, 1.0)
+		elif style == "fireball" or style == "magma":
 			world.play_fireball.rpc(from, impact + Vector3.UP * 0.5, travel, radius, style == "magma")
 		else:
 			world.play_spell.rpc(style, from, impact + Vector3.UP * 0.4, color, travel)
 		pet.get_tree().create_timer(travel).timeout.connect(_land.bind(pet, impact, damage))
+	if style == "meteors":
+		for i in SHOW_METEORS:
+			var spot := world.clamp_to_level(center + Vector3.FORWARD.rotated(Vector3.UP, randf() * TAU) * spread * randf_range(0.6, 1.5))
+			world.play_fireball.rpc(spot + METEOR_SLANT * 0.9, spot + Vector3.UP * 0.2, METEOR_FALL + randf_range(0.0, 0.8),
+					radius * 0.5, false, randf_range(0.45, 0.6))
 
 
 func _land(pet_ref, impact: Vector3, damage: float) -> void:

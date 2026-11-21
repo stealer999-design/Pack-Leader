@@ -1,7 +1,9 @@
 class_name FireballFX
 extends Node3D
 ## Fireball's look (and Magma Orb's, with `magma`: a bigger swirling ball of
-## molten rock and no trail): a blazing ball (white-hot heart, boiling flames, a halo)
+## molten rock and no trail; and Meteor Shower's, with `meteor`: a burning rock
+## streaking down out of the sky on a long tail of flame, that blasts out rock
+## chunks and leaves a patch of burning ground): a blazing ball (white-hot heart, boiling flames, a halo)
 ## with flame tendrils spiralling back from it and embers streaming off,
 ## flying from the caster to the spot; there it explodes in a ball of fire
 ## that burns out, flinging sparks, with a flash of light. Purely visual: the
@@ -13,6 +15,8 @@ const BALL_RADIUS := 0.55
 const TRAIL_LENGTH := 3.4
 const EXPLODE_TIME := 0.55
 const MAGMA_RADIUS := 0.8
+const SCORCH_SHADER := preload("res://scripts/scorch.gdshader")
+const SCORCH_TIME := 2.6
 
 static var _ribbon_mesh: ArrayMesh
 static var _dot_mat: StandardMaterial3D
@@ -21,16 +25,20 @@ var _trails: Array[ShaderMaterial] = []
 var _embers: CPUParticles3D
 var _blast_radius := 2.5
 var _magma := false
+var _meteor := 0.0  ## a meteor of this size (1 = full), 0 = not a meteor
 
 
 ## Throws a fireball from `from` to `to`, arriving after `travel` seconds.
-static func play(parent: Node, from: Vector3, to: Vector3, travel: float, blast_radius: float, magma := false) -> void:
+static func play(parent: Node, from: Vector3, to: Vector3, travel: float, blast_radius: float, magma := false, meteor := 0.0) -> void:
 	if _ribbon_mesh == null:
 		_ribbon_mesh = _make_ribbon()
 		_dot_mat = _make_dot_material()
+	if meteor > 0.0:
+		from = _meteor_start(parent, from, to)
 	var fx := FireballFX.new()
 	fx._blast_radius = blast_radius
 	fx._magma = magma
+	fx._meteor = meteor
 	parent.add_child(fx)
 	fx.global_position = from
 	var flat := to - from
@@ -42,9 +50,26 @@ static func play(parent: Node, from: Vector3, to: Vector3, travel: float, blast_
 	tween.tween_callback(fx._explode)
 
 
+## Meteors streak in from the top right of this player's screen, whichever
+## way their camera faces, so their tails show at full length.
+static func _meteor_start(parent: Node, from: Vector3, to: Vector3) -> Vector3:
+	var cam := parent.get_viewport().get_camera_3d() if parent.is_inside_tree() else null
+	if cam == null:
+		return from
+	var right := cam.global_basis.x
+	right.y = 0.0
+	var away := -cam.global_basis.z
+	away.y = 0.0
+	var height := from.y - to.y
+	return to + right.normalized() * height * 0.45 + away.normalized() * height * 0.12 + Vector3.UP * height
+
+
 func _build() -> void:
 	if _magma:
 		_build_magma()
+		return
+	if _meteor > 0.0:
+		_build_meteor()
 		return
 	# the ball: an outer shell of flame round a white-hot heart
 	for layer in [[BALL_RADIUS * 1.45, 0.75, 0.7], [BALL_RADIUS, 1.25, 1.0]]:
@@ -124,6 +149,95 @@ func _build_magma() -> void:
 	add_child(light)
 
 
+## A meteor: a burning rock (a dark crust cracked with fire inside a skin of
+## flame) on a long, straight tail of fire, shedding embers.
+func _build_meteor() -> void:
+	var m := _meteor
+	for layer in [[0.7 * m, 0.7, 0.55, 0.0], [0.5 * m, 0.95, 1.0, 1.0]]:
+		var mat := ShaderMaterial.new()
+		mat.shader = BALL_SHADER
+		mat.set_shader_parameter("heat", layer[1])
+		mat.set_shader_parameter("strength", layer[2])
+		mat.set_shader_parameter("magma", layer[3])
+		var ball := MeshInstance3D.new()
+		var sphere := SphereMesh.new()
+		sphere.radius = layer[0]
+		sphere.height = layer[0] * 2.0
+		ball.mesh = sphere
+		ball.material_override = mat
+		ball.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		add_child(ball)
+	add_child(_halo(2.6 * m, Color(1.0, 0.4, 0.08, 0.35)))
+	var mat := ShaderMaterial.new()
+	mat.shader = TRAIL_SHADER
+	mat.set_shader_parameter("radius", 0.0)
+	mat.set_shader_parameter("twist", 0.0)
+	mat.set_shader_parameter("spin", 0.0)
+	mat.set_shader_parameter("width", 1.2 * m)
+	mat.set_shader_parameter("trail_length", 0.3)
+	var tail := MeshInstance3D.new()
+	tail.mesh = _ribbon_mesh
+	tail.material_override = mat
+	tail.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	tail.extra_cull_margin = 8.0
+	add_child(tail)
+	create_tween().tween_method(func(v: float) -> void: mat.set_shader_parameter("trail_length", v),
+			0.3, 5.5 * m, 0.3)
+	_embers = _make_embers()
+	_embers.amount = int(30 * m) + 6
+	_embers.emission_sphere_radius = 0.35 * m
+	add_child(_embers)
+
+
+## Where a meteor lands: rock chunks thrown out, and the ground left burning.
+func _meteor_impact() -> void:
+	var m := _meteor
+	var scorch := MeshInstance3D.new()
+	var quad := QuadMesh.new()
+	quad.size = Vector2.ONE * (_blast_radius * 1.1 * m + 0.6)
+	quad.orientation = PlaneMesh.FACE_Y
+	scorch.mesh = quad
+	var mat := ShaderMaterial.new()
+	mat.shader = SCORCH_SHADER
+	mat.set_shader_parameter("seed", randf() * 50.0)
+	scorch.material_override = mat
+	scorch.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(scorch)
+	scorch.global_position = Vector3(global_position.x, 0.04, global_position.z)
+	scorch.global_rotation = Vector3(0, randf() * TAU, 0)
+	create_tween().tween_method(func(v: float) -> void: mat.set_shader_parameter("fade", v),
+			1.0, 0.0, SCORCH_TIME).set_ease(Tween.EASE_IN)
+	var rock_mat := StandardMaterial3D.new()
+	rock_mat.albedo_color = Color(0.12, 0.08, 0.07)
+	rock_mat.roughness = 0.9
+	rock_mat.emission_enabled = true
+	rock_mat.emission = Color(1.0, 0.35, 0.05)
+	rock_mat.emission_energy_multiplier = 0.2
+	for i in int(5 + 5 * m):
+		var rock := MeshInstance3D.new()
+		var mesh := SphereMesh.new()  # a few sides only, so it's lumpy
+		var r := randf_range(0.07, 0.17) * (0.5 + m * 0.6)
+		mesh.radius = r
+		mesh.height = r * randf_range(1.3, 2.0)
+		mesh.radial_segments = 5
+		mesh.rings = 3
+		rock.mesh = mesh
+		rock.material_override = rock_mat
+		rock.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		add_child(rock)
+		var start := Vector3(global_position.x, 0.2, global_position.z)
+		var out := Vector3.FORWARD.rotated(Vector3.UP, randf() * TAU) * randf_range(1.0, 2.6) * (0.6 + m * 0.5)
+		var up := randf_range(2.5, 5.0)
+		var time := randf_range(0.45, 0.75)
+		var spin := Vector3(randf(), randf(), randf()) * 12.0
+		rock.global_position = start
+		var tween := rock.create_tween()
+		tween.tween_method(func(t: float) -> void:
+				rock.global_position = start + out * t + Vector3.UP * (up * t * time - 4.9 * t * t * time * time)
+				rock.rotation = spin * t, 0.0, 1.0, time)
+		tween.tween_property(rock, "scale", Vector3.ZERO, 0.6).set_delay(0.5)
+
+
 ## It strikes: the ball and tendrils go, a fireball blooms and burns out.
 func _explode() -> void:
 	for child in get_children():
@@ -131,6 +245,9 @@ func _explode() -> void:
 			child.queue_free()
 	_embers.emitting = false  # the trail's last sparks drift on
 	var size := maxf(_blast_radius * 0.65, 1.0)
+	if _meteor > 0.0:
+		size = maxf(_blast_radius * 0.5 * _meteor, 0.7)
+		_meteor_impact()
 	var blast := Node3D.new()
 	add_child(blast)
 	var layers := []
@@ -161,16 +278,17 @@ func _explode() -> void:
 	light.shadow_enabled = false
 	light.position.y = 0.6
 	add_child(light)
+	var hot := 1.0 if _meteor > 0.0 else 1.3  # meteors burst redder, rock and fire
 	var tween := create_tween().set_parallel()
 	tween.tween_property(blast, "scale", Vector3.ONE * size, EXPLODE_TIME).from(Vector3.ONE * 0.3) \
 			.set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_OUT)
 	for mat: ShaderMaterial in layers:
 		tween.tween_method(func(v: float) -> void:
 				mat.set_shader_parameter("erode", 0.1 + v * 0.9)
-				mat.set_shader_parameter("heat", lerpf(1.3, 0.45, v)), 0.0, 1.0, EXPLODE_TIME).set_ease(Tween.EASE_IN)
+				mat.set_shader_parameter("heat", lerpf(hot, 0.45, v)), 0.0, 1.0, EXPLODE_TIME).set_ease(Tween.EASE_IN)
 	tween.tween_property(halo.material_override, "albedo_color:a", 0.0, EXPLODE_TIME * 0.8)
 	tween.tween_property(light, "light_energy", 0.0, EXPLODE_TIME)
-	tween.chain().tween_interval(0.6)  # the sparks land
+	tween.chain().tween_interval(SCORCH_TIME - EXPLODE_TIME if _meteor > 0.0 else 0.6)  # the sparks land (and the ground stops burning)
 	tween.chain().tween_callback(queue_free)
 
 
