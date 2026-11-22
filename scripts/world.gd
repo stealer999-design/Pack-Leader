@@ -2464,6 +2464,13 @@ func play_wave(origin: Vector3, forward: Vector3, radius: float, cone_degrees: f
 	TidalWaveFX.play(self, origin, forward, radius, cone_degrees, color)
 
 
+## Sunburst Arrow: a fiery bolt from `from` bursting into a blazing sun at
+## `to`, rays of light and sunlight over `radius` (SunburstFX).
+@rpc("authority", "call_local", "unreliable")
+func play_sunburst(from: Vector3, to: Vector3, radius: float) -> void:
+	SunburstFX.play(self, from, to, radius)
+
+
 ## Rain of Arrows: a streak shot up from `from`, a circle of runes over
 ## `center`, and glowing arrows raining down, landing on `spots` at `times`
 ## among many more (RainFX).

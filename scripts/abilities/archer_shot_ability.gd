@@ -41,8 +41,9 @@ const ARROW_HIT := 1.1  ## How close to an arrow's landing spot (or path) counts
 ## icy arrows arcing down onto erupting ice (HailVolleyFX; its own arrows unseen),
 ## "snipe" Snipe's golden tracer and blinding flare (SnipeFX), "prism" Prism Shot's
 ## crystal, rainbow beam and rainbow burst (PrismFX), "rain" Rain of Arrows' circle
-## in the sky and downpour of glowing arrows (RainFX; its own arrows fall inside it).
-@export_enum("plain", "cone", "pierce", "frost", "hail", "snipe", "prism", "rain") var look := "plain"
+## in the sky and downpour of glowing arrows (RainFX; its own arrows fall inside it),
+## "sun" Sunburst Arrow's blazing sun and rays of light (SunburstFX).
+@export_enum("plain", "cone", "pierce", "frost", "hail", "snipe", "prism", "rain", "sun") var look := "plain"
 
 
 func cannot_cast_reason(pet: Creature) -> String:
@@ -63,6 +64,8 @@ func execute(pet: Creature, point: Vector3, target: Creature) -> void:
 				world.play_frost_arrow.rpc(from, aim, maxf(splash_radius, 1.0))
 			elif look == "snipe":
 				world.play_snipe.rpc(from, aim + Vector3.UP * 0.6)
+			elif look == "sun":
+				world.play_sunburst.rpc(from, aim + Vector3.UP * 0.5, maxf(splash_radius, 1.0))
 			elif look == "prism":
 				world.play_prism_shot.rpc(from, aim + Vector3.UP * 0.5, maxf(splash_radius, 1.0))
 			_fire(pet, from, aim, _hit.bind(pet, aim, damage, maxf(splash_radius, ARROW_HIT), target))
