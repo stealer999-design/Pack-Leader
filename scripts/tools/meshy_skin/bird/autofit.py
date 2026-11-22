@@ -22,7 +22,10 @@ top = np.percentile(core[:, 1], 99.5); H = top - y0
 def sl(y, w=0.04): return P[np.abs(P[:, 1] - y) < w]
 lo = (P[:, 1] < y0 + 0.05) & ~brown(CF)  # (a bow can rest on the ground beside the feet)
 y0 = P[lo, 1].min(); lo = (P[:, 1] < y0 + 0.05) & ~brown(CF)
-cx = np.median(P[lo, 0])  # the feet may sit a little off the middle
+lo &= P[:, 2] > np.percentile(P[lo, 2], 90) - 0.45  # (a long tail can touch the ground far behind them)
+cx = np.median(P[lo, 0])  # the feet may sit a little off the middle: split them by 2-means on x
+for _ in range(20):
+	xl = P[lo, 0]; cx = (xl[xl > cx].mean() + xl[xl <= cx].mean()) / 2
 feet = {s: P[lo & (np.sign(P[:, 0] - cx) == sg)].mean(0) for s, sg in (('L', 1), ('R', -1))}
 fz = (feet['L'][2] + feet['R'][2]) / 2
 # head: the top fifth of the bird, near the midline; beak: its front-most part
