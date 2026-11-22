@@ -6,8 +6,8 @@
 # rig has them.
 import numpy as np
 
-WALK_T = 0.72  # seconds per cycle
-WALK_TRAVEL = 0.62  # rig units the body covers per cycle (the pace is travel / T)
+WALK_T = 0.8  # seconds per cycle
+WALK_TRAVEL = 0.74  # rig units the body covers per cycle (the pace is travel / T)
 RUN_T = 0.46
 RUN_TRAVEL = 0.82
 HAS_WINGS = 'WingL' in idx
@@ -21,17 +21,24 @@ def wings(f, spread, flap=0.0):
 
 
 def walk(t):
+	"""the reference's walk: a long, even four-beat stride (left hind, left fore, right hind,
+	right fore), each paw tucking back as it lifts, the head carried level and forward,
+	the tail held straight out behind"""
 	T = WALK_T; ph = TAU * t / T; f = {}; planted(f)
-	walk_like(t, T, {'RL': 0.0, 'FL': 0.25, 'RR': 0.5, 'FR': 0.75}, WALK_TRAVEL, 0.62, 0.07, f)
-	f['Hips'] = (0, 0.04 * np.sin(ph), 0.025 * np.sin(ph))
-	f['Spine1'] = (0, -0.02 * np.sin(ph), 0); f['Spine2'] = (0, -0.02 * np.sin(ph + 0.4), 0)
-	f['Chest'] = (0, -0.04 * np.sin(ph + 0.8), -0.025 * np.sin(ph + 0.8))
-	f['Neck'] = (0.04 + 0.03 * np.sin(2 * ph), 0, 0)  # a little nod on each step
-	steady_head(f, 0.75)
-	tail(f, t, 0.22, 1 / T, lift=0.05, curl=0.06)
+	walk_like(t, T, {'RL': 0.0, 'FL': 0.25, 'RR': 0.5, 'FR': 0.75}, WALK_TRAVEL, 0.6, 0.08, f)
+	for leg in ('RL', 'RR'):  # the hind paw curls back as it swings through
+		foot, flex = f['_feet'][leg]; f['_feet'][leg] = (foot, flex * 2.4)
+	for leg in ('FL', 'FR'):
+		foot, flex = f['_feet'][leg]; f['_feet'][leg] = (foot, flex * 1.4)
+	f['Hips'] = (0, 0.035 * np.sin(ph), 0.02 * np.sin(ph))
+	f['Spine1'] = (0, -0.015 * np.sin(ph), 0); f['Spine2'] = (0, -0.015 * np.sin(ph + 0.4), 0)
+	f['Chest'] = (0, -0.035 * np.sin(ph + 0.8), -0.02 * np.sin(ph + 0.8))
+	f['Neck'] = (0.015 * np.sin(2 * ph), 0, 0)
+	steady_head(f, 0.85)
+	tail(f, t, 0.1, 1 / T, lift=-0.05, curl=0.02)
 	ears(f, back=0.05)
-	wings(f, 0.0, 0.05 * np.sin(2 * ph))
-	f['_offset'] = (0, -0.008 + 0.012 * np.cos(2 * ph), 0)
+	wings(f, 0.0, 0.04 * np.sin(2 * ph))
+	f['_offset'] = (0, -0.006 + 0.01 * np.cos(2 * ph), 0)
 	return finish(f)
 
 
@@ -73,15 +80,16 @@ def swipe(t):
 	lunge = env(t, 0.14, 0.24, 0.3, 0.55)
 	snap = env(t, 0.24, 0.28, 0.32, 0.38)
 	shake = np.sin(TAU * t * 9) * env(t, 0.28, 0.34, 0.42, 0.52)
-	f['Chest'] = (-0.05 * draw + 0.1 * lunge, 0, 0); f['Hips'] = (0.03 * draw - 0.03 * lunge, 0, 0)
-	f['Neck'] = (-0.15 * draw + 0.22 * lunge, 0.14 * shake, 0)
-	f['Head'] = (-0.1 * draw + 0.06 * lunge, 0.1 * shake, 0.08 * shake)
-	f['Jaw'] = (0.08 + 0.4 * env(t, 0.06, 0.22, 0.24, 0.28) - 0.08 * snap, 0, 0)
+	f['Spine2'] = (-0.03 * draw + 0.05 * lunge, 0, 0)
+	f['Chest'] = (-0.06 * draw + 0.1 * lunge, 0.04 * shake, 0); f['Hips'] = (0.03 * draw - 0.03 * lunge, 0, 0)
+	f['Neck'] = (0, 0, 0)  # the neck holds still (bending it stretches the withers); the head does the work
+	f['Head'] = (-0.18 * draw + 0.18 * lunge, 0.17 * shake, 0.08 * shake)
+	f['Jaw'] = (0.06 + 0.3 * env(t, 0.06, 0.22, 0.24, 0.28) - 0.06 * snap, 0, 0)
 	for leg in ('FL', 'FR'):
 		f['%s_Scap' % leg] = (-0.12 * lunge, 0, 0)
 	tail(f, t, 0.12 + 0.15 * lunge, 1.3, lift=0.12 * draw)
 	ears(f, back=0.4 * lunge)
-	wings(f, 0.2 * draw)
+	wings(f, 0.12 * draw)
 	f['_offset'] = (0, 0.01 * draw - 0.03 * lunge, -0.04 * draw + 0.1 * lunge)
 	return finish(f)
 
@@ -91,15 +99,16 @@ def hiss(t):
 	f = {}; planted(f)
 	up = env(t, 0.0, 0.22, 0.75, 1.0)
 	bark = env(t, 0.25, 0.32, 0.36, 0.44) + env(t, 0.5, 0.57, 0.61, 0.7)
-	f['Hips'] = (0.08 * up, 0, 0); f['Spine1'] = (-0.05 * up, 0, 0); f['Spine2'] = (-0.04 * up, 0, 0)
-	f['Chest'] = (-0.1 * up, 0, 0)
-	f['Neck'] = (-0.32 * up - 0.06 * bark, 0, 0); f['Head'] = (-0.2 * up + 0.04 * bark, 0, 0)
+	f['Hips'] = (0.08 * up, 0, 0); f['Spine1'] = (-0.06 * up, 0, 0); f['Spine2'] = (-0.07 * up, 0, 0)
+	f['Chest'] = (-0.12 * up, 0, 0)
+	f['Neck'] = (0, 0, 0); f['Head'] = (-0.42 * up + 0.03 * bark, 0, 0)
 	f['Jaw'] = (0.06 + 0.42 * bark, 0, 0)
 	tail(f, t, 0.3 * up, 2.5, lift=0.25 * up)
 	ears(f, back=-0.1 * up)
-	wings(f, 0.6 * up, 0.08 * np.sin(TAU * t * 6) * up)  # Solarjackal spreads its wings wide
+	wings(f, 0.35 * up, 0.05 * np.sin(TAU * t * 6) * up)  # Solarjackal spreads its wings wide
 	f['_offset'] = (0, -0.03 * up, -0.03 * up)  # rocks back onto the hind legs
 	return finish(f)
 
 
-anims.update({'Idle': (4.0, idle), 'Walk': (WALK_T, walk), 'Run': (RUN_T, run), 'Swipe': (0.7, swipe), 'Hiss': (1.0, hiss)})
+# (run() is kept for later: the game plays the walk, faster, at every speed for now)
+anims.update({'Idle': (4.0, idle), 'Walk': (WALK_T, walk), 'Swipe': (0.7, swipe), 'Hiss': (1.0, hiss)})
