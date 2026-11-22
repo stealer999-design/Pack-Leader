@@ -2464,6 +2464,13 @@ func play_wave(origin: Vector3, forward: Vector3, radius: float, cone_degrees: f
 	TidalWaveFX.play(self, origin, forward, radius, cone_degrees, color)
 
 
+## Arrow Cone: a golden dome swept out from `from` towards `forward`, full
+## of streaking arrows (ConeFX).
+@rpc("authority", "call_local", "unreliable")
+func play_arrow_cone(from: Vector3, forward: Vector3, reach: float, spread_degrees: float) -> void:
+	ConeFX.play(self, from, forward, reach, spread_degrees)
+
+
 ## Hunter's Mark: a sigil by the caster's bow at `from`, a red beam to `to`
 ## (reached in `travel` seconds) and a burst there over `radius` (MarkFX).
 @rpc("authority", "call_local", "unreliable")

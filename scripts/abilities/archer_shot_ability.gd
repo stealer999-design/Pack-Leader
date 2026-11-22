@@ -35,6 +35,8 @@ const ARROW_HIT := 1.1  ## How close to an arrow's landing spot (or path) counts
 @export_range(0.0, 1.0) var crit_bonus := 0.5
 ## Burning on each enemy hit: damage per second as a share of the pet's damage, for 4s.
 @export var dot_multiplier := 0.0
+## A volley's extra look: "cone" is Arrow Cone's golden dome full of arrows (ConeFX).
+@export_enum("plain", "cone") var look := "plain"
 
 
 func cannot_cast_reason(pet: Creature) -> String:
@@ -57,6 +59,8 @@ func execute(pet: Creature, point: Vector3, target: Creature) -> void:
 			forward.y = 0.0
 			forward = forward.normalized() if forward.length() > 0.1 else Vector3.FORWARD
 			var reach := maxf(pet.global_position.distance_to(aim), 4.0)
+			if look == "cone":
+				world.play_arrow_cone.rpc(from, forward, reach, spread_degrees)
 			for i in arrows:
 				var t := (float(i) / (arrows - 1) - 0.5) if arrows > 1 else 0.0
 				var end := pet.global_position + forward.rotated(Vector3.UP, deg_to_rad(spread_degrees) * t) * reach
