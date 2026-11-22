@@ -25,16 +25,20 @@ const MESHY_FACING := PI
 const RIVAL_ANIMS := {"walk": "Walking", "run": "Running", "attack": "Attack", "attack_from": 0.6,
 		"attack_speed": 2.5, "cast": "mage_soell_cast_1", "idle": ["Attack", 0.0],
 		"walk_pace": 2.04, "run_pace": 5.04}
-## Pye the Parrot as a Meshy model (rigged: a waddling penguin walk, a run and
-## a head-down charge for his peck). His wings are the rig's arms; in the walk
-## and run they're held spread wide like a goose squaring up (fold_wings.py
-## --spread) so they don't swing. Falls back to the parrot built in code.
+## Pye the Parrot as a Meshy model, rigged as a bird (scripts/tools/meshy_skin/bird/):
+## made from two Meshy models of him, one with his wings folded (him) and one
+## with them spread (only its wings are used: they're hidden until he flaps,
+## then sweep out as the folded ones tuck away, so neither pose is stretched).
+## A waddle on planted feet, a goose-like charge with his wings half up, a peck,
+## Feather Flurry (rears up and beats his wings, after a dove's flap) and a
+## squawk with two beats for his summons. Falls back to the parrot built in code.
 const PYE_MODEL := "res://models/pye.glb"
 const PYE_HEIGHT := 3.2
-const PYE_ANIMS := {"walk": "penguin_walk", "run": "Running", "attack": "Male_Head_Down_Charge",
-		"attack_from": 0.0, "attack_speed": 1.0, "idle": ["penguin_walk", 0.0],
-		"in_place": ["Male_Head_Down_Charge"],
-		"walk_pace": 1.7, "run_pace": 3.0}
+const PYE_ANIMS := {"walk": "Walk", "run": "Run", "attack": "Peck",
+		"attack_from": 0.0, "attack_speed": 1.0, "idle": "Idle",
+		"special": ["Flurry", 0.0, 1.0], "summon": ["Squawk", 0.0, 1.0],
+		"walk_pace": 0.935, "run_pace": 1.68}  # world units a second: stride x his scale
+
 ## The Glacier Titan as a Meshy model: an ice golem with a real idle, a heavy
 ## walk (never runs) and an overhead two-fisted slam: from the top for a hit,
 ## from the full wind-up for his Avalanche (the fists land as the warning ends).

@@ -2,24 +2,23 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cynyaqr2jenm"
-path.s3tc="res://.godot/imported/pye_texture_0_metallic_roughness.png-f7b788d94c9df8bbd00df070cec0456e.s3tc.ctex"
+uid="uid://8adc85vbx4xs"
+path="res://.godot/imported/pye_1.png-c18420ef7c1a0894099773dbf0ceec81.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 generator_parameters={
-"md5": "5e9159054dc734d416ffb8df612f4f10"
+"md5": "81bab775526f43719760b0661b9ec1ef"
 }
 
 [deps]
 
-source_file="res://models/pye_texture_0_metallic_roughness.png"
-dest_files=["res://.godot/imported/pye_texture_0_metallic_roughness.png-f7b788d94c9df8bbd00df070cec0456e.s3tc.ctex"]
+source_file="res://models/pye_1.png"
+dest_files=["res://.godot/imported/pye_1.png-c18420ef7c1a0894099773dbf0ceec81.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/hdr_compression=1

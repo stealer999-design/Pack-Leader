@@ -238,11 +238,19 @@ played in the browser".
   skinning tied the bat to his thigh and the jeans to his hands, so the model
   was repaired with `scripts/tools/meshy_skin/fix_rival_skin.py` (run it again
   on a fresh Meshy export). The older hat-and-cape model built in code is kept
-  as a fallback. Pye the Parrot is a rigged Meshy model too (`models/pye.glb`):
-  he waddles (a penguin walk) and runs with his wings spread wide like a goose
-  squaring up (`scripts/tools/meshy_skin/fold_wings.py --spread` holds the wing
-  bones still), and lowers his head to charge for each
-  peck (played on the spot), standing still between moves; the grey parrot
+  as a fallback. Pye the Parrot is a rigged Meshy model too (`models/pye.glb`),
+  rigged as a bird by `scripts/tools/meshy_skin/bird/` from two Meshy models
+  of him: one with his wings folded (him: `turn_head.py` first turns his head,
+  modelled looking aside, to face forward) and one with them spread, of which
+  only the open wings are used (`rig_bird.py` cuts them out, sets them at his
+  shoulders on wing bones of their own and keeps them shrunk to nothing until
+  he flaps; then the folded wings tuck away as the open ones sweep out, so
+  neither pose is ever stretched). His animations (`pye_anims.py`): an idle
+  with curious head tilts, a waddle on planted feet, a goose-like charge with
+  his wings half up, a peck, Feather Flurry (rears up and beats his wings three
+  times, after a dove's flap: up into a V, a sweeping downstroke, the tips
+  curling) and a squawk with two beats for his summons. His textures are kept
+  uncompressed (VRAM compression bled his red tail into his dark wings). The grey parrot
   built in code is the fallback. The Glacier Titan is a rigged Meshy model as
   well (`models/glacier_titan.glb`): a hulking golem of blue ice that breathes
   and shifts while standing (a real idle), trudges after you (never runs), and
