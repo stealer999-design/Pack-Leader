@@ -2464,6 +2464,13 @@ func play_wave(origin: Vector3, forward: Vector3, radius: float, cone_degrees: f
 	TidalWaveFX.play(self, origin, forward, radius, cone_degrees, color)
 
 
+## Frost Arrow: an icy bolt from `from` to `to` bursting into ice, runes,
+## frost mist and snow over `radius` (FrostFX).
+@rpc("authority", "call_local", "unreliable")
+func play_frost_arrow(from: Vector3, to: Vector3, radius: float) -> void:
+	FrostFX.play(self, from, to, radius)
+
+
 ## Piercing Shot: a blazing bolt from `from` to `to` with a fiery trail and a
 ## crescent of light, bursting at each of `hits` as it passes (PierceFX).
 @rpc("authority", "call_local", "unreliable")

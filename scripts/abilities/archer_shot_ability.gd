@@ -36,8 +36,9 @@ const ARROW_HIT := 1.1  ## How close to an arrow's landing spot (or path) counts
 ## Burning on each enemy hit: damage per second as a share of the pet's damage, for 4s.
 @export var dot_multiplier := 0.0
 ## An extra look: "cone" is Arrow Cone's golden dome full of arrows (ConeFX),
-## "pierce" Piercing Shot's blazing bolt and starbursts (PierceFX).
-@export_enum("plain", "cone", "pierce") var look := "plain"
+## "pierce" Piercing Shot's blazing bolt and starbursts (PierceFX), "frost" Frost
+## Arrow's icy bolt and burst of ice (FrostFX).
+@export_enum("plain", "cone", "pierce", "frost") var look := "plain"
 
 
 func cannot_cast_reason(pet: Creature) -> String:
@@ -54,6 +55,8 @@ func execute(pet: Creature, point: Vector3, target: Creature) -> void:
 	var damage := pet.ability_damage() * damage_multiplier
 	match mode:
 		"shot":
+			if look == "frost":
+				world.play_frost_arrow.rpc(from, aim, maxf(splash_radius, 1.0))
 			_fire(pet, from, aim, _hit.bind(pet, aim, damage, maxf(splash_radius, ARROW_HIT), target))
 		"volley":
 			var forward := (aim - pet.global_position)
@@ -136,7 +139,7 @@ func _hit(pet_ref, at: Vector3, damage: float, hit_radius: float, target_ref) ->
 			victims.append(target)  # it may have stepped away a little: an arrow aimed at it still hits
 	for enemy in victims:
 		_apply(pet, enemy, damage)
-	if splash_radius > 0.0:
+	if splash_radius > 0.0 and look == "plain":
 		pet.world.play_burst.rpc(at, color, splash_radius)
 
 
