@@ -23,6 +23,35 @@ def column(f):
 		if len(q) > 3: c = 0.5 * c + 0.5 * q[:, [0, 2]].mean(0)
 		out.append([c[0], y, c[1]])
 	return np.array(out)
+def hind_joints(f):
+	"""the hind leg's real stifle (knee) and hock from its side outline: the hock is the
+	rearmost point of the lower leg; the stifle is where the thin gaskin widens into the
+	thigh. Returns (stifle, hock) joint positions, or None if the outline is unclear."""
+	side = np.sign(f[0]); c = np.array([f[0], f[2]]); rows = []
+	for y in np.arange(ymin + 0.02, belly + 0.1, 0.02):
+		m = (abs(P[:, 1] - y) < 0.012) & (np.hypot(P[:, 0] - c[0], P[:, 2] - c[1]) < 0.13) & (P[:, 0] * side > 0.02)
+		if m.sum() < 4: continue
+		Q = P[m]; c = 0.6 * c + 0.4 * Q[:, [0, 2]].mean(0)
+		rows.append((y, Q[:, 2].min(), Q[:, 2].max(), Q[:, 0].mean()))
+	if len(rows) < 8: return None
+	r = np.array(rows)
+	sm = lambda v: np.array([np.median(v[max(0, i - 1):i + 2]) for i in range(len(v))])
+	back, front, xs = sm(r[:, 1]), sm(r[:, 2]), sm(r[:, 3]); width = front - back
+	L = belly - ymin
+	band = (r[:, 0] > ymin + 0.15 * L) & (r[:, 0] < ymin + 0.6 * L)
+	if not band.any(): return None
+	i = np.nonzero(band)[0][np.argmin(back[band])]
+	hock = [xs[i], r[i, 0], back[i] + 0.35 * width[i]]
+	gas = (r[:, 0] > r[i, 0] + 0.03) & (r[:, 0] < r[i, 0] + 0.1)
+	w0 = np.median(width[gas]) if gas.any() else width[i]
+	up = np.nonzero((r[:, 0] > r[i, 0] + 0.08) & (width >= 1.35 * w0))[0]
+	ys = r[up[0], 0] if len(up) else r[i, 0] + 0.6 * (belly - r[i, 0])
+	ys = min(ys, belly - 0.02)
+	k = np.argmin(abs(r[:, 0] - ys))
+	stifle = [xs[k], ys, (back[k] + front[k]) / 2]
+	return stifle, hock
+
+
 def at(col, y):
 	i = np.argmin(abs(col[:, 1] - y)); return col[i]
 B = {}
@@ -55,6 +84,9 @@ for leg, f in feet.items():
 	end = [f[0], ymin + 0.012, f[2]]
 	paw = at(col, ymin + (0.08 if front else 0.22 * leglen + 0.04))
 	lower = at(col, ymin + (0.55 if front else 0.6) * leglen)
+	if not front:
+		hj = hind_joints(f)
+		if hj: lower, paw = hj  # the real stifle and hock
 	upper = at(col, belly)
 	upper = [upper[0], belly + 0.06, upper[2]]
 	par = 'Chest' if front else 'Hips'
@@ -67,12 +99,20 @@ for leg, f in feet.items():
 		bones = [leg + '_Upper', leg + '_Lower', leg + '_Paw']
 	B[leg + '_Lower'] = [leg + '_Upper', list(lower)]; B[leg + '_Paw'] = [leg + '_Lower', list(paw)]
 	legs.append({'bones': bones, 'end': end, 'radius': 0.11, 'top': belly + 0.02})
+# helper bones at each hind stifle and hock: they turn half as far as the joint below
+# them and carry the skin round the joint, so it keeps its thickness as it bends
+helpers = []
+for leg in ('RL', 'RR'):
+	helpers.append({'bone': leg + '_KneeFix', 'parent': leg + '_Upper', 'at': B[leg + '_Lower'][1], 'half_of': leg + '_Lower', 'leg': leg + '_Upper', 'joint': 1})
+	helpers.append({'bone': leg + '_HockFix', 'parent': leg + '_Lower', 'at': B[leg + '_Paw'][1], 'half_of': leg + '_Paw', 'leg': leg + '_Upper', 'joint': 2})
+for h in helpers:
+	B[h['bone']] = [h['parent'], list(h['at'])]
 cfg = {'yaw_deg': 0.0, 'scale': 2.0, 'root': 'Hips', 'lib': 'quad_lib.py', 'anims': sys.argv[3] if len(sys.argv) > 3 else 'dog_pet_anims.py',
 	   'bones': B, 'spine': ['Hips', 'Spine1', 'Spine2', 'Chest', 'Neck'], 'spine_end': B['Head'][1], 'legs': legs,
 	   'tail': {'bones': ['Tail1', 'Tail2', 'Tail3', 'Tail4'], 'end': tb[4], 'radius': 0.14, 'start_z': hz - 0.08},
 	   'head': {'center': list(hc), 'radius': float(max(0.2, (nose - hc[2]) + 0.06)), 'min_y': float(snout[:, 1].min() - 0.08), 'front_z': float(nose + 0.05)},
 	   'jaw': {'z0': float(nose - 0.24), 'z1': float(nose - 0.16), 'y0': float(snout[:, 1].min() + 0.02), 'y1': float(snout[:, 1].min() + 0.07)},
-	   'smooth': 3}
+	   'smooth': 3, 'helpers': helpers}
 # ears: what sticks up above the skull, either side
 crown = hc[1] + 0.12
 ear_pts = P[(P[:, 1] > crown) & (P[:, 2] > cz + 0.2) & (abs(P[:, 0]) > 0.03)]

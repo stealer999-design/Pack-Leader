@@ -168,17 +168,17 @@
   "RL_Lower": [
    "RL_Upper",
    [
-    0.1148,
-    -0.4065,
-    -0.5183
+    0.121,
+    -0.3465,
+    -0.4185
    ]
   ],
   "RL_Paw": [
    "RL_Lower",
    [
-    0.1316,
-    -0.5565,
-    -0.5243
+    0.1168,
+    -0.4665,
+    -0.5415
    ]
   ],
   "RR_Upper": [
@@ -192,17 +192,49 @@
   "RR_Lower": [
    "RR_Upper",
    [
-    -0.1176,
-    -0.4065,
-    -0.5175
+    -0.126,
+    -0.3465,
+    -0.4194
    ]
   ],
   "RR_Paw": [
    "RR_Lower",
    [
-    -0.1307,
-    -0.5565,
-    -0.5249
+    -0.1186,
+    -0.4665,
+    -0.5421
+   ]
+  ],
+  "RL_KneeFix": [
+   "RL_Upper",
+   [
+    0.121,
+    -0.3465,
+    -0.4185
+   ]
+  ],
+  "RL_HockFix": [
+   "RL_Lower",
+   [
+    0.1168,
+    -0.4665,
+    -0.5415
+   ]
+  ],
+  "RR_KneeFix": [
+   "RR_Upper",
+   [
+    -0.126,
+    -0.3465,
+    -0.4194
+   ]
+  ],
+  "RR_HockFix": [
+   "RR_Lower",
+   [
+    -0.1186,
+    -0.4665,
+    -0.5421
    ]
   ],
   "EarL": [
@@ -326,6 +358,56 @@
   "y1": 0.2912
  },
  "smooth": 3,
+ "helpers": [
+  {
+   "bone": "RL_KneeFix",
+   "parent": "RL_Upper",
+   "at": [
+    0.121,
+    -0.3465,
+    -0.4185
+   ],
+   "half_of": "RL_Lower",
+   "leg": "RL_Upper",
+   "joint": 1
+  },
+  {
+   "bone": "RL_HockFix",
+   "parent": "RL_Lower",
+   "at": [
+    0.1168,
+    -0.4665,
+    -0.5415
+   ],
+   "half_of": "RL_Paw",
+   "leg": "RL_Upper",
+   "joint": 2
+  },
+  {
+   "bone": "RR_KneeFix",
+   "parent": "RR_Upper",
+   "at": [
+    -0.126,
+    -0.3465,
+    -0.4194
+   ],
+   "half_of": "RR_Lower",
+   "leg": "RR_Upper",
+   "joint": 1
+  },
+  {
+   "bone": "RR_HockFix",
+   "parent": "RR_Lower",
+   "at": [
+    -0.1186,
+    -0.4665,
+    -0.5421
+   ],
+   "half_of": "RR_Paw",
+   "leg": "RR_Upper",
+   "joint": 2
+  }
+ ],
  "ears": [
   {
    "bone": "EarL",

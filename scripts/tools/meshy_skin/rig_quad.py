@@ -77,6 +77,19 @@ for ear in cfg.get('ears', []):  # ears ride their own bones
 	m = ss(ear['radius'] + 0.03, ear['radius'] - 0.03, np.linalg.norm(P - np.array(ear['center']), axis=1)) * ss(ear['min_y'] - 0.02, ear['min_y'] + 0.03, y)
 	We = np.zeros((N, NB)); We[:, idx[ear['bone']]] = 1
 	W = W * (1 - m)[:, None] + We * m[:, None]
+# joint helpers (config 'helpers'): a bone at a leg joint that turns half as far as the
+# joint; the skin right round the joint rides it, so the joint keeps its thickness
+for h in cfg.get('helpers', []):
+	leg = next(l for l in cfg['legs'] if l['bones'][0] == h['leg'])
+	bones = leg['bones']; chain = np.vstack([JP[[idx[b] for b in bones]], np.array(leg['end'])])
+	best = np.full(N, 1e9); u = np.zeros(N)
+	for i in range(len(chain) - 1):
+		A_, B_ = chain[i], chain[i + 1]; ab = B_ - A_
+		t = np.clip(((P - A_) @ ab) / (ab @ ab), 0, 1); dd = np.linalg.norm(P - (A_ + t[:, None] * ab), axis=1)
+		mm = dd < best; best[mm] = dd[mm]; u[mm] = i + t[mm]
+	on_leg = W[:, [idx[b] for b in bones]].sum(1)  # how much of each point the leg already owns
+	share = np.clip(1 - np.abs(u - h['joint']) / h.get('width', 0.3), 0, 1) * 0.8 * on_leg
+	W = W * (1 - share)[:, None]; W[:, idx[h['bone']]] += share
 # smooth over the mesh a little (welded neighbours)
 I = acc(j, bn, p['indices']).reshape(-1, 3).astype(np.int64)
 _, wid = np.unique(np.round(P, 5), axis=0, return_inverse=True); wid = wid.ravel(); nW = wid.max() + 1
@@ -127,6 +140,9 @@ j['animations'] = []
 for name, (length, fn) in anims.items():
 	ts = np.linspace(0, length, int(round(length * 30)) + 1)
 	frames = [fn(t) for t in ts]; tin = add(ts.astype(np.float32), 5126, 'SCALAR', True)
+	for f in frames:  # joint helpers turn half as far as their joint
+		for h in cfg.get('helpers', []):
+			e = f.get(h['half_of'], (0, 0, 0)); f[h['bone']] = (e[0] * 0.5, e[1] * 0.5, e[2] * 0.5)
 	samplers, channels = [], []
 	for bname in names:
 		q = np.array([quat(f.get(bname, (0, 0, 0))) for f in frames], np.float32)
