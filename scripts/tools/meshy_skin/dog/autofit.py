@@ -83,10 +83,19 @@ if len(ear_pts) > 80:
 		B[nm] = ['Head', [c[0] * 0.7, crown, c[2]]]
 		ears.append({'bone': nm, 'center': list(c), 'radius': float(np.linalg.norm(e - c, axis=1).max() * 1.05), 'min_y': float(crown - 0.02)})
 	cfg['ears'] = ears
+# wings (winged hybrids): what rises well above the back between hips and chest
+back = max(torso(z)[1] for z in np.linspace(hz, cz, 5))
+wing = P[(P[:, 1] > back + 0.06) & (P[:, 2] > hz - 0.15) & (P[:, 2] < cz + 0.1) & (abs(P[:, 0]) > 0.02)]
+if len(wing) > 200:
+	cfg.setdefault('ears', [])
+	for side, nm in ((1, 'WingL'), (-1, 'WingR')):
+		w = wing[wing[:, 0] * side > 0]; c = w.mean(0)
+		B[nm] = ['Spine2', [side * 0.05, back + 0.02, float(np.median(w[:, 2]))]]
+		cfg['ears'].append({'bone': nm, 'center': list(c), 'radius': float(np.linalg.norm(w - c, axis=1).max() * 1.05), 'min_y': float(back + 0.02)})
 def py(o):
 	if isinstance(o, dict): return {k: py(v) for k, v in o.items()}
 	if isinstance(o, (list, tuple, np.ndarray)): return [py(v) for v in o]
 	if isinstance(o, (np.floating, float, np.integer)): return round(float(o), 4)
 	return o
 json.dump(py(cfg), open(sys.argv[2], 'w'), indent=1)
-print(sys.argv[1], 'belly', round(belly, 2), 'feet', {k: v[[0, 2]].round(2).tolist() for k, v in feet.items()}, 'ears', 'ears' in cfg)
+print(sys.argv[1], 'belly', round(belly, 2), 'feet', {k: v[[0, 2]].round(2).tolist() for k, v in feet.items()}, 'ears/wings', [e['bone'] for e in cfg.get('ears', [])])
