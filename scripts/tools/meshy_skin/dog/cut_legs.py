@@ -28,7 +28,7 @@ W = np.where(far, W * (1 - fade), W)
 # (any point there, not just body points; the legs' inner faces lower down keep theirs)
 legb = leg_of[J] != ''
 belly = float(sys.argv[3]) if len(sys.argv) > 3 else -1e9  # the belly's height (rig units)
-mid = np.maximum(np.clip(np.abs(P[:, 0]) / 0.07, 0, 1), np.clip((belly - 0.08 - P[:, 1]) / 0.06, 0, 1))[:, None]
+mid = np.maximum(np.clip((np.abs(P[:, 0]) - 0.025) / 0.07, 0, 1), np.clip((belly - 0.08 - P[:, 1]) / 0.06, 0, 1))[:, None]
 W = np.where(legb, W * mid, W)
 W /= np.maximum(W.sum(1, keepdims=True), 1e-9)
 wa = j['accessors'][a['WEIGHTS_0']]; wv = j['bufferViews'][wa['bufferView']]; woff = wv.get('byteOffset', 0) + wa.get('byteOffset', 0)

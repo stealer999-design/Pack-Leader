@@ -21,7 +21,16 @@ static var _fire_mat: ShaderMaterial
 ## How far (Meshy units, x the model's scale) the walk cycle carries the body in a second.
 const WALK_PACE := 2.92
 ## ...per body type, where it differs (lizards scurry: short sprawled legs, quick steps).
-const WALK_PACE_BY_TYPE := {"lizard": 1.4, "dog": 0.925}
+const WALK_PACE_BY_TYPE := {"lizard": 1.4, "dog": 1.68}
+
+
+## How much faster than normal the walk may play, per body type, where it differs
+## (dogs trot fast to keep up with their tamer).
+const MAX_WALK_SPEED_BY_TYPE := {"dog": 4.0}
+
+
+static func max_walk_speed(body_type: String) -> float:
+	return MAX_WALK_SPEED_BY_TYPE.get(body_type, 3.0)
 
 
 static func walk_pace(body_type: String) -> float:

@@ -106,7 +106,7 @@ func _animate_meshy(delta: float) -> void:
 		var pace := PetModels.walk_pace(body_type) * scale_k
 		if anim.current_animation != "Walk":
 			anim.play("Walk", 0.2)
-		anim.speed_scale = clampf(_speed / maxf(pace, 0.01), 0.4, 3.0)
+		anim.speed_scale = clampf(_speed / maxf(pace, 0.01), 0.4, PetModels.max_walk_speed(body_type))
 	elif anim.current_animation != "Idle" or not anim.is_playing():
 		anim.speed_scale = 1.0
 		anim.play("Idle", 0.25)

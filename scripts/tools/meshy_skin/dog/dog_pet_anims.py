@@ -1,15 +1,12 @@
 # The dog pets' animations (all ten share these), built with quad_lib.py on the
-# skeleton dog/autofit.py fits (Koleko's bone names). After Koleko's: a walk
-# (each paw in turn, left hind, left fore, right hind, right fore), a trot for
-# the run, an alert idle, a lunging bite (Swipe, the attack) and a rallying bark
+# skeleton dog/autofit.py fits (Koleko's bone names). A trot after the user's
+# reference, the dogs' only gait (the game speeds it up or slows it down), an alert idle, a lunging bite (Swipe, the attack) and a rallying bark
 # with the head thrown up (Hiss, the ability). Ears and wings move when the
 # rig has them.
 import numpy as np
 
-WALK_T = 0.8  # seconds per cycle
-WALK_TRAVEL = 0.74  # rig units the body covers per cycle (the pace is travel / T)
-RUN_T = 0.46
-RUN_TRAVEL = 0.82
+WALK_T = 0.5  # seconds per cycle (two diagonal beats)
+WALK_TRAVEL = 0.84  # rig units the body covers per cycle (the pace is travel / T)
 HAS_WINGS = 'WingL' in idx
 
 
@@ -21,40 +18,30 @@ def wings(f, spread, flap=0.0):
 
 
 def walk(t):
-	"""the reference's walk: a long, even four-beat stride (left hind, left fore, right hind,
-	right fore), each paw tucking back as it lifts, the head carried level and forward,
-	the tail held straight out behind"""
+	"""the reference's trot (played at every speed): diagonal pairs strike together, left
+	fore with right hind, then right fore with left hind, with a moment of float between.
+	The body rises off each push and dips as the pair lands, rocking a little nose to
+	tail; the head nods with each beat; the paws fold up as they swing through; the tail
+	streams out behind, bouncing with the body"""
 	T = WALK_T; ph = TAU * t / T; f = {}; planted(f)
-	walk_like(t, T, {'RL': 0.0, 'FL': 0.25, 'RR': 0.5, 'FR': 0.75}, WALK_TRAVEL, 0.6, 0.08, f)
-	for leg in ('RL', 'RR'):  # the hind paw curls back as it swings through
+	walk_like(t, T, {'FL': 0.0, 'RR': 0.0, 'FR': 0.5, 'RL': 0.5}, WALK_TRAVEL, 0.44, 0.13, f, fore_reach=0.12)
+	for leg in ('FL', 'FR'):  # the fore paw flicks up and folds as it swings
+		foot, flex = f['_feet'][leg]; f['_feet'][leg] = (foot, flex * 2.0)
+	for leg in ('RL', 'RR'):  # the hind paw curls back
 		foot, flex = f['_feet'][leg]; f['_feet'][leg] = (foot, flex * 2.4)
-	for leg in ('FL', 'FR'):
-		foot, flex = f['_feet'][leg]; f['_feet'][leg] = (foot, flex * 1.4)
-	f['Hips'] = (0, 0.035 * np.sin(ph), 0.02 * np.sin(ph))
-	f['Spine1'] = (0, -0.015 * np.sin(ph), 0); f['Spine2'] = (0, -0.015 * np.sin(ph + 0.4), 0)
-	f['Chest'] = (0, -0.035 * np.sin(ph + 0.8), -0.02 * np.sin(ph + 0.8))
-	f['Neck'] = (0.015 * np.sin(2 * ph), 0, 0)
-	steady_head(f, 0.85)
-	tail(f, t, 0.1, 1 / T, lift=-0.05, curl=0.02)
-	ears(f, back=0.05)
-	wings(f, 0.0, 0.04 * np.sin(2 * ph))
-	f['_offset'] = (0, -0.006 + 0.01 * np.cos(2 * ph), 0)
-	return finish(f)
-
-
-def run(t):
-	"""a trot: diagonal pairs strike together, a moment of float between"""
-	T = RUN_T; ph = TAU * t / T; f = {}; planted(f)
-	walk_like(t, T, {'FL': 0.0, 'RR': 0.0, 'FR': 0.5, 'RL': 0.5}, RUN_TRAVEL, 0.46, 0.1, f, fore_reach=0.1)
-	f['Hips'] = (0, 0.03 * np.sin(ph), 0.03 * np.sin(ph)); f['Chest'] = (0, -0.03 * np.sin(ph), -0.03 * np.sin(ph))
-	f['Spine1'] = (0.012 * np.sin(2 * ph), 0, 0)
-	f['Neck'] = (0.08, 0, 0)
-	steady_head(f, 0.9)
-	f['Jaw'] = (0.1 + 0.04 * np.sin(2 * ph), 0, 0)  # panting
-	tail(f, t, 0.12, 1 / T, lift=0.1, curl=0.08)
-	ears(f, back=0.25)
-	wings(f, 0.08, 0.12 * np.sin(2 * ph))
-	f['_offset'] = (0, -0.03 + 0.016 * np.cos(2 * ph), 0)
+	beat = np.cos(2 * ph)  # two beats a cycle: +1 just after a pair lands, -1 at the top of the float
+	rock = np.sin(2 * ph)  # nose dips as the fore paw takes the weight, rises as the hind pushes
+	f['Hips'] = (0.04 * rock, 0.035 * np.sin(ph), 0.035 * np.sin(ph))
+	f['Spine1'] = (-0.02 * rock, 0, 0); f['Spine2'] = (-0.015 * rock, 0, 0)
+	f['Chest'] = (-0.02 * rock, -0.035 * np.sin(ph), -0.035 * np.sin(ph))
+	f['Neck'] = (0.03 + 0.03 * beat, 0, 0)
+	steady_head(f, 0.6)
+	f['Head'] = (f['Head'][0] + 0.04 * beat, f['Head'][1], f['Head'][2])  # the nod, lagging a touch
+	f['Jaw'] = (0.08 + 0.03 * np.sin(2 * ph), 0, 0)  # panting
+	tail(f, t, 0.1, 1 / T, lift=0.06 + 0.05 * beat, curl=0.05)
+	ears(f, back=0.15 + 0.08 * beat)
+	wings(f, 0.04, 0.08 * beat)
+	f['_offset'] = (0, -0.025 - 0.035 * beat, 0)  # rises in the float, dips on landing: clearly seen
 	return finish(f)
 
 
