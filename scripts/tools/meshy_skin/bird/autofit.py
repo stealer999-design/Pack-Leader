@@ -16,6 +16,8 @@ def model(path):
 	return P, C
 F, CF = model(sys.argv[1]); S, CS = model(sys.argv[2])
 brown = lambda C: (C[:, 0] > C[:, 2] + 18) & (C[:, 0] > C[:, 1] + 4)  # wood and leather: bows, quivers, straps
+GEAR = bool(brown(CF).mean() < 0.8)  # a bird mostly brown or orange itself (Dawnowl): gear can't be told apart by colour
+if not GEAR: brown = lambda C: np.zeros(len(C), bool)
 P = F * K
 y0 = P[:, 1].min(); core = P[np.abs(P[:, 0]) < 0.3]
 top = np.percentile(core[:, 1], 99.5); H = top - y0
@@ -77,9 +79,9 @@ cfg = {'scale': K, 'root': 'Hips', 'lib': 'bird_lib.py', 'anims': sys.argv[4] if
 	   'tail': {'bones': ['Tail1', 'Tail2'], 'end': list(tip), 'radius': 0.2 * H, 'start_y': hz[1], 'start_z': hz[2] - 0.05 * H},
 	   'head': {'below': y0 + 0.74 * H, 'center': list(hc + np.array([0, 0, 0.08 * H])), 'radius': 0.24 * H},
 	   'jaw': {'center': list(beak), 'radius': 0.07 * H, 'dark': 999, 'below': beak[1] + 0.01},
-	   'folded_wing': {'dark': 999, 'inner': half * 0.55, 'top': shoulder_y + 0.04 * H, 'bottom': y0 + 0.22 * H, 'skip_brown': True},
+	   'folded_wing': {'dark': 999, 'inner': half * 0.55, 'top': shoulder_y + 0.04 * H, 'bottom': y0 + 0.22 * H, 'skip_brown': GEAR, **({} if GEAR else {'outer': half * 1.1})},  # (no gear colour: keep a bow beside the body off the wing)
 	   'spread_scale': K * ratio,
-	   'open_wing': {'inner': body_half_s, 'above': band[0], 'below': band[1], 'skip_brown': True,
+	   'open_wing': {'inner': body_half_s, 'above': band[0], 'below': band[1], 'skip_brown': GEAR,
 					 'root_spread': root_s, 'root_folded': rf, 'size': 1.0, 'elbow': 0.5 * span},
 	   'smooth': 3}
 def py(o):

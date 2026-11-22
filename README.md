@@ -252,7 +252,7 @@ played in the browser".
   curling) and a squawk with two beats for his summons. His textures are kept
   uncompressed (VRAM compression bled his red tail into his dark wings). The grey parrot
   built in code is the fallback.
-  The bird pets use the same two-model approach (Glacipuff, Quillpuff, Prismpuff, Frostfinch, Shimmerwing, Aurora Swift, Rimeowl and Snowl so far,
+  The bird pets use the same two-model approach (all ten: Glacipuff, Quillpuff, Prismpuff, Frostfinch, Shimmerwing, Aurora Swift, Rimeowl, Snowl, Quillowl and Dawnowl,
   in `models/pets/`): `bird/autofit.py folded.glb spread.glb out.json` fits the
   skeleton from the two models (feet, legs, body line, the head as a sphere at
   the face end for these round birds, beak, tail, a patch of folded wing on each
@@ -262,7 +262,11 @@ played in the browser".
   ground beside them, a foot may sit off the middle or splay out, and a long tail or an owl's fluffy belly can touch the
   ground far behind them), then `rig_bird.py` rigs it with `bird_pet_anims.py`: an idle with
   head tilts and a feather ruffle, a bouncy waddle (Walk; the game speeds it up),
-  a peck (Swipe) and a wing-beating display after the dove flap (Hiss). Their
+  a peck (Swipe) and a wing-beating display after the dove flap (Hiss). For a bird that is mostly brown or orange itself (Dawnowl), colour can't pick out
+  its gear, so the filter is off and the folded wings stop at the body's sides
+  instead (its bow sticks out past them). `foot_reach` in a config limits how far
+  from a foot the low points riding it may be (Quillowl: 2, its belly and tail
+  feathers hang low behind its feet). Their
   textures are uncompressed too. The Glacier Titan is a rigged Meshy model as
   well (`models/glacier_titan.glb`): a hulking golem of blue ice that breathes
   and shifts while standing (a real idle), trudges after you (never runs), and

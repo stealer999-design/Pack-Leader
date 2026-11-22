@@ -63,7 +63,7 @@ W = W * (1 - m)[:, None] + Wh * m[:, None]
 # folded wings: the dark feathers down each side
 for side, nm in ((1, 'WingL'), (-1, 'WingR')):
 	fw = cfg['folded_wing']
-	m = ((lum < fw['dark']) & ~(is_brown(C) if fw.get('skip_brown') else False)).astype(float) * ss(fw['inner'] - 0.03, fw['inner'] + 0.03, side * x) * ss(fw['top'] + 0.04, fw['top'] - 0.04, y) * ss(fw['bottom'] - 0.04, fw['bottom'] + 0.04, y)
+	m = ((lum < fw['dark']) & ~(is_brown(C) if fw.get('skip_brown') else np.zeros(N, bool))).astype(float) * ss(fw['inner'] - 0.03, fw['inner'] + 0.03, side * x) * (ss(fw['outer'] + 0.03, fw['outer'] - 0.03, side * x) if 'outer' in fw else 1) * ss(fw['top'] + 0.04, fw['top'] - 0.04, y) * ss(fw['bottom'] - 0.04, fw['bottom'] + 0.04, y)
 	Ww = np.zeros((N, NB)); Ww[:, idx[nm]] = 1
 	W = W * (1 - m)[:, None] + Ww * m[:, None]
 # legs: below the belly, near each leg's line (everything below `foot_below` wholly on its foot)
@@ -72,7 +72,7 @@ for leg in cfg['legs']:
 	Wl, d = chain_weights(P, bones, end)
 	side = np.sign(end[0])
 	m = (1 - ss(leg['radius'] * 0.8, leg['radius'] * 1.2, d)) * ss(leg['top'] + 0.04, leg['top'] - 0.04, y) * (side * x > 0.02)
-	foot = (y < cfg['foot_below']) & (side * x > 0.02) & (d < leg['radius'] * 3)  # (not a low-hanging tail)
+	foot = (y < cfg['foot_below']) & (side * x > 0.02) & (d < leg['radius'] * cfg.get('foot_reach', 3))  # (not a low-hanging tail or belly)
 	Wf = np.zeros((N, NB)); Wf[:, idx[bones[-1]]] = 1
 	W = W * (1 - m)[:, None] + Wl * m[:, None]
 	W[foot] = Wf[foot]
