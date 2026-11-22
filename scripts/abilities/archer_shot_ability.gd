@@ -37,8 +37,9 @@ const ARROW_HIT := 1.1  ## How close to an arrow's landing spot (or path) counts
 @export var dot_multiplier := 0.0
 ## An extra look: "cone" is Arrow Cone's golden dome full of arrows (ConeFX),
 ## "pierce" Piercing Shot's blazing bolt and starbursts (PierceFX), "frost" Frost
-## Arrow's icy bolt and burst of ice (FrostFX).
-@export_enum("plain", "cone", "pierce", "frost") var look := "plain"
+## Arrow's icy bolt and burst of ice (FrostFX), "hail" Hail Volley's wave of
+## icy arrows arcing down onto erupting ice (HailVolleyFX; its own arrows unseen).
+@export_enum("plain", "cone", "pierce", "frost", "hail") var look := "plain"
 
 
 func cannot_cast_reason(pet: Creature) -> String:
@@ -65,10 +66,14 @@ func execute(pet: Creature, point: Vector3, target: Creature) -> void:
 			var reach := maxf(pet.global_position.distance_to(aim), 4.0)
 			if look == "cone":
 				world.play_arrow_cone.rpc(from, forward, reach, spread_degrees)
+			var ends := PackedVector3Array()
 			for i in arrows:
 				var t := (float(i) / (arrows - 1) - 0.5) if arrows > 1 else 0.0
 				var end := pet.global_position + forward.rotated(Vector3.UP, deg_to_rad(spread_degrees) * t) * reach
-				_fire(pet, from, end, _hit.bind(pet, end, damage, ARROW_HIT, null))
+				ends.append(end)
+				_fire(pet, from, end, _hit.bind(pet, end, damage, ARROW_HIT, null), Color(0, 0, 0, 0), look != "hail")
+			if look == "hail":
+				world.play_hail_volley.rpc(from, ends, maxf(from.distance_to(ends[0]) / ARROW_SPEED, 0.05))
 		"pierce":
 			var dir := (aim - pet.global_position)
 			dir.y = 0.0
@@ -110,14 +115,15 @@ func execute(pet: Creature, point: Vector3, target: Creature) -> void:
 
 
 ## An arrow from `from` to `to`; `on_land` runs when it gets there.
-func _fire(pet_ref, from: Vector3, to: Vector3, on_land: Callable, tint := Color(0, 0, 0, 0)) -> void:
+func _fire(pet_ref, from: Vector3, to: Vector3, on_land: Callable, tint := Color(0, 0, 0, 0), seen := true) -> void:
 	# Called later (an arrow landing, a leap ending): the pet or its target
 	# may have been freed by then, so they come in untyped and are checked.
 	if not is_instance_valid(pet_ref):
 		return
 	var pet: Creature = pet_ref
 	var travel := maxf(from.distance_to(to) / ARROW_SPEED, 0.05)
-	pet.world.play_arrow.rpc(from, to, tint if tint.a > 0.0 else color, travel)
+	if seen:
+		pet.world.play_arrow.rpc(from, to, tint if tint.a > 0.0 else color, travel)
 	if on_land.is_valid():
 		pet.get_tree().create_timer(travel).timeout.connect(on_land)
 

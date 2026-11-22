@@ -15,6 +15,7 @@ const SHARDS := 16
 
 static var _burst_shader: Shader
 static var _shard_mesh: CylinderMesh
+static var _puff: ImageTexture
 
 var _from := Vector3.ZERO
 var _to := Vector3.ZERO
@@ -147,7 +148,7 @@ func _impact() -> void:
 		shard.top_level = true
 		_shards.append([shard, dir, randf_range(0.5, 1.1)])
 	# frost mist rolling out over the ground, and snowflakes
-	add_child(_particles(at + Vector3.UP * 0.25, 18, 1.4, Vector2(1.3, 1.3), Color(0.92, 0.97, 1.0, 0.7), 1.5, 3.0, 0.0, 90.0, true))
+	_mist(self, at + Vector3.UP * 0.2, 14, 1.1, Color(0.92, 0.97, 1.0, 0.7), 1.8, 1.3)
 	add_child(_particles(at + Vector3.UP * 0.6, 40, 1.6, Vector2(0.07, 0.07), Color(1.0, 1.0, 1.0, 0.95), 1.0, 3.5, -1.2, 70.0, false))
 	# the call-out
 	var label := Label3D.new()
@@ -183,7 +184,7 @@ static func _quad(mat: Material) -> MeshInstance3D:
 
 
 ## A one-shot puff of particles: `soft` ones are mist (round, growing, fading).
-func _particles(at: Vector3, amount: int, life: float, size: Vector2, color: Color, v_min: float, v_max: float,
+static func _particles(at: Vector3, amount: int, life: float, size: Vector2, color: Color, v_min: float, v_max: float,
 		gravity: float, spread: float, soft: bool) -> CPUParticles3D:
 	var p := CPUParticles3D.new()
 	var mesh: PrimitiveMesh
@@ -196,17 +197,14 @@ func _particles(at: Vector3, amount: int, life: float, size: Vector2, color: Col
 	mat.vertex_color_use_as_albedo = true
 	mat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
 	if soft:  # a soft round puff: white in the middle, fading to nothing at the edge
-		var fall := Gradient.new()
-		fall.set_color(0, Color(1, 1, 1, 1))
-		fall.set_color(1, Color(1, 1, 1, 0))
-		var tex := GradientTexture2D.new()
-		tex.gradient = fall
-		tex.fill = GradientTexture2D.FILL_RADIAL
-		tex.fill_from = Vector2(0.5, 0.5)
-		tex.fill_to = Vector2(1.0, 0.5)
-		tex.width = 64
-		tex.height = 64
-		mat.albedo_texture = tex
+		if _puff == null:  # made once (a fresh one is blank for its first frame)
+			var img := Image.create(64, 64, false, Image.FORMAT_RGBA8)
+			for y in 64:
+				for x in 64:
+					var d := Vector2(x - 31.5, y - 31.5).length() / 32.0
+					img.set_pixel(x, y, Color(1, 1, 1, clampf(1.0 - d, 0.0, 1.0) ** 1.5))
+			_puff = ImageTexture.create_from_image(img)
+		mat.albedo_texture = _puff
 	mesh.material = mat
 	p.mesh = mesh
 	p.amount = amount
@@ -233,4 +231,42 @@ func _particles(at: Vector3, amount: int, life: float, size: Vector2, color: Col
 	p.top_level = true
 	p.position = at
 	p.emitting = true
+	p.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF  # (mist would throw dark blots on the ground)
 	return p
+
+
+## Frost mist: `count` soft white puffs rolling out over the ground from `at`,
+## swelling and fading over `life` seconds (tweened quads: the particle
+## system drew such puffs black for their first moments).
+static func _mist(parent: Node3D, at: Vector3, count: int, size: float, color: Color, reach: float, life: float) -> void:
+	if _puff == null:  # made once
+		var img := Image.create(64, 64, false, Image.FORMAT_RGBA8)
+		for y in 64:
+			for x in 64:
+				var d := Vector2(x - 31.5, y - 31.5).length() / 32.0
+				img.set_pixel(x, y, Color(1, 1, 1, clampf(1.0 - d, 0.0, 1.0) ** 1.5))
+		_puff = ImageTexture.create_from_image(img)
+	for k in count:
+		var mat := StandardMaterial3D.new()
+		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		mat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+		mat.albedo_texture = _puff
+		mat.albedo_color = color
+		var quad := QuadMesh.new()
+		quad.size = Vector2.ONE * size
+		var puff := MeshInstance3D.new()
+		puff.mesh = quad
+		puff.material_override = mat
+		puff.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		parent.add_child(puff)
+		puff.top_level = true
+		var a := TAU * k / count + randf_range(-0.3, 0.3)
+		var out := Vector3(cos(a), 0.0, sin(a)) * reach * randf_range(0.6, 1.0)
+		puff.global_position = at + Vector3(0, randf_range(0.0, 0.25), 0)
+		puff.scale = Vector3.ONE * 0.5
+		var tw := puff.create_tween().set_parallel()
+		tw.tween_property(puff, "global_position", puff.global_position + out + Vector3.UP * 0.2, life).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
+		tw.tween_property(puff, "scale", Vector3.ONE * randf_range(1.4, 2.0), life).set_ease(Tween.EASE_OUT)
+		tw.tween_property(mat, "albedo_color:a", 0.0, life * 0.7).set_delay(life * 0.3)
+		tw.chain().tween_callback(puff.queue_free)

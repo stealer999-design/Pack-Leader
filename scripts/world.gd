@@ -2464,6 +2464,13 @@ func play_wave(origin: Vector3, forward: Vector3, radius: float, cone_degrees: f
 	TidalWaveFX.play(self, origin, forward, radius, cone_degrees, color)
 
 
+## Hail Volley: a wave of icy arrows arcing from `from` down onto each of
+## `ends`, ice erupting where they land after `travel` seconds (HailVolleyFX).
+@rpc("authority", "call_local", "unreliable")
+func play_hail_volley(from: Vector3, ends: PackedVector3Array, travel: float) -> void:
+	HailVolleyFX.play(self, from, ends, travel)
+
+
 ## Frost Arrow: an icy bolt from `from` to `to` bursting into ice, runes,
 ## frost mist and snow over `radius` (FrostFX).
 @rpc("authority", "call_local", "unreliable")
