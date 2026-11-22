@@ -7,7 +7,9 @@ class_name PetModels
 
 const DIR := "res://models/pets/"
 ## How tall a size-1 creature of each body type stands (the code-built ones).
-const HEIGHT := {"cat": 1.25, "dog": 1.25, "lizard": 0.75}
+const HEIGHT := {"cat": 1.25, "dog": 1.25}
+## ...or how long, nose to tail tip (lizards: long and low, some much flatter than others).
+const LENGTH := {"lizard": 1.93}
 ## Per species: a colour multiplied into the model's texture (pale Meshy textures
 ## wash out in the bright sun).
 const TINT := {"voltwing": Color(0.62, 0.74, 0.95)}
@@ -51,6 +53,8 @@ static func build(body: MeshInstance3D, species: CreatureSpecies) -> AnimationPl
 		box = b if first else box.merge(b)
 		first = false
 	var k: float = HEIGHT.get(species.body_type, 1.25) / maxf(box.size.y, 0.01)
+	if LENGTH.has(species.body_type):
+		k = LENGTH[species.body_type] / maxf(box.size.z, 0.01)
 	scene.scale = Vector3.ONE * k
 	scene.position = Vector3(-box.get_center().x * k, -box.position.y * k, -box.get_center().z * k)
 	scene.rotation.y = PI  # Meshy models face +Z

@@ -32,7 +32,8 @@ def idle(t):
 	f['Neck'] = (0.03 * np.sin(2 * ph), look * 0.5, 0.05 * np.sin(ph))
 	f['Head'] = (0.02 * np.sin(2 * ph + 1), look * 0.5, 0.06 * np.sin(ph + 0.4))
 	f['Jaw'] = (0.04 * max(0.0, np.sin(TAU * t * 1.5)) * env(t % 2.0, 1.2, 1.3, 1.6, 1.8), 0, 0)  # a little gulp
-	f['Tail1'] = (0, 0.08 * np.sin(ph * 0.5 * 2), 0); f['Tail2'] = (0, 0.06 * np.sin(ph - 0.8), 0)
+	for k, b in enumerate(TAILS):
+		f[b] = (0, (0.08 - 0.02 * k) * np.sin(ph - 0.8 * k), 0)
 	f['_offset'] = (0, 0.006 * breathe, 0)
 	return finish(f)
 
@@ -64,7 +65,8 @@ def hiss(t):
 	f['Neck'] = (-0.1 * up + 0.02 * shake, 0.03 * shake, 0)
 	f['Head'] = (-0.1 * up, 0, 0)
 	f['Jaw'] = (0.55 * env(t, 0.15, 0.3, 0.7, 0.9) + 0.04 * shake, 0, 0)
-	f['Tail1'] = (0, 0.35 * np.sin(TAU * t * 3) * up, 0); f['Tail2'] = (0, 0.25 * np.sin(TAU * t * 3 - 1) * up, 0)
+	for k, b in enumerate(TAILS):
+		f[b] = (0, (0.35 - 0.1 * k) * TAIL_K * np.sin(TAU * t * 3 - k) * up, 0)
 	f['_offset'] = (0, 0.06 * up, -0.03 * up)
 	return finish(f)
 

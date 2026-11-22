@@ -12,6 +12,8 @@ import numpy as np
 
 TAU = 2 * np.pi
 LEGS = ['FL', 'FR', 'RL', 'RR']
+TAILS = [n for n in names if n.startswith('Tail')]  # (lizards with curled tails rig only two)
+TAIL_K = 1.0 if len(TAILS) <= 2 else 0.3  # long straight tails: the same swing at the tip
 END = {leg['bones'][-1][:2]: np.array(leg['end'], float) for leg in cfg['legs']}  # paw on the ground
 
 
@@ -120,8 +122,8 @@ def gait(f, t, T, travel, duty, lift, bend, roll=0.0):
 	f['Spine1'] = (0, -bend * c, 0)
 	f['Chest'] = (0, -bend * c, -roll * np.sin(ph))
 	f['Neck'] = (0, bend * c * 0.7, 0); f['Head'] = (0, bend * c * 0.3, 0)  # the head stays on course
-	f['Tail1'] = (0, -bend * 1.3 * np.cos(ph - 0.7), 0)
-	f['Tail2'] = (0, -bend * 0.9 * np.cos(ph - 1.4), 0)
+	for k, b in enumerate(TAILS):  # a wave running down the tail
+		f[b] = (0, -bend * (1.3 - 0.4 * k) * TAIL_K * np.cos(ph - 0.7 * (k + 1)), 0)
 	return ph
 
 
