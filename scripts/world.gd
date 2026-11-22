@@ -2464,6 +2464,13 @@ func play_wave(origin: Vector3, forward: Vector3, radius: float, cone_degrees: f
 	TidalWaveFX.play(self, origin, forward, radius, cone_degrees, color)
 
 
+## Snipe: a glint at the bow (`from`), a golden tracer and beam to `to`, and a
+## blinding golden flare there (SnipeFX).
+@rpc("authority", "call_local", "unreliable")
+func play_snipe(from: Vector3, to: Vector3) -> void:
+	SnipeFX.play(self, from, to)
+
+
 ## Eagle Eye: a glowing orange ring growing out from `center` (the bird) to
 ## `radius`, flaring on each of `allies` as it reaches them (EagleEyeFX).
 @rpc("authority", "call_local", "unreliable")

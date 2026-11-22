@@ -11,5 +11,6 @@ cast_range = 16
 needs_target = true
 damage_multiplier = 4.5
 mode = "shot"
-color = Color(0.6, 0.85, 1, 1)
+color = Color(1, 0.82, 0.4, 1)
+look = "snipe"
 stun_duration = 1.0

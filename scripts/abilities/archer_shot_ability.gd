@@ -38,8 +38,9 @@ const ARROW_HIT := 1.1  ## How close to an arrow's landing spot (or path) counts
 ## An extra look: "cone" is Arrow Cone's golden dome full of arrows (ConeFX),
 ## "pierce" Piercing Shot's blazing bolt and starbursts (PierceFX), "frost" Frost
 ## Arrow's icy bolt and burst of ice (FrostFX), "hail" Hail Volley's wave of
-## icy arrows arcing down onto erupting ice (HailVolleyFX; its own arrows unseen).
-@export_enum("plain", "cone", "pierce", "frost", "hail") var look := "plain"
+## icy arrows arcing down onto erupting ice (HailVolleyFX; its own arrows unseen),
+## "snipe" Snipe's golden tracer and blinding flare (SnipeFX).
+@export_enum("plain", "cone", "pierce", "frost", "hail", "snipe") var look := "plain"
 
 
 func cannot_cast_reason(pet: Creature) -> String:
@@ -58,6 +59,8 @@ func execute(pet: Creature, point: Vector3, target: Creature) -> void:
 		"shot":
 			if look == "frost":
 				world.play_frost_arrow.rpc(from, aim, maxf(splash_radius, 1.0))
+			elif look == "snipe":
+				world.play_snipe.rpc(from, aim + Vector3.UP * 0.6)
 			_fire(pet, from, aim, _hit.bind(pet, aim, damage, maxf(splash_radius, ARROW_HIT), target))
 		"volley":
 			var forward := (aim - pet.global_position)
