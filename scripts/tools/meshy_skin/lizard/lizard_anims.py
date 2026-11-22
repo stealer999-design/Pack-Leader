@@ -4,6 +4,17 @@
 # Swipe is the attack (a darting bite), Hiss the ability (rearing up, jaws wide).
 import numpy as np
 
+HAS_WINGS = 'WingL' in idx
+
+
+def wings(f, spread, flap=0.0):
+	"""winged lizards (hybrids): `spread` opens the wings out and down from their raised V
+	(0 = as modelled), `flap` beats them"""
+	if HAS_WINGS:
+		f['WingL'] = (0.1 * flap, 0, -spread - flap)
+		f['WingR'] = (0.1 * flap, 0, spread + flap)
+
+
 WALK_T = 0.5  # seconds per cycle (two diagonal steps)
 WALK_TRAVEL = 0.7  # rig units the body covers per cycle (pace = travel / T)
 
@@ -12,6 +23,7 @@ def walk(t):
 	f = {}; planted(f)
 	ph = gait(f, t, WALK_T, WALK_TRAVEL, 0.6, 0.09, 0.2, 0.04)
 	f['_offset'] = (0, -0.07 + 0.01 * np.cos(2 * ph), 0)  # crouched low (the legs reach further), a slight bob
+	wings(f, 0.0, 0.08 * np.sin(2 * ph))  # a little flutter on each step
 	f['Jaw'] = (0.0, 0, 0)
 	return finish(f)
 
@@ -20,6 +32,7 @@ def run(t):
 	T = 0.4; f = {}; planted(f)
 	ph = gait(f, t, T, WALK_TRAVEL, 0.5, 0.12, 0.3, 0.06)
 	f['_offset'] = (0, -0.07 + 0.015 * np.cos(2 * ph), 0)
+	wings(f, 0.1, 0.15 * np.sin(2 * ph))
 	return finish(f)
 
 
@@ -35,6 +48,7 @@ def idle(t):
 	for k, b in enumerate(TAILS):
 		f[b] = (0, (0.08 - 0.02 * k) * np.sin(ph - 0.8 * k), 0)
 	f['_offset'] = (0, 0.006 * breathe, 0)
+	wings(f, 0.03 * breathe, 0.0)
 	return finish(f)
 
 
@@ -51,6 +65,7 @@ def swipe(t):
 	f['Jaw'] = (0.5 * env(t, 0.08, 0.2, 0.24, 0.28) - 0.05 * snap, 0, 0)
 	f['Tail1'] = (0, 0.15 * np.sin(TAU * t * 2.5) * dart, 0)
 	f['_offset'] = (0, 0.03 * draw - 0.01 * dart, -0.06 * draw + 0.14 * dart)
+	wings(f, 0.25 * draw - 0.1 * dart)
 	return finish(f)
 
 
@@ -68,6 +83,7 @@ def hiss(t):
 	for k, b in enumerate(TAILS):
 		f[b] = (0, (0.35 - 0.1 * k) * TAIL_K * np.sin(TAU * t * 3 - k) * up, 0)
 	f['_offset'] = (0, 0.06 * up, -0.03 * up)
+	wings(f, 0.55 * up, 0.06 * shake)  # a threat display: wings flung wide
 	return finish(f)
 
 
