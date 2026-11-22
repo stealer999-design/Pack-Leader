@@ -27,7 +27,8 @@ extends PetAbility
 ##   towards the spot across a cone (`cone_degrees` wide, `radius` long),
 ##   hitting everything in it as it reaches them;
 ## - "vortex": a whirlwind spins at the spot for `duration` seconds, hurting
-##   and slowing what's inside.
+##   and slowing what's inside (CycloneFX: a funnel of dusty wind, whirling
+##   debris, dust on the ground, crackles of lightning).
 ## Hits can also stun, slow, knock back, set burning (damage over time),
 ## leave a burning patch, or arc on as chain lightning to `chain` more enemies.
 
@@ -238,5 +239,5 @@ func _vortex(pet: Creature, center: Vector3, damage: float) -> void:
 		enemy.receive_damage(damage, pet, pull.normalized() * 3.0)  # drawn into the middle
 		if enemy.has_method("slow"):
 			enemy.slow(duration, slow_factor)
-	world.add_zone(pet, center, radius, duration, pet.ability_damage() * burn_dps_multiplier, Color(color, 0.6))
+	world.add_zone(pet, center, radius, duration, pet.ability_damage() * burn_dps_multiplier, Color(color, 0.0))  # drawn by CycloneFX
 	world.play_vortex.rpc(center, radius, duration, color)
