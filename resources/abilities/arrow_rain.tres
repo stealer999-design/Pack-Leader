@@ -13,4 +13,5 @@ damage_multiplier = 1.2
 radius = 3.8
 mode = "rain"
 color = Color(0.95, 0.9, 0.8, 1)
+look = "rain"
 arrows = 10

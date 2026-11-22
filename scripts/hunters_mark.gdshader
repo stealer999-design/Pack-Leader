@@ -12,9 +12,11 @@ uniform float spin = 0.0;  // radians (the sigil's turn)
 uniform vec3 glow : source_color = vec3(0.6, 1.0, 0.7);
 uniform vec3 core : source_color = vec3(0.95, 1.0, 0.95);
 
+uniform bool lie_flat = false;  // lie as placed (Rain of Arrows' circle in the sky) instead of facing the camera
+
 void vertex() {
 	// face the camera, keeping the node's scale
-	MODELVIEW_MATRIX = VIEW_MATRIX * mat4(INV_VIEW_MATRIX[0] * length(MODEL_MATRIX[0].xyz),
+	if (!lie_flat) MODELVIEW_MATRIX = VIEW_MATRIX * mat4(INV_VIEW_MATRIX[0] * length(MODEL_MATRIX[0].xyz),
 			INV_VIEW_MATRIX[1] * length(MODEL_MATRIX[1].xyz), INV_VIEW_MATRIX[2], MODEL_MATRIX[3]);
 }
 

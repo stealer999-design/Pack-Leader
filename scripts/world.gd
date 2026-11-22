@@ -2464,6 +2464,14 @@ func play_wave(origin: Vector3, forward: Vector3, radius: float, cone_degrees: f
 	TidalWaveFX.play(self, origin, forward, radius, cone_degrees, color)
 
 
+## Rain of Arrows: a streak shot up from `from`, a circle of runes over
+## `center`, and glowing arrows raining down, landing on `spots` at `times`
+## among many more (RainFX).
+@rpc("authority", "call_local", "unreliable")
+func play_arrow_rain(from: Vector3, center: Vector3, radius: float, spots: PackedVector3Array, times: PackedFloat32Array) -> void:
+	RainFX.play(self, from, center, radius, spots, times)
+
+
 ## Prism Shot: a rainbow crystal ahead of the bow (`from`), a rainbow beam
 ## out of it to `to`, and a rainbow burst there over `radius` (PrismFX).
 @rpc("authority", "call_local", "unreliable")

@@ -40,8 +40,9 @@ const ARROW_HIT := 1.1  ## How close to an arrow's landing spot (or path) counts
 ## Arrow's icy bolt and burst of ice (FrostFX), "hail" Hail Volley's wave of
 ## icy arrows arcing down onto erupting ice (HailVolleyFX; its own arrows unseen),
 ## "snipe" Snipe's golden tracer and blinding flare (SnipeFX), "prism" Prism Shot's
-## crystal, rainbow beam and rainbow burst (PrismFX).
-@export_enum("plain", "cone", "pierce", "frost", "hail", "snipe", "prism") var look := "plain"
+## crystal, rainbow beam and rainbow burst (PrismFX), "rain" Rain of Arrows' circle
+## in the sky and downpour of glowing arrows (RainFX; its own arrows fall inside it).
+@export_enum("plain", "cone", "pierce", "frost", "hail", "snipe", "prism", "rain") var look := "plain"
 
 
 func cannot_cast_reason(pet: Creature) -> String:
@@ -96,11 +97,17 @@ func execute(pet: Creature, point: Vector3, target: Creature) -> void:
 			if look == "pierce":
 				world.play_piercing_shot.rpc(from, end + Vector3.UP * 0.7, bursts)
 		"rain":
+			var spots := PackedVector3Array()
+			var times := PackedFloat32Array()
 			for i in arrows:
 				var spot := world.clamp_to_level(aim + Vector3.FORWARD.rotated(Vector3.UP, randf() * TAU) * radius * sqrt(randf()))
 				var sky := spot + Vector3(1.5, 12.0, 1.0)
 				var delay := 0.08 * i
-				pet.get_tree().create_timer(delay + 0.01).timeout.connect(_fire.bind(pet, sky, spot, _hit.bind(pet, spot, damage, 1.3, null)))
+				pet.get_tree().create_timer(delay + 0.01).timeout.connect(_fire.bind(pet, sky, spot, _hit.bind(pet, spot, damage, 1.3, null), Color(0, 0, 0, 0), look != "rain"))
+				spots.append(spot)
+				times.append(delay + 0.01 + sky.distance_to(spot) / ARROW_SPEED)
+			if look == "rain":
+				world.play_arrow_rain.rpc(from, world.clamp_to_level(aim), radius, spots, times)
 		"mark":
 			var at := world.clamp_to_level(aim)
 			var to := at + Vector3.UP * 0.5
