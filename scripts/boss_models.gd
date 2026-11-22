@@ -78,7 +78,8 @@ const DOM_ANIMS := {"walk": "Walk", "run": "Run", "attack": "Swipe", "attack_fro
 		"idle": "Idle", "pounce": ["Pounce", 0.0, 1.0], "retch": ["Retch", 0.0, 1.3], "summon": ["Hiss", 0.0, 1.0],
 		"run_from": 99.0, "walk_pace": 2.92, "run_pace": 4.27}  # paces: Meshy units a second x his scale; he always walks
 
-## Koleko as a Meshy model, rigged and animated by rig_quad.py like Dom: a
+## Koleko as a Meshy model (his head, modelled turned aside, straightened by
+## turn_head_quad.py), rigged and animated by rig_quad.py like Dom: a
 ## panting idle, a trot (his only gait: diagonal pairs, a moment of float), a lunging bite with a head shake (his
 ## hit), a rear-back-and-heave Lava Spit, and a howl to the sky (his summons).
 const KOLEKO_MODEL := "res://models/koleko.glb"
