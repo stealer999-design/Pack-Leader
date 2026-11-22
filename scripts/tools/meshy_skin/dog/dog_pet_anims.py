@@ -4,10 +4,16 @@
 # with the head thrown up (Hiss, the ability). Ears and wings move when the
 # rig has them.
 import numpy as np
+import os
 
 WALK_T = 0.5  # seconds per cycle (two diagonal beats)
 WALK_TRAVEL = 0.84  # rig units the body covers per cycle (the pace is travel / T)
 HAS_WINGS = 'WingL' in idx
+FORE_SHIFT = float(os.environ.get('FORE_SHIFT', 0.12))  # rig units
+HIND_SHIFT = float(os.environ.get('HIND_SHIFT', 0.08))
+FORE_LIFT = float(os.environ.get('FORE_LIFT', 0.3))  # share of the stride's lift the fore paw gets
+WRIST_FOLD = float(os.environ.get('WRIST_FOLD', 1.7))  # radians at the top of the swing
+SCAP_ROCK = float(os.environ.get('SCAP_ROCK', 0.5))  # the shoulder blade's rock, x quad_lib's
 
 
 def wings(f, spread, flap=0.0):
@@ -24,15 +30,23 @@ def walk(t):
 	tail; the head nods with each beat; the paws fold up as they swing through; the tail
 	streams out behind, bouncing with the body"""
 	T = WALK_T; ph = TAU * t / T; f = {}; planted(f)
-	walk_like(t, T, {'FL': 0.0, 'RR': 0.0, 'FR': 0.5, 'RL': 0.5}, WALK_TRAVEL, 0.44, 0.13, f, fore_reach=0.12)
-	for leg in ('FL', 'FR'):  # the fore leg lifts high as it swings, the paw folding right back at the wrist
+	walk_like(t, T, {'FL': 0.0, 'RR': 0.0, 'FR': 0.5, 'RL': 0.5}, WALK_TRAVEL, 0.44, 0.13, f)
+	# as a real dog does: the fore paws work out in front of the shoulders (so the elbow never
+	# rides back into the chest) and the hind paws push out behind the hips (so the thigh
+	# never swings far forward and folds the groin); same stride
+	for leg in ('FL', 'FR', 'RL', 'RR'):
+		foot, flex = f['_feet'][leg]; foot = foot.copy()
+		foot[2] += FORE_SHIFT if leg[0] == 'F' else -HIND_SHIFT
+		f['_feet'][leg] = (foot, flex)
+	for leg in ('FL', 'FR'):  # the fore paw clears the ground by folding right back at the wrist,
+		# not by hoisting the whole leg (which drives the elbow up into the chest)
 		foot, flex = f['_feet'][leg]; up = flex / 0.45  # 0..1 through the swing
-		foot = foot.copy(); foot[1] += 0.07 * up
-		f['_feet'][leg] = (foot, up * 1.25)
+		foot = foot.copy(); foot[1] = END[leg][1] + (foot[1] - END[leg][1]) * FORE_LIFT
+		f['_feet'][leg] = (foot, up * WRIST_FOLD)
 	for leg in ('RL', 'RR'):  # the hind paw curls back
 		foot, flex = f['_feet'][leg]; f['_feet'][leg] = (foot, flex * 1.5)
 	for leg in ('FL', 'FR'):  # the shoulder blade rocks gently with the leg; the forearm does the swinging
-		e = f.get(leg + '_Scap', (0, 0, 0)); f[leg + '_Scap'] = (e[0] * 0.8, e[1], e[2])
+		e = f.get(leg + '_Scap', (0, 0, 0)); f[leg + '_Scap'] = (e[0] * SCAP_ROCK, e[1], e[2])
 	beat = np.cos(2 * ph)  # two beats a cycle: +1 just after a pair lands, -1 at the top of the float
 	rock = np.sin(2 * ph)  # nose dips as the fore paw takes the weight, rises as the hind pushes
 	f['Hips'] = (0.04 * rock, 0.035 * np.sin(ph), 0.035 * np.sin(ph))
