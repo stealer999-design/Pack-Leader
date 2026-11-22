@@ -239,13 +239,7 @@ static func _particles(at: Vector3, amount: int, life: float, size: Vector2, col
 ## swelling and fading over `life` seconds (tweened quads: the particle
 ## system drew such puffs black for their first moments).
 static func _mist(parent: Node3D, at: Vector3, count: int, size: float, color: Color, reach: float, life: float) -> void:
-	if _puff == null:  # made once
-		var img := Image.create(64, 64, false, Image.FORMAT_RGBA8)
-		for y in 64:
-			for x in 64:
-				var d := Vector2(x - 31.5, y - 31.5).length() / 32.0
-				img.set_pixel(x, y, Color(1, 1, 1, clampf(1.0 - d, 0.0, 1.0) ** 1.5))
-		_puff = ImageTexture.create_from_image(img)
+	puff_texture()
 	for k in count:
 		var mat := StandardMaterial3D.new()
 		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
@@ -270,3 +264,16 @@ static func _mist(parent: Node3D, at: Vector3, count: int, size: float, color: C
 		tw.tween_property(puff, "scale", Vector3.ONE * randf_range(1.4, 2.0), life).set_ease(Tween.EASE_OUT)
 		tw.tween_property(mat, "albedo_color:a", 0.0, life * 0.7).set_delay(life * 0.3)
 		tw.chain().tween_callback(puff.queue_free)
+
+
+## A soft round puff (white, fading to nothing at its edge), made once: for
+## mist, dust and smoke.
+static func puff_texture() -> ImageTexture:
+	if _puff == null:
+		var img := Image.create(64, 64, false, Image.FORMAT_RGBA8)
+		for y in 64:
+			for x in 64:
+				var d := Vector2(x - 31.5, y - 31.5).length() / 32.0
+				img.set_pixel(x, y, Color(1, 1, 1, clampf(1.0 - d, 0.0, 1.0) ** 1.5))
+		_puff = ImageTexture.create_from_image(img)
+	return _puff

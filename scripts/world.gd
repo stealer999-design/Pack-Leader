@@ -2464,6 +2464,14 @@ func play_wave(origin: Vector3, forward: Vector3, radius: float, cone_degrees: f
 	TidalWaveFX.play(self, origin, forward, radius, cone_degrees, color)
 
 
+## An archer's basic shot with the "dust" look: the arrow, a wake of dust and
+## pebbles behind it, sparks where it strikes (DustShotFX).
+@rpc("authority", "call_local", "unreliable")
+func play_dust_shot(from: Vector3, to: Vector3, color: Color, travel: float) -> void:
+	play_arrow(from, to, color, travel)
+	DustShotFX.play(self, from, to, travel)
+
+
 ## Sunburst Arrow: a fiery bolt from `from` bursting into a blazing sun at
 ## `to`, rays of light and sunlight over `radius` (SunburstFX).
 @rpc("authority", "call_local", "unreliable")

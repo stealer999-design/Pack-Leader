@@ -66,6 +66,10 @@ const ARCHER_KITE_DISTANCE := 2.8
 ## Monsters (the undead of the graveyard) are not creatures you can tame: they
 ## can't be captured, and the tamer's bat can finish them off.
 @export var monster := false
+## An archer's basic shot: "" a plain arrow, "dust" an arrow tearing up a wake
+## of dust and pebbles, with sparks where it hits (DustShotFX).
+@export var shot_look := ""
+
 ## Monsters that fight from range (fire imps, frost wraiths): magic bolts like a wizard's.
 @export var ranged_attack := false
 
