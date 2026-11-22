@@ -10,7 +10,7 @@ extends PetAbility
 ## - "heal": healing arrows at the `arrows` most injured allies within
 ##   `shot_range` (heal_fraction of their max health), splashing heal_splash
 ##   onto allies near them;
-## - "mark": Hunter's Mark: a flare over the spot marks every enemy within
+## - "mark": Hunter's Mark: a red arrow and beam to the spot (MarkFX) marks every enemy within
 ##   `radius` for `effect_duration` seconds, and pets crit them every hit;
 ## - "rally": Eagle Eye: every pet on its side within `radius` of the spot gets
 ##   +`crit_bonus` crit chance for `effect_duration` seconds.
@@ -80,7 +80,10 @@ func execute(pet: Creature, point: Vector3, target: Creature) -> void:
 				pet.get_tree().create_timer(delay + 0.01).timeout.connect(_fire.bind(pet, sky, spot, _hit.bind(pet, spot, damage, 1.3, null)))
 		"mark":
 			var at := world.clamp_to_level(aim)
-			_fire(pet, from, at + Vector3.UP * 0.5, _mark.bind(pet, at), Color(1.0, 0.3, 0.25))
+			var to := at + Vector3.UP * 0.5
+			var travel := maxf(from.distance_to(to) / ARROW_SPEED, 0.05)
+			world.play_hunters_mark.rpc(from, to, travel, radius)  # the sigil, the red beam and the burst
+			_fire(pet, from, to, _mark.bind(pet, at), Color(1.0, 0.3, 0.4))
 		"rally":
 			var at := world.clamp_to_level(aim)
 			for ally in world.allies_near(pet, at, radius):
@@ -137,7 +140,6 @@ func _mark(pet_ref, at: Vector3) -> void:
 	for enemy in pet.world.enemies_near(pet, at, radius):
 		if enemy is Creature:
 			(enemy as Creature).mark(effect_duration)
-	pet.world.play_burst.rpc(at, Color(1.0, 0.3, 0.25), radius)
 
 
 func _hit_one(pet_ref, enemy_id: int, damage: float) -> void:

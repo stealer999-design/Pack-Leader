@@ -1207,11 +1207,14 @@ func _leap_fx(duration: float) -> void:
 	tween.tween_property(model, "position:y", 0.0, duration * 0.5).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
 
 
-## Temporary status visuals: bubbles for "guard", "reflect" and "shield";
+## Temporary status visuals: a crosshair for "mark" (MarkFX); bubbles for "guard", "reflect" and "shield";
 ## rings at the feet for "slow", "root", "poison" and "weaken"; a spinning
 ## halo for "stun" and "blind".
 @rpc("authority", "call_local", "unreliable")
 func _status_fx(kind: String, duration: float) -> void:
+	if kind == "mark":  # Hunter's Mark: a red crosshair over it
+		MarkFX.reticle(self, duration, maxf(radius() * 2.6, 1.1), maxf(radius() * 1.2, 0.7))
+		return
 	var fx := MeshInstance3D.new()
 	var mat := StandardMaterial3D.new()
 	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
@@ -1222,7 +1225,7 @@ func _status_fx(kind: String, duration: float) -> void:
 	var ring_colors := {
 		"slow": Color(0.55, 0.85, 1.0, 0.8), "root": Color(0.45, 0.32, 0.18, 0.95),
 		"poison": Color(0.45, 0.95, 0.3, 0.8), "weaken": Color(0.7, 0.35, 0.85, 0.8),
-		"mark": Color(1.0, 0.25, 0.2, 0.9), "crit": Color(1.0, 0.85, 0.3, 0.8),
+		"crit": Color(1.0, 0.85, 0.3, 0.8),
 	}
 	if kind in bubble_colors:
 		var sphere := SphereMesh.new()

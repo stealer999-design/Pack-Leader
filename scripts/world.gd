@@ -2464,6 +2464,13 @@ func play_wave(origin: Vector3, forward: Vector3, radius: float, cone_degrees: f
 	TidalWaveFX.play(self, origin, forward, radius, cone_degrees, color)
 
 
+## Hunter's Mark: a sigil by the caster's bow at `from`, a red beam to `to`
+## (reached in `travel` seconds) and a burst there over `radius` (MarkFX).
+@rpc("authority", "call_local", "unreliable")
+func play_hunters_mark(from: Vector3, to: Vector3, travel: float, radius: float) -> void:
+	MarkFX.cast(self, from, to, travel, radius)
+
+
 ## A short beam between two points (e.g. a heal).
 @rpc("authority", "call_local", "unreliable")
 func play_beam(from: Vector3, to: Vector3, color: Color) -> void:
