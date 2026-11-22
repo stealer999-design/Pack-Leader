@@ -77,6 +77,15 @@ for ear in cfg.get('ears', []):  # ears ride their own bones
 	m = ss(ear['radius'] + 0.03, ear['radius'] - 0.03, np.linalg.norm(P - np.array(ear['center']), axis=1)) * ss(ear['min_y'] - 0.02, ear['min_y'] + 0.03, y)
 	We = np.zeros((N, NB)); We[:, idx[ear['bone']]] = 1
 	W = W * (1 - m)[:, None] + We * m[:, None]
+# muscles (config 'muscles'): the skin over a shoulder or thigh, up the side of the body,
+# rides that leg's bone: fading out with distance from the bone and towards the midline
+for mu in cfg.get('muscles', []):
+	A_, B_ = np.array(mu['a']), np.array(mu['b']); ab = B_ - A_
+	t = np.clip(((P - A_) @ ab) / (ab @ ab), 0, 1); dd = np.linalg.norm(P - (A_ + t[:, None] * ab), axis=1)
+	r = mu['radius']
+	m = (1 - ss(r * 0.55, r, dd)) * ss(mu['inner'], mu['inner'] + 0.06, mu['side'] * x) * mu.get('strength', 0.85)
+	Wm = np.zeros((N, NB)); Wm[:, idx[mu['bone']]] = 1
+	W = W * (1 - m)[:, None] + Wm * m[:, None]
 # joint helpers (config 'helpers'): a bone at a leg joint that turns half as far as the
 # joint; the skin right round the joint rides it, so the joint keeps its thickness
 for h in cfg.get('helpers', []):

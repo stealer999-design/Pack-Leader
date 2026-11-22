@@ -110,6 +110,7 @@ for z in zs:
 for i in range(4):
 	B['Tail%d' % (i + 1)] = ['Hips' if i == 0 else 'Tail%d' % i, tb[i]]
 legs = []
+muscles = []  # the shoulders' and thighs' skin, up the side of the body, rides the leg
 for leg, f in feet.items():
 	front = leg[0] == 'F'; col = column(f); leglen = belly - ymin
 	end = [f[0], ymin + 0.012, f[2]]
@@ -125,12 +126,20 @@ for leg, f in feet.items():
 		fj = fore_joints(f)
 		if fj:  # the real shoulder, elbow and wrist
 			upper, lower, paw = fj
-		B[leg + '_Scap'] = ['Chest', [f[0] * 0.6, max(mid(cz) + 0.08, upper[1] + 0.12), upper[2] - 0.06]]
+		# the shoulder blade pivots up near the withers and rocks with the leg
+		withers = [f[0] * 0.5, max(torso(cz)[1] - 0.07, upper[1] + 0.12), upper[2] - 0.1]
+		B[leg + '_Scap'] = ['Chest', withers]
+		muscles.append({'bone': leg + '_Scap', 'a': withers, 'b': list(upper), 'radius': 0.13, 'side': float(np.sign(f[0])), 'inner': 0.05})
+		muscles.append({'bone': leg + '_Upper', 'a': list(upper), 'b': list(lower), 'radius': 0.11, 'side': float(np.sign(f[0])), 'inner': 0.05})
 		B[leg + '_Upper'] = [leg + '_Scap', upper]
 		bones = [leg + '_Scap', leg + '_Upper', leg + '_Lower', leg + '_Paw']
 	else:
+		# the real hip joint: well up the side of the body, about over the hind paw
+		top_r = torso(rz)[1]
+		upper = [upper[0] * 0.9, belly + 0.55 * (top_r - belly), rz + 0.03]
 		B[leg + '_Upper'] = ['Hips', upper]
 		bones = [leg + '_Upper', leg + '_Lower', leg + '_Paw']
+		muscles.append({'bone': leg + '_Upper', 'a': upper, 'b': list(lower), 'radius': 0.16, 'side': float(np.sign(f[0])), 'inner': 0.05})
 	B[leg + '_Lower'] = [leg + '_Upper', list(lower)]; B[leg + '_Paw'] = [leg + '_Lower', list(paw)]
 	legs.append({'bones': bones, 'end': end, 'radius': 0.11, 'top': belly + 0.02})
 # helper bones at each hind stifle and hock: they turn half as far as the joint below
@@ -148,7 +157,7 @@ cfg = {'yaw_deg': 0.0, 'scale': 2.0, 'root': 'Hips', 'lib': 'quad_lib.py', 'anim
 	   'tail': {'bones': ['Tail1', 'Tail2', 'Tail3', 'Tail4'], 'end': tb[4], 'radius': 0.14, 'start_z': hz - 0.08},
 	   'head': {'center': list(hc), 'radius': float(max(0.2, (nose - hc[2]) + 0.06)), 'min_y': float(snout[:, 1].min() - 0.08), 'front_z': float(nose + 0.05)},
 	   'jaw': {'z0': float(nose - 0.24), 'z1': float(nose - 0.16), 'y0': float(snout[:, 1].min() + 0.02), 'y1': float(snout[:, 1].min() + 0.07)},
-	   'smooth': 3, 'helpers': helpers}
+	   'smooth': 3, 'helpers': helpers, 'muscles': muscles}
 # ears: what sticks up above the skull, either side
 crown = hc[1] + 0.12
 ear_pts = P[(P[:, 1] > crown) & (P[:, 2] > cz + 0.2) & (abs(P[:, 0]) > 0.03)]

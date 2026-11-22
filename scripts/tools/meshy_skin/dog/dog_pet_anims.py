@@ -31,6 +31,8 @@ def walk(t):
 		f['_feet'][leg] = (foot, up * 1.25)
 	for leg in ('RL', 'RR'):  # the hind paw curls back
 		foot, flex = f['_feet'][leg]; f['_feet'][leg] = (foot, flex * 1.5)
+	for leg in ('FL', 'FR'):  # the shoulder blade rocks well forward as the leg reaches, back as it pushes
+		e = f.get(leg + '_Scap', (0, 0, 0)); f[leg + '_Scap'] = (e[0] * 2.2, e[1], e[2])
 	beat = np.cos(2 * ph)  # two beats a cycle: +1 just after a pair lands, -1 at the top of the float
 	rock = np.sin(2 * ph)  # nose dips as the fore paw takes the weight, rises as the hind pushes
 	f['Hips'] = (0.04 * rock, 0.035 * np.sin(ph), 0.035 * np.sin(ph))
