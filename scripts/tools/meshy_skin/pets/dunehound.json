@@ -221,6 +221,22 @@
     0.3813
    ]
   ],
+  "RL_HipFix": [
+   "Hips",
+   [
+    0.1189,
+    0.1223,
+    -0.4806
+   ]
+  ],
+  "RR_HipFix": [
+   "Hips",
+   [
+    -0.1127,
+    0.1223,
+    -0.4806
+   ]
+  ],
   "RL_KneeFix": [
    "RL_Upper",
    [
@@ -384,6 +400,32 @@
    "joint": 3
   },
   {
+   "bone": "RL_HipFix",
+   "parent": "Hips",
+   "at": [
+    0.1189,
+    0.1223,
+    -0.4806
+   ],
+   "half_of": "RL_Upper",
+   "leg": "RL_Upper",
+   "joint": 0,
+   "width": 0.45
+  },
+  {
+   "bone": "RR_HipFix",
+   "parent": "Hips",
+   "at": [
+    -0.1127,
+    0.1223,
+    -0.4806
+   ],
+   "half_of": "RR_Upper",
+   "leg": "RR_Upper",
+   "joint": 0,
+   "width": 0.45
+  },
+  {
    "bone": "RL_KneeFix",
    "parent": "RL_Upper",
    "at": [
@@ -461,9 +503,10 @@
     -0.1767,
     0.3362
    ],
-   "radius": 0.11,
+   "radius": 0.1,
    "side": 1.0,
-   "inner": 0.05
+   "inner": 0.06,
+   "strength": 0.6
   },
   {
    "bone": "FR_Scap",
@@ -493,9 +536,10 @@
     -0.1767,
     0.3362
    ],
-   "radius": 0.11,
+   "radius": 0.1,
    "side": -1.0,
-   "inner": 0.05
+   "inner": 0.06,
+   "strength": 0.6
   },
   {
    "bone": "RL_Upper",
@@ -509,9 +553,11 @@
     -0.1967,
     -0.4492
    ],
-   "radius": 0.16,
+   "radius": 0.22,
+   "soft": 0.3,
    "side": 1.0,
-   "inner": 0.05
+   "inner": 0.04,
+   "strength": 0.95
   },
   {
    "bone": "RR_Upper",
@@ -525,9 +571,11 @@
     -0.1967,
     -0.4497
    ],
-   "radius": 0.16,
+   "radius": 0.22,
+   "soft": 0.3,
    "side": -1.0,
-   "inner": 0.05
+   "inner": 0.04,
+   "strength": 0.95
   }
  ]
 }

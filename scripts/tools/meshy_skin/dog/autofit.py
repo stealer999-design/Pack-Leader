@@ -130,7 +130,7 @@ for leg, f in feet.items():
 		withers = [f[0] * 0.5, max(torso(cz)[1] - 0.07, upper[1] + 0.12), upper[2] - 0.1]
 		B[leg + '_Scap'] = ['Chest', withers]
 		muscles.append({'bone': leg + '_Scap', 'a': withers, 'b': list(upper), 'radius': 0.13, 'side': float(np.sign(f[0])), 'inner': 0.05})
-		muscles.append({'bone': leg + '_Upper', 'a': list(upper), 'b': list(lower), 'radius': 0.11, 'side': float(np.sign(f[0])), 'inner': 0.05})
+		muscles.append({'bone': leg + '_Upper', 'a': list(upper), 'b': list(lower), 'radius': 0.1, 'side': float(np.sign(f[0])), 'inner': 0.06, 'strength': 0.6})
 		B[leg + '_Upper'] = [leg + '_Scap', upper]
 		bones = [leg + '_Scap', leg + '_Upper', leg + '_Lower', leg + '_Paw']
 	else:
@@ -139,7 +139,8 @@ for leg, f in feet.items():
 		upper = [upper[0] * 0.9, belly + 0.55 * (top_r - belly), rz + 0.03]
 		B[leg + '_Upper'] = ['Hips', upper]
 		bones = [leg + '_Upper', leg + '_Lower', leg + '_Paw']
-		muscles.append({'bone': leg + '_Upper', 'a': upper, 'b': list(lower), 'radius': 0.16, 'side': float(np.sign(f[0])), 'inner': 0.05})
+		# the whole haunch rides the thigh, blending softly into the back and belly
+		muscles.append({'bone': leg + '_Upper', 'a': upper, 'b': list(lower), 'radius': 0.22, 'soft': 0.3, 'side': float(np.sign(f[0])), 'inner': 0.04, 'strength': 0.95})
 	B[leg + '_Lower'] = [leg + '_Upper', list(lower)]; B[leg + '_Paw'] = [leg + '_Lower', list(paw)]
 	legs.append({'bones': bones, 'end': end, 'radius': 0.11, 'top': belly + 0.02})
 # helper bones at each hind stifle and hock: they turn half as far as the joint below
@@ -147,6 +148,8 @@ for leg, f in feet.items():
 helpers = []
 for leg in ('FL', 'FR'):  # (no elbow helper: the elbow hardly bends, and one mixes into the armpit)
 	helpers.append({'bone': leg + '_WristFix', 'parent': leg + '_Lower', 'at': B[leg + '_Paw'][1], 'half_of': leg + '_Paw', 'leg': leg + '_Scap', 'joint': 3})
+for leg in ('RL', 'RR'):  # the hip too: the top of the thigh keeps its fullness as it swings
+	helpers.append({'bone': leg + '_HipFix', 'parent': 'Hips', 'at': B[leg + '_Upper'][1], 'half_of': leg + '_Upper', 'leg': leg + '_Upper', 'joint': 0, 'width': 0.45})
 for leg in ('RL', 'RR'):
 	helpers.append({'bone': leg + '_KneeFix', 'parent': leg + '_Upper', 'at': B[leg + '_Lower'][1], 'half_of': leg + '_Lower', 'leg': leg + '_Upper', 'joint': 1})
 	helpers.append({'bone': leg + '_HockFix', 'parent': leg + '_Lower', 'at': B[leg + '_Paw'][1], 'half_of': leg + '_Paw', 'leg': leg + '_Upper', 'joint': 2})

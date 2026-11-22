@@ -83,7 +83,7 @@ for mu in cfg.get('muscles', []):
 	A_, B_ = np.array(mu['a']), np.array(mu['b']); ab = B_ - A_
 	t = np.clip(((P - A_) @ ab) / (ab @ ab), 0, 1); dd = np.linalg.norm(P - (A_ + t[:, None] * ab), axis=1)
 	r = mu['radius']
-	m = (1 - ss(r * 0.55, r, dd)) * ss(mu['inner'], mu['inner'] + 0.06, mu['side'] * x) * mu.get('strength', 0.85)
+	m = (1 - ss(r * mu.get('soft', 0.55), r, dd)) * ss(mu['inner'], mu['inner'] + 0.06, mu['side'] * x) * mu.get('strength', 0.85)
 	Wm = np.zeros((N, NB)); Wm[:, idx[mu['bone']]] = 1
 	W = W * (1 - m)[:, None] + Wm * m[:, None]
 # joint helpers (config 'helpers'): a bone at a leg joint that turns half as far as the
