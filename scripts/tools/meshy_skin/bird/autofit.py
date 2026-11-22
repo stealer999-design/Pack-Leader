@@ -20,8 +20,10 @@ P = F * K
 y0 = P[:, 1].min(); core = P[np.abs(P[:, 0]) < 0.3]
 top = np.percentile(core[:, 1], 99.5); H = top - y0
 def sl(y, w=0.04): return P[np.abs(P[:, 1] - y) < w]
-lo = P[:, 1] < y0 + 0.05
-feet = {s: P[lo & (np.sign(P[:, 0]) == sg)].mean(0) for s, sg in (('L', 1), ('R', -1))}
+lo = (P[:, 1] < y0 + 0.05) & ~brown(CF)  # (a bow can rest on the ground beside the feet)
+y0 = P[lo, 1].min(); lo = (P[:, 1] < y0 + 0.05) & ~brown(CF)
+cx = np.median(P[lo, 0])  # the feet may sit a little off the middle
+feet = {s: P[lo & (np.sign(P[:, 0] - cx) == sg)].mean(0) for s, sg in (('L', 1), ('R', -1))}
 fz = (feet['L'][2] + feet['R'][2]) / 2
 # head: the top fifth of the bird, near the midline; beak: its front-most part
 hp = core[core[:, 1] > y0 + 0.8 * H]
@@ -48,7 +50,7 @@ for s, f in feet.items():
 	B[s + '_Upper'] = ['Hips', [x, y0 + 0.23 * H, fz - 0.05 * H]]
 	B[s + '_Lower'] = [s + '_Upper', [x * 1.05, y0 + 0.15 * H, fz - 0.03 * H]]
 	B[s + '_Paw'] = [s + '_Lower', [x * 1.1, y0 + 0.04 * H, fz - 0.02 * H]]
-	legs.append({'bones': [s + '_Upper', s + '_Lower', s + '_Paw'], 'end': [f[0], y0 + 0.01, f[2] + 0.04 * H], 'radius': 0.06 * H, 'top': y0 + 0.2 * H})
+	legs.append({'bones': [s + '_Upper', s + '_Lower', s + '_Paw'], 'end': [f[0], y0 + 0.01, f[2] + 0.04 * H], 'radius': 0.09 * H, 'top': y0 + 0.2 * H})
 # folded wings: a patch on each side, from the shoulder down
 shoulder_y = y0 + 0.68 * H
 for side, nm in ((1, 'WingL'), (-1, 'WingR')):
@@ -68,7 +70,7 @@ for side, s in ((1, 'L'), (-1, 'R')):
 	B['WingOpen%s1' % s] = ['Chest', [side * rf[0], rf[1], rf[2]]]
 	B['WingOpen%s2' % s] = ['WingOpen%s1' % s, [side * (rf[0] + 0.5 * span), rf[1], rf[2]]]
 cfg = {'scale': K, 'root': 'Hips', 'lib': 'bird_lib.py', 'anims': sys.argv[4] if len(sys.argv) > 4 else 'bird_pet_anims.py', 'bones': B,
-	   'spine': ['Hips', 'Spine', 'Chest', 'Neck'], 'spine_end': B['Head'][1], 'legs': legs, 'foot_below': y0 + 0.03 * H,
+	   'spine': ['Hips', 'Spine', 'Chest', 'Neck'], 'spine_end': B['Head'][1], 'legs': legs, 'foot_below': y0 + 0.06 * H,
 	   'tail': {'bones': ['Tail1', 'Tail2'], 'end': list(tip), 'radius': 0.2 * H, 'start_y': hz[1], 'start_z': hz[2] - 0.05 * H},
 	   'head': {'below': y0 + 0.74 * H, 'center': list(hc + np.array([0, 0, 0.08 * H])), 'radius': 0.24 * H},
 	   'jaw': {'center': list(beak), 'radius': 0.07 * H, 'dark': 999, 'below': beak[1] + 0.01},

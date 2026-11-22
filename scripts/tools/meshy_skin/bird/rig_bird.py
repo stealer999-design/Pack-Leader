@@ -72,7 +72,7 @@ for leg in cfg['legs']:
 	Wl, d = chain_weights(P, bones, end)
 	side = np.sign(end[0])
 	m = (1 - ss(leg['radius'] * 0.8, leg['radius'] * 1.2, d)) * ss(leg['top'] + 0.04, leg['top'] - 0.04, y) * (side * x > 0.02)
-	foot = (y < cfg['foot_below']) & (side * x > 0.02)
+	foot = (y < cfg['foot_below']) & (side * x > 0.02) & (d < leg['radius'] * 3)  # (not a low-hanging tail)
 	Wf = np.zeros((N, NB)); Wf[:, idx[bones[-1]]] = 1
 	W = W * (1 - m)[:, None] + Wl * m[:, None]
 	W[foot] = Wf[foot]

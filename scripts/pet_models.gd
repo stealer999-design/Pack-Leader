@@ -12,7 +12,7 @@ const HEIGHT := {"cat": 1.25, "dog": 1.25, "bird": 1.1}
 const LENGTH := {"lizard": 1.93}
 ## Per species: a colour multiplied into the model's texture (pale Meshy textures
 ## wash out in the bright sun).
-const TINT := {"voltwing": Color(0.62, 0.74, 0.95)}
+const TINT := {"voltwing": Color(0.62, 0.74, 0.95), "frostfinch": Color(0.78, 0.85, 0.95)}
 ## Per species with models/pets/<species>_emit.png: those parts of its texture
 ## glow (an additive layer). Per species with models/pets/<species>_core.json (from core_shapes.py): a
 ## core of flickering fire inside the model, capsules riding its bones, seen

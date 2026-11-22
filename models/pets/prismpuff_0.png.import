@@ -1,0 +1,37 @@
+[remap]
+
+importer="texture"
+type="CompressedTexture2D"
+uid="uid://bxsw3cybhyb3u"
+path="res://.godot/imported/prismpuff_0.png-074d92b84d1b98ea5fdbca2544936100.ctex"
+metadata={
+"vram_texture": false
+}
+generator_parameters={
+"md5": "e72ed4efd90f5f81c7a23b3b47bf975e"
+}
+
+[deps]
+
+source_file="res://models/pets/prismpuff_0.png"
+dest_files=["res://.godot/imported/prismpuff_0.png-074d92b84d1b98ea5fdbca2544936100.ctex"]
+
+[params]
+
+compress/mode=0
+compress/high_quality=false
+compress/lossy_quality=0.7
+compress/hdr_compression=1
+compress/normal_map=0
+compress/channel_pack=0
+mipmaps/generate=true
+mipmaps/limit=-1
+roughness/mode=0
+roughness/src_normal=""
+process/fix_alpha_border=true
+process/premult_alpha=false
+process/normal_map_invert_y=false
+process/hdr_as_srgb=false
+process/hdr_clamp_exposure=false
+process/size_limit=1024
+detect_3d/compress_to=1
