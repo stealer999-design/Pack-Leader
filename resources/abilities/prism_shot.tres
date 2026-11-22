@@ -12,5 +12,6 @@ needs_target = false
 damage_multiplier = 2.0
 mode = "shot"
 color = Color(1, 0.85, 1, 1)
+look = "prism"
 splash_radius = 2.5
 blind_duration = 4.0

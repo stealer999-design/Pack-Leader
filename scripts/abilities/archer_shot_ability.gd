@@ -39,8 +39,9 @@ const ARROW_HIT := 1.1  ## How close to an arrow's landing spot (or path) counts
 ## "pierce" Piercing Shot's blazing bolt and starbursts (PierceFX), "frost" Frost
 ## Arrow's icy bolt and burst of ice (FrostFX), "hail" Hail Volley's wave of
 ## icy arrows arcing down onto erupting ice (HailVolleyFX; its own arrows unseen),
-## "snipe" Snipe's golden tracer and blinding flare (SnipeFX).
-@export_enum("plain", "cone", "pierce", "frost", "hail", "snipe") var look := "plain"
+## "snipe" Snipe's golden tracer and blinding flare (SnipeFX), "prism" Prism Shot's
+## crystal, rainbow beam and rainbow burst (PrismFX).
+@export_enum("plain", "cone", "pierce", "frost", "hail", "snipe", "prism") var look := "plain"
 
 
 func cannot_cast_reason(pet: Creature) -> String:
@@ -61,6 +62,8 @@ func execute(pet: Creature, point: Vector3, target: Creature) -> void:
 				world.play_frost_arrow.rpc(from, aim, maxf(splash_radius, 1.0))
 			elif look == "snipe":
 				world.play_snipe.rpc(from, aim + Vector3.UP * 0.6)
+			elif look == "prism":
+				world.play_prism_shot.rpc(from, aim + Vector3.UP * 0.5, maxf(splash_radius, 1.0))
 			_fire(pet, from, aim, _hit.bind(pet, aim, damage, maxf(splash_radius, ARROW_HIT), target))
 		"volley":
 			var forward := (aim - pet.global_position)

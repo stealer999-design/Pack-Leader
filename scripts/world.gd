@@ -2464,6 +2464,13 @@ func play_wave(origin: Vector3, forward: Vector3, radius: float, cone_degrees: f
 	TidalWaveFX.play(self, origin, forward, radius, cone_degrees, color)
 
 
+## Prism Shot: a rainbow crystal ahead of the bow (`from`), a rainbow beam
+## out of it to `to`, and a rainbow burst there over `radius` (PrismFX).
+@rpc("authority", "call_local", "unreliable")
+func play_prism_shot(from: Vector3, to: Vector3, radius: float) -> void:
+	PrismFX.play(self, from, to, radius)
+
+
 ## Snipe: a glint at the bow (`from`), a golden tracer and beam to `to`, and a
 ## blinding golden flare there (SnipeFX).
 @rpc("authority", "call_local", "unreliable")
