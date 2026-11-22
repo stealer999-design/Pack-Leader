@@ -67,7 +67,7 @@ for leg, f in feet.items():
 		bones = [leg + '_Upper', leg + '_Lower', leg + '_Paw']
 	B[leg + '_Lower'] = [leg + '_Upper', list(lower)]; B[leg + '_Paw'] = [leg + '_Lower', list(paw)]
 	legs.append({'bones': bones, 'end': end, 'radius': 0.11, 'top': belly + 0.02})
-cfg = {'yaw_deg': 0.0, 'scale': 2.0, 'root': 'Hips', 'lib': 'quad_lib.py', 'anims': sys.argv[3] if len(sys.argv) > 3 else 'dog_rest.py',
+cfg = {'yaw_deg': 0.0, 'scale': 2.0, 'root': 'Hips', 'lib': 'quad_lib.py', 'anims': sys.argv[3] if len(sys.argv) > 3 else 'dog_pet_anims.py',
 	   'bones': B, 'spine': ['Hips', 'Spine1', 'Spine2', 'Chest', 'Neck'], 'spine_end': B['Head'][1], 'legs': legs,
 	   'tail': {'bones': ['Tail1', 'Tail2', 'Tail3', 'Tail4'], 'end': tb[4], 'radius': 0.14, 'start_z': hz - 0.08},
 	   'head': {'center': list(hc), 'radius': float(max(0.2, (nose - hc[2]) + 0.06)), 'min_y': float(snout[:, 1].min() - 0.08), 'front_z': float(nose + 0.05)},
