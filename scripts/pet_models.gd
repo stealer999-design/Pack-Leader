@@ -7,7 +7,7 @@ class_name PetModels
 
 const DIR := "res://models/pets/"
 ## How tall a size-1 creature of each body type stands (the code-built ones).
-const HEIGHT := {"cat": 1.25, "dog": 1.25}
+const HEIGHT := {"cat": 1.25, "dog": 1.25, "bird": 1.1}
 ## ...or how long, nose to tail tip (lizards: long and low, some much flatter than others).
 const LENGTH := {"lizard": 1.93}
 ## Per species: a colour multiplied into the model's texture (pale Meshy textures
@@ -21,12 +21,12 @@ static var _fire_mat: ShaderMaterial
 ## How far (Meshy units, x the model's scale) the walk cycle carries the body in a second.
 const WALK_PACE := 2.92
 ## ...per body type, where it differs (lizards scurry: short sprawled legs, quick steps).
-const WALK_PACE_BY_TYPE := {"lizard": 1.4, "dog": 1.68}
+const WALK_PACE_BY_TYPE := {"lizard": 1.4, "dog": 1.68, "bird": 0.7}
 
 
 ## How much faster than normal the walk may play, per body type, where it differs
-## (dogs trot fast to keep up with their tamer).
-const MAX_WALK_SPEED_BY_TYPE := {"dog": 4.0}
+## (dogs trot fast to keep up with their tamer; birds hop quickly on short legs).
+const MAX_WALK_SPEED_BY_TYPE := {"dog": 4.0, "bird": 5.0}
 
 
 static func max_walk_speed(body_type: String) -> float:

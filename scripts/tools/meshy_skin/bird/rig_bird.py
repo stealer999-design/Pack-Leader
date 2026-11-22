@@ -24,6 +24,7 @@ def texture_colours(jj, bb, uv):
 	A = np.asarray(Image.open(io.BytesIO(bytes(bb[v.get('byteOffset', 0):v.get('byteOffset', 0) + v['byteLength']]))).convert('RGB')).astype(float); h, w, _ = A.shape
 	return A[np.clip((uv[:, 1] * h).astype(int), 0, h - 1), np.clip((uv[:, 0] * w).astype(int), 0, w - 1)]
 C = texture_colours(j, bn, UV); lum = C.mean(1)
+def is_brown(C): return (C[:, 0] > C[:, 2] + 18) & (C[:, 0] > C[:, 1] + 4)  # wood and leather: bows, quivers, straps
 def put(i, arr):
 	ac = j['accessors'][i]; v = j['bufferViews'][ac['bufferView']]; off = v.get('byteOffset', 0) + ac.get('byteOffset', 0)
 	b = arr.tobytes(); bn[off:off + len(b)] = b
@@ -53,6 +54,7 @@ m = ss(tb['start_y'] + 0.05, tb['start_y'] - 0.05, y) * ss(tb['start_z'] + 0.05,
 W = W * (1 - m)[:, None] + Wt * m[:, None]
 # head (and the lower beak)
 hd = cfg['head']; m = ss(hd['below'] - 0.04, hd['below'] + 0.04, y)
+if 'radius' in hd: m = m * ss(hd['radius'] * 1.25, hd['radius'] * 0.8, np.linalg.norm(P - np.array(hd['center']), axis=1))  # round birds: just the face end, not the whole top of the back
 Wh = np.zeros((N, NB)); Wh[:, idx['Head']] = 1
 jw = cfg['jaw']; jm = (np.linalg.norm(P - np.array(jw['center']), axis=1) < jw['radius']) & (lum < jw['dark']) & (y < jw['below'])
 jm = jm.astype(float)
@@ -61,7 +63,7 @@ W = W * (1 - m)[:, None] + Wh * m[:, None]
 # folded wings: the dark feathers down each side
 for side, nm in ((1, 'WingL'), (-1, 'WingR')):
 	fw = cfg['folded_wing']
-	m = (lum < fw['dark']).astype(float) * ss(fw['inner'] - 0.03, fw['inner'] + 0.03, side * x) * ss(fw['top'] + 0.04, fw['top'] - 0.04, y) * ss(fw['bottom'] - 0.04, fw['bottom'] + 0.04, y)
+	m = ((lum < fw['dark']) & ~(is_brown(C) if fw.get('skip_brown') else False)).astype(float) * ss(fw['inner'] - 0.03, fw['inner'] + 0.03, side * x) * ss(fw['top'] + 0.04, fw['top'] - 0.04, y) * ss(fw['bottom'] - 0.04, fw['bottom'] + 0.04, y)
 	Ww = np.zeros((N, NB)); Ww[:, idx[nm]] = 1
 	W = W * (1 - m)[:, None] + Ww * m[:, None]
 # legs: below the belly, near each leg's line (everything below `foot_below` wholly on its foot)
@@ -106,6 +108,8 @@ Ns = acc(js_, bs_, pa['NORMAL']).astype(float); UVs = acc(js_, bs_, pa['TEXCOORD
 Is = acc(js_, bs_, js_['meshes'][0]['primitives'][0]['indices']).reshape(-1, 3).astype(np.int64)
 ow = cfg['open_wing']; root_s = np.array(ow['root_spread']) * cfg['spread_scale']
 wing_pt = (np.abs(Ps[:, 0]) > ow['inner'] * cfg['spread_scale']) & (Ps[:, 1] > ow['above'] * cfg['spread_scale'])
+if 'below' in ow: wing_pt &= Ps[:, 1] < ow['below'] * cfg['spread_scale']
+if ow.get('skip_brown'): wing_pt &= ~is_brown(texture_colours(js_, bs_, UVs))
 keep = wing_pt[Is].all(1)
 Q = Ps.copy(); Jw = np.zeros((len(Ps), 4), np.uint8); Wwg = np.zeros((len(Ps), 4), np.float32)
 for side, nm in ((1, 'L'), (-1, 'R')):

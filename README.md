@@ -251,7 +251,17 @@ played in the browser".
   times, after a dove's flap: up into a V, a sweeping downstroke, the tips
   curling) and a squawk with two beats for his summons. His textures are kept
   uncompressed (VRAM compression bled his red tail into his dark wings). The grey parrot
-  built in code is the fallback. The Glacier Titan is a rigged Meshy model as
+  built in code is the fallback.
+  The bird pets use the same two-model approach (Glacipuff and Quillpuff so far,
+  in `models/pets/`): `bird/autofit.py folded.glb spread.glb out.json` fits the
+  skeleton from the two models (feet, legs, body line, the head as a sphere at
+  the face end for these round birds, beak, tail, a patch of folded wing on each
+  side found by shape since their wings are body-coloured, and the spread
+  model's open wings cut out by height band, bows and quivers left out by their
+  brown colour), then `rig_bird.py` rigs it with `bird_pet_anims.py`: an idle with
+  head tilts and a feather ruffle, a bouncy waddle (Walk; the game speeds it up),
+  a peck (Swipe) and a wing-beating display after the dove flap (Hiss). Their
+  textures are uncompressed too. The Glacier Titan is a rigged Meshy model as
   well (`models/glacier_titan.glb`): a hulking golem of blue ice that breathes
   and shifts while standing (a real idle), trudges after you (never runs), and
   slams both fists down from overhead; for an Avalanche he plants his feet and
