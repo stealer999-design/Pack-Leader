@@ -35,8 +35,9 @@ const ARROW_HIT := 1.1  ## How close to an arrow's landing spot (or path) counts
 @export_range(0.0, 1.0) var crit_bonus := 0.5
 ## Burning on each enemy hit: damage per second as a share of the pet's damage, for 4s.
 @export var dot_multiplier := 0.0
-## A volley's extra look: "cone" is Arrow Cone's golden dome full of arrows (ConeFX).
-@export_enum("plain", "cone") var look := "plain"
+## An extra look: "cone" is Arrow Cone's golden dome full of arrows (ConeFX),
+## "pierce" Piercing Shot's blazing bolt and starbursts (PierceFX).
+@export_enum("plain", "cone", "pierce") var look := "plain"
 
 
 func cannot_cast_reason(pet: Creature) -> String:
@@ -71,11 +72,15 @@ func execute(pet: Creature, point: Vector3, target: Creature) -> void:
 			dir = dir.normalized() if dir.length() > 0.1 else Vector3.FORWARD
 			var end := pet.global_position + dir * shot_range
 			_fire(pet, from, end + Vector3.UP * 0.7, Callable())
+			var bursts := PackedVector3Array()
 			for enemy in world.enemies_near(pet, pet.global_position, shot_range):
 				var along := (enemy.global_position - pet.global_position).dot(dir)
 				var off := Geometry3D.get_closest_point_to_segment(enemy.global_position, pet.global_position, end)
 				if along > 0.0 and Vector2(off.x - enemy.global_position.x, off.z - enemy.global_position.z).length() <= ARROW_HIT + enemy.radius():
 					pet.get_tree().create_timer(along / ARROW_SPEED).timeout.connect(_hit_one.bind(pet, enemy.get_instance_id(), damage))
+					bursts.append(from + dir * along)
+			if look == "pierce":
+				world.play_piercing_shot.rpc(from, end + Vector3.UP * 0.7, bursts)
 		"rain":
 			for i in arrows:
 				var spot := world.clamp_to_level(aim + Vector3.FORWARD.rotated(Vector3.UP, randf() * TAU) * radius * sqrt(randf()))

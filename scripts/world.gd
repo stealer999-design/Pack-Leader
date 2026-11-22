@@ -2464,6 +2464,13 @@ func play_wave(origin: Vector3, forward: Vector3, radius: float, cone_degrees: f
 	TidalWaveFX.play(self, origin, forward, radius, cone_degrees, color)
 
 
+## Piercing Shot: a blazing bolt from `from` to `to` with a fiery trail and a
+## crescent of light, bursting at each of `hits` as it passes (PierceFX).
+@rpc("authority", "call_local", "unreliable")
+func play_piercing_shot(from: Vector3, to: Vector3, hits: PackedVector3Array) -> void:
+	PierceFX.play(self, from, to, hits)
+
+
 ## Arrow Cone: a golden dome swept out from `from` towards `forward`, full
 ## of streaking arrows (ConeFX).
 @rpc("authority", "call_local", "unreliable")
