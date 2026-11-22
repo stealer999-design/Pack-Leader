@@ -2464,6 +2464,13 @@ func play_wave(origin: Vector3, forward: Vector3, radius: float, cone_degrees: f
 	TidalWaveFX.play(self, origin, forward, radius, cone_degrees, color)
 
 
+## Eagle Eye: a glowing orange ring growing out from `center` (the bird) to
+## `radius`, flaring on each of `allies` as it reaches them (EagleEyeFX).
+@rpc("authority", "call_local", "unreliable")
+func play_eagle_eye(center: Vector3, radius: float, allies: PackedVector3Array) -> void:
+	EagleEyeFX.play(self, center, radius, allies)
+
+
 ## Hail Volley: a wave of icy arrows arcing from `from` down onto each of
 ## `ends`, ice erupting where they land after `travel` seconds (HailVolleyFX).
 @rpc("authority", "call_local", "unreliable")

@@ -12,7 +12,7 @@ extends PetAbility
 ##   onto allies near them;
 ## - "mark": Hunter's Mark: a red arrow and beam to the spot (MarkFX) marks every enemy within
 ##   `radius` for `effect_duration` seconds, and pets crit them every hit;
-## - "rally": Eagle Eye: every pet on its side within `radius` of the spot gets
+## - "rally": Eagle Eye: every pet on its side within `radius` of the bird gets
 ##   +`crit_bonus` crit chance for `effect_duration` seconds.
 ## Hits can also slow, stun, blind or set burning (damage over time).
 
@@ -101,13 +101,13 @@ func execute(pet: Creature, point: Vector3, target: Creature) -> void:
 			var travel := maxf(from.distance_to(to) / ARROW_SPEED, 0.05)
 			world.play_hunters_mark.rpc(from, to, travel, radius)  # the sigil, the red beam and the burst
 			_fire(pet, from, to, _mark.bind(pet, at), Color(1.0, 0.3, 0.4))
-		"rally":
-			var at := world.clamp_to_level(aim)
-			for ally in world.allies_near(pet, at, radius):
+		"rally":  # round the bird itself: its ring (EagleEyeFX) grows out from it to `radius`
+			var buffed := PackedVector3Array()
+			for ally in world.allies_near(pet, pet.global_position, radius):
 				if ally is Creature:
 					(ally as Creature).add_crit(crit_bonus, effect_duration)
-			world.play_burst.rpc(at, Color(1.0, 0.85, 0.3), radius)
-			world.play_burst.rpc(pet.global_position, Color(1.0, 0.85, 0.3), 2.0)
+					buffed.append(ally.global_position)
+			world.play_eagle_eye.rpc(pet.global_position, radius, buffed)
 		"heal":
 			for ally in _injured(pet).slice(0, arrows):
 				var to: Vector3 = ally.global_position + Vector3.UP * 0.7
