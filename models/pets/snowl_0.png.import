@@ -1,0 +1,37 @@
+[remap]
+
+importer="texture"
+type="CompressedTexture2D"
+uid="uid://dp3m7fqk77gjc"
+path="res://.godot/imported/snowl_0.png-c9d616350a3bc0fc14c7ed7e0c4ee629.ctex"
+metadata={
+"vram_texture": false
+}
+generator_parameters={
+"md5": "a74f09d1d1b1243eba689432eda41058"
+}
+
+[deps]
+
+source_file="res://models/pets/snowl_0.png"
+dest_files=["res://.godot/imported/snowl_0.png-c9d616350a3bc0fc14c7ed7e0c4ee629.ctex"]
+
+[params]
+
+compress/mode=0
+compress/high_quality=false
+compress/lossy_quality=0.7
+compress/hdr_compression=1
+compress/normal_map=0
+compress/channel_pack=0
+mipmaps/generate=true
+mipmaps/limit=-1
+roughness/mode=0
+roughness/src_normal=""
+process/fix_alpha_border=true
+process/premult_alpha=false
+process/normal_map_invert_y=false
+process/hdr_as_srgb=false
+process/hdr_clamp_exposure=false
+process/size_limit=1024
+detect_3d/compress_to=1

@@ -22,7 +22,7 @@ top = np.percentile(core[:, 1], 99.5); H = top - y0
 def sl(y, w=0.04): return P[np.abs(P[:, 1] - y) < w]
 lo = (P[:, 1] < y0 + 0.05) & ~brown(CF)  # (a bow can rest on the ground beside the feet)
 y0 = P[lo, 1].min(); lo = (P[:, 1] < y0 + 0.05) & ~brown(CF)
-lo &= P[:, 2] > np.percentile(P[lo, 2], 90) - 0.45  # (a long tail can touch the ground far behind them)
+lo &= P[:, 2] > np.percentile(P[lo, 2], 90) - 0.25  # (a long tail or a fluffy belly can touch the ground behind them)
 cx = np.median(P[lo, 0])  # the feet may sit a little off the middle: split them by 2-means on x
 for _ in range(20):
 	xl = P[lo, 0]; cx = (xl[xl > cx].mean() + xl[xl <= cx].mean()) / 2

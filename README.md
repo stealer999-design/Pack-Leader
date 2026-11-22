@@ -252,14 +252,14 @@ played in the browser".
   curling) and a squawk with two beats for his summons. His textures are kept
   uncompressed (VRAM compression bled his red tail into his dark wings). The grey parrot
   built in code is the fallback.
-  The bird pets use the same two-model approach (Glacipuff, Quillpuff, Prismpuff, Frostfinch, Shimmerwing and Aurora Swift so far,
+  The bird pets use the same two-model approach (Glacipuff, Quillpuff, Prismpuff, Frostfinch, Shimmerwing, Aurora Swift, Rimeowl and Snowl so far,
   in `models/pets/`): `bird/autofit.py folded.glb spread.glb out.json` fits the
   skeleton from the two models (feet, legs, body line, the head as a sphere at
   the face end for these round birds, beak, tail, a patch of folded wing on each
   side found by shape since their wings are body-coloured, and the spread
   model's open wings cut out by height band, bows and quivers left out by their
   brown colour; the feet are found the same way, since a bow can rest on the
-  ground beside them, a foot may sit off the middle or splay out, and a long tail can touch the
+  ground beside them, a foot may sit off the middle or splay out, and a long tail or an owl's fluffy belly can touch the
   ground far behind them), then `rig_bird.py` rigs it with `bird_pet_anims.py`: an idle with
   head tilts and a feather ruffle, a bouncy waddle (Walk; the game speeds it up),
   a peck (Swipe) and a wing-beating display after the dove flap (Hiss). Their
