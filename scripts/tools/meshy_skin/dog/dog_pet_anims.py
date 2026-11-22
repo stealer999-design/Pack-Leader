@@ -25,8 +25,10 @@ def walk(t):
 	streams out behind, bouncing with the body"""
 	T = WALK_T; ph = TAU * t / T; f = {}; planted(f)
 	walk_like(t, T, {'FL': 0.0, 'RR': 0.0, 'FR': 0.5, 'RL': 0.5}, WALK_TRAVEL, 0.44, 0.13, f, fore_reach=0.12)
-	for leg in ('FL', 'FR'):  # the fore paw flicks up and folds as it swings
-		foot, flex = f['_feet'][leg]; f['_feet'][leg] = (foot, flex * 2.0)
+	for leg in ('FL', 'FR'):  # the fore leg lifts high as it swings, the paw folding right back at the wrist
+		foot, flex = f['_feet'][leg]; up = flex / 0.45  # 0..1 through the swing
+		foot = foot.copy(); foot[1] += 0.07 * up
+		f['_feet'][leg] = (foot, up * 1.25)
 	for leg in ('RL', 'RR'):  # the hind paw curls back
 		foot, flex = f['_feet'][leg]; f['_feet'][leg] = (foot, flex * 1.5)
 	beat = np.cos(2 * ph)  # two beats a cycle: +1 just after a pair lands, -1 at the top of the float

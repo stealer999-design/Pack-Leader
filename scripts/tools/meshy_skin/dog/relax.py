@@ -29,9 +29,10 @@ for it in range(int(sys.argv[3]) if len(sys.argv) > 3 else 8):
 	bad = bad_edges(D); print('pass', it, 'stretched edges', len(bad))
 	if len(bad) == 0: break
 	pts = np.unique(E[bad].ravel())
-	ring = set(pts.tolist())
-	for e in E[np.isin(E[:, 0], pts) | np.isin(E[:, 1], pts)]: ring.update(e.tolist())  # and their neighbours
-	ring = np.array(sorted(ring))
+	ring = pts
+	for _ in range(2 if it >= 6 else 1):  # their neighbours (two rings deep if one isn't enough)
+		near = E[np.isin(E[:, 0], ring) | np.isin(E[:, 1], ring)]
+		ring = np.unique(np.concatenate([ring, near.ravel()]))
 	S = D.copy(); cnt = np.ones(N)
 	for a0, a1 in ((0, 1), (1, 0)): np.add.at(S, E[:, a0], D[E[:, a1]]); np.add.at(cnt, E[:, a0], 1)
 	D[ring] = S[ring] / cnt[ring][:, None]

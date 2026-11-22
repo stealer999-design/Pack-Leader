@@ -52,6 +52,37 @@ def hind_joints(f):
 	return stifle, hock
 
 
+def fore_joints(f):
+	"""the fore leg's real elbow and wrist (and the point of the shoulder) from its side
+	outline: the forearm is the long thin stretch; the wrist is its narrowest point just
+	above the paw (the pastern angles forward below it); the elbow is where it widens and
+	pushes back at the bottom of the chest. Returns (shoulder, elbow, wrist) or None."""
+	side = np.sign(f[0]); c = np.array([f[0], f[2]]); rows = []
+	for y in np.arange(ymin + 0.02, belly + 0.2, 0.02):
+		m = (abs(P[:, 1] - y) < 0.012) & (np.hypot(P[:, 0] - c[0], P[:, 2] - c[1]) < 0.12) & (P[:, 0] * side > 0.02)
+		if m.sum() < 4: continue
+		Q = P[m]; c = 0.7 * c + 0.3 * Q[:, [0, 2]].mean(0)
+		rows.append((y, Q[:, 2].min(), Q[:, 2].max(), Q[:, 0].mean()))
+	if len(rows) < 10: return None
+	r = np.array(rows)
+	sm = lambda v: np.array([np.median(v[max(0, i - 2):i + 3]) for i in range(len(v))])
+	back, front, xs = sm(r[:, 1]), sm(r[:, 2]), sm(r[:, 3]); width = front - back
+	L = belly - ymin
+	band = (r[:, 0] > ymin + 0.06 * L) & (r[:, 0] < ymin + 0.35 * L)
+	if not band.any(): return None
+	i = np.nonzero(band)[0][np.argmin(width[band])]
+	wrist = [xs[i], r[i, 0], (back[i] + front[i]) / 2]
+	fa = (r[:, 0] > r[i, 0] + 0.05) & (r[:, 0] < r[i, 0] + 0.25)
+	b0 = np.median(back[fa]) if fa.any() else back[i]; w0 = np.median(width[fa]) if fa.any() else width[i]
+	up = np.nonzero((r[:, 0] > r[i, 0] + 0.2) & ((back < b0 - 0.035) | (width > 1.6 * w0)))[0]
+	if not len(up): return None
+	k = up[0]
+	elbow = [xs[k], r[k, 0], back[k] + 0.4 * width[k]]
+	fore = elbow[1] - wrist[1]
+	shoulder = [xs[k], elbow[1] + 0.55 * fore, elbow[2] + 0.35 * fore]
+	return shoulder, elbow, wrist
+
+
 def at(col, y):
 	i = np.argmin(abs(col[:, 1] - y)); return col[i]
 B = {}
@@ -91,7 +122,10 @@ for leg, f in feet.items():
 	upper = [upper[0], belly + 0.06, upper[2]]
 	par = 'Chest' if front else 'Hips'
 	if front:
-		B[leg + '_Scap'] = ['Chest', [f[0] * 0.6, mid(cz) + 0.08, upper[2] - 0.04]]
+		fj = fore_joints(f)
+		if fj:  # the real shoulder, elbow and wrist
+			upper, lower, paw = fj
+		B[leg + '_Scap'] = ['Chest', [f[0] * 0.6, max(mid(cz) + 0.08, upper[1] + 0.12), upper[2] - 0.06]]
 		B[leg + '_Upper'] = [leg + '_Scap', upper]
 		bones = [leg + '_Scap', leg + '_Upper', leg + '_Lower', leg + '_Paw']
 	else:
@@ -102,6 +136,8 @@ for leg, f in feet.items():
 # helper bones at each hind stifle and hock: they turn half as far as the joint below
 # them and carry the skin round the joint, so it keeps its thickness as it bends
 helpers = []
+for leg in ('FL', 'FR'):  # (no elbow helper: the elbow hardly bends, and one mixes into the armpit)
+	helpers.append({'bone': leg + '_WristFix', 'parent': leg + '_Lower', 'at': B[leg + '_Paw'][1], 'half_of': leg + '_Paw', 'leg': leg + '_Scap', 'joint': 3})
 for leg in ('RL', 'RR'):
 	helpers.append({'bone': leg + '_KneeFix', 'parent': leg + '_Upper', 'at': B[leg + '_Lower'][1], 'half_of': leg + '_Lower', 'leg': leg + '_Upper', 'joint': 1})
 	helpers.append({'bone': leg + '_HockFix', 'parent': leg + '_Lower', 'at': B[leg + '_Paw'][1], 'half_of': leg + '_Paw', 'leg': leg + '_Upper', 'joint': 2})
