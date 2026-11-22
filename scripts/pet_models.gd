@@ -7,7 +7,7 @@ class_name PetModels
 
 const DIR := "res://models/pets/"
 ## How tall a size-1 creature of each body type stands (the code-built ones).
-const HEIGHT := {"cat": 1.25, "dog": 1.25}
+const HEIGHT := {"cat": 1.25, "dog": 1.25, "lizard": 0.75}
 ## Per species: a colour multiplied into the model's texture (pale Meshy textures
 ## wash out in the bright sun).
 const TINT := {"voltwing": Color(0.62, 0.74, 0.95)}
