@@ -18,6 +18,12 @@ const TINT := {"voltwing": Color(0.62, 0.74, 0.95)}
 static var _fire_mat: ShaderMaterial
 ## How far (Meshy units, x the model's scale) the walk cycle carries the body in a second.
 const WALK_PACE := 2.92
+## ...per body type, where it differs (lizards scurry: short sprawled legs, quick steps).
+const WALK_PACE_BY_TYPE := {"lizard": 1.4}
+
+
+static func walk_pace(body_type: String) -> float:
+	return WALK_PACE_BY_TYPE.get(body_type, WALK_PACE)
 
 
 static func path_for(species: CreatureSpecies) -> String:

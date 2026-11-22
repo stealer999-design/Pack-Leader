@@ -54,6 +54,13 @@ for leg in cfg['legs']:
 	near = 1 - ss(leg['radius'] * 0.8, leg['radius'] * 1.2, d)
 	m = near * ss(leg['top'] + 0.08, leg['top'] - 0.08, y)
 	W = W * (1 - m)[:, None] + Wl * m[:, None]
+# feet (lizards): everything below `paw_below` belongs wholly to the nearest paw
+if 'paw_below' in cfg:
+	ends = np.array([leg['end'] for leg in cfg['legs']]); paws = [idx[leg['bones'][-1]] for leg in cfg['legs']]
+	near = np.argmin(((P[:, None, [0, 2]] - ends[None, :, [0, 2]]) ** 2).sum(2), 1)
+	m = ss(cfg['paw_below'] + 0.03, cfg['paw_below'] - 0.03, y)
+	Wp = np.zeros((N, NB)); Wp[np.arange(N), np.array(paws)[near]] = 1
+	W = W * (1 - m)[:, None] + Wp * m[:, None]
 # tail
 tb = cfg['tail']; Wl, d = chain_weights(P, tb['bones'], np.array(tb['end']))
 m = (1 - ss(tb['radius'] * 0.8, tb['radius'] * 1.25, d)) * ss(tb['start_z'] + 0.05, tb['start_z'] - 0.05, z)
