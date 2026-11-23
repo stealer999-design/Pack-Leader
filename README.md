@@ -7,8 +7,6 @@ creature in the world can be captured, then follows you, fights for you and
 levels up. Each level is a randomly generated path from a start camp to a
 rival tamer waiting at the end.
 
-![screenshot](screenshot.png)
-
 ## Run
 Open `project.godot` in Godot 4.4+ and press F5. Click **Play solo**, or have
 one player click **Host** while the others enter the host's address and click
