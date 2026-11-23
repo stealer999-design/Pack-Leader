@@ -877,8 +877,8 @@ func _fire_bolt(victim: Node3D, damage: float) -> void:
 	var from := global_position + Vector3.UP * (0.55 * body_size())
 	var to := victim.global_position + Vector3.UP * 0.6
 	var travel := from.distance_to(to) / (ARROW_SPEED if species.is_archer() else BOLT_SPEED)
-	if species.is_archer() and species.shot_look == "dust":
-		world.play_dust_shot.rpc(from, to, species.color.lightened(0.4), travel)
+	if species.is_archer() and species.shot_look == "air":
+		world.play_air_shot.rpc(from, to, species.color, travel)
 	elif species.is_archer():
 		world.play_arrow.rpc(from, to, species.color.lightened(0.4), travel)
 	else:
