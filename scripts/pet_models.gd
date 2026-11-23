@@ -31,7 +31,7 @@ const MAX_WALK_SPEED_BY_TYPE := {"dog": 4.0, "bird": 5.0}
 
 ## ...and per species, where its model has its own walk (cats re-rigged with
 ## meshy_skin/cat/cat_pet_anims.py, the reference walk: shorter steps, so a lower pace and a higher cap).
-const WALK_PACE_BY_SPECIES := {"Emberfox": 1.3}
+const WALK_PACE_BY_SPECIES := {"Emberfox": 1.63}
 const MAX_WALK_SPEED_BY_SPECIES := {"Emberfox": 6.5}
 
 
