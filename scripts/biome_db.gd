@@ -140,7 +140,7 @@ static func for_level(level_number: int) -> Dictionary:
 
 ## Where area `level_number` falls: {act: 1, 2, ... (rising each time the
 ## cycle repeats), area: its place in that act (1-based)}.
-## Acts 2-5 (and their repeats) are open fields instead of a winding path
+## Acts 2-5 (and their repeats) are tile levels (a grid strip of square tiles) instead of a winding path
 ## (see LevelGenerator.generate_open).
 static func is_open_level(level_number: int) -> bool:
 	if level_number <= CROSSROADS:

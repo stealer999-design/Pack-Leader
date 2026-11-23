@@ -58,7 +58,7 @@ var party_slot := -1
 ## A Champion: a giant, much tougher wild monster that guards the end of the
 ## first two levels of Acts 2-5 (see World._start_level). Set at spawn.
 var elite := false
-## The leader of a pack in the open fields: a little bigger, and a better drop
+## The leader of a pack in the tile levels: a little bigger, and a better drop
 ## (35%, at least Magic; see _on_died). Set at spawn.
 var pack_leader := false
 const LEADER_SIZE := 1.15

@@ -620,7 +620,7 @@ func _start_level(number: int) -> void:
 	var base_level := levels.x
 	var level_biome := biome()
 	var spots: Array = layout.creature_spots
-	var pack_species := {}  ## Open fields: each pack ("group") is all one kind.
+	var pack_species := {}  ## Tile levels: each pack ("group") is all one kind.
 	for i in spots.size():
 		var spot: Dictionary = spots[i]
 		# The first two creatures by the camp are the biome's starter species (if it has one).
@@ -1718,71 +1718,74 @@ func _build_path(floor_mat: Material, camp_mat: Material, arena_mat: Material, w
 		cap.rotation.y = LevelGenerator.heading_at(layout, end[0])
 
 
-## An open level (Act 2): the field's floor, a wall round its wavy edge (low
-## on the side facing the camera, so it never hides anyone), and patches of
-## trampled dirt at the camp and flagstones in the boss arena.
+## A tile level (Act 2 on): each tile's floor, a wall along every side where
+## it isn't joined to the next tile (low on the camera's side, so it never
+## hides anyone), knee-high ruins, trampled dirt at the camp and the boss
+## arena off the boss tile's right side.
 func _build_open(floor_mat: Material, camp_mat: Material, arena_mat: Material, wall_mat: StandardMaterial3D) -> void:
-	var boundary: PackedVector3Array = layout.boundary
-	var center: Vector3 = layout.center
-	var n := boundary.size()
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	var outward := func(i: int) -> Vector3:
-		var p := boundary[i]
-		return Vector3(p.x - center.x, 0.0, p.z - center.z).normalized()
-	for i in n:
-		var a: Vector3 = boundary[i] + outward.call(i) * 0.6  # tucked under the wall
-		var b: Vector3 = boundary[(i + 1) % n] + outward.call((i + 1) % n) * 0.6
-		_up_quad(st, center, a, b, center)
+	for cell: Dictionary in layout.cells:
+		var r: Rect2 = cell.rect
+		var closed: Dictionary = cell.closed
+		# Tucked under the walls on closed sides; edge to edge with the next tile on open ones.
+		var lo := Vector2(r.position.x - (0.6 if closed.n else 0.0), r.position.y - (0.6 if closed.e else 0.0))
+		var hi := Vector2(r.end.x + (0.6 if closed.s else 0.0), r.end.y + (0.6 if closed.w else 0.0))
+		_up_quad(st, Vector3(lo.x, 0, lo.y), Vector3(hi.x, 0, lo.y), Vector3(hi.x, 0, hi.y), Vector3(lo.x, 0, hi.y))
 	var floor_mesh := st.commit()
 	floor_mesh.surface_set_material(0, floor_mat)
 	_add_solid(floor_mesh, floor_mesh)
-	# The camp patch, just above the field (no collision of its own).
+	# The camp patch, just above the floor (no collision of its own).
 	_add_disc(layout.camp_center, LevelGenerator.CAMP_RADIUS, camp_mat)
 	_build_boss_arena(floor_mat, arena_mat, wall_mat)
-	# The wall, in two meshes: tall (back and sides) and low (facing the camera).
 	wall_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
-	var tall := SurfaceTool.new()
-	tall.begin(Mesh.PRIMITIVE_TRIANGLES)
-	var low := SurfaceTool.new()
-	low.begin(Mesh.PRIMITIVE_TRIANGLES)
-	var low_solid := SurfaceTool.new()
-	low_solid.begin(Mesh.PRIMITIVE_TRIANGLES)
-	var corridor: Rect2 = layout.get("corridor_rect", Rect2())
-	for i in n:
-		var j := (i + 1) % n
-		var a := boundary[i]
-		var b := boundary[j]
-		var mid := (a + b) * 0.5
-		if corridor.has_area() and mid.z < center.z and absf(mid.x - corridor.get_center().x) < corridor.size.x * 0.5 + 0.3:
-			continue  # the gap where the corridor to the boss arena joins the field
-		var a_out: Vector3 = a + outward.call(i)
-		var b_out: Vector3 = b + outward.call(j)
-		var edge_out := Vector3(b.z - a.z, 0.0, a.x - b.x).normalized()  # this stretch's outward side
-		if edge_out.dot(Vector3(a.x - center.x, 0.0, a.z - center.z)) < 0.0:
-			edge_out = -edge_out
-		var faces_camera := edge_out.x > 0.3
-		for target in ([low, low_solid] if faces_camera else [tall]):
-			var height := LOW_WALL_HEIGHT if target == low else 2.0
-			var up := Vector3.UP * height
-			_quad(target, a, b, b + up, a + up)
-			_quad(target, a_out, b_out, b_out + up, a_out + up)
-			_quad(target, a + up, b + up, b_out + up, a_out + up)
-	for pair in [[tall, tall], [low, low_solid]]:
-		pair[0].generate_normals()
-		var visual: ArrayMesh = pair[0].commit()
-		visual.surface_set_material(0, wall_mat)
-		var solid: ArrayMesh = visual
-		if pair[1] != pair[0]:
-			pair[1].generate_normals()
-			solid = pair[1].commit()
-		if visual.get_surface_count() > 0:
-			_add_solid(visual, solid)
+	var corridor: Rect2 = layout.corridor_rect
+	for cell: Dictionary in layout.cells:
+		var r: Rect2 = cell.rect
+		for side: String in LevelGenerator.SIDES:
+			if not cell.closed[side]:
+				continue
+			var neighbour: bool = layout.cell_index.has(cell.cell + LevelGenerator.SIDES[side])
+			# A wall between two tiles is built once, from its s or w tile.
+			if neighbour and (side == "n" or side == "e"):
+				continue
+			match side:
+				"s":  # towards the camera: always low
+					_add_wall_z(r.end.x, r.end.y + WALL_OVERLAP, r.position.y - WALL_OVERLAP, wall_mat, true)
+				"n":
+					_add_wall_z(r.position.x, r.end.y + WALL_OVERLAP, r.position.y - WALL_OVERLAP, wall_mat)
+				"w":
+					_add_wall_x(r.end.y, r.position.x - WALL_OVERLAP, r.end.x + WALL_OVERLAP, wall_mat)
+				"e":
+					if cell.kind == "boss":  # the doorway into the corridor to the boss
+						_add_wall_x(r.position.y, r.position.x - WALL_OVERLAP, corridor.position.x - 0.5, wall_mat)
+						_add_wall_x(r.position.y, corridor.end.x + 0.5, r.end.x + WALL_OVERLAP, wall_mat)
+					else:
+						_add_wall_x(r.position.y, r.position.x - WALL_OVERLAP, r.end.x + WALL_OVERLAP, wall_mat)
+	# Ruins: broken stubs of stone wall, a run of blocks of uneven height.
+	var ruin_mat := GroundTextures.material("cobble", Color(biome().rock).lerp(Color(0.6, 0.57, 0.52), 0.5))
+	var rng := RandomNumberGenerator.new()
+	rng.seed = level_state.x ^ 0x2b1
+	for stub: Rect2 in layout.ruins:
+		var along_x := stub.size.x > stub.size.y
+		var length := maxf(stub.size.x, stub.size.y)
+		var blocks := maxi(roundi(length / 2.2), 2)
+		for k in blocks:
+			var t := (k + 0.5) / blocks
+			var height := rng.randf_range(0.5, 1.5) if k % 2 == 0 else rng.randf_range(0.35, 1.0)
+			var center := Vector3(lerpf(stub.position.x, stub.end.x, t) if along_x else stub.get_center().x, height * 0.5,
+					stub.get_center().y if along_x else lerpf(stub.position.y, stub.end.y, t))
+			var block := length / blocks - 0.08
+			var size := Vector3(block if along_x else 1.0, height, 1.0 if along_x else block)
+			_add_box(center + Vector3(rng.randf_range(-0.1, 0.1), 0.0, rng.randf_range(-0.1, 0.1)), size, ruin_mat)
 
 
-## An open level's boss arena: a walled box of flagstones outside the field's
-## right edge, joined to the field by a walled corridor through a gap in its
-## wall. Walls facing the camera are low, like everywhere else.
+const WALL_OVERLAP := 0.5  ## Walls run this far past a tile's corner, so corners close.
+
+
+## A tile level's boss arena: a walled box of flagstones off the boss tile's
+## right side, joined to it by a walled corridor through a doorway in its wall.
+## Walls facing the camera are low, like everywhere else.
 func _build_boss_arena(floor_mat: Material, arena_mat: Material, wall_mat: Material) -> void:
 	if not layout.has("arena_rect"):
 		return
@@ -1808,8 +1811,7 @@ func _build_boss_arena(floor_mat: Material, arena_mat: Material, wall_mat: Mater
 	# The corridor's walls, from the arena to where they meet the field's wall.
 	for side in [-1.0, 1.0]:
 		var x: float = corridor.get_center().x + side * (corridor.size.x * 0.5 + 0.5)
-		var edge := LevelGenerator._right_edge_z(layout.boundary, layout.center, x) + 1.0
-		_add_wall_z(x, z1, edge, wall_mat, side > 0.0)
+		_add_wall_z(x, z1, mouth.z, wall_mat, side > 0.0)
 
 
 ## A wall along x at local `z`, from `x_from` to `x_to`.

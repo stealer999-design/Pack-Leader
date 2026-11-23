@@ -110,13 +110,7 @@ func _update_fog() -> void:
 		return
 	if _fog == null or _fog_level != world.level_state:
 		_fog_level = world.level_state
-		var bounds := Rect2(_to_map(world.layout.boundary[0]), Vector2.ZERO)
-		for point in world.layout.boundary:
-			bounds = bounds.expand(_to_map(point))
-		if world.layout.has("arena_rect"):
-			var box: Rect2 = world.layout.arena_rect
-			bounds = bounds.expand(_to_map(Vector3(box.position.x, 0, box.position.y))).expand(_to_map(Vector3(box.end.x, 0, box.end.y)))
-		_fog_rect = bounds.grow(4.0)
+		_fog_rect = _tile_bounds(world.layout).grow(4.0)
 		var cells := Vector2i(ceili(_fog_rect.size.x / FOG_CELL), ceili(_fog_rect.size.y / FOG_CELL))
 		_fog = Image.create(cells.x, cells.y, false, Image.FORMAT_RGBA8)
 		_fog.fill(Color(0.03, 0.035, 0.05, 1.0))
@@ -310,7 +304,7 @@ func _draw_self(world: World) -> void:
 	_canvas.draw_colored_polygon(inner, player.color.lightened(0.25))
 
 
-## An open level: the field, the camp and arena patches, the fenced town, rocks
+## A tile level: the tiles and their walls, the camp and arena patches, the fenced town, rocks
 ## and landmarks, then the fog over whatever hasn't been explored yet.
 func _draw_open_map(world: World) -> void:
 	var layout := world.layout
@@ -319,18 +313,26 @@ func _draw_open_map(world: World) -> void:
 	var frame: Transform3D = v.frame
 	var plaza: Rect2 = v.plaza
 	if expanded:
-		var bounds := Rect2(_to_map(layout.boundary[0]), Vector2.ZERO)
-		for point in layout.boundary:
-			bounds = bounds.expand(_to_map(point))
-		if layout.has("arena_rect"):
-			var box: Rect2 = layout.arena_rect
-			bounds = bounds.expand(_to_map(Vector3(box.position.x, 0, box.position.y))).expand(_to_map(Vector3(box.end.x, 0, box.end.y)))
+		var bounds := _tile_bounds(layout)
 		_scale = minf(_canvas.size.x / bounds.size.x, _canvas.size.y / bounds.size.y) * 0.96
 		_origin = bounds.get_center()
 	else:
 		_scale = COMPACT_SCALE
 		_origin = _to_map(world.level_root.to_local(player.global_position))
-	_draw_poly_local(Array(layout.boundary), Color(layout.floor_tint).darkened(0.15))
+	# The tiles, then a line along every wall between them.
+	var floor_color := Color(layout.floor_tint).darkened(0.15)
+	for cell: Dictionary in layout.cells:
+		_draw_rect_path(Transform3D(), cell.rect, floor_color)
+	var wall_color := Color(biome.wall).darkened(0.4)
+	for cell: Dictionary in layout.cells:
+		var r: Rect2 = cell.rect
+		var ends := {"n": [Vector3(r.position.x, 0, r.position.y), Vector3(r.position.x, 0, r.end.y)],
+				"s": [Vector3(r.end.x, 0, r.position.y), Vector3(r.end.x, 0, r.end.y)],
+				"w": [Vector3(r.position.x, 0, r.end.y), Vector3(r.end.x, 0, r.end.y)],
+				"e": [Vector3(r.position.x, 0, r.position.y), Vector3(r.end.x, 0, r.position.y)]}
+		for side: String in ends:
+			if cell.closed[side]:
+				_canvas.draw_line(_to_canvas(_to_map(ends[side][0])), _to_canvas(_to_map(ends[side][1])), wall_color, 2.0)
 	_canvas.draw_circle(_to_canvas(_to_map(layout.camp_center)), LevelGenerator.CAMP_RADIUS * _scale, Color(biome.camp).darkened(0.15))
 	if layout.has("arena_rect"):  # the boss arena and its corridor, off the right edge
 		_draw_rect_path(Transform3D(), layout.corridor_rect, Color(layout.floor_tint).darkened(0.15))
@@ -371,6 +373,13 @@ func _draw_open_map(world: World) -> void:
 		var b := _to_canvas(_fog_rect.end)
 		_canvas.draw_texture_rect(_fog_texture, Rect2(a, b - a), false)
 	_draw_live(world)
+
+
+## The whole tile level (tiles and the boss arena) in map space.
+static func _tile_bounds(layout: Dictionary) -> Rect2:
+	var b: Rect2 = layout.bounds
+	return Rect2(_to_map(Vector3(b.position.x, 0, b.position.y)), Vector2.ZERO) \
+			.expand(_to_map(Vector3(b.end.x, 0, b.end.y)))
 
 
 ## A little barn: brown with a red roof.

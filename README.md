@@ -174,24 +174,35 @@ played in the browser".
   and obstacles), and loads every sound and icon. Graphics cards compile each
   kind of material the first time they draw it, which used to cause little
   freezes the first few times things appeared mid-play.
-- **Open fields (Acts 2-5):** the monster acts' levels (and their repeats) aren't paths: each is a
-  **big open field**, a rounded box (about 224 by 328 units) with gently wavy
-  edges and a wall all round (low on the side facing the camera). The camp is
-  at the left end. The **boss has its own arena**: a walled box of flagstones
-  outside the field's right-hand edge, anywhere up or down it, joined to the
-  field by a short walled corridor through a gap in the wall; the exit and
-  Travel portals are inside it, past the boss. The objective at the top reads
-  **"Find and defeat"** the boss, and the arena is hidden on the map until
-  you've found it. Somewhere in
-  the middle, never dead centre and never near the edges, is a **town**
+- **Tile levels (Acts 2-5):** the monster acts' levels (and their repeats)
+  aren't paths: each is laid out like the wilderness in the classic isometric
+  ARPGs, from **square tiles** (48 units a side) on a grid 4 tiles across by 7
+  from left to right. A random walk lays a **guaranteed route** of tiles from
+  the camp (the left column) to the boss tile (the right column), stepping up
+  or down a row now and then; more tiles grow off it until about 70% of the
+  grid is used, so every level has a different, ragged shape with dead ends
+  and side rooms. Neighbouring tiles are **joined** (no wall between them)
+  along the route and wherever a tile was grown, and about half the time
+  elsewhere; where they aren't, a wall runs between them, so parts of a level
+  are a small maze, but there's always a clear way from the camp to the boss.
+  Walls facing the camera are low, so they never hide anyone. Each field tile
+  gets a **template**: open ground, a **grove** (a ring of trees round a
+  clearing, with a gap or two), a **scatter** of trees and rocks, four
+  **pillars**, or **ruins** (broken stone wall stubs). Nothing is placed near
+  a tile's edges, so the ways between tiles stay open. The **boss has its own
+  arena**: a walled box of flagstones off the boss tile's right side, joined
+  by a short walled corridor; the exit and Travel portals are inside it, past
+  the boss. The objective at the top reads **"Find and defeat"** the boss,
+  and the arena is hidden on the map until you've found it. A tile in the
+  middle columns (more often a side room off the route) holds the **town**,
   ringed by a **white picket fence**, with gates on its south side (towards
   the camera) and west side (towards the camp). The town holds the
   **lemonade stand** (walking into town is your checkpoint), a stable, the
-  bat shop and the breeder; no creatures are placed inside it. A field has
-  **exactly as many** monsters, vases (and gold vases) and obstacles as the
-  path level from the same seed would, just spread out over the field, clear
-  of the camp, the arena and the town. The monsters come in **packs of 3 to
-  5**, each pack **all one kind** (a pack of skeletons, a pack of zombies...).
+  bat shop and the breeder; no creatures are placed inside it. A level has
+  **exactly as many** monsters and vases (and gold vases) as the path level
+  from the same seed would, dealt out over the field tiles so they're spread
+  along the whole strip. The monsters come in **packs of 3 to 5**, each pack
+  **all one kind** (a pack of skeletons, a pack of zombies...).
 - **Travel:** beside it stands the violet **Travel** portal, always open (even
   before the boss is beaten). Step into it to pick any area you've reached, to
   catch the pets that live there, or to level your pets somewhere easier
@@ -366,7 +377,7 @@ played in the browser".
   portal (purple, filled when open), the boss (big red), wild creatures (red),
   your pets (green), other players and their pets (in their colours) and you
   (an arrow). Press M for the whole level, large; M or Esc to shrink it.
-  In the open fields (Acts 2-5) the map starts **dark**: it's revealed as you walk
+  In the tile levels (Acts 2-5) the map shows each tile's walls and starts **dark**: it's revealed as you walk
   (everything within about 18 units of you), and vases, wild creatures and
   the boss only show where you've explored. Each player has their own map.
 - **Your tamer** is a little person with a bat, drawn in your colour (hair
@@ -437,7 +448,7 @@ played in the browser".
   | Source | Chance | At least |
   |---|---|---|
   | Wild creature or monster | 8% | |
-  | Pack Alpha (the first of each pack in the open fields; a little bigger) | 35% | Magic |
+  | Pack Alpha (the first of each pack in the tile levels; a little bigger) | 35% | Magic |
   | Vase | 12% | |
   | Gold vase | 50% | Magic |
   | Champion | 2 items | the first Magic, 40% of the time Rare |
@@ -774,7 +785,7 @@ The host is the authoritative server and also plays.
 | `scripts/network.gd` | Autoload `Network`: WebSocket host/join, solo mode, player registry (names, colours) |
 | `scenes/main.tscn` + `scripts/main.gd` | Menu + `LevelSpawner` that replicates the world to joining clients |
 | `scenes/world.tscn` + `scripts/world.gd` | Level flow (start → rival → portal → next level), level geometry, spawners, XP sharing, FX |
-| `scripts/level_generator.gd` | Deterministic layout of a level from a seed: paths are laid out unrolled, then bent along a curved centre line (1-3 curves); open fields of Acts 2-5 (`generate_open`) are a wavy rounded box with a fenced town, using the path layout's counts; rocks, creature spots, boss, exit; mapping between path space and the level |
+| `scripts/level_generator.gd` | Deterministic layout of a level from a seed: paths are laid out unrolled, then bent along a curved centre line (1-3 curves); tile levels of Acts 2-5 (`generate_open`) are a grid strip of square tiles (guaranteed route, grown side tiles, walls between unjoined tiles, tile templates) with a fenced town tile and the boss arena off the end, using the path layout's counts; `walkable_distance`/`clamp_to_floor` respect the tile walls; rocks, creature spots, boss, exit; mapping between path space and the level |
 | `scripts/boss_models.gd`, `models/rival_kael.glb`, `models/pye.glb`, `models/glacier_titan.glb`, `models/bog_witch.glb`, `scripts/tools/meshy_skin/` | The bosses' models (Rival Kael, loaded from the Meshy model, with the old code-built rival kept as a fallback, Glacier Titan (a Meshy model, with a code-built fallback), Sand Wyrm (a Meshy model rigged in code, with a code-built fallback), Bog Witch (a Meshy model, with a code-built fallback), Howard the Zombie Fish (a Meshy model, with a code-built fallback), Sand Pharaoh, Sunmane the Desert Lion, Magma Colossus and Yeti King (unused for now), Dom the House Cat (a Meshy model rigged by script, with a code-built fallback), Koleko the Fire Dog (a Meshy model rigged by script, with a code-built fallback), Pye the Parrot (a Meshy model, with the code-built parrot as a fallback)) and what animates |
 | `scripts/biome_db.gd` | The biomes levels cycle through: their creatures, boss and colours, and the 16-level cycle of acts (which levels end with a named boss or a Champion) |
 | `scenes/rival.tscn` + `scripts/rival.gd` | The AI rival tamer boss (and the base class for every boss) |
@@ -794,7 +805,7 @@ The host is the authoritative server and also plays.
 | `scripts/building_textures.gd` | The buildings' shared textures, painted in code: clay shingle roofs, plaster walls, plank doors (and stall woodwork) |
 | `scenes/obstacles/*.tscn` (built by `scripts/tools/build_obstacles.gd`) | Four premade trees and rocks per biome (meadow: oak, pine, mossy boulder, berry bush; frost: frosted white spruce, ice crystals, snow boulder, frozen tree; desert: cactus, sandstone pillar, palm, boulders; swamp: willow, vine tree, mossy rock, old stump; graveyard: headstones, dead tree, crypt, grave cross; volcano: lava spire, charred tree, obsidian shards, smoking vent). Areas can name their set, so the Act 3 desert and Act 5 ice areas reuse the desert and frost sets, placed turned and sized differently from the level seed. Rebuild with `godot --headless --path . -s res://scripts/tools/build_obstacles.gd` |
 | `scripts/item_db.gd`, `scripts/item_icons.gd`, `scripts/inventory_window.gd`, `scripts/loot.gd` | Gear (items: base types and tiers, item level, rarities, affixes and their ranges, class items, converting old saves), the inventory window (I: the Tamer tab, and the Pets tab with collars and the reserve) and loot sacks on the ground |
-| `scripts/mini_map.gd` | The mini map (and the large map, M), drawn from the level layout, with fog of war on open fields |
+| `scripts/mini_map.gd` | The mini map (and the large map, M), drawn from the level layout, with each tile's walls and fog of war on tile levels |
 | `scripts/skill_window.gd`, `scripts/skill_icons.gd` | The skills screen (K) and its skill icons, drawn in code |
 | `scripts/creature_model.gd` | Builds each creature's body from simple meshes: a cat, bird, dog or lizard, depending on its biome, or a monster (skeleton, zombie, mummy, sand scorpion, fire imp, magma golem, frost wraith, yeti) |
 | `scripts/creature_species.gd`, `resources/species/*.tres`, `scripts/species_db.gd` | Species data. Add a `.tres` and list it in `SpeciesDB` to add a species |

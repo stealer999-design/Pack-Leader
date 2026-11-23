@@ -421,151 +421,266 @@ static func progress(layout: Dictionary, local_point: Vector3) -> float:
 	return clampf(project(layout, local_point).x / layout.total_length, 0.0, 1.0)
 
 
-# --- Open levels (Act 2) ---------------------------------------------------------------
+# --- Tile levels (Act 2 onwards) ---------------------------------------------------------
 #
-# A big field instead of a path: a rounded box with gently wavy edges, OPEN_SIZE
-# across, with the start camp at its left end (z near 0) and the boss arena at
-# its right end (z near -length). Local x runs across the screen (+x towards the
-# camera), as on paths. The town sits off-centre in the middle, fenced in, with
-# the lemonade stand inside it. The level has exactly as many creature packs,
-# vases and obstacles as the path level from the same seed would, spread out.
+# Laid out like the wilderness in the old isometric ARPGs: a long strip of square
+# tiles, GRID_ROWS across the screen (local x, +x towards the camera) by
+# GRID_COLS from left to right (local z, from 0 at the camp's edge to -length).
+# A random walk lays a guaranteed route of tiles from the camp tile (column 0)
+# to the boss tile (the last column); more tiles are added around it until the
+# strip is about GRID_FILL full. Tiles next to each other are joined (no wall)
+# along the route and wherever a tile was added, and sometimes elsewhere; where
+# they aren't, a wall runs between them, so the strip is partly a maze but the
+# way from the camp to the boss is always there. Each field tile gets a
+# template (open, grove, scatter, pillars or ruins). The boss arena is a walled
+# box off the boss tile's right side, joined by a short corridor. The town (the
+# fenced square with the lemonade stand, shops and breeder) fills a tile in the
+# middle columns.
 
-const OPEN_SIZE := Vector2(224.0, 328.0)  ## x (across the screen) by z (left to right).
-const OPEN_POINTS := 192  ## Points around the boundary.
+const TILE := 48.0  ## A tile's side.
+const GRID_COLS := 7  ## Tiles from left to right.
+const GRID_ROWS := 4  ## Tiles across the screen.
+const GRID_FILL := 0.7  ## About this share of the grid's tiles are used.
+const EXTRA_LINK_CHANCE := 0.45  ## Two neighbouring tiles not already joined are joined this often.
+const WALL_HALF := 0.5  ## Half a wall's thickness (walls run along tile edges).
 const OPEN_PLAZA := Vector2(36.0, 34.0)  ## The town square: x by z.
 const CAMP_RADIUS := 16.0
-const ARENA_RADIUS := 21.0
-## The boss arena: a walled box (x by z) outside the field's right edge,
+## The boss arena: a walled box (x by z) off the boss tile's right side,
 ## joined to it by a corridor CORRIDOR_WIDTH wide.
 const ARENA_BOX := Vector2(56.0, 52.0)
 const CORRIDOR_WIDTH := 10.0
+const CORRIDOR_LENGTH := 10.0
 ## The town's gates: the middle of its camera-facing (south) side and of its left (west) side.
 const GATE_WIDTH := 6.0
+## A tile's sides: s = +x (towards the camera), n = -x, w = +z (towards the camp), e = -z (towards the boss).
+const SIDES := {"s": Vector2i(0, 1), "n": Vector2i(0, -1), "w": Vector2i(-1, 0), "e": Vector2i(1, 0)}
+const TEMPLATES := ["open", "grove", "scatter", "pillars", "ruins"]
 
 
-## The open-field layout, with the same keys as a path layout (where they make
-## sense) plus: open: true, boundary: PackedVector3Array (level-local, closed),
-## center: Vector3, camp_center / arena_center: Vector3, gates: [Rect2] (in the
-## town's frame). `path` is the path layout from the same seed: its counts,
-## rival and colours are reused.
+## The tile layout, with the same keys as a path layout (where they make sense)
+## plus: open: true, tile: true, cells: [{cell: Vector2i(col, row), rect: Rect2
+## (x, z), kind: "camp" | "town" | "boss" | "field", template: String, closed:
+## {s, n, w, e: bool}}], cell_index: {Vector2i: int}, ruins: [Rect2] (low
+## wall stubs), bounds: Rect2 (x, z; the whole level), camp_center /
+## arena_center / mouth: Vector3, arena_rect / corridor_rect: Rect2, left_z.
+## `path` is the path layout from the same seed: its counts, rival and colours
+## are reused.
 static func generate_open(level_seed: int, path: Dictionary) -> Dictionary:
 	var rng := RandomNumberGenerator.new()
-	rng.seed = level_seed ^ 0x5eed
-	var length := OPEN_SIZE.y
-	var center := Vector3(0.0, 0.0, -length * 0.5)
-	var boundary := _open_boundary(rng, center)
-	var flat := PackedVector2Array()
-	for point in boundary:
-		flat.append(Vector2(point.x, point.z))
-	# Where the wavy edge really is at the left end (the camp).
-	var left_z := boundary[OPEN_POINTS / 4].z
-	# The boss arena: a box outside the right-hand edge, anywhere up or down it,
-	# joined to the field by a corridor through a gap in the wall.
-	var arena_x := rng.randf_range(-OPEN_SIZE.x * 0.3, OPEN_SIZE.x * 0.3)
-	var mouth_z := _right_edge_z(boundary, center, arena_x)
-	var clear_z := INF  # the box must sit beyond the edge all across its width
-	for k in 13:
-		var x := arena_x - ARENA_BOX.x * 0.5 - 2.0 + (ARENA_BOX.x + 4.0) * k / 12.0
-		clear_z = minf(clear_z, _right_edge_z(boundary, center, x))
-	var box_near_z := minf(clear_z - 4.0, mouth_z - 10.0)  # the arena's left (corridor) side
+	rng.seed = level_seed ^ 0x711e5
+	var present := {}  # Vector2i(col, row) -> true
+	var links := {}  # _link_key(a, b) -> true: joined, no wall between
+	var link := func(a: Vector2i, b: Vector2i) -> void: links[_link_key(a, b)] = true
+	var inside := func(c: Vector2i) -> bool: return c.x >= 0 and c.x < GRID_COLS and c.y >= 0 and c.y < GRID_ROWS
+
+	# The route: left to right, now and then stepping up or down a row.
+	var at := Vector2i(0, rng.randi_range(0, GRID_ROWS - 1))
+	var route: Array[Vector2i] = [at]
+	present[at] = true
+	var steps_here := 0
+	while at.x < GRID_COLS - 1:
+		var next := at + Vector2i(1, 0)
+		if steps_here < 2 and at.x > 0 and rng.randf() < 0.45:
+			var dir := 1 if rng.randf() < 0.5 else -1
+			for d in [dir, -dir]:
+				var side_step := at + Vector2i(0, d)
+				if inside.call(side_step) and not present.has(side_step):
+					next = side_step
+					break
+		steps_here = steps_here + 1 if next.x == at.x else 0
+		link.call(at, next)
+		at = next
+		route.append(at)
+		present[at] = true
+
+	# Grow more tiles off the ones already there.
+	var target := roundi(GRID_COLS * GRID_ROWS * GRID_FILL)
+	for guard in 200:
+		if present.size() >= target:
+			break
+		var options: Array[Vector2i] = []
+		for c: Vector2i in present:
+			for d: Vector2i in SIDES.values():
+				var n := c + d
+				if inside.call(n) and not present.has(n) and n.x < GRID_COLS - 1 and not options.has(n):
+					options.append(n)
+		if options.is_empty():
+			break
+		var add: Vector2i = options[rng.randi() % options.size()]
+		var touching: Array[Vector2i] = []
+		for d: Vector2i in SIDES.values():
+			if present.has(add + d):
+				touching.append(add + d)
+		present[add] = true
+		link.call(add, touching[rng.randi() % touching.size()])
+	# ...and join some more neighbours, for loops and wide-open stretches.
+	var ordered: Array[Vector2i] = []
+	for c: Vector2i in present:
+		ordered.append(c)
+	ordered.sort_custom(func(a: Vector2i, b: Vector2i) -> bool: return a.x < b.x or (a.x == b.x and a.y < b.y))
+	for c in ordered:
+		for d in [Vector2i(1, 0), Vector2i(0, 1)]:
+			var n: Vector2i = c + d
+			if present.has(n) and not links.has(_link_key(c, n)) and rng.randf() < EXTRA_LINK_CHANCE:
+				link.call(c, n)
+
+	# The town: a tile in the middle columns, away from the route if it can be (a side room).
+	var camp_cell := route[0]
+	var boss_cell := route[-1]
+	var middle: Array[Vector2i] = []
+	var side_rooms: Array[Vector2i] = []
+	for c in ordered:
+		if c.x >= 2 and c.x <= GRID_COLS - 3:
+			middle.append(c)
+			if not route.has(c):
+				side_rooms.append(c)
+	var pool := side_rooms if not side_rooms.is_empty() and rng.randf() < 0.6 else middle
+	var town_cell: Vector2i = pool[rng.randi() % pool.size()]
+
+	var cells: Array[Dictionary] = []
+	var cell_index := {}
+	for c in ordered:
+		var kind := "field"
+		if c == camp_cell:
+			kind = "camp"
+		elif c == boss_cell:
+			kind = "boss"
+		elif c == town_cell:
+			kind = "town"
+		var closed := {}
+		for side: String in SIDES:
+			closed[side] = not links.has(_link_key(c, c + SIDES[side]))
+		cell_index[c] = cells.size()
+		cells.append({"cell": c, "rect": cell_rect(c), "kind": kind, "closed": closed,
+				"template": TEMPLATES[rng.randi() % TEMPLATES.size()] if kind == "field" else kind})
+
+	# The boss arena, off the boss tile's right side.
+	var boss_rect := cell_rect(boss_cell)
+	var arena_x := boss_rect.get_center().x
+	var mouth_z := boss_rect.position.y
+	var box_near_z := mouth_z - CORRIDOR_LENGTH
 	var arena_rect := Rect2(arena_x - ARENA_BOX.x * 0.5, box_near_z - ARENA_BOX.y, ARENA_BOX.x, ARENA_BOX.y)
-	var corridor_rect := Rect2(arena_x - CORRIDOR_WIDTH * 0.5, box_near_z, CORRIDOR_WIDTH, mouth_z + 8.0 - box_near_z)
+	var corridor_rect := Rect2(arena_x - CORRIDOR_WIDTH * 0.5, box_near_z, CORRIDOR_WIDTH, CORRIDOR_LENGTH + 2.0)
 	var right_z := arena_rect.position.y
-	length = left_z - right_z
-	var layout := {"open": true, "boundary": boundary, "boundary_2d": flat, "center": center, "total_length": length,
-			"left_z": left_z, "arena_rect": arena_rect, "corridor_rect": corridor_rect,
-			"mouth": Vector3(arena_x, 0.0, mouth_z)}
-	var camp_center := Vector3(0.0, 0.0, left_z - CAMP_RADIUS - 2.0)
+	var grid_rect := Rect2(-GRID_ROWS * TILE * 0.5, -GRID_COLS * TILE, GRID_ROWS * TILE, GRID_COLS * TILE)
+	var layout := {"open": true, "tile": true, "cells": cells, "cell_index": cell_index, "left_z": 0.0,
+			"total_length": -right_z, "arena_rect": arena_rect, "corridor_rect": corridor_rect,
+			"mouth": Vector3(arena_x, 0.0, mouth_z), "bounds": grid_rect.merge(arena_rect)}
+	var camp_center := Vector3(cell_rect(camp_cell).get_center().x, 0.0, cell_rect(camp_cell).get_center().y)
 	var arena_center := Vector3(arena_x, 0.0, arena_rect.get_center().y)
 	var mouth := Vector3(arena_x, 0.0, mouth_z)
 
-	# The town: somewhere in the middle, but not dead centre and not near the edges.
 	var plaza := Rect2(-OPEN_PLAZA.x * 0.5, -OPEN_PLAZA.y * 0.5, OPEN_PLAZA.x, OPEN_PLAZA.y)
-	var town := Vector3.ZERO
-	for attempt in 40:
-		var side := -1.0 if rng.randf() < 0.5 else 1.0
-		town = center + Vector3(side * rng.randf_range(22.0, 48.0), 0.0, rng.randf_range(-55.0, 55.0))
-		if Vector2(town.x - center.x, town.z - center.z).length() < 24.0:
-			continue
-		var fits := true
-		for corner in [Vector2(plaza.position.x, plaza.position.y), Vector2(plaza.end.x, plaza.position.y),
-				Vector2(plaza.position.x, plaza.end.y), Vector2(plaza.end.x, plaza.end.y)]:
-			if _edge_distance(layout, town + Vector3(corner.x, 0.0, corner.y)) < 30.0:
-				fits = false
-		# ...and well clear of the camp and the boss arena.
-		for zone in [[camp_center, CAMP_RADIUS + 10.0], [mouth, 24.0]]:
-			var local: Vector3 = zone[0] - town
-			var nearest := Vector2(clampf(local.x, plaza.position.x, plaza.end.x), clampf(local.z, plaza.position.y, plaza.end.y))
-			if nearest.distance_to(Vector2(local.x, local.z)) < zone[1]:
-				fits = false
-		if fits:
-			break
+	var town_rect := cell_rect(town_cell)
+	var town := Vector3(town_rect.get_center().x, 0.0, town_rect.get_center().y)
 	var village := _village_open(plaza)
 	village["frame"] = Transform3D(Basis(), town)
 	var shop_local := Vector3(plaza.get_center().x + 5.0, 0.0, plaza.get_center().y + 6.0)
 
-	# Everything else is spread over the field, clear of the camp, the arena,
-	# the town (and its fence) and each other.
-	var keep_out := func(p: Vector3, edge: float) -> bool:
-		if _edge_distance(layout, p) < edge:
+	# What's in each field tile, by its template. Everything keeps clear of the
+	# tile's edges (so the ways between tiles stay open), of the camp, the town
+	# and the way into the boss arena.
+	var rocks: Array[Dictionary] = []
+	var ruins: Array[Rect2] = []
+	var taken: Array[Vector3] = []
+	var keep_out := func(p: Vector3, room: float) -> bool:
+		if walkable_distance(layout, p) < room:
 			return true
 		if Vector2(p.x - camp_center.x, p.z - camp_center.z).length() < CAMP_RADIUS + 6.0:
 			return true
-		if Vector2(p.x - mouth.x, p.z - mouth.z).length() < 14.0:  # keep the way to the boss clear
+		if Vector2(p.x - mouth.x, p.z - mouth.z).length() < 14.0:
 			return true
 		var q := p - town
 		return plaza.grow(7.0).has_point(Vector2(q.x, q.z))
-	var taken: Array[Vector3] = []
 	var far_enough := func(p: Vector3, spacing: float) -> bool:
 		for other in taken:
 			if Vector2(other.x - p.x, other.z - p.z).length() < spacing:
 				return false
+		for r in ruins:
+			if r.grow(2.5).has_point(Vector2(p.x, p.z)):
+				return false
 		return true
-	var sample := func(edge: float, spacing: float) -> Vector3:
-		for attempt in 200:
-			var p := center + Vector3(rng.randf_range(-OPEN_SIZE.x * 0.5, OPEN_SIZE.x * 0.5), 0.0,
-					rng.randf_range(-length * 0.5, length * 0.5))
-			if not keep_out.call(p, edge) and far_enough.call(p, spacing):
-				return p
-		return Vector3.INF
-
-	# Obstacles: as many as the path level had (its arena's four corner rocks
-	# stay round the arena here too).
-	var rocks: Array[Dictionary] = []
-	var path_rocks: Array = path.rocks
-	var arena_rocks := 4
-	for i in maxi(path_rocks.size() - arena_rocks, 0):
-		var p: Vector3 = sample.call(5.0, 11.0)
-		if p != Vector3.INF:
+	var add_rock := func(p: Vector3) -> void:
+		if not keep_out.call(p, 6.0) and far_enough.call(p, 4.5):
 			taken.append(p)
-			rocks.append({"pos": p, "size": path_rocks[i].size})
+			rocks.append({"pos": p, "size": Vector3(rng.randf_range(1.5, 3.5), rng.randf_range(1.5, 3.0), rng.randf_range(1.5, 3.5))})
+	for cell: Dictionary in cells:
+		var r: Rect2 = cell.rect
+		var mid := Vector3(r.get_center().x, 0.0, r.get_center().y)
+		var spread := func() -> Vector3:
+			return Vector3(rng.randf_range(r.position.x + 8.0, r.end.x - 8.0), 0.0, rng.randf_range(r.position.y + 8.0, r.end.y - 8.0))
+		match cell.template:
+			"open":
+				for i in rng.randi_range(1, 3):
+					add_rock.call(spread.call())
+			"scatter":
+				for i in rng.randi_range(5, 8):
+					add_rock.call(spread.call())
+			"grove":  # a ring of trees round a clearing, with a gap or two
+				var count := rng.randi_range(8, 11)
+				var radius := rng.randf_range(9.0, 12.0)
+				var turn := rng.randf() * TAU
+				var gaps := [rng.randi() % count, rng.randi() % count]
+				for i in count:
+					if gaps.has(i):
+						continue
+					var a := turn + TAU * i / count
+					add_rock.call(mid + Vector3(cos(a), 0.0, sin(a)) * radius)
+			"pillars":
+				for corner in [Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1)]:
+					add_rock.call(mid + Vector3(corner.x, 0.0, corner.y) * rng.randf_range(9.0, 12.0))
+			"ruins":  # two or three broken wall stubs, knee high
+				for i in rng.randi_range(2, 3):
+					var length := rng.randf_range(6.0, 10.0)
+					var off := Vector2(rng.randf_range(-12.0, 12.0), rng.randf_range(-12.0, 12.0))
+					var stub := Rect2(mid.x + off.x - length * 0.5, mid.z + off.y - 0.5, length, 1.0) if rng.randf() < 0.5 \
+							else Rect2(mid.x + off.x - 0.5, mid.z + off.y - length * 0.5, 1.0, length)
+					var clear := true
+					for other in ruins:
+						if other.grow(4.0).intersects(stub):
+							clear = false
+					if clear:
+						ruins.append(stub)
+				for i in rng.randi_range(0, 2):
+					add_rock.call(spread.call())
+	# The arena's four corner rocks, as on the path levels.
 	for corner in [Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1)]:
 		rocks.append({"pos": arena_center + Vector3(corner.x * 14.0, 0.0, corner.y * 12.0), "size": Vector3(3.0, 3.5, 3.0)})
 
+	var sample_in := func(r: Rect2, room: float, spacing: float) -> Vector3:
+		for attempt in 60:
+			var p := Vector3(rng.randf_range(r.position.x + room, r.end.x - room), 0.0, rng.randf_range(r.position.y + room, r.end.y - room))
+			if not keep_out.call(p, room) and far_enough.call(p, spacing):
+				return p
+		return Vector3.INF
 	# Creature packs: as many creatures as the path level had, in packs of
-	# PACK_MIN-PACK_MAX, each pack around its own point (and all one kind: see
-	# World._start_level, which picks a species per "group"). Deeper packs,
-	# further right, are tougher.
+	# PACK_MIN-PACK_MAX, dealt out over the field tiles (and the boss tile)
+	# from a shuffled deck, so they're spread over the whole strip. Deeper
+	# packs, further right, are tougher (World._start_level).
+	var deck: Array[Rect2] = []
+	for cell: Dictionary in cells:
+		if cell.kind == "field" or cell.kind == "boss":
+			deck.append(cell.rect)
 	var sizes := pack_sizes(rng, path.creature_spots.size())
 	var spots: Array[Dictionary] = []
+	var dealt: Array[Rect2] = []
 	for group in sizes.size():
-		var size: int = sizes[group]
-		var home: Vector3 = sample.call(8.0, 30.0)
-		if home == Vector3.INF:
-			home = sample.call(6.0, 6.0)
+		if dealt.is_empty():
+			dealt = deck.duplicate()
+			_shuffle(rng, dealt)
+		var home: Vector3 = sample_in.call(dealt.pop_back(), 8.0, 14.0)
 		if home == Vector3.INF:
 			continue
 		taken.append(home)
 		var depth := progress(layout, home)
+		var size: int = sizes[group]
 		for k in size:
 			var angle: float = TAU * k / size + rng.randf_range(-0.3, 0.3)
-			var pos := home + Vector3(cos(angle), 0.0, sin(angle)) * rng.randf_range(1.5, 4.5)
-			spots.append({"pos": pos, "depth": depth, "group": group})
-
-	# Vases: the same number (and as many gold ones), spread out.
+			spots.append({"pos": home + Vector3(cos(angle), 0.0, sin(angle)) * rng.randf_range(1.5, 4.5), "depth": depth, "group": group})
+	# Vases: the same number (and as many gold ones), anywhere but the camp and town.
 	var crates: Array[Dictionary] = []
 	for crate: Dictionary in path.crate_spots:
-		var p: Vector3 = sample.call(3.0, 10.0)
+		var p: Vector3 = sample_in.call(deck[rng.randi() % deck.size()], 3.0, 6.0)
 		if p == Vector3.INF:
 			continue
 		taken.append(p)
@@ -573,6 +688,7 @@ static func generate_open(level_seed: int, path: Dictionary) -> Dictionary:
 
 	layout.merge({
 		"rocks": rocks,
+		"ruins": ruins,
 		"creature_spots": spots,
 		"crate_spots": crates,
 		"village": village,
@@ -581,8 +697,8 @@ static func generate_open(level_seed: int, path: Dictionary) -> Dictionary:
 		"shop_yaw": 0.0,  # faces the camera
 		"camp_center": camp_center,
 		"arena_center": arena_center,
-		"start_point": Vector3(0.0, 0.0, left_z - 14.0),
-		"stable_point": Vector3(-8.0, 0.0, left_z - 16.0),
+		"start_point": camp_center + Vector3(0.0, 0.0, 4.0),
+		"stable_point": camp_center + Vector3(-8.0, 0.0, 2.0),
 		"rival_point": arena_center,
 		"exit_point": Vector3(arena_x, 0.0, right_z + 7.0),
 		"travel_point": Vector3(arena_x - 4.5, 0.0, right_z + 7.0),
@@ -593,6 +709,33 @@ static func generate_open(level_seed: int, path: Dictionary) -> Dictionary:
 		"biome": path.biome,
 	})
 	return layout
+
+
+## A tile's square in level space: x across the screen, y = z.
+static func cell_rect(c: Vector2i) -> Rect2:
+	return Rect2(-GRID_ROWS * TILE * 0.5 + c.y * TILE, -(c.x + 1) * TILE, TILE, TILE)
+
+
+static func _link_key(a: Vector2i, b: Vector2i) -> String:
+	if b.x < a.x or (b.x == a.x and b.y < a.y):
+		var t := a
+		a = b
+		b = t
+	return "%d,%d|%d,%d" % [a.x, a.y, b.x, b.y]
+
+
+static func _shuffle(rng: RandomNumberGenerator, list: Array) -> void:
+	for i in range(list.size() - 1, 0, -1):
+		var j := rng.randi() % (i + 1)
+		var t: Variant = list[i]
+		list[i] = list[j]
+		list[j] = t
+
+
+## The tile a level-local point is on (its index in layout.cells), or -1.
+static func cell_at(layout: Dictionary, p: Vector3) -> int:
+	var c := Vector2i(floori(-p.z / TILE), floori((p.x + GRID_ROWS * TILE * 0.5) / TILE))
+	return layout.cell_index.get(c, -1)
 
 
 const PACK_MIN := 3
@@ -613,25 +756,6 @@ static func pack_sizes(rng: RandomNumberGenerator, total: int) -> Array[int]:
 		sizes.append(size)
 		left -= size
 	return sizes
-
-
-## The field's edge: a rounded box (a superellipse) with slow waves along it,
-## OPEN_POINTS points around `center`, counter-clockwise seen from above.
-static func _open_boundary(rng: RandomNumberGenerator, center: Vector3) -> PackedVector3Array:
-	var a := OPEN_SIZE.x * 0.5
-	var b := OPEN_SIZE.y * 0.5
-	var phases := [rng.randf() * TAU, rng.randf() * TAU, rng.randf() * TAU]
-	var amounts := [rng.randf_range(0.03, 0.06), rng.randf_range(0.02, 0.04), rng.randf_range(0.01, 0.025)]
-	var points := PackedVector3Array()
-	for i in OPEN_POINTS:
-		var t := TAU * i / OPEN_POINTS
-		var c := cos(t)
-		var s := sin(t)
-		var r := 1.0 / pow(pow(absf(c) / a, 4.0) + pow(absf(s) / b, 4.0), 0.25)
-		r *= 1.0 + amounts[0] * sin(2.0 * t + phases[0]) + amounts[1] * sin(3.0 * t + phases[1]) \
-				+ amounts[2] * sin(5.0 * t + phases[2])
-		points.append(center + Vector3(c * r, 0.0, s * r))
-	return points
 
 
 ## The town square and what's in it, in the town's own frame (+x towards the camera).
@@ -656,29 +780,64 @@ static func _village_open(plaza: Rect2) -> Dictionary:
 	return v
 
 
-## Where the field's right-hand edge is (its z) at local `x`.
-static func _right_edge_z(boundary: PackedVector3Array, center: Vector3, x: float) -> float:
-	var best := INF
-	var n := boundary.size()
-	for i in n:
-		var a := boundary[i]
-		var b := boundary[(i + 1) % n]
-		if a.z > center.z or b.z > center.z:
-			continue  # only the right-hand half
-		if (a.x - x) * (b.x - x) <= 0.0 and absf(b.x - a.x) > 0.0001:
-			var z := lerpf(a.z, b.z, (x - a.x) / (b.x - a.x))
-			best = minf(best, z)
-	return best if best < INF else center.z - OPEN_SIZE.y * 0.5
-
-
 ## How far inside the walkable ground a local point is (negative = outside):
-## the field, the corridor to the boss and the boss arena.
+## the tiles (walls run along their closed sides), the corridor to the boss
+## and the boss arena.
 static func walkable_distance(layout: Dictionary, p: Vector3) -> float:
-	var best := _edge_distance(layout, p)
+	var best := _tiles_distance(layout, p)
 	for key in ["arena_rect", "corridor_rect"]:
 		if layout.has(key):
 			best = maxf(best, _rect_inside(layout[key], Vector2(p.x, p.z)))
 	return best
+
+
+## How far a point is from the walls of the tile it's on (negative off the tiles).
+static func _tiles_distance(layout: Dictionary, p: Vector3) -> float:
+	var q := Vector2(p.x, p.z)
+	var i := cell_at(layout, p)
+	if i < 0:  # off the tiles: how far from the nearest one
+		var best := -INF
+		for cell: Dictionary in layout.cells:
+			best = maxf(best, _rect_inside(cell.rect, q))
+		return best - WALL_HALF
+	var cell: Dictionary = layout.cells[i]
+	var r: Rect2 = cell.rect
+	var closed: Dictionary = cell.closed
+	var d := INF
+	if closed.n:
+		d = minf(d, q.x - r.position.x)
+	if closed.s:
+		d = minf(d, r.end.x - q.x)
+	if closed.e:
+		d = minf(d, q.y - r.position.y)
+	if closed.w:
+		d = minf(d, r.end.y - q.y)
+	# A corner between two open sides: a wall ends there unless the tile
+	# across the corner is joined to both of those neighbours.
+	for xs in ["n", "s"]:
+		for zs in ["w", "e"]:
+			if closed[xs] or closed[zs]:
+				continue
+			var here: Vector2i = cell.cell
+			var a: Vector2i = here + SIDES[xs]
+			var b: Vector2i = here + SIDES[zs]
+			var diag: Vector2i = here + SIDES[xs] + SIDES[zs]
+			var joined: bool = layout.cell_index.has(diag) and _joined(layout, a, diag) and _joined(layout, b, diag)
+			if not joined:
+				var corner := Vector2(r.position.x if xs == "n" else r.end.x, r.end.y if zs == "w" else r.position.y)
+				d = minf(d, q.distance_to(corner))
+	return d - WALL_HALF
+
+
+## True if tiles `a` and `b` (neighbours) are joined, with no wall between.
+static func _joined(layout: Dictionary, a: Vector2i, b: Vector2i) -> bool:
+	var i: int = layout.cell_index.get(a, -1)
+	if i < 0 or not layout.cell_index.has(b):
+		return false
+	for side: String in SIDES:
+		if a + SIDES[side] == b:
+			return not layout.cells[i].closed[side]
+	return false
 
 
 ## How far inside a rectangle a point is (negative = outside).
@@ -690,45 +849,48 @@ static func _rect_inside(rect: Rect2, q: Vector2) -> float:
 	return -q.distance_to(nearest)
 
 
-## How far inside the field's edge a local point is (negative = outside).
-static func _edge_distance(layout: Dictionary, p: Vector3) -> float:
-	var polygon: PackedVector2Array = layout.boundary_2d
-	var flat := Vector2(p.x, p.z)
-	var best := INF
-	var n := polygon.size()
-	for i in n:
-		best = minf(best, flat.distance_to(Geometry2D.get_closest_point_to_segment(flat, polygon[i], polygon[(i + 1) % n])))
-	return best if Geometry2D.is_point_in_polygon(flat, polygon) else -best
-
-
-## Keeps a point inside the field, `margin` from its edge.
+## Keeps a point on the tiles (or in the arena or its corridor), `margin` from the walls.
 static func _clamp_open(layout: Dictionary, local_point: Vector3, margin: float) -> Vector3:
-	var center: Vector3 = layout.center
-	var flat := Vector2(local_point.x, local_point.z)
-	# Most points are nowhere near the edge: the middle 2/3 of the field is always inside.
-	if margin <= 8.0 and absf(flat.x - center.x) < OPEN_SIZE.x * 0.33 and absf(flat.y - center.z) < OPEN_SIZE.y * 0.33:
-		return local_point
 	if walkable_distance(layout, local_point) >= margin:
 		return local_point
+	var flat := Vector2(local_point.x, local_point.z)
+	var tiles := _tiles_distance(layout, local_point)
 	# In (or nearest to) the arena or its corridor: keep it in that box.
 	for key in ["arena_rect", "corridor_rect"]:
 		if layout.has(key):
 			var rect: Rect2 = layout[key]
-			if _rect_inside(rect, flat) > _edge_distance(layout, local_point) and _rect_inside(rect, flat) > -6.0:
+			var inside := _rect_inside(rect, flat)
+			if inside > tiles and inside > -6.0:
 				var inner := rect.grow(-minf(margin, rect.size.x * 0.4))
 				return Vector3(clampf(flat.x, inner.position.x, inner.end.x), local_point.y, clampf(flat.y, inner.position.y, inner.end.y))
-	# Pull it towards the middle until it's far enough in.
-	var to := Vector2(center.x, center.z) - flat
-	var lo := 0.0
-	var hi := 1.0
-	for i in 12:
-		var mid := (lo + hi) * 0.5
-		var trial := flat + to * mid
-		if _edge_distance(layout, Vector3(trial.x, 0.0, trial.y)) >= margin:
-			hi = mid
-		else:
-			lo = mid
-	var out := flat + to * hi
+	# The tile it's on (or the nearest): clamp inside its closed sides.
+	var i := cell_at(layout, local_point)
+	if i < 0:
+		var best := -INF
+		for k in layout.cells.size():
+			var inside := _rect_inside(layout.cells[k].rect, flat)
+			if inside > best:
+				best = inside
+				i = k
+	var cell: Dictionary = layout.cells[i]
+	var r: Rect2 = cell.rect
+	var inset := margin + WALL_HALF
+	var lo := Vector2(r.position.x + (inset if cell.closed.n else 0.0), r.position.y + (inset if cell.closed.e else 0.0))
+	var hi := Vector2(r.end.x - (inset if cell.closed.s else 0.0), r.end.y - (inset if cell.closed.w else 0.0))
+	var out := Vector2(clampf(flat.x, lo.x, hi.x), clampf(flat.y, lo.y, hi.y))
+	if _tiles_distance(layout, Vector3(out.x, 0.0, out.y)) < margin * 0.5:
+		# Against a wall's end at a corner: pull it towards the tile's middle.
+		var to := r.get_center() - out
+		var a := 0.0
+		var b := 1.0
+		for k in 10:
+			var m := (a + b) * 0.5
+			var trial := out + to * m
+			if _tiles_distance(layout, Vector3(trial.x, 0.0, trial.y)) >= margin:
+				b = m
+			else:
+				a = m
+		out += to * b
 	return Vector3(out.x, local_point.y, out.y)
 
 
