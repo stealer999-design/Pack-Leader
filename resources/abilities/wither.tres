@@ -15,3 +15,4 @@ mode = "spit"
 poison_dps_multiplier = 0.8
 poison_duration = 6.0
 heal_from_hit = 0.4
+look = "wither"

@@ -16,3 +16,4 @@ trap_duration = 30.0
 max_traps = 3
 poison_dps_multiplier = 0.7
 poison_duration = 5.0
+look = "mud"

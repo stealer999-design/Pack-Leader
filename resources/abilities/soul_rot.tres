@@ -15,3 +15,4 @@ mode = "spit"
 poison_dps_multiplier = 1.2
 poison_duration = 7.0
 heal_from_hit = 0.5
+look = "soul_rot"

@@ -13,3 +13,4 @@ radius = 6.0
 smite_area_multiplier = 1.2
 blind_duration = 5.0
 heal_allies = 0.25
+look = "holy_light"

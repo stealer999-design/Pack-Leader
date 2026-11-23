@@ -13,3 +13,4 @@ radius = 5.5
 sanctuary_duration = 7.0
 sanctuary_heal = 0.1
 sanctuary_dps_multiplier = 0.5
+look = "sunlit"

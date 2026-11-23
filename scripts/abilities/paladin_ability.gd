@@ -40,6 +40,9 @@ const HOLY := Color(1.0, 0.88, 0.45)
 @export_range(0.0, 1.0) var armor_reduction := 0.3
 @export_group("Leap")
 @export var leap := false
+@export_group("Look")
+## The spell's look (HolyFX); "" = the plain golden bursts.
+@export var look := ""
 @export_group("Consecrate")
 @export var sanctuary_duration := 0.0
 @export var sanctuary_heal := 0.0
@@ -49,12 +52,12 @@ const HOLY := Color(1.0, 0.88, 0.45)
 func execute(pet: Creature, point: Vector3, target: Creature) -> void:
 	var at := pet.world.clamp_to_level(point)
 	if leap:
-		pet.leap_to(at, 0.45, _effects.bind(pet, at, target))
+		pet.leap_to(at, 0.45, _effects.bind(pet, at, target, pet.global_position))
 	else:
-		_effects(pet, at, target)
+		_effects(pet, at, target, pet.global_position)
 
 
-func _effects(pet_ref, at: Vector3, target_ref) -> void:
+func _effects(pet_ref, at: Vector3, target_ref, from := Vector3.ZERO) -> void:
 	# Called later (an arrow landing, a leap ending): the pet or its target
 	# may have been freed by then, so they come in untyped and are checked.
 	if not is_instance_valid(pet_ref):
@@ -82,9 +85,13 @@ func _effects(pet_ref, at: Vector3, target_ref) -> void:
 			enemy.blind(blind_duration)
 		if taunt and enemy is Creature:
 			enemy.taunt(pet)
+	var hit := PackedVector3Array()
+	for enemy in world.enemies_near(pet, at, radius):
+		hit.append(enemy.global_position)
 	if guard_duration > 0.0:
 		pet.guard(guard_duration, guard_reduction)
-		world.play_burst.rpc(pet.global_position, Color(0.4, 0.7, 1.0), 1.6)
+		if look == "":
+			world.play_burst.rpc(pet.global_position, Color(0.4, 0.7, 1.0), 1.6)
 	var allies := world.allies_near(pet, at, radius)
 	var power := pet.heal_power()
 	for ally in allies:
@@ -103,11 +110,19 @@ func _effects(pet_ref, at: Vector3, target_ref) -> void:
 	if injured and (heal_injured > 0.0 or (heal_from_smite > 0.0 and dealt > 0.0)):
 		injured.health.heal((injured.health.max_health * heal_injured + dealt * heal_from_smite) * power)
 		world.play_beam.rpc(at + Vector3.UP * 0.6, injured.global_position + Vector3.UP * 0.8, Color(0.6, 1.0, 0.6))
-		world.play_burst.rpc(injured.global_position, Color(0.6, 1.0, 0.6), 1.2)
+		if look == "":
+			world.play_burst.rpc(injured.global_position, Color(0.6, 1.0, 0.6), 1.2)
 	if sanctuary_duration > 0.0:
 		world.add_zone(pet, world.clamp_to_level(at), radius, sanctuary_duration,
-				pet.ability_damage() * sanctuary_dps_multiplier, HOLY, 0.0, sanctuary_heal * power)
-	world.play_burst.rpc(at, HOLY, maxf(radius, 2.0))
+				pet.ability_damage() * sanctuary_dps_multiplier, HOLY if look == "" else Color(0, 0, 0, 0), 0.0, sanctuary_heal * power)
+	if look == "":
+		world.play_burst.rpc(at, HOLY, maxf(radius, 2.0))
+		return
+	var touched := PackedVector3Array()
+	for ally in allies:
+		touched.append(ally.global_position)
+	var lasting := maxf(sanctuary_duration, maxf(armor_duration, shield_duration if shield_fraction > 0.0 else 0.0))
+	world.play_pet_fx.rpc("holy", look, at, from, radius, lasting, touched, hit)
 
 
 static func _most_injured(allies: Array[Node3D]) -> Node3D:

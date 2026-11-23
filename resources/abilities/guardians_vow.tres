@@ -15,3 +15,4 @@ taunt = true
 guard_duration = 5.0
 guard_reduction = 0.5
 heal_self = 0.25
+look = "guardian"

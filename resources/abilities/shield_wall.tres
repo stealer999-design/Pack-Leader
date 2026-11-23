@@ -15,3 +15,4 @@ shield_fraction = 0.35
 shield_duration = 6.0
 guard_duration = 4.0
 guard_reduction = 0.4
+look = "shield_wall"

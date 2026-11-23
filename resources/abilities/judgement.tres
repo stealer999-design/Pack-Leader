@@ -15,3 +15,4 @@ smite_area_multiplier = 2.0
 taunt = true
 heal_self = 0.2
 heal_from_smite = 0.5
+look = "judgement"

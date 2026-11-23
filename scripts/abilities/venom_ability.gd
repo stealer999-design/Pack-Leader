@@ -26,6 +26,8 @@ const SPIT_SPEED := 18.0
 @export var heal_from_hit := 0.0
 ## Heals every ally around the pet for this share of their max health.
 @export_range(0.0, 1.0) var heal_allies := 0.0
+## The spell's look (SwampFX); "" = the plain green bolt and bursts.
+@export var look := ""
 
 
 func execute(pet: Creature, point: Vector3, target: Creature) -> void:
@@ -35,27 +37,40 @@ func execute(pet: Creature, point: Vector3, target: Creature) -> void:
 		"spit":
 			var from := pet.global_position + Vector3.UP * 0.5
 			var travel := maxf(from.distance_to(aim) / SPIT_SPEED, 0.1)
-			world.play_bolt.rpc(from, aim + Vector3.UP * 0.4, VENOM, travel)
+			if look == "":
+				world.play_bolt.rpc(from, aim + Vector3.UP * 0.4, VENOM, travel)
+			else:
+				world.play_pet_fx.rpc("swamp", look, aim, from, radius, travel, PackedVector3Array(), PackedVector3Array())
 			pet.get_tree().create_timer(travel).timeout.connect(_splash.bind(pet, aim))
 		"lash":
 			if not is_instance_valid(target):
 				return
-			world.play_beam.rpc(pet.global_position + Vector3.UP * 0.5, target.global_position + Vector3.UP * 0.5, VENOM)
+			if look == "":
+				world.play_beam.rpc(pet.global_position + Vector3.UP * 0.5, target.global_position + Vector3.UP * 0.5, VENOM)
+			else:
+				world.play_pet_fx.rpc("swamp", look, target.global_position + Vector3.UP * 0.5, pet.global_position + Vector3.UP * 0.5,
+						radius, 0.0, PackedVector3Array(), PackedVector3Array())
 			var toward := target.global_position - pet.global_position
 			toward.y = 0.0
 			target.pull_to(pet.global_position + toward.normalized() * (pet.radius() + target.radius() + 0.3))
 			_poison(pet, target)
 		"nova":
-			_splash(pet, world.clamp_to_level(aim))
+			var at := world.clamp_to_level(aim)
+			if look != "":
+				world.play_pet_fx.rpc("swamp", look, at, pet.global_position, radius, 0.0, _allies_at(pet, at), _enemies_at(pet, at))
+			_splash(pet, at)
 		"cloud":
 			var at := world.clamp_to_level(aim)
-			world.add_zone(pet, at, radius, cloud_duration, 0.0, VENOM, pet.ability_damage() * poison_dps_multiplier)
+			world.add_zone(pet, at, radius, cloud_duration, 0.0, VENOM if look == "" else Color(0, 0, 0, 0), pet.ability_damage() * poison_dps_multiplier)
+			if look != "":
+				world.play_pet_fx.rpc("swamp", look, at, pet.global_position, radius, cloud_duration, PackedVector3Array(), PackedVector3Array())
 			_splash(pet, at)
 	if heal_allies > 0.0:
 		var at := world.clamp_to_level(aim)
 		for ally in world.allies_near(pet, at, maxf(radius, 6.0)):
 			ally.health.heal(ally.health.max_health * heal_allies)
-		world.play_burst.rpc(at, Color(0.6, 1.0, 0.6), 3.0)
+		if look == "":
+			world.play_burst.rpc(at, Color(0.6, 1.0, 0.6), 3.0)
 
 
 func _splash(pet_ref, at: Vector3) -> void:
@@ -66,7 +81,23 @@ func _splash(pet_ref, at: Vector3) -> void:
 	var pet: Creature = pet_ref
 	for enemy in pet.world.enemies_near(pet, at, radius):
 		_poison(pet, enemy)
-	pet.world.play_burst.rpc(at, VENOM, maxf(radius, 1.5))
+	if look == "":
+		pet.world.play_burst.rpc(at, VENOM, maxf(radius, 1.5))
+
+
+func _allies_at(pet: Creature, at: Vector3) -> PackedVector3Array:
+	var out := PackedVector3Array()
+	if heal_allies > 0.0:
+		for ally in pet.world.allies_near(pet, at, maxf(radius, 6.0)):
+			out.append(ally.global_position)
+	return out
+
+
+func _enemies_at(pet: Creature, at: Vector3) -> PackedVector3Array:
+	var out := PackedVector3Array()
+	for enemy in pet.world.enemies_near(pet, at, radius):
+		out.append(enemy.global_position)
+	return out
 
 
 func _poison(pet: Creature, enemy: Node3D) -> void:

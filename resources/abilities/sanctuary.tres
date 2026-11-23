@@ -12,3 +12,4 @@ needs_target = false
 radius = 4.5
 sanctuary_duration = 6.0
 sanctuary_heal = 0.08
+look = "sanctuary"

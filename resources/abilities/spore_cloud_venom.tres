@@ -17,3 +17,4 @@ poison_duration = 4.0
 cloud_duration = 6.0
 weaken_duration = 6.0
 weaken_factor = 0.6
+look = "spores"

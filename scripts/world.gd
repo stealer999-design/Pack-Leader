@@ -750,7 +750,7 @@ func _tick_zones(delta: float) -> void:
 ## position and the trap is used up. It disappears after `duration` seconds, or
 ## when its source is gone; a source keeps at most `max_traps` (oldest go first).
 func add_trap(source: Node3D, at: Vector3, trigger_radius: float, duration: float, max_traps: int,
-		on_trigger: Callable, color: Color) -> void:
+		on_trigger: Callable, color: Color, look := "") -> void:
 	var own := _traps.filter(func(t: Dictionary) -> bool: return t.source == source)
 	while own.size() >= max_traps:
 		var oldest: Dictionary = own.pop_front()
@@ -761,7 +761,7 @@ func add_trap(source: Node3D, at: Vector3, trigger_radius: float, duration: floa
 		"id": _next_trap_id, "source": source, "pos": at, "radius": trigger_radius,
 		"time_left": duration, "on_trigger": on_trigger,
 	})
-	play_trap.rpc(_next_trap_id, at, trigger_radius, color)
+	play_trap.rpc(_next_trap_id, at, trigger_radius, color, look)
 
 
 func _tick_traps(delta: float) -> void:
@@ -2464,6 +2464,17 @@ func play_wave(origin: Vector3, forward: Vector3, radius: float, cone_degrees: f
 	TidalWaveFX.play(self, origin, forward, radius, cone_degrees, color)
 
 
+## A dog's or lizard's ability look (HolyFX / SwampFX): `family` "holy" or
+## "swamp", `look` the spell's, at `at` from `from`.
+@rpc("authority", "call_local", "unreliable")
+func play_pet_fx(family: String, look: String, at: Vector3, from: Vector3, radius: float, extra: float,
+		allies: PackedVector3Array, enemies: PackedVector3Array) -> void:
+	if family == "holy":
+		HolyFX.play(self, look, at, from, radius, extra, allies, enemies)
+	else:
+		SwampFX.play(self, look, at, from, radius, extra, allies, enemies)
+
+
 ## An archer's basic shot with the "air" look: a real arrow with a streak of
 ## air behind it and wisps spiralling round its path (AirShotFX).
 @rpc("authority", "call_local", "unreliable")
@@ -2584,10 +2595,13 @@ func play_zone(at: Vector3, radius: float, duration: float, color: Color) -> voi
 
 ## A trap on the ground: a dark disc with a lighter rim and a few lumps.
 @rpc("authority", "call_local", "reliable")
-func play_trap(id: int, at: Vector3, radius: float, color: Color) -> void:
+func play_trap(id: int, at: Vector3, radius: float, color: Color, look := "") -> void:
 	var trap := Node3D.new()
 	trap.name = "Trap%d" % id
 	add_child(trap)
+	if look != "":  # (a lizard's: SwampFX's mud puddle or ghostly rune)
+		SwampFX.trap(trap, at, radius, look)
+		return
 	trap.global_position = at + Vector3.UP * 0.05
 	var rim := MeshInstance3D.new()
 	var rim_mesh := CylinderMesh.new()

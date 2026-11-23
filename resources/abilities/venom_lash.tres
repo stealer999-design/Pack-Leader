@@ -13,3 +13,4 @@ damage_multiplier = 1.2
 mode = "lash"
 poison_dps_multiplier = 0.9
 poison_duration = 6.0
+look = "lash"

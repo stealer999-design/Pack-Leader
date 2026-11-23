@@ -13,3 +13,4 @@ damage_multiplier = 2.0
 mode = "lash"
 poison_dps_multiplier = 1.2
 poison_duration = 7.0
+look = "fang"

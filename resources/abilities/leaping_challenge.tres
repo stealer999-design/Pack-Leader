@@ -15,3 +15,4 @@ smite_area_multiplier = 1.0
 taunt = true
 guard_duration = 4.0
 guard_reduction = 0.4
+look = "challenge"

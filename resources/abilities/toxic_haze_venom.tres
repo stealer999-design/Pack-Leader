@@ -16,3 +16,4 @@ poison_dps_multiplier = 0.9
 poison_duration = 7.0
 weaken_duration = 7.0
 weaken_factor = 0.5
+look = "haze"

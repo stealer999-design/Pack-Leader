@@ -14,3 +14,4 @@ armor_duration = 6.0
 armor_reduction = 0.35
 shield_fraction = 0.15
 shield_duration = 6.0
+look = "aegis"

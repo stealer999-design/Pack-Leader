@@ -13,3 +13,4 @@ radius = 5.0
 sanctuary_duration = 6.0
 sanctuary_heal = 0.06
 sanctuary_dps_multiplier = 0.8
+look = "consecration"
