@@ -161,7 +161,7 @@
    "Hips",
    [
     -0.13,
-    -0.18,
+    -0.0239,
     -0.12
    ]
   ],
@@ -169,23 +169,23 @@
    "RL_Upper",
    [
     -0.13,
-    -0.36,
-    -0.12
+    -0.2742,
+    -0.06
    ]
   ],
   "RL_Paw": [
    "RL_Lower",
    [
     -0.15,
-    -0.48,
-    -0.1
+    -0.4132,
+    -0.164
    ]
   ],
   "RR_Upper": [
    "Hips",
    [
     0.13,
-    -0.18,
+    -0.0239,
     -0.1
    ]
   ],
@@ -193,16 +193,80 @@
    "RR_Upper",
    [
     0.13,
-    -0.36,
-    -0.1
+    -0.2742,
+    -0.04
    ]
   ],
   "RR_Paw": [
    "RR_Lower",
    [
     0.15,
-    -0.48,
+    -0.4132,
+    -0.132
+   ]
+  ],
+  "FL_WristFix": [
+   "FL_Lower",
+   [
+    -0.1,
+    -0.5,
+    0.54
+   ]
+  ],
+  "FR_WristFix": [
+   "FR_Lower",
+   [
+    0.1,
+    -0.5,
+    0.54
+   ]
+  ],
+  "RL_HipFix": [
+   "Hips",
+   [
+    -0.13,
+    -0.0239,
+    -0.12
+   ]
+  ],
+  "RL_KneeFix": [
+   "RL_Upper",
+   [
+    -0.13,
+    -0.2742,
     -0.06
+   ]
+  ],
+  "RL_HockFix": [
+   "RL_Lower",
+   [
+    -0.15,
+    -0.4132,
+    -0.164
+   ]
+  ],
+  "RR_HipFix": [
+   "Hips",
+   [
+    0.13,
+    -0.0239,
+    -0.1
+   ]
+  ],
+  "RR_KneeFix": [
+   "RR_Upper",
+   [
+    0.13,
+    -0.2742,
+    -0.04
+   ]
+  ],
+  "RR_HockFix": [
+   "RR_Lower",
+   [
+    0.15,
+    -0.4132,
+    -0.132
    ]
   ]
  },
@@ -261,7 +325,7 @@
     -0.084
    ],
    "radius": 0.11,
-   "top": -0.16
+   "top": -0.236
   },
   {
    "bones": [
@@ -275,7 +339,7 @@
     -0.052
    ],
    "radius": 0.11,
-   "top": -0.16
+   "top": -0.236
   }
  ],
  "tail": {
@@ -309,5 +373,209 @@
   "y0": 0.2,
   "y1": 0.26
  },
- "smooth": 3
+ "smooth": 3,
+ "helpers": [
+  {
+   "bone": "FL_WristFix",
+   "parent": "FL_Lower",
+   "at": [
+    -0.1,
+    -0.5,
+    0.54
+   ],
+   "half_of": "FL_Paw",
+   "leg": "FL_Scap",
+   "joint": 3
+  },
+  {
+   "bone": "FR_WristFix",
+   "parent": "FR_Lower",
+   "at": [
+    0.1,
+    -0.5,
+    0.54
+   ],
+   "half_of": "FR_Paw",
+   "leg": "FR_Scap",
+   "joint": 3
+  },
+  {
+   "bone": "RL_HipFix",
+   "parent": "Hips",
+   "at": [
+    -0.13,
+    -0.0239,
+    -0.12
+   ],
+   "half_of": "RL_Upper",
+   "leg": "RL_Upper",
+   "joint": 0,
+   "width": 0.45
+  },
+  {
+   "bone": "RL_KneeFix",
+   "parent": "RL_Upper",
+   "at": [
+    -0.13,
+    -0.2742,
+    -0.06
+   ],
+   "half_of": "RL_Lower",
+   "leg": "RL_Upper",
+   "joint": 1
+  },
+  {
+   "bone": "RL_HockFix",
+   "parent": "RL_Lower",
+   "at": [
+    -0.15,
+    -0.4132,
+    -0.164
+   ],
+   "half_of": "RL_Paw",
+   "leg": "RL_Upper",
+   "joint": 2
+  },
+  {
+   "bone": "RR_HipFix",
+   "parent": "Hips",
+   "at": [
+    0.13,
+    -0.0239,
+    -0.1
+   ],
+   "half_of": "RR_Upper",
+   "leg": "RR_Upper",
+   "joint": 0,
+   "width": 0.45
+  },
+  {
+   "bone": "RR_KneeFix",
+   "parent": "RR_Upper",
+   "at": [
+    0.13,
+    -0.2742,
+    -0.04
+   ],
+   "half_of": "RR_Lower",
+   "leg": "RR_Upper",
+   "joint": 1
+  },
+  {
+   "bone": "RR_HockFix",
+   "parent": "RR_Lower",
+   "at": [
+    0.15,
+    -0.4132,
+    -0.132
+   ],
+   "half_of": "RR_Paw",
+   "leg": "RR_Upper",
+   "joint": 2
+  }
+ ],
+ "muscles": [
+  {
+   "bone": "FL_Scap",
+   "a": [
+    -0.13,
+    0.2377920001745224,
+    0.38
+   ],
+   "b": [
+    -0.15,
+    -0.16,
+    0.42
+   ],
+   "radius": 0.09,
+   "side": -1.0,
+   "inner": 0.04
+  },
+  {
+   "bone": "FL_Upper",
+   "a": [
+    -0.15,
+    -0.16,
+    0.42
+   ],
+   "b": [
+    -0.14,
+    -0.34,
+    0.44
+   ],
+   "radius": 0.07,
+   "side": -1.0,
+   "inner": 0.05,
+   "strength": 0.6
+  },
+  {
+   "bone": "FR_Scap",
+   "a": [
+    0.13,
+    0.2377920001745224,
+    0.38
+   ],
+   "b": [
+    0.15,
+    -0.16,
+    0.42
+   ],
+   "radius": 0.09,
+   "side": 1.0,
+   "inner": 0.04
+  },
+  {
+   "bone": "FR_Upper",
+   "a": [
+    0.15,
+    -0.16,
+    0.42
+   ],
+   "b": [
+    0.14,
+    -0.34,
+    0.44
+   ],
+   "radius": 0.07,
+   "side": 1.0,
+   "inner": 0.05,
+   "strength": 0.6
+  },
+  {
+   "bone": "RL_Upper",
+   "a": [
+    -0.13,
+    -0.0239,
+    -0.12
+   ],
+   "b": [
+    -0.13,
+    -0.2742,
+    -0.06
+   ],
+   "radius": 0.13,
+   "soft": 0.3,
+   "side": -1.0,
+   "inner": 0.03,
+   "strength": 0.95
+  },
+  {
+   "bone": "RR_Upper",
+   "a": [
+    0.13,
+    -0.0239,
+    -0.1
+   ],
+   "b": [
+    0.13,
+    -0.2742,
+    -0.04
+   ],
+   "radius": 0.13,
+   "soft": 0.3,
+   "side": 1.0,
+   "inner": 0.03,
+   "strength": 0.95
+  }
+ ]
 }
