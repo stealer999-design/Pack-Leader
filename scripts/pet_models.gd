@@ -26,13 +26,14 @@ const WALK_PACE_BY_TYPE := {"lizard": 1.4, "dog": 1.68, "bird": 0.7}
 
 ## How much faster than normal the walk may play, per body type, where it differs
 ## (dogs trot fast to keep up with their tamer; birds hop quickly on short legs).
-const MAX_WALK_SPEED_BY_TYPE := {"dog": 4.0, "bird": 5.0}
+const MAX_WALK_SPEED_BY_TYPE := {"dog": 4.0, "bird": 5.0, "cat": 6.0}
 
 
-## ...and per species, where its model has its own walk (cats re-rigged with
-## meshy_skin/cat/cat_pet_anims.py, the reference walk: shorter steps, so a lower pace and a higher cap).
-const WALK_PACE_BY_SPECIES := {"Emberfox": 1.63}
-const MAX_WALK_SPEED_BY_SPECIES := {"Emberfox": 6.5}
+## ...and per species, where its model has its own walk: the cats' (meshy_skin/cat/cat_pet_anims.py,
+## the reference walk) covers the reference's stride in leg heights, x1.25, per 0.83 s, so each
+## cat's pace is its own (rig units a second, like every pace here: stride / cycle).
+const WALK_PACE_BY_SPECIES := {"Emberfox": 0.839, "Mossback": 0.995, "Voltwing": 0.782, "Gloomhorn": 0.862, "Magmashell": 0.881, "Thundershell": 0.708, "Stonehorn": 0.831, "Blitzfox": 0.794, "Stormhorn": 0.419, "Duskbloom": 0.574}
+const MAX_WALK_SPEED_BY_SPECIES := {}
 
 
 static func max_walk_speed(body_type: String, species_name := "") -> float:
