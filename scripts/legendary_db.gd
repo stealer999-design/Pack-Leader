@@ -447,7 +447,7 @@ static func hit_multiplier(source: Node, victim: Node) -> float:
 		pct += amount(powers, "executioner", cls)
 	if fraction > 0.9:
 		pct += amount(powers, "first_strike", cls)
-	var big: bool = victim is Rival or (victim is Creature and (victim.elite or victim.pack_leader))
+	var big: bool = victim is Rival or (victim is Creature and (victim.elite or victim.keeper or victim.pack_leader))
 	if big:
 		pct += amount(powers, "giant_slayer", cls)
 	var troubled: bool = victim.health.is_poisoned() or (victim is Creature and victim.is_stunned())

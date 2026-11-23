@@ -700,6 +700,17 @@ func _update_objective() -> void:
 				% ("Crossroads" if world.next_level() == BiomeDB.CROSSROADS else "Next level")
 	elif rival and rival.engaged:
 		objective_label.text = "Defeat %s!" % rival.objective_name()
+	elif world.has_dungeon() and world.key_state < 2:
+		var theme := world.dungeon_theme()
+		if world.key_state == 1:
+			objective_label.text = "Pick up the %s, then go to the gate to %s." % [theme.key, world.boss_objective_name()]
+		elif world.in_dungeon(_player.global_position):
+			objective_label.text = "Find the %s and take its key." % theme.keeper
+		else:
+			objective_label.text = "Find the %s and take the %s from its Keeper: it opens the gate to %s." \
+					% [theme.entrance, theme.key, world.boss_objective_name()]
+	elif world.has_dungeon():
+		objective_label.text = "The gate is open: find and defeat %s" % world.boss_objective_name()
 	else:
 		objective_label.text = ("Find and defeat %s" if world.layout.get("open", false) \
 				else "Follow the path and defeat %s at the end.") % world.boss_objective_name()

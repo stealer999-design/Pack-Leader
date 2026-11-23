@@ -111,6 +111,8 @@ func _update_fog() -> void:
 	if _fog == null or _fog_level != world.level_state:
 		_fog_level = world.level_state
 		_fog_rect = _tile_bounds(world.layout).grow(4.0)
+		if world.layout.has("dungeon"):  # the dungeon, off to the side, is fogged too
+			_fog_rect = _fog_rect.merge(_rect_to_map(world.layout.dungeon.bounds).grow(4.0))
 		var cells := Vector2i(ceili(_fog_rect.size.x / FOG_CELL), ceili(_fog_rect.size.y / FOG_CELL))
 		_fog = Image.create(cells.x, cells.y, false, Image.FORMAT_RGBA8)
 		_fog.fill(Color(0.03, 0.035, 0.05, 1.0))
@@ -267,9 +269,9 @@ func _draw_live(world: World) -> void:
 		elif c.is_rival_pet():
 			color = Color(0.75, 0.1, 0.15)
 			radius = 3.5
-		elif c.elite:
+		elif c.elite or c.keeper:
 			color = Color(1.0, 0.45, 0.1)
-			radius = 5.5
+			radius = 5.5 if c.elite else 4.5
 		if c.fainted:
 			color = color.darkened(0.5)
 		if not c.is_player_pet() and _fogged(world.level_root.to_local(c.global_position)):
@@ -314,6 +316,8 @@ func _draw_open_map(world: World) -> void:
 	var plaza: Rect2 = v.plaza
 	if expanded:
 		var bounds := _tile_bounds(layout)
+		if world.in_dungeon(player.global_position):  # down in the dungeon: just the dungeon
+			bounds = _rect_to_map(layout.dungeon.bounds).grow(6.0)
 		_scale = minf(_canvas.size.x / bounds.size.x, _canvas.size.y / bounds.size.y) * 0.96
 		_origin = bounds.get_center()
 	else:
@@ -367,12 +371,41 @@ func _draw_open_map(world: World) -> void:
 	_canvas.draw_arc(portal_at, 7.0, 0, TAU, 20, Color(0.75, 0.45, 1.0), 2.5)
 	if world.exit_open:
 		_canvas.draw_circle(portal_at, 4.5, Color(0.85, 0.6, 1.0))
+	if layout.has("dungeon"):
+		_draw_dungeon_marks(world)
 	# The fog over everything not yet explored (the live things under it are skipped).
 	if _fog_texture:
 		var a := _to_canvas(_fog_rect.position)
 		var b := _to_canvas(_fog_rect.end)
 		_canvas.draw_texture_rect(_fog_texture, Rect2(a, b - a), false)
 	_draw_live(world)
+
+
+## The dungeon's entrance (a dark arch), its way out, the gate to the boss
+## (red bars while locked) and the dropped key. Drawn under the fog.
+func _draw_dungeon_marks(world: World) -> void:
+	var layout := world.layout
+	var d: Dictionary = layout.dungeon
+	var theme := world.dungeon_theme()
+	for at: Vector3 in [d.entrance, d.exit]:
+		var c := _to_canvas(_to_map(at))
+		_canvas.draw_rect(Rect2(c - Vector2(7, 6), Vector2(14, 10)), Color(theme.wall).darkened(0.2))
+		_canvas.draw_circle(c + Vector2(0, -1), 4.0, Color(0.03, 0.03, 0.05))
+		_canvas.draw_rect(Rect2(c - Vector2(4, 1), Vector2(8, 5)), Color(0.03, 0.03, 0.05))
+		_canvas.draw_arc(c + Vector2(0, -1), 6.5, PI, TAU, 10, Color(theme.key_color), 1.5)
+	var gate := _to_canvas(_to_map(layout.gate))
+	var half: float = layout.corridor_rect.size.x * 0.5 * _scale
+	var bar_color := Color(0.9, 0.3, 0.25) if world.key_state < 2 else Color(0.5, 0.9, 0.5, 0.6)
+	_canvas.draw_line(gate - Vector2(0, half), gate + Vector2(0, half), bar_color, 3.0)
+	if world.key_state == 1:
+		var k := _to_canvas(_to_map(world.key_pos))
+		_canvas.draw_circle(k, 6.0, Color(0.1, 0.08, 0.02))
+		_canvas.draw_circle(k, 4.5, Color(theme.key_color))
+
+
+## A rectangle in level space (x, z) in map space.
+static func _rect_to_map(r: Rect2) -> Rect2:
+	return Rect2(_to_map(Vector3(r.position.x, 0, r.position.y)), Vector2.ZERO).expand(_to_map(Vector3(r.end.x, 0, r.end.y)))
 
 
 ## The whole tile level (tiles and the boss arena) in map space.

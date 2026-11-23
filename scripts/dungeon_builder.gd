@@ -1,0 +1,415 @@
+class_name DungeonBuilder
+## Builds a tile level's key dungeon (see DungeonDB, LevelGenerator._dungeon)
+## out of simple shapes, under World.level_root:
+## - the entrance on the surface, by theme: a stone mausoleum (crypt), a
+##   stepped sandstone doorway between obelisks (sandstone), a carved stone
+##   archway with glowing runes set into a rock mound (ancient), a mossy rock
+##   mound with a dark natural mouth (cave) or an igloo with its tunnel (ice);
+## - the dungeon's look inside: pillars (stone columns, rune columns,
+##   stalagmites or ice crystals), details along the walls (niches, glyphs,
+##   glowing runes, rock lumps, ice shards), braziers with light, and the
+##   stairs back up;
+## - the key (hidden until the Keeper drops it) and the gate across the
+##   corridor to the boss arena (World.refresh_key opens it).
+## The rooms' floors and walls themselves are built with the map's tiles
+## (World._build_open).
+
+const DOOR_GLOW := 2.2
+
+
+static func build(world: World, layout: Dictionary, theme: Dictionary, theme_id: String, wall_mat: Material) -> void:
+	var root: Node3D = world.level_root
+	var d: Dictionary = layout.dungeon
+	_entrance(root, d.entrance, theme, theme_id)
+	_interior(root, layout, theme, theme_id, wall_mat)
+	_stairs(root, d.exit, theme)
+	_key(root, theme)
+	_gate(root, layout.gate, Vector2(layout.corridor_rect.size.x, 0.0), theme)
+
+
+# --- Shapes ----------------------------------------------------------------------------
+
+static func _mat(color: Color, glow := Color.BLACK, energy := 0.0) -> StandardMaterial3D:
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = color
+	if energy > 0.0:
+		mat.emission_enabled = true
+		mat.emission = glow
+		mat.emission_energy_multiplier = energy
+	return mat
+
+
+## A doorway's darkness: flat black, unlit.
+static func _dark() -> StandardMaterial3D:
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.albedo_color = Color(0.02, 0.02, 0.03)
+	return mat
+
+
+static func _glow_mat(color: Color) -> StandardMaterial3D:
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.albedo_color = color.lightened(0.2)
+	mat.emission_enabled = true
+	mat.emission = color
+	mat.emission_energy_multiplier = DOOR_GLOW
+	return mat
+
+
+static func _add(parent: Node3D, mesh: Mesh, pos: Vector3, mat: Material, rot := Vector3.ZERO, scale := Vector3.ONE) -> MeshInstance3D:
+	var part := MeshInstance3D.new()
+	part.mesh = mesh
+	part.material_override = mat
+	part.position = pos
+	part.rotation = rot
+	part.scale = scale
+	parent.add_child(part)
+	return part
+
+
+static func _box(parent: Node3D, size: Vector3, pos: Vector3, mat: Material, rot := Vector3.ZERO) -> MeshInstance3D:
+	var mesh := BoxMesh.new()
+	mesh.size = size
+	return _add(parent, mesh, pos, mat, rot)
+
+
+static func _ball(parent: Node3D, pos: Vector3, scale: Vector3, mat: Material) -> MeshInstance3D:
+	var mesh := SphereMesh.new()
+	mesh.radius = 1.0
+	mesh.height = 2.0
+	mesh.radial_segments = 14
+	mesh.rings = 8
+	return _add(parent, mesh, pos, mat, Vector3.ZERO, scale)
+
+
+static func _cylinder(parent: Node3D, top: float, bottom: float, height: float, pos: Vector3, mat: Material,
+		rot := Vector3.ZERO, sides := 16) -> MeshInstance3D:
+	var mesh := CylinderMesh.new()
+	mesh.top_radius = top
+	mesh.bottom_radius = bottom
+	mesh.height = height
+	mesh.radial_segments = sides
+	return _add(parent, mesh, pos, mat, rot)
+
+
+## Something solid there (an invisible box).
+static func _solid(parent: Node3D, size: Vector3, pos: Vector3) -> void:
+	var body := StaticBody3D.new()
+	var shape := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = size
+	shape.shape = box
+	body.add_child(shape)
+	body.position = pos
+	parent.add_child(body)
+
+
+static func _light(parent: Node3D, pos: Vector3, color: Color, energy: float, reach: float) -> void:
+	var light := OmniLight3D.new()
+	light.position = pos
+	light.light_color = color
+	light.light_energy = energy
+	light.omni_range = reach
+	parent.add_child(light)
+
+
+static func _sign(parent: Node3D, text: String, pos: Vector3, color: Color) -> Label3D:
+	var sign := Label3D.new()
+	sign.text = text
+	sign.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	sign.pixel_size = 0.012
+	sign.font_size = 40
+	sign.outline_size = 12
+	sign.modulate = color
+	sign.position = pos
+	parent.add_child(sign)
+	return sign
+
+
+# --- The entrance ------------------------------------------------------------------------
+# Built facing the camera (+x), the doorway at the front, about 2-3 units out
+# from its centre; World moves whoever walks up to it into the dungeon.
+
+static func _entrance(root: Node3D, at: Vector3, theme: Dictionary, theme_id: String) -> void:
+	var e := Node3D.new()
+	e.name = "DungeonEntrance"
+	e.position = at
+	root.add_child(e)
+	var stone := _mat(theme.wall)
+	var trim := _mat(theme.trim)
+	var dark := _dark()
+	var glow := _glow_mat(theme.glow)
+	match theme_id:
+		"crypt":  # the graveyard's own crypt (a textured model), scaled up, its iron door to the camera
+			var crypt := (load("res://scenes/obstacles/graveyard_2.tscn") as PackedScene).instantiate() as Node3D
+			crypt.rotation.y = PI / 2.0
+			crypt.scale = Vector3.ONE * 2.6
+			e.add_child(crypt)
+			for z in [-1.9, 1.9]:  # ghostly candles either side of the steps
+				_cylinder(e, 0.07, 0.07, 0.45, Vector3(3.2, 0.22, z), _mat(Color(0.9, 0.88, 0.8)))
+				_ball(e, Vector3(3.2, 0.55, z), Vector3(0.09, 0.15, 0.09), glow)
+			_light(e, Vector3(3.6, 1.6, 0.0), theme.glow, 0.9, 5.0)
+		"sandstone":  # a stepped sandstone block, a doorway between obelisks
+			_box(e, Vector3(6.0, 1.4, 8.0), Vector3(-0.5, 0.7, 0.0), stone)
+			_box(e, Vector3(5.0, 1.2, 6.6), Vector3(-0.9, 2.0, 0.0), stone)
+			_box(e, Vector3(3.8, 1.0, 5.0), Vector3(-1.3, 3.1, 0.0), stone)
+			for z in [-2.4, 2.4]:
+				_cylinder(e, 0.12, 0.45, 4.2, Vector3(2.9, 2.1, z), trim, Vector3(0.0, PI / 4.0, 0.0), 4)
+				_solid(e, Vector3(0.8, 4.0, 0.8), Vector3(2.9, 2.0, z))
+			for z in [-1.15, 1.15]:
+				_box(e, Vector3(0.6, 2.6, 0.6), Vector3(2.55, 1.3, z), trim)
+			_box(e, Vector3(0.8, 0.6, 3.0), Vector3(2.55, 2.85, 0.0), trim)
+			_cylinder(e, 0.42, 0.42, 0.1, Vector3(2.98, 2.85, 0.0), glow, Vector3(0.0, 0.0, PI / 2.0))
+			_box(e, Vector3(0.1, 2.3, 1.7), Vector3(2.52, 1.15, 0.0), dark)
+			_box(e, Vector3(1.2, 0.15, 2.4), Vector3(3.2, 0.07, 0.0), trim)
+			_solid(e, Vector3(6.0, 3.6, 8.0), Vector3(-0.5, 1.8, 0.0))
+		"ancient":  # a rock mound with a carved archway and glowing runes: someone built this
+			for b in [[Vector3(-2.8, 1.0, 0.0), Vector3(3.6, 3.2, 4.6)], [Vector3(-1.8, 0.6, 2.9), Vector3(2.4, 2.0, 2.4)],
+					[Vector3(-1.9, 0.5, -3.0), Vector3(2.4, 1.9, 2.6)], [Vector3(-3.8, 1.4, 0.5), Vector3(3.0, 3.0, 3.0)],
+					[Vector3(0.7, 0.6, 2.6), Vector3(1.3, 1.2, 1.3)], [Vector3(0.6, 0.5, -2.6), Vector3(1.2, 1.1, 1.4)]]:
+				_ball(e, b[0], b[1], stone)
+			_box(e, Vector3(0.3, 2.7, 2.2), Vector3(1.75, 1.35, 0.0), dark)
+			for z in [-1.5, 1.5]:
+				_box(e, Vector3(0.9, 3.0, 0.9), Vector3(2.0, 1.5, z), trim)
+				for y in [0.7, 1.3, 1.9, 2.5]:
+					_box(e, Vector3(0.05, 0.28, 0.14), Vector3(2.47, y, z), glow)
+				_solid(e, Vector3(0.9, 3.0, 0.9), Vector3(2.0, 1.5, z))
+			_box(e, Vector3(1.1, 0.8, 4.0), Vector3(2.0, 3.3, 0.0), trim)
+			_box(e, Vector3(0.05, 0.14, 2.8), Vector3(2.57, 3.3, 0.0), glow)
+			_light(e, Vector3(3.2, 2.0, 0.0), theme.glow, 1.4, 6.0)
+			_solid(e, Vector3(5.0, 3.6, 6.6), Vector3(-2.0, 1.8, 0.0))
+			_solid(e, Vector3(1.6, 1.4, 1.6), Vector3(0.7, 0.7, 2.6))
+			_solid(e, Vector3(1.6, 1.4, 1.6), Vector3(0.6, 0.7, -2.6))
+		"cave":  # a mossy rock mound with a dark natural mouth, vines and glowing mushrooms
+			var moss := _mat(Color(theme.trim))
+			for b in [[Vector3(-2.8, 1.0, 0.0), Vector3(3.6, 3.0, 5.0)], [Vector3(-1.8, 0.7, 2.7), Vector3(2.4, 2.2, 2.6)],
+					[Vector3(-1.6, 0.6, -2.8), Vector3(2.4, 2.0, 2.4)], [Vector3(0.2, 2.5, 0.0), Vector3(1.6, 0.9, 3.2)],
+					[Vector3(0.6, 0.8, 1.9), Vector3(1.2, 1.1, 1.2)], [Vector3(0.6, 0.8, -1.9), Vector3(1.2, 1.1, 1.2)]]:
+				_ball(e, b[0], b[1], stone)
+			for b in [[Vector3(-2.4, 3.6, 0.4), Vector3(2.4, 0.5, 3.0)], [Vector3(-0.2, 3.2, 0.8), Vector3(1.2, 0.35, 1.4)],
+					[Vector3(-1.6, 2.4, -2.6), Vector3(1.6, 0.4, 1.6)], [Vector3(0.6, 1.75, 1.9), Vector3(0.9, 0.3, 0.9)]]:
+				_ball(e, b[0], b[1], moss)
+			_ball(e, Vector3(0.75, 1.0, 0.0), Vector3(0.6, 1.45, 1.35), dark)
+			for z in [-0.9, -0.35, 0.3, 0.85]:
+				_cylinder(e, 0.035, 0.035, 1.2, Vector3(1.5, 1.9, z), moss)
+			for m in [Vector3(2.2, 0.15, 2.2), Vector3(1.9, 0.15, -2.3), Vector3(1.0, 0.15, 3.0)]:
+				_cylinder(e, 0.05, 0.05, 0.3, m, _mat(Color(0.85, 0.85, 0.75)))
+				_ball(e, m + Vector3(0.0, 0.2, 0.0), Vector3(0.22, 0.1, 0.22), glow)
+			_light(e, Vector3(2.4, 1.0, 0.0), theme.glow, 0.8, 5.0)
+			_solid(e, Vector3(4.6, 3.2, 6.6), Vector3(-2.3, 1.6, 0.0))
+			for z in [-1.9, 1.9]:
+				_solid(e, Vector3(1.8, 1.6, 1.6), Vector3(0.6, 0.8, z))
+		"ice":  # an igloo of ice blocks, with its tunnel
+			var snow := _mat(Color(0.93, 0.95, 0.98))
+			_ball(e, Vector3(-0.4, 0.05, 0.0), Vector3(4.4, 0.35, 4.4), snow)
+			var dome := SphereMesh.new()
+			dome.radius = 2.6
+			dome.height = 2.6
+			dome.is_hemisphere = true
+			dome.radial_segments = 24
+			dome.rings = 8
+			_add(e, dome, Vector3(-0.8, 0.0, 0.0), stone)
+			for h in [0.65, 1.25, 1.8, 2.25]:
+				var ring := TorusMesh.new()
+				var r := sqrt(2.62 * 2.62 - h * h)
+				ring.inner_radius = r - 0.04
+				ring.outer_radius = r + 0.04
+				_add(e, ring, Vector3(-0.8, h, 0.0), trim)
+			_cylinder(e, 1.25, 1.25, 2.6, Vector3(1.6, 0.0, 0.0), stone, Vector3(0.0, 0.0, PI / 2.0), 20)
+			_cylinder(e, 0.95, 0.95, 0.1, Vector3(2.92, 0.0, 0.0), _dark(), Vector3(0.0, 0.0, PI / 2.0), 20)
+			_solid(e, Vector3(5.2, 2.7, 5.2), Vector3(-0.8, 1.3, 0.0))
+			_solid(e, Vector3(2.6, 1.3, 2.5), Vector3(1.5, 0.65, 0.0))
+	_sign(e, theme.entrance, Vector3(2.4, {"crypt": 8.0, "ice": 3.6}.get(theme_id, 5.4), 0.0), Color(theme.key_color).lightened(0.3))
+
+
+# --- Inside --------------------------------------------------------------------------------
+
+static func _interior(root: Node3D, layout: Dictionary, theme: Dictionary, theme_id: String, wall_mat: Material) -> void:
+	var d: Dictionary = layout.dungeon
+	var inside := Node3D.new()
+	inside.name = "Dungeon"
+	root.add_child(inside)
+	var stone := _mat(theme.wall)
+	var trim := _mat(theme.trim)
+	var glow := _glow_mat(theme.glow)
+	# Pillars.
+	for p: Vector3 in d.pillars:
+		match theme_id:
+			"cave":  # stalagmites
+				_cylinder(inside, 0.12, 0.85, 3.2, p + Vector3(0.0, 1.6, 0.0), stone, Vector3.ZERO, 9)
+			"ice":  # ice crystals
+				_cylinder(inside, 0.15, 0.75, 3.6, p + Vector3(0.0, 1.8, 0.0), wall_mat, Vector3(0.0, 0.4, 0.0), 6)
+			_:
+				_box(inside, Vector3(1.2, 3.4, 1.2), p + Vector3(0.0, 1.7, 0.0), stone)
+				_box(inside, Vector3(1.5, 0.3, 1.5), p + Vector3(0.0, 3.4, 0.0), trim)
+				_box(inside, Vector3(1.5, 0.3, 1.5), p + Vector3(0.0, 0.15, 0.0), trim)
+				if theme_id == "ancient":
+					_box(inside, Vector3(1.22, 0.12, 1.22), p + Vector3(0.0, 2.4, 0.0), glow)
+		_solid(inside, Vector3(1.2, 3.4, 1.2), p + Vector3(0.0, 1.7, 0.0))
+	# Along the walls (the far and side walls; the low camera-side ones stay bare).
+	var decor := MultiMesh.new()
+	decor.transform_format = MultiMesh.TRANSFORM_3D
+	var shape: Mesh
+	var shape_mat: Material = trim
+	match theme_id:
+		"cave":
+			var lump := SphereMesh.new()
+			lump.radius = 1.0
+			lump.height = 2.0
+			lump.radial_segments = 10
+			lump.rings = 6
+			shape = lump
+			shape_mat = stone
+		"ice":
+			var shard := CylinderMesh.new()
+			shard.top_radius = 0.02
+			shard.bottom_radius = 0.35
+			shard.height = 1.6
+			shard.radial_segments = 5
+			shape = shard
+			shape_mat = wall_mat
+		"ancient":
+			var rune := BoxMesh.new()
+			rune.size = Vector3(0.06, 0.22, 1.1)
+			shape = rune
+			shape_mat = glow
+		_:
+			var niche := BoxMesh.new()
+			niche.size = Vector3(0.08, 0.9, 1.2)
+			shape = niche
+			shape_mat = _dark() if theme_id == "crypt" else trim
+	decor.mesh = shape
+	var spots: Array[Transform3D] = []
+	var rng := RandomNumberGenerator.new()
+	rng.seed = int(d.arrive.x * 1000.0 + d.arrive.z)
+	for cell: Dictionary in layout.cells:
+		if cell.get("grid", "") != "dungeon":
+			continue
+		var r: Rect2 = cell.rect
+		for side in ["n", "w", "e"]:
+			if not cell.closed[side]:
+				continue
+			for k in range(1, 5):
+				var t := k / 5.0
+				var pos: Vector3
+				var inward: Vector3
+				match side:
+					"n":
+						pos = Vector3(r.position.x + 0.55, 0.0, lerpf(r.position.y, r.end.y, t))
+						inward = Vector3(1, 0, 0)
+					"w":
+						pos = Vector3(lerpf(r.position.x, r.end.x, t), 0.0, r.end.y - 0.55)
+						inward = Vector3(0, 0, -1)
+					"e":
+						pos = Vector3(lerpf(r.position.x, r.end.x, t), 0.0, r.position.y + 0.55)
+						inward = Vector3(0, 0, 1)
+				var basis := Basis.looking_at(-inward, Vector3.UP).rotated(Vector3.UP, PI / 2.0)
+				match theme_id:
+					"cave":
+						var sz := rng.randf_range(0.5, 1.1)
+						spots.append(Transform3D(Basis().scaled(Vector3(sz, sz * rng.randf_range(0.8, 1.6), sz)), pos + Vector3(0.0, sz * 0.4, 0.0)))
+					"ice":
+						spots.append(Transform3D(Basis().rotated(inward.cross(Vector3.UP), -0.35).scaled(Vector3.ONE * rng.randf_range(0.7, 1.3)), pos + Vector3(0.0, 0.7, 0.0)))
+					"ancient":
+						spots.append(Transform3D(basis, pos + Vector3(0.0, 2.3, 0.0) - inward * 0.02))
+					_:
+						spots.append(Transform3D(basis, pos + Vector3(0.0, 1.7, 0.0) - inward * 0.03))
+	decor.instance_count = spots.size()
+	for i in spots.size():
+		decor.set_instance_transform(i, spots[i])
+	var decor_node := MultiMeshInstance3D.new()
+	decor_node.multimesh = decor
+	decor_node.material_override = shape_mat
+	inside.add_child(decor_node)
+	# Braziers (with light) in the first room, the Keeper's and a few between.
+	var lit := 0
+	for cell: Dictionary in layout.cells:
+		if cell.get("grid", "") != "dungeon":
+			continue
+		var r: Rect2 = cell.rect
+		var wanted: bool = cell.kind != "dungeon" or (lit < 6 and rng.randf() < 0.45)
+		if not wanted:
+			continue
+		lit += 1
+		for z in ([-3.5, 3.5] if cell.kind == "dungeon_keeper" else [0.0]):
+			var at := Vector3(r.position.x + 1.6, 0.0, r.get_center().y + z)
+			_cylinder(inside, 0.12, 0.2, 1.0, at + Vector3(0.0, 0.5, 0.0), trim)
+			_cylinder(inside, 0.45, 0.25, 0.3, at + Vector3(0.0, 1.1, 0.0), trim)
+			_ball(inside, at + Vector3(0.0, 1.35, 0.0), Vector3(0.3, 0.42, 0.3), glow)
+			_solid(inside, Vector3(0.8, 1.3, 0.8), at + Vector3(0.0, 0.65, 0.0))
+		_light(inside, Vector3(r.get_center().x - 3.0, 2.6, r.get_center().y), theme.glow, 1.3, 13.0)
+
+
+## The stairs back up, against the first room's left wall.
+static func _stairs(root: Node3D, at: Vector3, theme: Dictionary) -> void:
+	var s := Node3D.new()
+	s.name = "DungeonExit"
+	s.position = at
+	root.add_child(s)
+	var trim := _mat(Color(theme.trim).lightened(0.15))
+	for k in 4:
+		_box(s, Vector3(3.0, 0.25 + 0.25 * k, 0.6), Vector3(0.0, (0.25 + 0.25 * k) * 0.5, 1.2 + 0.6 * k - 0.9), trim)
+	_box(s, Vector3(2.4, 2.4, 0.1), Vector3(0.0, 1.2, 2.1), _dark())
+	_light(s, Vector3(0.0, 2.2, 0.0), Color(1.0, 0.95, 0.85), 1.0, 7.0)
+	_sign(s, "Way out", Vector3(0.0, 3.0, 0.8), Color(0.95, 0.92, 0.8))
+
+
+## The key, floating and turning (hidden until the Keeper drops it; World.refresh_key).
+static func _key(root: Node3D, theme: Dictionary) -> void:
+	var k := Node3D.new()
+	k.name = "KeyPickup"
+	k.visible = false
+	root.add_child(k)
+	var spin := Node3D.new()
+	spin.name = "Spin"
+	spin.position = Vector3(0.0, 1.2, 0.0)
+	k.add_child(spin)
+	var gold := _mat(theme.key_color, theme.key_color, 1.2)
+	gold.metallic = 0.8
+	gold.roughness = 0.3
+	var bow := TorusMesh.new()
+	bow.inner_radius = 0.16
+	bow.outer_radius = 0.3
+	_add(spin, bow, Vector3(0.0, 0.45, 0.0), gold, Vector3(PI / 2.0, 0.0, 0.0))
+	_box(spin, Vector3(0.09, 0.85, 0.09), Vector3(0.0, -0.15, 0.0), gold)
+	_box(spin, Vector3(0.22, 0.08, 0.09), Vector3(0.1, -0.45, 0.0), gold)
+	_box(spin, Vector3(0.16, 0.08, 0.09), Vector3(0.08, -0.28, 0.0), gold)
+	_light(k, Vector3(0.0, 1.4, 0.0), theme.key_color, 1.6, 5.0)
+	_ball(k, Vector3(0.0, 0.03, 0.0), Vector3(0.7, 0.02, 0.7), _glow_mat(theme.key_color))
+
+
+## The gate across the corridor to the boss: two posts, a beam and iron bars.
+static func _gate(root: Node3D, at: Vector3, span: Vector2, theme: Dictionary) -> void:
+	var g := Node3D.new()
+	g.name = "BossGate"
+	g.position = at
+	root.add_child(g)
+	var half := span.x * 0.5
+	var stone := _mat(Color(theme.trim).darkened(0.1))
+	var iron := _mat(Color(0.18, 0.18, 0.2))
+	iron.metallic = 0.7
+	iron.roughness = 0.45
+	for x in [-half - 0.4, half + 0.4]:
+		_box(g, Vector3(1.0, 4.2, 1.0), Vector3(x, 2.1, 0.0), stone)
+	_box(g, Vector3(span.x + 1.8, 0.7, 1.1), Vector3(0.0, 4.25, 0.0), stone)
+	var bars := Node3D.new()
+	bars.name = "Bars"
+	g.add_child(bars)
+	var x := -half + 0.35
+	while x <= half - 0.3:
+		_cylinder(bars, 0.07, 0.07, 3.8, Vector3(x, 1.9, 0.0), iron, Vector3.ZERO, 8)
+		x += 0.7
+	for y in [0.8, 2.6]:
+		_box(bars, Vector3(span.x, 0.12, 0.14), Vector3(0.0, y, 0.0), iron)
+	var block := StaticBody3D.new()
+	block.name = "Block"
+	var shape := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = Vector3(span.x + 1.0, 4.0, 0.8)
+	shape.shape = box
+	block.add_child(shape)
+	block.position = Vector3(0.0, 2.0, 0.0)
+	g.add_child(block)
+	var sign := _sign(g, "Locked: find the %s" % theme.key, Vector3(0.0, 5.2, 0.0), Color(theme.key_color).lightened(0.3))
+	sign.name = "LockSign"

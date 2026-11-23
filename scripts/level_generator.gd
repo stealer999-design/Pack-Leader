@@ -455,6 +455,16 @@ const GATE_WIDTH := 6.0
 ## A tile's sides: s = +x (towards the camera), n = -x, w = +z (towards the camp), e = -z (towards the boss).
 const SIDES := {"s": Vector2i(0, 1), "n": Vector2i(0, -1), "w": Vector2i(-1, 0), "e": Vector2i(1, 0)}
 const TEMPLATES := ["open", "grove", "scatter", "pillars", "ruins"]
+## The key dungeon (DungeonDB): a small maze of DUNGEON_COLS x DUNGEON_ROWS
+## rooms, DUNGEON_TILE a side, laid out off to the side of the map (beyond
+## the camera-facing edge, out of sight). Its rooms are tiles like the map's
+## (in layout.cells, with "grid": "dungeon"), keyed DUNGEON_KEY + their place.
+const DUNGEON_TILE := 20.0
+const DUNGEON_COLS := 4
+const DUNGEON_ROWS := 3
+const DUNGEON_KEY := 100
+const DUNGEON_GAP := 70.0  ## Between the map's camera-facing edge and the dungeon.
+const ENTRANCE_CLEARANCE := 9.0  ## Nothing else is placed this close to the dungeon entrance.
 
 
 ## The tile layout, with the same keys as a path layout (where they make sense)
@@ -554,6 +564,17 @@ static func generate_open(level_seed: int, path: Dictionary) -> Dictionary:
 		cells.append({"cell": c, "rect": cell_rect(c), "kind": kind, "closed": closed,
 				"template": TEMPLATES[rng.randi() % TEMPLATES.size()] if kind == "field" else kind})
 
+	# The dungeon's entrance: a field tile in the middle columns, kept open.
+	var entrance_options := cells.filter(func(c: Dictionary) -> bool:
+		return c.kind == "field" and c.cell.x >= 2 and c.cell.x <= GRID_COLS - 2)
+	if entrance_options.is_empty():
+		entrance_options = cells.filter(func(c: Dictionary) -> bool: return c.kind == "field")
+	var entrance_cell: Dictionary = entrance_options[rng.randi() % entrance_options.size()]
+	entrance_cell.template = "open"
+	entrance_cell.entrance = true
+	var entrance_at := Vector3(entrance_cell.rect.get_center().x - 4.0, 0.0, entrance_cell.rect.get_center().y)
+	var dungeon := _dungeon(rng, cells, cell_index, entrance_at)
+
 	# The boss arena, off the boss tile's right side.
 	var boss_rect := cell_rect(boss_cell)
 	var arena_x := boss_rect.get_center().x
@@ -565,7 +586,9 @@ static func generate_open(level_seed: int, path: Dictionary) -> Dictionary:
 	var grid_rect := Rect2(-GRID_ROWS * TILE * 0.5, -GRID_COLS * TILE, GRID_ROWS * TILE, GRID_COLS * TILE)
 	var layout := {"open": true, "tile": true, "cells": cells, "cell_index": cell_index, "left_z": 0.0,
 			"total_length": -right_z, "arena_rect": arena_rect, "corridor_rect": corridor_rect,
-			"mouth": Vector3(arena_x, 0.0, mouth_z), "bounds": grid_rect.merge(arena_rect)}
+			"mouth": Vector3(arena_x, 0.0, mouth_z), "bounds": grid_rect.merge(arena_rect), "dungeon": dungeon,
+			# The gate across the corridor to the boss, opened by the dungeon's key.
+			"gate": Vector3(arena_x, 0.0, mouth_z - 3.0)}
 	var camp_center := Vector3(cell_rect(camp_cell).get_center().x, 0.0, cell_rect(camp_cell).get_center().y)
 	var arena_center := Vector3(arena_x, 0.0, arena_rect.get_center().y)
 	var mouth := Vector3(arena_x, 0.0, mouth_z)
@@ -590,6 +613,10 @@ static func generate_open(level_seed: int, path: Dictionary) -> Dictionary:
 			return true
 		if Vector2(p.x - mouth.x, p.z - mouth.z).length() < 14.0:
 			return true
+		if Vector2(p.x - entrance_at.x, p.z - entrance_at.z).length() < ENTRANCE_CLEARANCE:
+			return true
+		if cell_at(layout, p) >= 0 and layout.cells[cell_at(layout, p)].get("grid", "") == "dungeon":
+			return true  # the dungeon fills itself (_dungeon)
 		var q := p - town
 		return plaza.grow(7.0).has_point(Vector2(q.x, q.z))
 	var far_enough := func(p: Vector3, spacing: float) -> bool:
@@ -605,6 +632,8 @@ static func generate_open(level_seed: int, path: Dictionary) -> Dictionary:
 			taken.append(p)
 			rocks.append({"pos": p, "size": Vector3(rng.randf_range(1.5, 3.5), rng.randf_range(1.5, 3.0), rng.randf_range(1.5, 3.5))})
 	for cell: Dictionary in cells:
+		if cell.get("grid", "") == "dungeon":
+			continue
 		var r: Rect2 = cell.rect
 		var mid := Vector3(r.get_center().x, 0.0, r.get_center().y)
 		var spread := func() -> Vector3:
@@ -701,7 +730,8 @@ static func generate_open(level_seed: int, path: Dictionary) -> Dictionary:
 		"stable_point": camp_center + Vector3(-8.0, 0.0, 2.0),
 		"rival_point": arena_center,
 		"exit_point": Vector3(arena_x, 0.0, right_z + 7.0),
-		"travel_point": Vector3(arena_x - 4.5, 0.0, right_z + 7.0),
+		# Tile levels: the Travel portal is at the camp (the arena is behind the key gate).
+		"travel_point": camp_center + Vector3(5.0, 0.0, -6.0),
 		"hub_portals": [],
 		"rival_name": path.rival_name,
 		"rival_species": path.rival_species,
@@ -735,7 +765,119 @@ static func _shuffle(rng: RandomNumberGenerator, list: Array) -> void:
 ## The tile a level-local point is on (its index in layout.cells), or -1.
 static func cell_at(layout: Dictionary, p: Vector3) -> int:
 	var c := Vector2i(floori(-p.z / TILE), floori((p.x + GRID_ROWS * TILE * 0.5) / TILE))
-	return layout.cell_index.get(c, -1)
+	var i: int = layout.cell_index.get(c, -1)
+	if i >= 0:
+		return i
+	var o := dungeon_origin()
+	var d := Vector2i(DUNGEON_KEY + floori((o.y - p.z) / DUNGEON_TILE), DUNGEON_KEY + floori((p.x - o.x) / DUNGEON_TILE))
+	return layout.cell_index.get(d, -1)
+
+
+## The dungeon's corner: x of its far side, z of its left (camp) side.
+static func dungeon_origin() -> Vector2:
+	return Vector2(GRID_ROWS * TILE * 0.5 + DUNGEON_GAP, -30.0)
+
+
+## A dungeon room's square (`c` = its place, column and row).
+static func dungeon_rect(c: Vector2i) -> Rect2:
+	var o := dungeon_origin()
+	return Rect2(o.x + c.y * DUNGEON_TILE, o.y - (c.x + 1) * DUNGEON_TILE, DUNGEON_TILE, DUNGEON_TILE)
+
+
+## True if a level-local point is in the dungeon.
+static func in_dungeon(layout: Dictionary, p: Vector3) -> bool:
+	var d: Dictionary = layout.get("dungeon", {})
+	return not d.is_empty() and (d.bounds as Rect2).grow(2.0).has_point(Vector2(p.x, p.z))
+
+
+## The key dungeon: a maze of rooms (a random spanning tree, plus a few
+## loops), added to `cells` (as "grid": "dungeon"). You arrive in the first
+## room (at the left, its stairs back up against its left wall) and the
+## Keeper waits in the room furthest from it, round its four pillars; two or
+## three packs hold the rooms between. Returns {entrance, back (where you come
+## out, in front of the entrance), arrive, exit, keeper: Vector3, spots:
+## [{pos, group}], pillars: [Vector3], bounds: Rect2}.
+static func _dungeon(rng: RandomNumberGenerator, cells: Array[Dictionary], cell_index: Dictionary,
+		entrance_at: Vector3) -> Dictionary:
+	var inside := func(c: Vector2i) -> bool: return c.x >= 0 and c.x < DUNGEON_COLS and c.y >= 0 and c.y < DUNGEON_ROWS
+	var start := Vector2i(0, rng.randi_range(0, DUNGEON_ROWS - 1))
+	var links := {}
+	var seen := {start: true}
+	var stack: Array[Vector2i] = [start]
+	while not stack.is_empty():
+		var here: Vector2i = stack[-1]
+		var next: Array[Vector2i] = []
+		for d: Vector2i in SIDES.values():
+			if inside.call(here + d) and not seen.has(here + d):
+				next.append(here + d)
+		if next.is_empty():
+			stack.pop_back()
+			continue
+		var go: Vector2i = next[rng.randi() % next.size()]
+		links[_link_key(here, go)] = true
+		seen[go] = true
+		stack.append(go)
+	for c: Vector2i in seen:
+		for d in [Vector2i(1, 0), Vector2i(0, 1)]:
+			if seen.has(c + d) and rng.randf() < 0.2:
+				links[_link_key(c, c + d)] = true
+	# The Keeper's room: the furthest from the first, by the maze's paths.
+	var dist := {start: 0}
+	var queue: Array[Vector2i] = [start]
+	var far := start
+	while not queue.is_empty():
+		var c: Vector2i = queue.pop_front()
+		if dist[c] > dist[far]:
+			far = c
+		for d: Vector2i in SIDES.values():
+			if links.has(_link_key(c, c + d)) and not dist.has(c + d):
+				dist[c + d] = dist[c] + 1
+				queue.append(c + d)
+	var pillars: Array[Vector3] = []
+	var spots: Array[Dictionary] = []
+	var middle_rooms: Array[Rect2] = []
+	for col in DUNGEON_COLS:
+		for row in DUNGEON_ROWS:
+			var c := Vector2i(col, row)
+			var closed := {}
+			for side: String in SIDES:
+				closed[side] = not links.has(_link_key(c, c + SIDES[side]))
+			var kind := "dungeon_entry" if c == start else ("dungeon_keeper" if c == far else "dungeon")
+			var r := dungeon_rect(c)
+			cell_index[Vector2i(DUNGEON_KEY + col, DUNGEON_KEY + row)] = cells.size()
+			cells.append({"cell": Vector2i(DUNGEON_KEY + col, DUNGEON_KEY + row), "rect": r, "kind": kind, "closed": closed,
+					"template": kind, "grid": "dungeon"})
+			var mid := Vector3(r.get_center().x, 0.0, r.get_center().y)
+			if kind == "dungeon_keeper":
+				for k in [Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1)]:
+					pillars.append(mid + Vector3(k.x, 0.0, k.y) * 6.0)
+			elif kind == "dungeon":
+				middle_rooms.append(r)
+				if rng.randf() < 0.5:
+					for k in [Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1)]:
+						pillars.append(mid + Vector3(k.x, 0.0, k.y) * 5.5)
+	# Packs in two or three of the rooms between (packs of 3-4, round the room's middle).
+	_shuffle(rng, middle_rooms)
+	for group in mini(rng.randi_range(2, 3), middle_rooms.size()):
+		var r: Rect2 = middle_rooms[group]
+		var mid := Vector3(r.get_center().x, 0.0, r.get_center().y)
+		var size := rng.randi_range(3, 4)
+		for k in size:
+			var angle: float = TAU * k / size + rng.randf_range(-0.3, 0.3)
+			spots.append({"pos": mid + Vector3(cos(angle), 0.0, sin(angle)) * rng.randf_range(1.5, 3.2), "group": 1000 + group})
+	var first := dungeon_rect(start)
+	var keeper_room := dungeon_rect(far)
+	var o := dungeon_origin()
+	return {
+		"entrance": entrance_at,
+		"door": entrance_at + Vector3(2.6, 0.0, 0.0),  # walk in here
+		"back": entrance_at + Vector3(5.5, 0.0, 0.0),  # where you come out
+		"arrive": Vector3(first.get_center().x, 0.0, first.get_center().y),
+		"exit": Vector3(first.get_center().x, 0.0, first.end.y - 2.5),  # the stairs back up
+		"keeper": Vector3(keeper_room.get_center().x, 0.0, keeper_room.get_center().y),
+		"spots": spots, "pillars": pillars,
+		"bounds": Rect2(o.x, o.y - DUNGEON_COLS * DUNGEON_TILE, DUNGEON_ROWS * DUNGEON_TILE, DUNGEON_COLS * DUNGEON_TILE),
+	}
 
 
 const PACK_MIN := 3

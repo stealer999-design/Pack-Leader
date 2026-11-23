@@ -60,6 +60,18 @@ var exit_open := false:
 		if is_node_ready():
 			portal.visible = v
 
+## Replicated (tile levels): where the dungeon's key lies (level-local), and
+## the key's state: 0 = its Keeper still has it, 1 = dropped at key_pos,
+## 2 = picked up, which opens the gate to the boss arena. key_pos is listed
+## before key_state in the sync config, so it's there first.
+var key_pos := Vector3.ZERO
+var key_state := 0:
+	set(v):
+		key_state = v
+		if is_node_ready():
+			refresh_key()
+var _door_ready := {}  ## Peer id -> when (msec) they can use a dungeon door again.
+
 ## Replicated: the furthest area anyone has reached in this game. The travel
 ## portal can take the party back to any area up to it.
 var furthest_level := 0
@@ -160,6 +172,11 @@ func _process(delta: float) -> void:
 		portal.rotate_y(delta * 1.5)
 	if travel_portal.visible:
 		travel_portal.rotate_y(-delta * 1.2)
+	var key := level_root.get_node_or_null("KeyPickup") as Node3D
+	if key and key.visible:
+		var spin := key.get_node("Spin") as Node3D
+		spin.rotate_y(delta * 2.0)
+		spin.position.y = 1.2 + sin(Time.get_ticks_msec() / 400.0) * 0.12
 	var hub := level_root.get_node_or_null("HubPortals")
 	if hub:
 		for p: Node3D in hub.get_children():
@@ -174,6 +191,8 @@ func _physics_process(delta: float) -> void:
 	_tick_zones(delta)
 	_tick_traps(delta)
 	_check_checkpoints()
+	_check_dungeon_doors()
+	_collect_key()
 	if is_crossroads() and not _advancing:
 		_check_hub_portals()
 	if not exit_open or _advancing:
@@ -599,6 +618,7 @@ func _start_level(number: int) -> void:
 			+ loot_root.get_children():
 		node.queue_free()
 	exit_open = false
+	key_state = 0
 	furthest_level = maxi(furthest_level, number)
 	level_state = Vector2i(randi_range(1, 2_000_000_000), number)  # rebuilds the level here and on clients
 
@@ -640,6 +660,8 @@ func _start_level(number: int) -> void:
 		})
 	for crate: Dictionary in layout.crate_spots:
 		crate_spawner.spawn({"pos": level_root.to_global(crate.pos), "gold": crate.gold, "level": number})
+	if has_dungeon():
+		_spawn_dungeon(levels)
 	var boss_pos := level_root.to_global(layout.rival_point)
 	if not BiomeDB.has_named_boss(number):
 		# The first two levels of Acts 2-5 end with a Champion instead of the named boss.
@@ -659,6 +681,97 @@ func _start_level(number: int) -> void:
 		announce.rpc("%s: find and defeat %s!" % [level_biome.name, boss_objective_name()], Color(1, 0.9, 0.5))
 	else:
 		announce.rpc("%s: defeat %s!" % [level_biome.name, boss_objective_name()], Color(1, 0.9, 0.5))
+
+
+## Server: the dungeon's packs (as tough as the deeper half of the map) and
+## its Keeper, an elite of the area's top level, in the last room.
+func _spawn_dungeon(levels: Vector2i) -> void:
+	var d: Dictionary = layout.dungeon
+	var kinds := {}
+	for spot: Dictionary in d.spots:
+		var leader: bool = not kinds.has(spot.group)
+		if leader:
+			kinds[spot.group] = SpeciesDB.pick_random_index(biome().species)
+		creature_spawner.spawn({"species": kinds[spot.group], "level": mini(levels.x + 2 + randi() % 3, levels.y),
+				"pos": level_root.to_global(spot.pos), "leader": leader})
+	creature_spawner.spawn({"species": SpeciesDB.pick_random_index(biome().species), "level": levels.y,
+			"pos": level_root.to_global(d.keeper), "keeper": true})
+
+
+## Server: a dungeon's Keeper fell: it drops the key (and some loot).
+func on_keeper_defeated(keeper: Creature) -> void:
+	if not has_dungeon() or key_state != 0:
+		return
+	key_pos = level_root.to_local(keeper.global_position)
+	key_pos.y = 0.0
+	key_state = 1
+	announce.rpc("The %s dropped the %s!" % [keeper.title(), dungeon_theme().key], Color(dungeon_theme().key_color))
+	play_burst.rpc(keeper.global_position, dungeon_theme().key_color, 3.0)
+	roll_loot(keeper.global_position, 1.0, -1, ItemDB.MAGIC, 2, 0.3, true)
+
+
+## Server: whoever walks onto the dropped key picks it up for everyone: the gate opens.
+func _collect_key() -> void:
+	if key_state != 1:
+		return
+	var at := level_root.to_global(key_pos)
+	for p in get_players():
+		if not p.downed and _flat_distance(p.global_position, at) < 1.8:
+			key_state = 2
+			announce.rpc("%s took the %s: the gate to %s is open!" % [p.display_name, dungeon_theme().key, boss_objective_name()],
+					Color(dungeon_theme().key_color))
+			return
+
+
+## Server: players walking into the dungeon's entrance go down into it (their
+## pets with them), and up its stairs come back out in front of the entrance.
+func _check_dungeon_doors() -> void:
+	if not has_dungeon() or _advancing:
+		return
+	var d: Dictionary = layout.dungeon
+	var now := Time.get_ticks_msec()
+	for p in get_players():
+		if p.downed or now < int(_door_ready.get(p.peer_id, 0)):
+			continue
+		var at := level_root.to_local(p.global_position)
+		var to := Vector3.INF
+		if Vector2(at.x - d.door.x, at.z - d.door.z).length() < 1.8:
+			to = d.arrive
+			if key_state == 0:
+				tell(p.peer_id, "You enter %s. Find its Keeper and take the %s." % [dungeon_theme().place, dungeon_theme().key],
+						Color(dungeon_theme().key_color))
+		elif Vector2(at.x - d.exit.x, at.z - d.exit.z).length() < 1.8:
+			to = d.back
+		if to == Vector3.INF:
+			continue
+		_door_ready[p.peer_id] = now + 1500
+		var dest := level_root.to_global(to)
+		p._respawn_at.rpc_id(p.peer_id, dest)
+		for pet in get_pets(p.peer_id):
+			if not pet.fainted:
+				pet.global_position = dest + pet._follow_offset()
+				pet.target = null
+				pet.set_focus(null)
+
+
+## Shows the key (dropped or not) and opens or closes the gate (every peer).
+func refresh_key() -> void:
+	var key := level_root.get_node_or_null("KeyPickup") as Node3D
+	if key:
+		key.visible = key_state == 1
+		key.position = key_pos
+	var gate := level_root.get_node_or_null("BossGate") as Node3D
+	if gate == null:
+		return
+	var open := key_state == 2
+	(gate.get_node("LockSign") as Label3D).visible = not open
+	var shape := gate.get_node("Block").get_child(0) as CollisionShape3D
+	shape.set_deferred("disabled", open)
+	var bars := gate.get_node("Bars") as Node3D
+	var target_y := -3.7 if open else 0.0
+	if not is_equal_approx(bars.position.y, target_y):
+		var tween := create_tween()
+		tween.tween_property(bars, "position:y", target_y, 1.4 if open else 0.01).set_trans(Tween.TRANS_SINE)
 
 
 ## Which monster is the Champion of this level: the biome's "champions" list
@@ -1109,6 +1222,7 @@ func _build_level() -> void:
 		_build_hub_portals()
 	ModelLook.apply(level_root)  # walls, buildings, fences, obstacles: realistic surfaces
 	ModelLook.apply(stable)
+	refresh_key()
 	level_changed.emit()
 	_warm_up()
 
@@ -1582,10 +1696,10 @@ func _add_door(at: Vector3, door_mat: Material, frame_mat: Material) -> void:
 
 
 ## A wall along z at local `x`, from `z_from` to `z_to`.
-func _add_wall_z(x: float, z_from: float, z_to: float, mat: Material, low := false) -> void:
+func _add_wall_z(x: float, z_from: float, z_to: float, mat: Material, low := false, height := 2.0) -> void:
 	var length := absf(z_from - z_to)
 	if length > 0.05:
-		_add_box(Vector3(x, 1.0, (z_from + z_to) * 0.5), Vector3(1.0, 2.0, length), mat, low)
+		_add_box(Vector3(x, height * 0.5, (z_from + z_to) * 0.5), Vector3(1.0, height, length), mat, low)
 
 
 ## A market stall in level space at `point`, turned by `rot_y` (its counter faces
@@ -1737,16 +1851,25 @@ func _build_path(floor_mat: Material, camp_mat: Material, arena_mat: Material, w
 func _build_open(floor_mat: Material, camp_mat: Material, arena_mat: Material, wall_mat: StandardMaterial3D) -> void:
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var under := SurfaceTool.new()  # the dungeon's floor
+	under.begin(Mesh.PRIMITIVE_TRIANGLES)
 	for cell: Dictionary in layout.cells:
 		var r: Rect2 = cell.rect
 		var closed: Dictionary = cell.closed
 		# Tucked under the walls on closed sides; edge to edge with the next tile on open ones.
 		var lo := Vector2(r.position.x - (0.6 if closed.n else 0.0), r.position.y - (0.6 if closed.e else 0.0))
 		var hi := Vector2(r.end.x + (0.6 if closed.s else 0.0), r.end.y + (0.6 if closed.w else 0.0))
-		_up_quad(st, Vector3(lo.x, 0, lo.y), Vector3(hi.x, 0, lo.y), Vector3(hi.x, 0, hi.y), Vector3(lo.x, 0, hi.y))
+		_up_quad(under if cell.get("grid", "") == "dungeon" else st,
+				Vector3(lo.x, 0, lo.y), Vector3(hi.x, 0, lo.y), Vector3(hi.x, 0, hi.y), Vector3(lo.x, 0, hi.y))
 	var floor_mesh := st.commit()
 	floor_mesh.surface_set_material(0, floor_mat)
 	_add_solid(floor_mesh, floor_mesh)
+	var theme := dungeon_theme()
+	if layout.has("dungeon"):
+		var dungeon_floor := under.commit()
+		dungeon_floor.surface_set_material(0, GroundTextures.material(theme.floor_style, theme.floor))
+		_add_solid(dungeon_floor, dungeon_floor)
+	var dungeon_wall := _dungeon_wall_material(theme)
 	# The camp patch, just above the floor (no collision of its own).
 	_add_disc(layout.camp_center, LevelGenerator.CAMP_RADIUS, camp_mat)
 	_build_boss_arena(floor_mat, arena_mat, wall_mat)
@@ -1754,6 +1877,9 @@ func _build_open(floor_mat: Material, camp_mat: Material, arena_mat: Material, w
 	var corridor: Rect2 = layout.corridor_rect
 	for cell: Dictionary in layout.cells:
 		var r: Rect2 = cell.rect
+		var under_ground: bool = cell.get("grid", "") == "dungeon"
+		var mat: Material = dungeon_wall if under_ground else wall_mat
+		var high := DUNGEON_WALL_HEIGHT if under_ground else 2.0
 		for side: String in LevelGenerator.SIDES:
 			if not cell.closed[side]:
 				continue
@@ -1763,21 +1889,23 @@ func _build_open(floor_mat: Material, camp_mat: Material, arena_mat: Material, w
 				continue
 			match side:
 				"s":  # towards the camera: always low
-					_add_wall_z(r.end.x, r.end.y + WALL_OVERLAP, r.position.y - WALL_OVERLAP, wall_mat, true)
+					_add_wall_z(r.end.x, r.end.y + WALL_OVERLAP, r.position.y - WALL_OVERLAP, mat, true, high)
 				"n":
-					_add_wall_z(r.position.x, r.end.y + WALL_OVERLAP, r.position.y - WALL_OVERLAP, wall_mat)
+					_add_wall_z(r.position.x, r.end.y + WALL_OVERLAP, r.position.y - WALL_OVERLAP, mat, false, high)
 				"w":
-					_add_wall_x(r.end.y, r.position.x - WALL_OVERLAP, r.end.x + WALL_OVERLAP, wall_mat)
+					_add_wall_x(r.end.y, r.position.x - WALL_OVERLAP, r.end.x + WALL_OVERLAP, mat, false, high)
 				"e":
 					if cell.kind == "boss":  # the doorway into the corridor to the boss
-						_add_wall_x(r.position.y, r.position.x - WALL_OVERLAP, corridor.position.x - 0.5, wall_mat)
-						_add_wall_x(r.position.y, corridor.end.x + 0.5, r.end.x + WALL_OVERLAP, wall_mat)
+						_add_wall_x(r.position.y, r.position.x - WALL_OVERLAP, corridor.position.x - 0.5, mat)
+						_add_wall_x(r.position.y, corridor.end.x + 0.5, r.end.x + WALL_OVERLAP, mat)
 					else:
-						_add_wall_x(r.position.y, r.position.x - WALL_OVERLAP, r.end.x + WALL_OVERLAP, wall_mat)
+						_add_wall_x(r.position.y, r.position.x - WALL_OVERLAP, r.end.x + WALL_OVERLAP, mat, false, high)
 	# Ruins: broken stubs of stone wall, a run of blocks of uneven height.
 	var ruin_mat := GroundTextures.material("cobble", Color(biome().rock).lerp(Color(0.6, 0.57, 0.52), 0.5))
 	var rng := RandomNumberGenerator.new()
 	rng.seed = level_state.x ^ 0x2b1
+	if layout.has("dungeon"):
+		DungeonBuilder.build(self, layout, theme, DungeonDB.theme_id(layout.biome), dungeon_wall)
 	for stub: Rect2 in layout.ruins:
 		var along_x := stub.size.x > stub.size.y
 		var length := maxf(stub.size.x, stub.size.y)
@@ -1793,6 +1921,32 @@ func _build_open(floor_mat: Material, camp_mat: Material, arena_mat: Material, w
 
 
 const WALL_OVERLAP := 0.5  ## Walls run this far past a tile's corner, so corners close.
+const DUNGEON_WALL_HEIGHT := 3.2
+
+
+## The dungeon walls' material, by theme (carved ice glows faintly).
+func _dungeon_wall_material(theme: Dictionary) -> StandardMaterial3D:
+	var mat := _material(theme.wall)
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	if DungeonDB.theme_id(layout.get("biome", 0)) == "ice":
+		mat.roughness = 0.15
+		mat.metallic_specular = 0.9
+		mat.emission_enabled = true
+		mat.emission = Color(theme.wall).darkened(0.55)
+	return mat
+
+
+func dungeon_theme() -> Dictionary:
+	return DungeonDB.theme(layout.get("biome", 0))
+
+
+func has_dungeon() -> bool:
+	return not layout.is_empty() and layout.has("dungeon")
+
+
+## True if a point (global) is down in the level's dungeon.
+func in_dungeon(point: Vector3) -> bool:
+	return has_dungeon() and LevelGenerator.in_dungeon(layout, level_root.to_local(point))
 
 
 ## A tile level's boss arena: a walled box of flagstones off the boss tile's
@@ -1827,10 +1981,10 @@ func _build_boss_arena(floor_mat: Material, arena_mat: Material, wall_mat: Mater
 
 
 ## A wall along x at local `z`, from `x_from` to `x_to`.
-func _add_wall_x(z: float, x_from: float, x_to: float, mat: Material, low := false) -> void:
+func _add_wall_x(z: float, x_from: float, x_to: float, mat: Material, low := false, height := 2.0) -> void:
 	var length := absf(x_to - x_from)
 	if length > 0.05:
-		_add_box(Vector3((x_from + x_to) * 0.5, 1.0, z), Vector3(length, 2.0, 1.0), mat, low)
+		_add_box(Vector3((x_from + x_to) * 0.5, height * 0.5, z), Vector3(length, height, 1.0), mat, low)
 
 
 ## A flat disc of `mat` on the ground (camp dirt, arena flagstones).
@@ -1997,6 +2151,7 @@ func _spawn_creature(data: Dictionary) -> Node:
 	creature.nickname = Creature.clean_name(data.get("name", ""))
 	creature.elite = data.get("elite", false)
 	creature.pack_leader = data.get("leader", false)
+	creature.keeper = data.get("keeper", false)
 	creature.position = data.pos
 	creature.home = data.pos
 	if data.get("dead", false):

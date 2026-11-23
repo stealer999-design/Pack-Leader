@@ -201,6 +201,34 @@ played in the browser".
   from the same seed would, dealt out over the field tiles so they're spread
   along the whole strip. The monsters come in **packs of 3 to 5**, each pack
   **all one kind** (a pack of skeletons, a pack of zombies...).
+- **Key dungeons (Acts 2-5):** the boss arena's corridor is shut by an iron
+  **gate** ("Locked: find the Crypt Key"), so every tile level has a reason
+  to search it: somewhere in its middle columns stands the entrance to a
+  small **dungeon**, kept clear of trees and monsters. Walk into the doorway
+  to go down (your pets come with you); its **way out** stairs bring you back
+  in front of the entrance. Inside is a maze of 12 rooms (20 units a side,
+  a random spanning tree with a few loops, so you have to search it), two or
+  three packs in the rooms between, and in the room furthest from the stairs,
+  round four pillars, an elite **Keeper** (1.5x size, 4x health, 1.35x
+  damage, of the area's top level). Beat it and it drops the area's **key**
+  (and a couple of items): a glowing key, turning above the floor. Whoever
+  picks it up opens the gate for the whole party ("Tamer took the Crypt Key:
+  the gate to the Zombie Champion is open!"). The objective line walks you
+  through it, and the map shows the entrance and the way out (dark arches),
+  the gate (red bars while it's locked) and the dropped key. Each biome has
+  its own dungeon:
+
+  | Area | Entrance | Inside | Key |
+  |---|---|---|---|
+  | Graveyard (Act 2) | The graveyard's stone **crypt**, scaled up, its iron door to the camera, ghostly candles by the steps | Grey flagstones, dark burial niches along the walls, stone columns, pale blue candle braziers | Crypt Key |
+  | Desert ruins (Act 3) | A stepped **sandstone** block, a doorway between two obelisks under a glowing sun disk | Sandstone walls and floor, glyph panels, sandstone columns, fire braziers | Sun Key |
+  | Volcano (Act 4) | A rock mound with a **carved stone archway** and glowing orange runes: caves someone built long ago | Near-black stone, bands of glowing runes along the walls and round the columns | Ember Key |
+  | Swamp | A mossy rock mound with a dark **natural cave** mouth, hanging vines and glowing mushrooms | Rough rock lumps along the walls, stalagmites, mushroom-green light | Bog Key |
+  | Ice (Act 5) | An **igloo** of ice blocks with its tunnel | Carved, faintly glowing ice walls with ice shards along them, ice-crystal columns, cold blue light | Frost Key |
+
+  (The swamp is an Act 1 biome, whose areas are paths and have no dungeon;
+  its cave is ready for when a swamp area has one.) In the tile levels the
+  violet Travel portal stands at the camp, since the arena is behind the gate.
 - **Travel:** beside it stands the violet **Travel** portal, always open (even
   before the boss is beaten). Step into it to pick any area you've reached, to
   catch the pets that live there, or to level your pets somewhere easier
@@ -866,6 +894,7 @@ The host is the authoritative server and also plays.
 | `scenes/main.tscn` + `scripts/main.gd` | Menu + `LevelSpawner` that replicates the world to joining clients |
 | `scenes/world.tscn` + `scripts/world.gd` | Level flow (start → rival → portal → next level), level geometry, spawners, XP sharing, FX |
 | `scripts/level_generator.gd` | Deterministic layout of a level from a seed: paths are laid out unrolled, then bent along a curved centre line (1-3 curves); tile levels of Acts 2-5 (`generate_open`) are a grid strip of square tiles (guaranteed route, grown side tiles, walls between unjoined tiles, tile templates) with a fenced town tile and the boss arena off the end, using the path layout's counts; `walkable_distance`/`clamp_to_floor` respect the tile walls; rocks, creature spots, boss, exit; mapping between path space and the level |
+| `scripts/dungeon_db.gd`, `scripts/dungeon_builder.gd` | The key dungeons of the tile levels: DungeonDB has each biome's theme (crypt, sandstone vault, ancient caves, swamp cave, ice halls: names, key, colours, floor); LevelGenerator._dungeon lays out the maze (its rooms are tiles too, `"grid": "dungeon"`, off past the map's camera-facing edge), the Keeper's room, packs and pillars, and the boss gate; DungeonBuilder builds the entrances, the themed insides, the stairs, the key and the gate from simple shapes (the crypt reuses the graveyard's crypt model); World moves players in and out (`_check_dungeon_doors`), spawns the Keeper and drops, picks up and syncs the key (`key_state`, `key_pos`) and opens the gate (`refresh_key`) |
 | `scripts/boss_models.gd`, `models/rival_kael.glb`, `models/pye.glb`, `models/glacier_titan.glb`, `models/bog_witch.glb`, `scripts/tools/meshy_skin/` | The bosses' models (Rival Kael, loaded from the Meshy model, with the old code-built rival kept as a fallback, Glacier Titan (a Meshy model, with a code-built fallback), Sand Wyrm (a Meshy model rigged in code, with a code-built fallback), Bog Witch (a Meshy model, with a code-built fallback), Howard the Zombie Fish (a Meshy model, with a code-built fallback), Sand Pharaoh, Sunmane the Desert Lion, Magma Colossus and Yeti King (unused for now), Dom the House Cat (a Meshy model rigged by script, with a code-built fallback), Koleko the Fire Dog (a Meshy model rigged by script, with a code-built fallback), Pye the Parrot (a Meshy model, with the code-built parrot as a fallback)) and what animates |
 | `scripts/biome_db.gd` | The biomes levels cycle through: their creatures, boss and colours, and the 16-level cycle of acts (which levels end with a named boss or a Champion) |
 | `scenes/rival.tscn` + `scripts/rival.gd` | The AI rival tamer boss (and the base class for every boss) |

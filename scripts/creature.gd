@@ -61,10 +61,16 @@ var elite := false
 ## The leader of a pack in the tile levels: a little bigger, and a better drop
 ## (35%, at least Magic; see _on_died). Set at spawn.
 var pack_leader := false
+var keeper := false  ## A dungeon's Keeper: drops the key to the boss gate.
 const LEADER_SIZE := 1.15
 const ELITE_SIZE := 1.9
 const ELITE_HEALTH := 8.0
 const ELITE_DAMAGE := 1.6
+## A dungeon's Keeper (an elite guarding the key to the boss gate): tough,
+## but less than a Champion.
+const KEEPER_SIZE := 1.5
+const KEEPER_HEALTH := 4.0
+const KEEPER_DAMAGE := 1.35
 var level := 1:
 	set(v):
 		level = v
@@ -275,12 +281,12 @@ func radius() -> float:
 
 ## How big it is drawn (and how wide it is): its species' size, bigger for a Champion.
 func body_size() -> float:
-	return species.size * (ELITE_SIZE if elite else (LEADER_SIZE if pack_leader else 1.0))
+	return species.size * (ELITE_SIZE if elite else (KEEPER_SIZE if keeper else (LEADER_SIZE if pack_leader else 1.0)))
 
 
 func get_damage() -> float:
 	var tamed_venomancer := owner_id != 0 and species.pet_class() == "venomancer"
-	return species.damage * _level_multiplier() * (ELITE_DAMAGE if elite else 1.0) * (1.0 + skill_bonus("damage")) \
+	return species.damage * _level_multiplier() * (ELITE_DAMAGE if elite else (KEEPER_DAMAGE if keeper else 1.0)) * (1.0 + skill_bonus("damage")) \
 			* (_weaken_factor if _weaken_timer > 0.0 else 1.0) \
 			* (CreatureSpecies.VENOMANCER_PET_DAMAGE if tamed_venomancer else 1.0)
 
@@ -983,6 +989,8 @@ func _on_died() -> void:
 	if is_wild():
 		if elite:
 			world.on_champion_defeated(self)
+		if keeper:
+			world.on_keeper_defeated(self)
 		world.award_xp(self)
 		if pack_leader:
 			world.roll_loot(global_position, 0.35, level, ItemDB.MAGIC)
@@ -1007,7 +1015,7 @@ func _apply_level_stats() -> void:
 	var sturdy := CreatureSpecies.PALADIN_HEALTH if species.is_paladin() \
 			else (CreatureSpecies.WIZARD_HEALTH if species.is_wizard() else 1.0)
 	health.max_health = roundf(species.max_health * _level_multiplier() * (1.0 + skill_bonus("health")) * sturdy \
-			* (ELITE_HEALTH if elite else 1.0))
+			* (ELITE_HEALTH if elite else (KEEPER_HEALTH if keeper else 1.0)))
 
 
 ## Pack health skills come and go as pets join, faint and wake up: keep max
@@ -1121,7 +1129,7 @@ func _apply_faint() -> void:
 func title() -> String:
 	if nickname != "":
 		return nickname
-	return species.display_name + (" Champion" if elite else (" Alpha" if pack_leader else ""))
+	return species.display_name + (" Champion" if elite else (" Keeper" if keeper else (" Alpha" if pack_leader else "")))
 
 
 ## A name made safe: no control characters or line breaks, trimmed, at most
@@ -1144,7 +1152,7 @@ func _refresh_label() -> void:
 	name_label.text = "%s  Lv%d" % [title(), level]
 	var master_player = world.get_tamer(owner_id) if world and not is_wild() else null  # Player or Rival
 	name_label.modulate = master_player.color.lightened(0.3) if master_player else Color.WHITE
-	if elite:
+	if elite or keeper:
 		name_label.modulate = Color(1.0, 0.75, 0.3)
 
 
