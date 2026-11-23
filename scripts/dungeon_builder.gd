@@ -230,6 +230,9 @@ static func _interior(root: Node3D, layout: Dictionary, theme: Dictionary, theme
 	var inside := Node3D.new()
 	inside.name = "Dungeon"
 	root.add_child(inside)
+	if theme.has("models"):
+		_interior_models(inside, layout, theme)
+		return
 	var stone := _mat(theme.wall)
 	var trim := _mat(theme.trim)
 	var glow := _glow_mat(theme.glow)
@@ -339,6 +342,112 @@ static func _interior(root: Node3D, layout: Dictionary, theme: Dictionary, theme
 			_ball(inside, at + Vector3(0.0, 1.35, 0.0), Vector3(0.3, 0.42, 0.3), glow)
 			_solid(inside, Vector3(0.8, 1.3, 0.8), at + Vector3(0.0, 0.65, 0.0))
 		_light(inside, Vector3(r.get_center().x - 3.0, 2.6, r.get_center().y), theme.glow, 1.3, 13.0)
+
+
+## A model (a .glb), `size` units tall (wider or deeper by `stretch`), turned
+## `turn` about the vertical, standing on the floor at `at`.
+static func _model(parent: Node3D, path: String, at: Vector3, height: float, turn := 0.0, stretch := Vector3.ONE) -> Node3D:
+	var node := (load(path) as PackedScene).instantiate() as Node3D
+	var aabb := _bounds(node)
+	var k := height / maxf(aabb.size.y, 0.001)
+	node.scale = Vector3(k * stretch.x, k, k * stretch.z)
+	node.rotation.y = turn
+	node.position = at + Vector3(0.0, -aabb.position.y * k, 0.0)
+	parent.add_child(node)
+	return node
+
+
+## A model's bounds (its meshes, unscaled).
+static func _bounds(node: Node3D) -> AABB:
+	var box := AABB()
+	var first := true
+	for m in node.find_children("*", "MeshInstance3D", true, false):
+		var part := (m as MeshInstance3D).get_aabb()
+		box = part if first else box.merge(part)
+		first = false
+	return box
+
+
+## A dungeon with models (the ice halls): carved wall segments along the far
+## and side walls (the box walls there are solid but not drawn), support
+## pillars, brazier pillars with light, an archway against the Keeper room's
+## far wall and a fountain plaza in a quiet room. The models face +z as made.
+static func _interior_models(inside: Node3D, layout: Dictionary, theme: Dictionary) -> void:
+	var d: Dictionary = layout.dungeon
+	var models: Dictionary = theme.models
+	var wall_height := 3.4
+	var wall_depth := 1.7  # how far a segment comes out from its wall line
+	for cell: Dictionary in layout.cells:
+		if cell.get("grid", "") != "dungeon":
+			continue
+		var r: Rect2 = cell.rect
+		# Three segments per wall, each a little wider than its share so they meet.
+		var per := 3
+		for side in ["n", "w", "e"]:
+			if not cell.closed[side]:
+				continue
+			for k in per:
+				var t := (k + 0.5) / per
+				var at: Vector3
+				var turn := 0.0
+				match side:
+					"n":  # faces +x, into the room and the camera
+						at = Vector3(r.position.x + wall_depth * 0.5 - 0.5, 0.0, lerpf(r.end.y, r.position.y, t))
+						turn = PI / 2.0
+					"w":
+						at = Vector3(lerpf(r.position.x, r.end.x, t), 0.0, r.end.y - wall_depth * 0.5 + 0.5)
+						turn = PI
+					"e":
+						at = Vector3(lerpf(r.position.x, r.end.x, t), 0.0, r.position.y + wall_depth * 0.5 - 0.5)
+				var seg := _model(inside, models.wall, at, wall_height, turn)
+				var aabb := _bounds(seg)
+				var k_h: float = seg.scale.y
+				seg.scale.x = (r.size.x / per) * 1.08 / maxf(aabb.size.x, 0.001)
+				seg.scale.z = wall_depth / maxf(aabb.size.z, 0.001)
+				seg.scale.y = k_h
+	for p: Vector3 in d.pillars:
+		_model(inside, models.pillar, p, 3.8)
+		_solid(inside, Vector3(1.1, 3.6, 1.1), p + Vector3(0.0, 1.8, 0.0))
+	# Brazier pillars, lit: in the first room, the Keeper's and a few between.
+	var rng := RandomNumberGenerator.new()
+	rng.seed = int(d.arrive.x * 1000.0 + d.arrive.z)
+	var lit := 0
+	for cell: Dictionary in layout.cells:
+		if cell.get("grid", "") != "dungeon":
+			continue
+		var r: Rect2 = cell.rect
+		if not (cell.kind != "dungeon" or (lit < 6 and rng.randf() < 0.45)):
+			continue
+		lit += 1
+		for z in ([-3.5, 3.5] if cell.kind == "dungeon_keeper" else [-6.0, 6.0]):
+			var at := Vector3(r.position.x + 2.6, 0.0, r.get_center().y + z)
+			_model(inside, models.brazier, at, 2.9)
+			_solid(inside, Vector3(0.8, 2.8, 0.8), at + Vector3(0.0, 1.4, 0.0))
+			_light(inside, at + Vector3(0.6, 3.2, 0.0), theme.glow, 1.0, 8.0)
+	# The archway behind the Keeper, against its room's far wall.
+	for cell: Dictionary in layout.cells:
+		if cell.kind == "dungeon_keeper":
+			var r: Rect2 = cell.rect
+			var at := Vector3(r.position.x + 2.4, 0.0, r.get_center().y)
+			_model(inside, models.arch, at, 6.4, PI / 2.0, Vector3(1.0, 1.0, 0.55))
+			for z in [-2.9, 2.9]:
+				_solid(inside, Vector3(2.0, 5.0, 1.2), at + Vector3(0.0, 2.5, z))
+	# The fountain plaza.
+	if d.centre != Vector3.INF:
+		var f := _model(inside, models.centre, d.centre, 2.3)
+		var aabb := _bounds(f)
+		var wide := 9.6 / maxf(aabb.size.x, 0.001)
+		f.scale = Vector3(wide, f.scale.y, wide)
+		var body := StaticBody3D.new()
+		var shape := CollisionShape3D.new()
+		var cyl := CylinderShape3D.new()
+		cyl.radius = 4.4
+		cyl.height = 2.0
+		shape.shape = cyl
+		body.add_child(shape)
+		body.position = d.centre + Vector3(0.0, 1.0, 0.0)
+		inside.add_child(body)
+		_light(inside, d.centre + Vector3(0.0, 3.5, 0.0), theme.glow, 1.4, 11.0)
 
 
 ## The stairs back up, against the first room's left wall.

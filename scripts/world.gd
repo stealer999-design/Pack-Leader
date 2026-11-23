@@ -1880,6 +1880,9 @@ func _build_open(floor_mat: Material, camp_mat: Material, arena_mat: Material, w
 		var under_ground: bool = cell.get("grid", "") == "dungeon"
 		var mat: Material = dungeon_wall if under_ground else wall_mat
 		var high := DUNGEON_WALL_HEIGHT if under_ground else 2.0
+		# A theme with wall models (DungeonBuilder) draws its far and side walls
+		# with them: the walls here are then solid but not drawn.
+		var modelled: bool = under_ground and theme.has("models")
 		for side: String in LevelGenerator.SIDES:
 			if not cell.closed[side]:
 				continue
@@ -1891,15 +1894,16 @@ func _build_open(floor_mat: Material, camp_mat: Material, arena_mat: Material, w
 				"s":  # towards the camera: always low
 					_add_wall_z(r.end.x, r.end.y + WALL_OVERLAP, r.position.y - WALL_OVERLAP, mat, true, high)
 				"n":
-					_add_wall_z(r.position.x, r.end.y + WALL_OVERLAP, r.position.y - WALL_OVERLAP, mat, false, high)
+					_add_wall_z(r.position.x, r.end.y + WALL_OVERLAP, r.position.y - WALL_OVERLAP, null if modelled else mat, false, high)
 				"w":
-					_add_wall_x(r.end.y, r.position.x - WALL_OVERLAP, r.end.x + WALL_OVERLAP, mat, false, high)
+					_add_wall_x(r.end.y, r.position.x - WALL_OVERLAP, r.end.x + WALL_OVERLAP, null if modelled else mat, false, high)
 				"e":
 					if cell.kind == "boss":  # the doorway into the corridor to the boss
 						_add_wall_x(r.position.y, r.position.x - WALL_OVERLAP, corridor.position.x - 0.5, mat)
 						_add_wall_x(r.position.y, corridor.end.x + 0.5, r.end.x + WALL_OVERLAP, mat)
 					else:
-						_add_wall_x(r.position.y, r.position.x - WALL_OVERLAP, r.end.x + WALL_OVERLAP, mat, false, high)
+						_add_wall_x(r.position.y, r.position.x - WALL_OVERLAP, r.end.x + WALL_OVERLAP,
+								null if modelled and not neighbour else (null if modelled else mat), false, high)
 	# Ruins: broken stubs of stone wall, a run of blocks of uneven height.
 	var ruin_mat := GroundTextures.material("cobble", Color(biome().rock).lerp(Color(0.6, 0.57, 0.52), 0.5))
 	var rng := RandomNumberGenerator.new()
@@ -2106,15 +2110,16 @@ func _add_box(local_pos: Vector3, size: Vector3, mat: Material, low := false) ->
 	box_shape.size = size
 	shape.shape = box_shape
 	body.add_child(shape)
-	var mesh := MeshInstance3D.new()
-	var box_mesh := BoxMesh.new()
-	box_mesh.size = size
-	box_mesh.material = mat
-	mesh.mesh = box_mesh
-	if low:
-		box_mesh.size.y = LOW_WALL_HEIGHT
-		mesh.position.y = (LOW_WALL_HEIGHT - size.y) * 0.5
-	body.add_child(mesh)
+	if mat != null:  # (no material: solid but not drawn, as under a dungeon's wall models)
+		var mesh := MeshInstance3D.new()
+		var box_mesh := BoxMesh.new()
+		box_mesh.size = size
+		box_mesh.material = mat
+		mesh.mesh = box_mesh
+		if low:
+			box_mesh.size.y = LOW_WALL_HEIGHT
+			mesh.position.y = (LOW_WALL_HEIGHT - size.y) * 0.5
+		body.add_child(mesh)
 	body.position = local_pos
 	level_root.add_child(body)
 	return body

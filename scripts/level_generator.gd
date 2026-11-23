@@ -858,13 +858,19 @@ static func _dungeon(rng: RandomNumberGenerator, cells: Array[Dictionary], cell_
 						pillars.append(mid + Vector3(k.x, 0.0, k.y) * 5.5)
 	# Packs in two or three of the rooms between (packs of 3-4, round the room's middle).
 	_shuffle(rng, middle_rooms)
-	for group in mini(rng.randi_range(2, 3), middle_rooms.size()):
+	var packs := mini(rng.randi_range(2, 3), middle_rooms.size())
+	for group in packs:
 		var r: Rect2 = middle_rooms[group]
 		var mid := Vector3(r.get_center().x, 0.0, r.get_center().y)
 		var size := rng.randi_range(3, 4)
 		for k in size:
 			var angle: float = TAU * k / size + rng.randf_range(-0.3, 0.3)
 			spots.append({"pos": mid + Vector3(cos(angle), 0.0, sin(angle)) * rng.randf_range(1.5, 3.2), "group": 1000 + group})
+	# A quiet room (no pack) for a centrepiece, if the theme has one (the ice halls' fountain).
+	var centre := Vector3.INF
+	if middle_rooms.size() > packs:
+		var quiet: Rect2 = middle_rooms[packs]
+		centre = Vector3(quiet.get_center().x, 0.0, quiet.get_center().y)
 	var first := dungeon_rect(start)
 	var keeper_room := dungeon_rect(far)
 	var o := dungeon_origin()
@@ -875,7 +881,7 @@ static func _dungeon(rng: RandomNumberGenerator, cells: Array[Dictionary], cell_
 		"arrive": Vector3(first.get_center().x, 0.0, first.get_center().y),
 		"exit": Vector3(first.get_center().x, 0.0, first.end.y - 2.5),  # the stairs back up
 		"keeper": Vector3(keeper_room.get_center().x, 0.0, keeper_room.get_center().y),
-		"spots": spots, "pillars": pillars,
+		"spots": spots, "pillars": pillars, "centre": centre,
 		"bounds": Rect2(o.x, o.y - DUNGEON_COLS * DUNGEON_TILE, DUNGEON_ROWS * DUNGEON_TILE, DUNGEON_COLS * DUNGEON_TILE),
 	}
 

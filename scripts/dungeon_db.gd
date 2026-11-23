@@ -36,6 +36,13 @@ const THEMES := {
 	},
 	"ice": {
 		"place": "the ice halls", "entrance": "Igloo", "key": "Frost Key", "keeper": "Ice Warden",
+		# Models (Meshy, low poly; see DungeonBuilder): carved ice wall segments,
+		# support pillars, brazier pillars, an archway and a fountain plaza.
+		"models": {
+			"wall": "res://models/dungeon/ice/wall_segment.glb", "pillar": "res://models/dungeon/ice/support_pillar.glb",
+			"brazier": "res://models/dungeon/ice/brazier_pillar.glb", "arch": "res://models/dungeon/ice/archway.glb",
+			"centre": "res://models/dungeon/ice/fountain.glb",
+		},
 		"wall": Color(0.72, 0.86, 0.97), "trim": Color(0.55, 0.74, 0.92), "floor_style": "snow",
 		"floor": Color(0.72, 0.84, 0.96), "glow": Color(0.55, 0.9, 1.0), "key_color": Color(0.6, 0.95, 1.0),
 	},
