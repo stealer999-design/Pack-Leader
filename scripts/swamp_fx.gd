@@ -22,13 +22,16 @@ static func play(parent: Node3D, look: String, at: Vector3, from: Vector3, radiu
 			_tongue(parent, from, at, look == "fang")
 		"wither", "soul_rot":
 			_spit(parent, from, at, radius, extra, look == "soul_rot")
-		"bog":  # a pool of bubbling poison, fumes rising off it
-			FXKit.pool(parent, at, radius, DEEP, TOXIC, extra, 1.0, 0.06, 0.85)
+		"bog":  # after the user's reference: a dark bubbling swamp ringed with glowing purple
+			# mushrooms and thorny roots, glossy bubbles swelling and popping, a toxic cloud over it
+			FXKit.pool(parent, at, radius, Color(0.02, 0.09, 0.03), Color(0.16, 0.5, 0.1), extra, 1.4, 0.03, 0.97)
 			FXKit.ring(parent, at, radius, TOXIC, Color(0.85, 1.0, 0.6), 0.45)
-			FXKit.debris(parent, at, Color(0.2, 0.45, 0.1), 12, 3.0, 0.08)
-			_fumes(parent, at, radius, Color(0.5, 0.85, 0.3, 0.45), extra)
-			FXKit.sparkles(parent, at, radius * 0.85, Color(0.8, 1.0, 0.5), extra, 20.0, 1.0, 0.07)
-			FXKit.callout(parent, at + Vector3.UP * 2.2, "TOXIC BOG!", Color(0.7, 1.0, 0.45), OUTLINE)
+			FXKit.debris(parent, at, Color(0.15, 0.4, 0.08), 14, 3.5, 0.09)
+			_bog_rim(parent, at, radius, extra)
+			_bog_bubbles(parent, at, radius, extra)
+			_fumes(parent, at, radius, Color(0.5, 1.0, 0.3, 0.5), extra, 3.0, 0.25, 2.0)
+			FXKit.sparkles(parent, at + Vector3.UP * 0.4, radius * 0.85, Color(0.75, 1.0, 0.45), extra, 30.0, 1.2, 0.12)
+			FXKit.callout(parent, at + Vector3.UP * 2.6, "TOXIC BOG!", Color(0.7, 1.0, 0.45), OUTLINE)
 		"spores":  # a drifting cloud of glowing spores
 			FXKit.pool(parent, at, radius, Color(0.45, 0.5, 0.15), Color(0.85, 0.95, 0.45), extra, 0.0, 0.04, 0.5)
 			FXKit.sparkles(parent, at + Vector3.UP * 0.8, radius * 0.9, Color(0.9, 1.0, 0.45), extra, 60.0, 0.25, 0.1, false, 2.0, 180.0)
@@ -195,9 +198,76 @@ static func _drain(parent: Node3D, from: Vector3, to: Vector3, color: Color) -> 
 
 
 ## Fumes rising off a pool for `duration`: soft puffs (FrostFX._mist) every so often.
-static func _fumes(parent: Node3D, at: Vector3, radius: float, color: Color, duration: float) -> void:
-	var n := int(duration / 0.6)
+static func _fumes(parent: Node3D, at: Vector3, radius: float, color: Color, duration: float, size := 1.3, every := 0.6, high := 1.2) -> void:
+	var n := int(duration / every)
 	for k in n:
-		parent.get_tree().create_timer(0.6 * k).timeout.connect(func() -> void:
-			var p := at + Vector3.FORWARD.rotated(Vector3.UP, randf() * TAU) * radius * 0.5 * randf()
-			FrostFX._mist(parent, p + Vector3.UP * 0.5, 3, 1.3, color, radius * 0.3, 1.4))
+		parent.get_tree().create_timer(every * k).timeout.connect(func() -> void:
+			var p := at + Vector3.FORWARD.rotated(Vector3.UP, randf() * TAU) * radius * 0.6 * sqrt(randf())
+			FrostFX._mist(parent, p + Vector3.UP * randf_range(0.4, high), 3, size, color, radius * 0.3, 1.6))
+
+
+## The bog's rim: glowing purple mushrooms and thorny purple roots round its edge,
+## growing up out of the ground and sinking away when it dries up.
+static func _bog_rim(parent: Node3D, at: Vector3, radius: float, duration: float) -> void:
+	var stalk := FXKit.glow(Color(0.85, 0.8, 0.95, 1.0))
+	var root_mat := StandardMaterial3D.new(); root_mat.albedo_color = Color(0.6, 0.2, 0.55); root_mat.roughness = 0.6; root_mat.emission_enabled = true; root_mat.emission = Color(0.25, 0.05, 0.25)
+	var nodes: Array = []
+	for k in 9:  # mushrooms in little clumps
+		var a := TAU * k / 9.0 + randf_range(-0.2, 0.2)
+		var base := at + Vector3(cos(a), 0, sin(a)) * radius * randf_range(0.85, 1.05)
+		for j in randi_range(1, 3):
+			var m := Node3D.new(); parent.add_child(m); m.top_level = true
+			var h := randf_range(0.25, 0.55); var w := randf_range(0.14, 0.26)
+			var st := CylinderMesh.new(); st.top_radius = w * 0.25; st.bottom_radius = w * 0.35; st.height = h; st.radial_segments = 6; st.rings = 1
+			var sm := MeshInstance3D.new(); sm.mesh = st; sm.material_override = stalk; sm.position.y = h * 0.5; m.add_child(sm)
+			var cap := SphereMesh.new(); cap.radius = w; cap.height = w; cap.is_hemisphere = true; cap.radial_segments = 12; cap.rings = 4
+			var hue := randf_range(0.78, 0.9)
+			var cm := MeshInstance3D.new(); cm.mesh = cap; cm.material_override = FXKit.glow(Color.from_hsv(hue, 0.65, 1.0, 1.0)); cm.position.y = h; m.add_child(cm)
+			var halo := SphereMesh.new(); halo.radius = w * 1.8; halo.height = w * 2.0
+			var gm := MeshInstance3D.new(); gm.mesh = halo; gm.material_override = FXKit.glow(Color.from_hsv(hue, 0.7, 1.0, 0.18)); gm.position.y = h; m.add_child(gm)
+			for c in m.get_children(): (c as MeshInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			m.global_position = base + Vector3(randf_range(-0.2, 0.2), 0, randf_range(-0.2, 0.2))
+			nodes.append(m)
+	for k in 18:  # thorny roots arching out of the ground round the edge
+		var a := TAU * k / 18.0 + randf_range(-0.15, 0.15)
+		var base := at + Vector3(cos(a), 0, sin(a)) * radius * randf_range(0.9, 1.1)
+		var c := CylinderMesh.new(); c.top_radius = 0.0; c.bottom_radius = 0.13; c.height = 1.0; c.radial_segments = 6; c.rings = 1
+		var r := MeshInstance3D.new(); r.mesh = c; r.material_override = root_mat; r.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		var holder := Node3D.new(); parent.add_child(holder); holder.top_level = true; holder.add_child(r)
+		var out := Vector3(cos(a), 0, sin(a)); var lean := (out * randf_range(-0.6, 0.5) + Vector3.UP).normalized()
+		var tall := randf_range(0.7, 1.3)
+		r.transform = Transform3D(Basis.IDENTITY.scaled(Vector3(1, tall, 1)), Vector3(0, tall * 0.5, 0))
+		holder.global_transform = Transform3D(Basis.looking_at(lean, out) * Basis(Vector3.RIGHT, -PI / 2.0), base)
+		nodes.append(holder)
+	for n in nodes:
+		var node: Node3D = n
+		var full := node.scale
+		node.scale = Vector3(full.x, 0.02, full.z)
+		var tw := node.create_tween()
+		tw.tween_interval(randf_range(0.05, 0.3))
+		tw.tween_property(node, "scale", full, 0.25).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
+		tw.tween_interval(maxf(duration - 0.8, 0.2))
+		tw.tween_property(node, "scale", Vector3(full.x, 0.02, full.z), 0.35).set_ease(Tween.EASE_IN)
+		tw.tween_callback(node.queue_free)
+
+
+## Glossy green bubbles swelling up out of the bog and popping, over `duration`.
+static func _bog_bubbles(parent: Node3D, at: Vector3, radius: float, duration: float) -> void:
+	var n := int(duration / 0.12)
+	for k in n:
+		parent.get_tree().create_timer(0.12 * k + randf() * 0.1).timeout.connect(func() -> void:
+			var p := at + Vector3.FORWARD.rotated(Vector3.UP, randf() * TAU) * radius * 0.85 * sqrt(randf())
+			var size := randf_range(0.22, 0.45)
+			var mat := FXKit.glow(Color(0.45, 1.0, 0.3, 0.85))
+			mat.render_priority = 2  # (drawn over the pool, which is see-through too)
+			var sph := SphereMesh.new(); sph.radius = 1.0; sph.height = 1.0; sph.is_hemisphere = true; sph.radial_segments = 14; sph.rings = 6
+			var b := MeshInstance3D.new(); b.mesh = sph; b.material_override = mat; b.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			var shine := MeshInstance3D.new(); var hs := SphereMesh.new(); hs.radius = 0.25; hs.height = 0.5
+			shine.mesh = hs; shine.material_override = FXKit.glow(Color(0.95, 1.0, 0.85, 0.9)); (shine.material_override as StandardMaterial3D).render_priority = 3; shine.position = Vector3(-0.35, 0.65, 0.2); b.add_child(shine)
+			parent.add_child(b); b.top_level = true; b.global_position = p + Vector3.UP * 0.05
+			b.scale = Vector3.ONE * 0.02
+			var tw := b.create_tween()
+			tw.tween_property(b, "scale", Vector3.ONE * size, randf_range(0.5, 0.9)).set_ease(Tween.EASE_OUT)
+			tw.tween_callback(func() -> void:
+				FXKit.sparkles(parent, p + Vector3.UP * size * 0.6, size * 0.5, Color(0.7, 1.0, 0.5), 0.0, 20.0, 1.5, 0.06, false, 0.35, 80.0, -4.0)
+				b.queue_free()))
