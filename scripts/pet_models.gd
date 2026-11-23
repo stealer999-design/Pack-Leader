@@ -29,12 +29,18 @@ const WALK_PACE_BY_TYPE := {"lizard": 1.4, "dog": 1.68, "bird": 0.7}
 const MAX_WALK_SPEED_BY_TYPE := {"dog": 4.0, "bird": 5.0}
 
 
-static func max_walk_speed(body_type: String) -> float:
-	return MAX_WALK_SPEED_BY_TYPE.get(body_type, 3.0)
+## ...and per species, where its model has its own walk (cats re-rigged with
+## meshy_skin/cat/cat_pet_anims.py: shorter steps, so a lower pace and a higher cap).
+const WALK_PACE_BY_SPECIES := {"Emberfox": 1.5}
+const MAX_WALK_SPEED_BY_SPECIES := {"Emberfox": 6.0}
 
 
-static func walk_pace(body_type: String) -> float:
-	return WALK_PACE_BY_TYPE.get(body_type, WALK_PACE)
+static func max_walk_speed(body_type: String, species_name := "") -> float:
+	return MAX_WALK_SPEED_BY_SPECIES.get(species_name, MAX_WALK_SPEED_BY_TYPE.get(body_type, 3.0))
+
+
+static func walk_pace(body_type: String, species_name := "") -> float:
+	return WALK_PACE_BY_SPECIES.get(species_name, WALK_PACE_BY_TYPE.get(body_type, WALK_PACE))
 
 
 static func path_for(species: CreatureSpecies) -> String:

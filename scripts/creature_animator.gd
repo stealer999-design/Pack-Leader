@@ -103,10 +103,11 @@ func _animate_meshy(delta: float) -> void:
 		return
 	if _speed > 0.3:
 		var scale_k: float = body.get_node("Meshy").get_meta("scale", 1.0) * creature.body_size()
-		var pace := PetModels.walk_pace(body_type) * scale_k
+		var sp_name: String = creature.species.display_name if creature.species else ""
+		var pace := PetModels.walk_pace(body_type, sp_name) * scale_k
 		if anim.current_animation != "Walk":
 			anim.play("Walk", 0.2)
-		anim.speed_scale = clampf(_speed / maxf(pace, 0.01), 0.4, PetModels.max_walk_speed(body_type))
+		anim.speed_scale = clampf(_speed / maxf(pace, 0.01), 0.4, PetModels.max_walk_speed(body_type, sp_name))
 	elif anim.current_animation != "Idle" or not anim.is_playing():
 		anim.speed_scale = 1.0
 		anim.play("Idle", 0.25)

@@ -3,7 +3,10 @@
  "scale": 2.0,
  "root": "Hips",
  "lib": "../quad_lib.py",
- "anims": "../dom/cat_anims.py",
+ "anims": [
+  "../dom/cat_anims.py",
+  "../cat/cat_pet_anims.py"
+ ],
  "bones": {
   "Hips": [
    "",

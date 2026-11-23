@@ -137,7 +137,8 @@ base = os.path.dirname(os.path.abspath(sys.argv[1]))  # animation files sit besi
 env = {'np': np, 'anims': anims, 'cfg': cfg, 'names': names, 'JP': JP, 'par': par, 'idx': idx}
 if cfg.get('lib'):
 	exec(open(os.path.join(base, cfg['lib'])).read(), env)
-exec(open(os.path.join(base, cfg['anims'])).read(), env)
+for anims_file in (cfg['anims'] if isinstance(cfg['anims'], list) else [cfg['anims']]):  # (a list: later files add to or replace earlier ones' animations)
+	exec(open(os.path.join(base, anims_file)).read(), env)
 def quat(e):
 	cx, sx = np.cos(e[0] / 2), np.sin(e[0] / 2); cy, sy = np.cos(e[1] / 2), np.sin(e[1] / 2); cz, sz = np.cos(e[2] / 2), np.sin(e[2] / 2)
 	qx = np.array([sx, 0, 0, cx]); qy = np.array([0, sy, 0, cy]); qz = np.array([0, 0, sz, cz])
