@@ -34,12 +34,13 @@ def seg_param(pts, chain):
 		t = np.clip(((pts - A) @ ab) / (ab @ ab), 0, 1); d = np.linalg.norm(pts - (A + t[:, None] * ab), axis=1)
 		m = d < best; best[m] = d[m]; si[m] = i; ti[m] = t[m]
 	return si, ti, best
-def chain_weights(pts, bones, end):
-	"""weights over a chain of bones (each owns the segment to the next joint, the last to `end`), blended at joints"""
+def chain_weights(pts, bones, end, blend=0.75):
+	"""weights over a chain of bones (each owns the segment to the next joint, the last to `end`), blended at joints
+	(`blend`: how far, in segments, a bone's weight reaches from its middle; 0.5 = a hard joint)"""
 	chain = np.vstack([JP[[idx[b] for b in bones]], end]); si, ti, d = seg_param(pts, chain)
 	W = np.zeros((len(pts), NB)); u = si + ti  # 0..len
 	for k, b in enumerate(bones):
-		W[:, idx[b]] = np.clip(1 - np.abs(u - (k + 0.5)) / 0.75, 0, 1) if len(bones) > 1 else 1
+		W[:, idx[b]] = np.clip(1 - np.abs(u - (k + 0.5)) / blend, 0, 1) if len(bones) > 1 else 1
 	W[W.sum(1) == 0, idx[bones[0]]] = 1
 	return W / W.sum(1, keepdims=True), d
 def ss(e0, e1, x): t = np.clip((x - e0) / (e1 - e0), 0, 1); return t * t * (3 - 2 * t)
@@ -50,7 +51,7 @@ W = Wt.copy()
 # legs: points below the body near each leg's column
 for leg in cfg['legs']:
 	bones = leg['bones']; col = JP[[idx[b] for b in bones]]; end = np.array(leg['end'])
-	Wl, d = chain_weights(P, bones, end)
+	Wl, d = chain_weights(P, bones, end, leg.get('blend', 0.75))
 	near = 1 - ss(leg['radius'] * 0.8, leg['radius'] * 1.2, d)
 	m = near * ss(leg['top'] + 0.08, leg['top'] - 0.08, y)
 	W = W * (1 - m)[:, None] + Wl * m[:, None]
@@ -81,9 +82,11 @@ for ear in cfg.get('ears', []):  # ears ride their own bones
 # rides that leg's bone: fading out with distance from the bone and towards the midline
 for mu in cfg.get('muscles', []):
 	A_, B_ = np.array(mu['a']), np.array(mu['b']); ab = B_ - A_
-	t = np.clip(((P - A_) @ ab) / (ab @ ab), 0, 1); dd = np.linalg.norm(P - (A_ + t[:, None] * ab), axis=1)
+	t_raw = ((P - A_) @ ab) / (ab @ ab); t = np.clip(t_raw, 0, 1); dd = np.linalg.norm(P - (A_ + t[:, None] * ab), axis=1)
 	r = mu['radius']
 	m = (1 - ss(r * mu.get('soft', 0.55), r, dd)) * ss(mu['inner'], mu['inner'] + 0.06, mu['side'] * x) * mu.get('strength', 0.85)
+	if mu.get('stop_at_b'):  # (an upper arm's: none of it reaches past the elbow down the forearm)
+		m = m * ss(1.0, 0.85, t_raw)
 	Wm = np.zeros((N, NB)); Wm[:, idx[mu['bone']]] = 1
 	W = W * (1 - m)[:, None] + Wm * m[:, None]
 # joint helpers (config 'helpers'): a bone at a leg joint that turns half as far as the
