@@ -1,0 +1,156 @@
+PACK LEADER
+===========
+
+Double-click PackLeader.exe to start. No install needed.
+
+Saving: progress saves automatically (3 save slots). On the title screen,
+"Load Game" lets you pick or delete a save and "New Game" starts a fresh one.
+
+Playing alone: click "Play solo".
+
+Playing together:
+  - One player clicks "Host".
+  - Everyone else types the host's IP address and clicks "Join".
+  - Same home network: use the host's local IP (e.g. 192.168.x.x).
+  - Over the internet: the host must forward TCP port 24565 on their router,
+    or everyone can use a virtual LAN tool such as Tailscale or ZeroTier.
+  - Friends can also join from the browser version of the game. See the
+    README on GitHub for how to give browser players a secure (wss://) address.
+  - Windows Firewall may ask to allow PackLeader the first time you host: click Allow.
+
+Pet classes (every ability lands where your mouse is):
+  Cats are Wizards: magic bolts from range; damage spells in fire,
+    lightning, air and water (fireballs, chain lightning, cyclones,
+    tidal waves, thunderstorms, hail). Glass cannons: less health,
+    but their spells hit harder and recharge twice as fast (1.5s).
+  Dogs are Paladins: tough melee tanks whose Healing Kisses heal you and
+    your pets as they fight; abilities taunt
+    (leaping to the spot), heal, and raise armor and shields.
+  Birds are Archers: arrows from long range, hop back from enemies, crit
+    more often; ranger skills (arrow cones, rain of arrows, piercing shots,
+    snipes, Hunter's Mark and Eagle Eye for crits).
+  Lizards are Venomancers: bites stack venom, toxic blood; poison skills
+    (venom lashes, poison clouds, plague spores, poisoned traps).
+
+You start at the Crossroads, with a walk-in portal to each Act 1 area.
+Pick the order yourself to collect the pets you want first:
+  Greenmeadow: cats (Wizards), boss: Rival Tamer
+  Frostfang Peaks: birds (Archers), boss: Glacier Titan
+  Sunscorch Dunes: dogs (Paladins), boss: Sand Wyrm
+  Mirewood Bog: lizards (Venomancers), boss: Bog Witch
+Your first area has creatures level 1-5, the second 6-10, the third 11-15
+and the fourth 16-20. After each Act 1 boss the portal takes you back to the
+Crossroads to choose the next. A new area opens only once the current
+area's boss is beaten. With all four cleared, a red portal at the
+Crossroads leads on to Act 2.
+After Act 1, each monster biome is an act of three levels (16 levels in all):
+  Act 2, levels 5-7:   Hollowmere Graveyard, skeletons and zombies (Howard the Zombie Fish)
+  Act 3, levels 8-10:  Scorchsand Ruins, mummies and sand scorpions (Skeleton Champion,
+                       Mummy Champion, then Dom the House Cat)
+  Act 4, levels 11-13: Cinderpeak Caldera, fire imps and magma golems (Koleko the Fire Dog)
+  Act 5, levels 14-16: Frostveil Expanse, frost wraiths and yetis (Pye the Parrot)
+Each level's creatures are 5 levels stronger than the last (Act 2 starts at 21).
+Monsters can't be captured, and your bat kills them. The named boss waits
+on the third level of each act; the first two end with a Champion, a giant
+version of one of the act's monsters (much tougher; beat it to open the exit).
+These levels are big open fields instead of paths: the camp is on the
+left, and the boss waits in its own walled arena off the right-hand edge
+(find the corridor leading to it), and a fenced town (lemonade stand,
+stable, bat shop, breeder) is somewhere in the middle. Monsters roam in
+packs of 3 to 5 of one kind. The mini map starts
+dark and fills in as you explore.
+Bring pets from Act 1! After level 16 the acts loop (Act 6 is the Act 1
+areas again, from level 81). Pets more than 2 levels above what they beat earn less experience,
+so keep moving on.
+
+Goal:
+  Each level is a randomly generated path running left to right. You start
+  at a camp with the stable; at the far end a Rival Tamer waits with one
+  pet. Defeat the rival, then step into the Next level portal that opens to
+  continue to the next, harder level. The violet Travel portal beside it is
+  always open: step in to go back to any area you've reached (to catch its
+  pets, or to level up somewhere easier).
+  The rival's pet goes wild when its tamer is beaten - capture it!
+
+Health: your pets heal 1 HP every half second, all the time. You slowly
+regenerate after 5 seconds out of combat. You carry up
+to 2 potions (Q) and get a fresh pair every level. Smash vases for coins
+and buy more potions at the lemonade stand halfway along each level. The
+stand also sells Lucky Lemonade: capture chance x1.5 for 90 seconds.
+Village: halfway along each level a side path leads up to a village with a
+second stable (20 hay beds, same pets as the camp's). Its Bat Shop upgrades
+your bat to a Spiked Bat (more damage, 60 coins), then from Act 2 to the
+Chain Bat (36 damage, 150 coins). Every bat still stops creatures at 1 HP,
+ready to capture (monsters it kills). The Bat Shop also buys gear from your
+bag: Normal 1 coin, Magic 3, Rare 8 (plus 1 per 20 item levels).
+Breeder (village): pick two different pets of the same kind (any level) and
+pay 25 coins for a hybrid baby: a new, stronger pet. Cats breed with cats,
+birds with birds, dogs with dogs, lizards with lizards. 24 hybrids in all.
+The baby is born at 75% of its parents' level (two level 10s make a level 7).
+The breeder also buys pets you don't need: 1 coin each, 2 for a hybrid.
+Checkpoint: once you reach the lemonade stand, you get back up there if
+you go down (its flag turns green). Before that, you start over at the camp.
+
+The action bar along the bottom shows your health orb with small capture (E)
+and potion (Q) buttons beside it,
+bat (left click), your three pets (1 2 3, with their health, level and
+ability cooldowns), pet stance (T) and your coins. You can click any of its
+boxes too; hover one for details. Tiny buttons under the mini map open the
+inventory (I), skills (K) and the menu (Esc).
+
+Name your pets: right-click a pet's portrait (inventory Pets tab, or the
+stable) and type a name.
+Pets: 3 pets fight beside you and 3 more wait in your reserve. Party and
+reserve pets all get the same XP from every fight, so they level together;
+pets in the stable don't level. Swap them
+any time in the inventory (I), on the Pets tab: drag a reserve pet onto a
+party pet. A pet that dies stays dead: it can't fight or be healed until you reach a stable (at the camp or in the village), where every
+pet is revived and healed. Swap it out for a reserve pet in the meantime.
+
+Controls:
+  WASD        Move
+  Left click  Swing your bat: weakens creatures (never below 1 HP) and
+              smashes vases. A creature at 1 HP is a 99% catch!
+  E           Toss a treat to capture the creature under the mouse (or the
+              nearest one in range, preferring weakened ones). The catch
+              chance shows over each wild creature's name; a heart pops up
+              when one is caught
+  1 / 2 / 3   Use the ability of the pet in that party slot (every 3s): it lands
+              where your mouse is
+  Right click Send pets at a creature or the rival / click ground to regroup
+  T           Pet stance: Passive pets stop attacking so you can weaken
+              and capture a creature yourself; press again for Aggressive.
+              Right-clicking an enemy also sends them back to Aggressive
+  Q           Drink a health potion (heals 50%)
+  F           Open the stable / the lemonade stand (stand next to it).
+              In the stable, drag pets between the hay beds, your party
+              and your reserve. Dead pets come back to life at the stable.
+  K           Pet skills: spend the skill points your pets earn as they
+              level up (one at level 5 and every 2 levels after). Click a
+              skill to add a point, right-click to take one back, or
+              Reset skills to get them all back (free)
+  Wheel       Zoom the camera in (and back out to the starting view)
+  I           Inventory: your gear and bag. Walk over glowing loot sacks to
+              pick up gear; drag it onto its slot to wear it. Gear is
+              like Diablo's: a base item plus random bonuses (affixes).
+              The number on an item is its item level (the level of
+              what dropped it): deeper areas drop stronger gear.
+              White = Normal, blue = Magic (1-2 bonuses), yellow = Rare
+              (3-5 bonuses, a pillar of light when it drops), gold =
+              Unique (named, fixed bonuses), green = Set (4 pieces per
+              pet class; wear 2 or 4 for bonuses to that class).
+              Class rings and necklaces (Arcane, Holy, Keen, Venomous)
+              boost every party pet of that class; from item level 30
+              they can add +1 to +3 to every skill rank.
+              A green arrow marks items better than what's worn; click
+              one to see each stat that would change (green better, red
+              worse). The stash chest in each village / town (F) holds
+              40 more items between runs.
+              Pets tab: each party pet wears one collar (drag it on from
+              the bag). Class collars fit only that class of pet.
+              Junk: press Select (or right-click items), mark what you
+              don't want, then Throw away
+  M           Mini map: switch between the corner and the whole level
+  Esc         Close any menu (stable, shop, confirmations, Load Game). With
+              nothing open: the game menu (resume, save, quit to main menu)
+  Space       Dash

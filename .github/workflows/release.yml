@@ -1,0 +1,71 @@
+# Builds the Windows version of Pack Leader on GitHub's servers and publishes
+# it as a GitHub Release (PackLeader-windows.zip: PackLeader.exe, with the game
+# data embedded, and How to play.txt).
+#
+# Run it from the repository's Actions tab: "Release Windows build" -> Run
+# workflow, and enter the version (e.g. 0.002). It tags the commit it builds
+# v<version> and publishes "Pack Leader v<version>".
+name: Release Windows build
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version number, e.g. 0.002 (published as v0.002)"
+        required: true
+      notes:
+        description: "Release notes (optional)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+env:
+  GODOT_VERSION: "4.4.1"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Godot and its export templates
+        run: |
+          base="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable"
+          curl -sSfL -o godot.zip "$base/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          curl -sSfL -o templates.tpz "$base/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+          unzip -q godot.zip
+          mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" /usr/local/bin/godot
+          dest="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          mkdir -p "$dest"
+          unzip -q templates.tpz
+          mv templates/* "$dest/"
+          rm -rf godot.zip templates.tpz templates
+          godot --version
+
+      - name: Import the project
+        run: godot --headless --path . --import || true
+
+      - name: Export the Windows build
+        run: |
+          mkdir -p export/windows
+          godot --headless --path . --export-release "Windows Desktop" export/windows/PackLeader.exe
+          test -s export/windows/PackLeader.exe
+          cp "dist/How to play.txt" export/windows/
+          (cd export/windows && zip -q -r ../../PackLeader-windows.zip .)
+          ls -la PackLeader-windows.zip
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
+          NOTES: ${{ inputs.notes }}
+        run: |
+          tag="v${VERSION#v}"
+          notes="${NOTES:-Windows build of Pack Leader. Download PackLeader-windows.zip, unzip it and run PackLeader.exe (How to play.txt is included).}"
+          gh release create "$tag" PackLeader-windows.zip \
+            --target "$GITHUB_SHA" \
+            --title "Pack Leader $tag" \
+            --notes "$notes"

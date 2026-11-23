@@ -48,6 +48,14 @@ share. From the command line:
 godot --headless --path . --export-release "Windows Desktop" export/windows/PackLeader.exe
 ```
 
+### Publishing a release on GitHub
+`.github/workflows/release.yml` builds the Windows version on GitHub's servers
+and publishes it as a GitHub Release, ready to download. On the repository's
+**Actions** tab pick **Release Windows build**, click **Run workflow**, and
+enter the version (e.g. `0.002`): it tags the commit `v0.002` and publishes
+"Pack Leader v0.002" with `PackLeader-windows.zip` (the exe and
+`dist/How to play.txt`). Each run takes several minutes of Actions time.
+
 ## Playing in a browser (legacy)
 **Retired:** Windows is the only supported build from here on. The browser
 version loaded too slowly and couldn't show the game well (it uses Godot's
