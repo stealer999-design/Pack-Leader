@@ -23,17 +23,16 @@ static func play(parent: Node3D, look: String, at: Vector3, from: Vector3, radiu
 		"wither", "soul_rot":
 			_spit(parent, from, at, radius, extra, look == "soul_rot")
 		"bog":  # a pool of bubbling poison, fumes rising off it
-			FXKit.pool(parent, at, radius, DEEP, TOXIC, extra, 1.0, 0.4)
+			FXKit.pool(parent, at, radius, DEEP, TOXIC, extra, 1.0, 0.06, 0.85)
 			FXKit.ring(parent, at, radius, TOXIC, Color(0.85, 1.0, 0.6), 0.45)
 			FXKit.debris(parent, at, Color(0.2, 0.45, 0.1), 12, 3.0, 0.08)
-			FXKit.sparkles(parent, at, radius * 0.85, Color(0.5, 0.9, 0.3, 0.55), extra, 25.0, 0.7, 0.45, false, 1.6, 20.0)
+			_fumes(parent, at, radius, Color(0.5, 0.85, 0.3, 0.45), extra)
 			FXKit.sparkles(parent, at, radius * 0.85, Color(0.8, 1.0, 0.5), extra, 20.0, 1.0, 0.07)
 			FXKit.callout(parent, at + Vector3.UP * 2.2, "TOXIC BOG!", Color(0.7, 1.0, 0.45), OUTLINE)
 		"spores":  # a drifting cloud of glowing spores
-			FXKit.pool(parent, at, radius, Color(0.35, 0.4, 0.1), Color(0.85, 0.95, 0.4), extra, 0.0, 0.25)
+			FXKit.pool(parent, at, radius, Color(0.45, 0.5, 0.15), Color(0.85, 0.95, 0.45), extra, 0.0, 0.04, 0.5)
 			FXKit.sparkles(parent, at + Vector3.UP * 0.8, radius * 0.9, Color(0.9, 1.0, 0.45), extra, 60.0, 0.25, 0.1, false, 2.0, 180.0)
-			FXKit.sparkles(parent, at + Vector3.UP * 0.6, radius * 0.8, Color(0.65, 0.8, 0.3, 0.45), extra, 18.0, 0.3, 0.7, false, 2.2, 180.0)
-			FrostFX._mist(parent, at + Vector3.UP * 0.4, 12, 1.6, Color(0.75, 0.85, 0.35, 0.55), radius * 0.6, 1.4)
+			_fumes(parent, at, radius, Color(0.8, 0.9, 0.4, 0.5), extra)
 			FXKit.callout(parent, at + Vector3.UP * 2.4, "SPORE CLOUD!", Color(0.9, 1.0, 0.5), OUTLINE)
 		"haze":  # a burst of toxic gas rolling outward
 			FXKit.flash(parent, at + Vector3.UP * 0.5, 3.0, Color(0.85, 1.0, 0.6), TOXIC, 0.4)
@@ -125,7 +124,7 @@ static func _tongue(parent: Node3D, from: Vector3, to: Vector3, fangs: bool) -> 
 			for i in 10:
 				var u := float(i) / 9.0
 				pts.append(from.lerp(tip_at, u) + Vector3.UP * 0.15 * sin(PI * u) * (1.0 - back))
-			FXKit.ribbon(im, pts, cam.global_position, 0.14, TONGUE, 0.7)
+			FXKit.ribbon(im, pts, cam.global_position, 0.24, TONGUE, 0.6)
 		else:
 			tip.visible = false
 	var driver := Timer.new(); driver.wait_time = 1.0 / 60.0; driver.autostart = true; node.add_child(driver)
@@ -133,6 +132,8 @@ static func _tongue(parent: Node3D, from: Vector3, to: Vector3, fangs: bool) -> 
 	FXKit.sparkles(parent, to + Vector3.UP * 0.3, 0.3, TOXIC, 0.0, 20.0, 2.0, 0.08, false, 0.5, 70.0, -6.0)
 	if fangs:
 		parent.get_tree().create_timer(0.3).timeout.connect(func() -> void: _snap(parent, near + Vector3.UP * 0.5, cam))
+	else:
+		FXKit.callout(parent, to + Vector3.UP * 1.6, "VENOM LASH!", Color(1.0, 0.6, 0.7), OUTLINE)
 	parent.get_tree().create_timer(1.0).timeout.connect(node.queue_free)
 
 
@@ -191,3 +192,12 @@ static func _drain(parent: Node3D, from: Vector3, to: Vector3, color: Color) -> 
 	tw.tween_method(func(u: float) -> void:
 		if is_instance_valid(p): p.global_position = from.lerp(to, u) + Vector3.UP * 0.8 * sin(PI * u), 0.0, 1.0, 0.5)
 	tw.tween_callback(func() -> void: FXKit.flash(parent, to, 1.0, Color(0.85, 1.0, 0.8), Color(0.5, 1.0, 0.5), 0.3))
+
+
+## Fumes rising off a pool for `duration`: soft puffs (FrostFX._mist) every so often.
+static func _fumes(parent: Node3D, at: Vector3, radius: float, color: Color, duration: float) -> void:
+	var n := int(duration / 0.6)
+	for k in n:
+		parent.get_tree().create_timer(0.6 * k).timeout.connect(func() -> void:
+			var p := at + Vector3.FORWARD.rotated(Vector3.UP, randf() * TAU) * radius * 0.5 * randf()
+			FrostFX._mist(parent, p + Vector3.UP * 0.5, 3, 1.3, color, radius * 0.3, 1.4))
