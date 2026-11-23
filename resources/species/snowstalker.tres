@@ -6,6 +6,7 @@
 [resource]
 script = ExtResource("1_species")
 display_name = "Snowl"
+shot_look = "air"
 color = Color(0.93, 0.95, 1, 1)
 size = 1.0
 body_type = "bird"

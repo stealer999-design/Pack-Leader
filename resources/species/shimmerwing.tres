@@ -6,6 +6,7 @@
 [resource]
 script = ExtResource("1_species")
 display_name = "Shimmerwing"
+shot_look = "air"
 color = Color(0.45, 0.95, 0.85, 1)
 size = 0.84
 body_type = "bird"
