@@ -99,6 +99,25 @@ if __name__ == '__main__':
 		leg['top'] = round(f[top_from] + (tl['top'] - fT[top_from]) / (fT[top_to] - fT[top_from]) * (f[top_to] - f[top_from]), 4)
 		thick = leg['radius'] / tl['radius']  # (the leg's own radius, as first fitted: legs grow longer without growing thicker)
 		if 'blend' in tl: leg['blend'] = tl['blend']
+	# the fore leg's elbow and wrist: on the leg itself, as far from its middle (along the
+	# walk) as Emberfox's are from the middle of its leg (a cat modelled leaning or mid-stride
+	# can leave a joint placed in proportion off its leg)
+	def column(PP, leg_end, yy, side):
+		q = PP[(np.abs(PP[:, 1] - yy) < 0.02) & (side * PP[:, 0] > 0.02) & (np.abs(PP[:, 2] - leg_end[2]) < 0.3)]
+		if len(q) < 4: return None
+		# the leg's own run of points nearest its paw (not the chest beside it)
+		zs = np.sort(q[:, 2]); gaps = np.where(np.diff(zs) > 0.04)[0]
+		runs = np.split(zs, gaps + 1); run = min(runs, key=lambda r: abs(np.median(r) - leg_end[2]))
+		return float((run.min() + run.max()) / 2)
+	for leg in out['legs']:
+		if leg['bones'][0][0] != 'F': continue
+		nm = leg['bones'][0][:2]; side = np.sign(leg['end'][0])
+		tl = next(l for l in T['legs'] if l['bones'][0][:2] == nm)
+		for bone in (nm + '_Lower', nm + '_Paw'):
+			tz = column(PT, tl['end'], TB[bone][1][1], side); cz = column(P, leg['end'], B[bone][1][1], side)
+			if tz is None or cz is None: continue
+			off = (TB[bone][1][2] - tz) * scale_of(f, 'front') / scale_of(fT, 'front')
+			B[bone][1][2] = round(cz + off, 4)
 	# helpers and muscles: the template's, each point moved with the joint it belongs to
 	def joint_of(p, leg2):  # the template joint nearest p, among that leg's
 		names = [n for n in TB if n[:2] == leg2 and 'Fix' not in n]
