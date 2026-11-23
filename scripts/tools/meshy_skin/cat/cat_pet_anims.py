@@ -1,35 +1,59 @@
-# The cat pets' animations: Dom's (dom/cat_anims.py) with a new walk, after the
-# user's walking-cat reference (a white cat on pink): short, even steps in the
-# cat's lateral sequence (each hind paw a quarter-cycle ahead of the fore paw on
-# its side), the fore leg kept a straight column that folds only at the wrist as
-# it lifts and lands just ahead of the chest, the hind leg keeping its Z and
-# folding at the hock, the body low and level with a gentle bob.
-# (Listed after dom/cat_anims.py in a config's 'anims': it replaces only the walk.)
+# The cat pets' walk, replayed from a reference cat walk (cat/ref_walk.json, measured
+# by cat/extract_ref.py from a professionally animated walking cat the user found):
+# each toe follows the reference toe's path over the ground (scaled by leg height:
+# the cat's lateral sequence, how far each paw reaches, how high it lifts), the paw
+# folds as much as the reference paw does (the leg solver places our own wrist,
+# elbow, hock and stifle so the toe lands exactly there), the shoulder blades roll
+# with the reference's shoulders, and the body bobs, surges, twists and rolls as the
+# reference's hips and shoulders do. Listed after dom/cat_anims.py in a config's
+# 'anims': it replaces only the walk.
+import json
 
-WALK_T = 0.8  # seconds per cycle
-WALK_TRAVEL = 0.62  # how far the body moves per cycle (pace = travel / T)
-WALK_DUTY = 0.64  # share of the cycle each paw is down
-FORE_REACH = 0.1  # the furthest a fore paw lands ahead of where it stands
-FORE_LIFT = 0.35  # share of the paws' lift the fore paws take
+REF = json.load(open(os.path.join(base, '..', 'cat', 'ref_walk.json')))
+WALK_T = REF['length']
+NS = REF['samples']
+HEIGHT = {}  # each leg's height, top joint to the ground
+for leg in LEGS:
+	top = leg + '_Upper'
+	HEIGHT[leg] = JP[idx[top]][1] - END[leg][1]
+H = float(np.mean(list(HEIGHT.values())))
+WALK_TRAVEL = REF['travel_per_cycle'] * H  # how far the body moves per cycle (pace = travel / T)
+SIDE = {leg: np.sign(END[leg][0]) for leg in LEGS}
+REF_LEG = {leg: next(k for k, d in REF['legs'].items() if k[0] == leg[0] and d['side'] == SIDE[leg]) for leg in LEGS}
+
+
+def curve(c, u):
+	"""a sampled periodic curve at u (0..1), linearly interpolated"""
+	c = np.asarray(c); x = (u % 1.0) * NS; k = int(x) % NS; f = x - int(x)
+	return c[k] * (1 - f) + c[(k + 1) % NS] * f
 
 
 def walk(t):
-	T = WALK_T; ph = TAU * t / T; f = {}; planted(f)
-	walk_like(t, T, {'RL': 0.0, 'FL': 0.25, 'RR': 0.5, 'FR': 0.75}, WALK_TRAVEL, WALK_DUTY, 0.07, f, fore_reach=FORE_REACH)
-	for leg in ('FL', 'FR'):  # the fore paw barely lifts and folds back at the wrist instead, so
-		foot, flex = f['_feet'][leg]  # the elbow never rides up into the chest
-		foot = foot.copy(); foot[1] = rest_foot(leg)[1] + (foot[1] - rest_foot(leg)[1]) * FORE_LIFT
-		f['_feet'][leg] = (foot, flex * 2.4)
-	for leg in ('RL', 'RR'):  # the hind paw curls at the hock
-		foot, flex = f['_feet'][leg]; f['_feet'][leg] = (foot, flex * 1.6)
-	sway = np.sin(ph)
-	f['Hips'] = (0, 0.04 * sway, 0.02 * sway)
-	f['Spine1'] = (0, -0.02 * sway, 0); f['Spine2'] = (0, -0.02 * np.sin(ph + 0.4), 0)
-	f['Chest'] = (0, -0.04 * np.sin(ph + 0.8), -0.02 * np.sin(ph + 0.8))
-	f['Neck'] = (0.08 + 0.02 * np.sin(2 * ph), 0, 0)  # head carried a little low, as in the reference
+	u = t / WALK_T; f = {}
+	feet = {}
+	for leg in LEGS:
+		d = REF['legs'][REF_LEG[leg]]; h = HEIGHT[leg]
+		toe = END[leg] + curve(d['toe'], u) * np.array([0.5, 1.0, 1.0]) * h  # (half its sideways drift)
+		flex = curve(d['paw_pitch'], u) - d['neutral_pitch']
+		# the ankle (wrist or hock) where the toe lands on `toe` with the paw folded by `flex`
+		rest = END[leg] - JP[idx[leg + '_Paw']]
+		feet[leg] = (toe + rest - Rx(flex) @ rest, flex)
+		if leg[0] == 'F':  # the shoulder blade rolls with the reference's shoulder
+			sh = curve(d['shoulder'], u) * h
+			scap = np.linalg.norm(JP[idx[leg + '_Upper']] - JP[idx[leg + '_Scap']])
+			f[leg + '_Scap'] = (-sh[2] / scap, 0, 0)
+	B = REF['body']
+	hips = curve(B['hips'], u) * H
+	f['_offset'] = (0, hips[1], hips[2])
+	pitch = curve(B['spine_pitch'], u); pyaw = curve(B['pelvis_yaw'], u); proll = curve(B['pelvis_roll'], u)
+	syaw = curve(B['shoulder_yaw'], u) - pyaw; sroll = curve(B['shoulder_roll'], u) - proll
+	f['Hips'] = (-pitch, -pyaw, proll)
+	f['Spine1'] = (0, -0.3 * syaw, 0.3 * sroll); f['Spine2'] = (0, -0.35 * syaw, 0.35 * sroll)
+	f['Chest'] = (0, -0.35 * syaw, 0.35 * sroll)
+	f['Neck'] = (0.06, 0, 0)  # head carried a little low
 	steady_head(f); ears(f, 0.05)
-	tail(f, t, 0.15, 1 / T, lift=-0.03, curl=0.12)
-	f['_offset'] = (0, -0.02 + 0.01 * np.cos(2 * ph), 0)
+	tail(f, t, 0.15, 1 / WALK_T, lift=-0.03, curl=0.12)
+	f['_feet'] = feet
 	return finish(f)
 
 

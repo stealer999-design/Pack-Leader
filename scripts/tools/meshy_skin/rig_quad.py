@@ -134,7 +134,7 @@ j['scenes'][j.get('scene', 0)]['nodes'] = [mesh_node] + [first + i for i in rang
 anims = {}
 import os
 base = os.path.dirname(os.path.abspath(sys.argv[1]))  # animation files sit beside the config
-env = {'np': np, 'anims': anims, 'cfg': cfg, 'names': names, 'JP': JP, 'par': par, 'idx': idx}
+env = {'np': np, 'anims': anims, 'cfg': cfg, 'names': names, 'JP': JP, 'par': par, 'idx': idx, 'os': os, 'base': base}  # (base: the config's folder, for data files)
 if cfg.get('lib'):
 	exec(open(os.path.join(base, cfg['lib'])).read(), env)
 for anims_file in (cfg['anims'] if isinstance(cfg['anims'], list) else [cfg['anims']]):  # (a list: later files add to or replace earlier ones' animations)
