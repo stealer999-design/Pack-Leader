@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://cjw7yqfcnncr7"
-path="res://.godot/imported/blitzfox.glb-bc3f8e5332bb9a9a3d983c505e59cfe6.scn"
+uid="uid://dsv41o7yfjo2v"
+path="res://.godot/imported/emberkitty.glb-93159e892c30dc4ad1184b0abe0462da.scn"
 
 [deps]
 
-source_file="res://models/pets/blitzfox.glb"
-dest_files=["res://.godot/imported/blitzfox.glb-bc3f8e5332bb9a9a3d983c505e59cfe6.scn"]
+source_file="res://models/pets/emberkitty.glb"
+dest_files=["res://.godot/imported/emberkitty.glb-93159e892c30dc4ad1184b0abe0462da.scn"]
 
 [params]
 

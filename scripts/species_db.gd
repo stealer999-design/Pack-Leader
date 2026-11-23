@@ -4,7 +4,7 @@ class_name SpeciesDB
 
 const PATHS := [
 	"res://resources/species/mossback.tres",
-	"res://resources/species/emberfox.tres",
+	"res://resources/species/emberkitty.tres",
 	"res://resources/species/voltwing.tres",
 	"res://resources/species/gloomhorn.tres",
 	"res://resources/species/frostling.tres",
@@ -23,7 +23,7 @@ const PATHS := [
 	"res://resources/species/magmashell.tres",
 	"res://resources/species/thundershell.tres",
 	"res://resources/species/stonehorn.tres",
-	"res://resources/species/blitzfox.tres",
+	"res://resources/species/blitzkitty.tres",
 	"res://resources/species/stormhorn.tres",
 	"res://resources/species/duskbloom.tres",
 	"res://resources/species/glacipuff.tres",

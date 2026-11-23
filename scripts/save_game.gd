@@ -17,7 +17,7 @@ const VERSION := 2
 ## Version 2 retired five cats (Bloomling and four hybrids), which shifted the
 ## species indices after them. Older saves are converted as they're read: each
 ## old index -> its new one; a retired species becomes its nearest kept cat.
-const V1_RETIRED := {8: 0, 20: 16, 22: 21, 23: 19, 25: 19}  # Bloomling -> Mossback, Mossbloom -> Magmashell, Cinderhorn -> Duskbloom, Sunpetal and Sparkblossom -> Blitzfox
+const V1_RETIRED := {8: 0, 20: 16, 22: 21, 23: 19, 25: 19}  # Bloomling -> Mossback, Mossbloom -> Magmashell, Cinderhorn -> Duskbloom, Sunpetal and Sparkblossom -> Blitzkitty
 const AUTOSAVE_INTERVAL := 20.0  ## Seconds of real time.
 
 ## The slot being played (or about to be). -1 = none chosen.

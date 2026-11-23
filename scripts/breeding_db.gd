@@ -21,11 +21,11 @@ static func baby_level(a_level: int, b_level: int) -> int:
 ## "a+b" (species indices, smaller first) -> the hybrid's species index.
 const HYBRIDS := {
 	# Cats
-	"0+1": 16,  # Mossback + Emberfox = Magmashell
+	"0+1": 16,  # Mossback + Emberkitty = Magmashell
 	"0+2": 17,  # Mossback + Voltwing = Thundershell
 	"0+3": 18,  # Mossback + Gloomhorn = Stonehorn
-	"1+2": 19,  # Emberfox + Voltwing = Blitzfox
-	"1+3": 21,  # Emberfox + Gloomhorn = Duskbloom
+	"1+2": 19,  # Emberkitty + Voltwing = Blitzkitty
+	"1+3": 21,  # Emberkitty + Gloomhorn = Duskbloom
 	"2+3": 20,  # Voltwing + Gloomhorn = Stormhorn
 	# Birds
 	"4+5": 22,  # Glacipuff

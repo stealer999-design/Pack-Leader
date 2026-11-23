@@ -5,7 +5,7 @@
 
 [resource]
 script = ExtResource("1_species")
-display_name = "Blitzfox"
+display_name = "Blitzkitty"
 color = Color(1.00, 0.62, 0.08, 1)
 size = 0.9
 body_type = "cat"

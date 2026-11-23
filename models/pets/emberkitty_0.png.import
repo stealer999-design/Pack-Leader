@@ -2,30 +2,26 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dmi761bqukmpb"
-path.s3tc="res://.godot/imported/emberfox_0.png-7e97b8a770b025e7d3d0d0290a00d9e1.s3tc.ctex"
+uid="uid://djg18i3r70f6l"
+path="res://.godot/imported/emberkitty_0.png-5933bbd70685141226a0f57b45d7bae3.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
-}
-generator_parameters={
-"md5": "ced6b258a221e4ebf248ecf408046dc5"
+"vram_texture": false
 }
 
 [deps]
 
-source_file="res://models/pets/emberfox_0.png"
-dest_files=["res://.godot/imported/emberfox_0.png-7e97b8a770b025e7d3d0d0290a00d9e1.s3tc.ctex"]
+source_file="res://models/pets/emberkitty_0.png"
+dest_files=["res://.godot/imported/emberkitty_0.png-5933bbd70685141226a0f57b45d7bae3.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=true
+mipmaps/generate=false
 mipmaps/limit=-1
 roughness/mode=0
 roughness/src_normal=""
@@ -34,5 +30,5 @@ process/premult_alpha=false
 process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
-process/size_limit=1024
+process/size_limit=0
 detect_3d/compress_to=1

@@ -1,16 +1,16 @@
-# Fits a cat's legs the way Emberfox's were fitted by hand (after the user's cat skeleton
+# Fits a cat's legs the way Emberkitty's were fitted by hand (after the user's cat skeleton
 # diagram and walking-cat reference): measures the cat's body (ground, chest bottom and
 # withers over the fore legs, belly and back over the hips) and its paws, and places
-# every leg joint, helper bone and muscle in proportion, using Emberfox's rig as the
+# every leg joint, helper bone and muscle in proportion, using Emberkitty's rig as the
 # template. Keeps the cat's own spine, head, jaw and tail.
 #   python3 cat/autofit.py pets/<cat>.json <cat's meshy.glb> out.json
-#   (run from scripts/tools/meshy_skin; needs pets/emberfox.json and Emberfox's Meshy
+#   (run from scripts/tools/meshy_skin; needs pets/emberkitty.json and Emberkitty's Meshy
 #   model, path in TEMPLATE_GLB or argv[4])
 import sys, os, json, copy, numpy as np
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + '/..')
 from glb import load, acc
 HERE = os.path.dirname(os.path.abspath(__file__))
-TEMPLATE = os.path.join(HERE, '..', 'pets', 'emberfox.json')
+TEMPLATE = os.path.join(HERE, '..', 'pets', 'emberkitty.json')
 TEMPLATE_GLB = sys.argv[4] if len(sys.argv) > 4 else os.environ.get('TEMPLATE_GLB')
 
 
@@ -78,7 +78,7 @@ def kind_of(bone):
 if __name__ == '__main__':
 	T = json.load(open(TEMPLATE)); PT = points(T, TEMPLATE_GLB)
 	TB = T['bones']
-	fT = features(T, PT, (0.42 - 0.59) / 0.62, (-0.25 - (-0.03)) / 0.62)  # where Emberfox was measured by hand
+	fT = features(T, PT, (0.42 - 0.59) / 0.62, (-0.25 - (-0.03)) / 0.62)  # where Emberkitty was measured by hand
 	# (its ends: the mean toe z of each pair, its length L)
 	c = json.load(open(sys.argv[1])); P = points(c, sys.argv[2])
 	f = features(c, P)
@@ -100,7 +100,7 @@ if __name__ == '__main__':
 		thick = leg['radius'] / tl['radius']  # (the leg's own radius, as first fitted: legs grow longer without growing thicker)
 		if 'blend' in tl: leg['blend'] = tl['blend']
 	# the fore leg's elbow and wrist: on the leg itself, as far from its middle (along the
-	# walk) as Emberfox's are from the middle of its leg (a cat modelled leaning or mid-stride
+	# walk) as Emberkitty's are from the middle of its leg (a cat modelled leaning or mid-stride
 	# can leave a joint placed in proportion off its leg)
 	def column(PP, leg_end, yy, side):
 		q = PP[(np.abs(PP[:, 1] - yy) < 0.02) & (side * PP[:, 0] > 0.02) & (np.abs(PP[:, 2] - leg_end[2]) < 0.3)]

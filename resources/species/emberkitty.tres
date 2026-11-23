@@ -5,7 +5,7 @@
 
 [resource]
 script = ExtResource("1_species")
-display_name = "Emberfox"
+display_name = "Emberkitty"
 color = Color(0.95, 0.45, 0.15, 1)
 size = 0.8
 max_health = 40.0
