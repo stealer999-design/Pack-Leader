@@ -1,5 +1,7 @@
 # Pack Leader
 
+<p align="center"><img src="art/box_art.png" alt="Pack Leader box art" width="420"></p>
+
 Co-op (2–4 players) isometric action RPG where **pets are the focus**: every
 creature in the world can be captured, then follows you, fights for you and
 levels up. Each level is a randomly generated path from a start camp to a
