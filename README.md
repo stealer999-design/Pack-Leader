@@ -487,7 +487,7 @@ played in the browser".
 
   **Rarity** sets how many affixes it rolls: **Normal** (white) none,
   **Magic** (blue) 1-2, **Rare** (yellow) 3-5 and a random name ("Grim Fang
-  Talisman"), and the named **Unique** (gold) and **Set** (green) items below. A Magic item is named by its affixes ("Savage Band of the
+  Talisman"), and the named **Legendary** (orange) and **Set** (green) items below. A Magic item is named by its affixes ("Savage Band of the
   Leech"). Each affix rolls in a range that grows with item level, so two
   items with the same name can differ a lot:
 
@@ -526,25 +526,105 @@ played in the browser".
   every party pet of its class (at three quarters of a collar's strength); a
   class collar fits only that class of pet.
 
-  **Uniques** (gold): about 40 named, one-of-a-kind items with fixed affixes
-  that roll near the top of their range for their item level, such as
-  Alpha's Signet (pets: much more damage, health and life per hit),
-  Fortune's Feather (magic and coin find) and Archmage's Spark (+2 to every
-  cat skill rank). Better ones only drop from the higher tiers.
+  **Legendaries** (orange): the top of the loot table, Diablo III style.
+  From item level 21 (Act 2) on, every 5-level band of item levels (one
+  band per area, 21-25 up to 76-80) has **8 Legendaries, one for each of the
+  tamer's slots** (a bat, a jacket, pants, a hat, boots, two rings and a
+  necklace), 96 in all, each themed on the area it drops in. A Legendary's
+  stats roll near the top of their range, it rolls one extra random stat,
+  and it has a **legendary power** (shown last in its description) that
+  rolls 85-100% of its band's value. Legendary and set **bats** go in the
+  weapon slot in place of the shop bat (a better bat for their band: 40
+  damage in the first band, 79 in the last; take it off to swing the shop
+  bat again).
 
-  **Sets** (green): four class sets of four pieces, from item level 30.
-  Pieces count when worn by the tamer or, for the collar, by a party pet; the
-  bonuses go to every party pet of that class:
+  **Drop odds:** every item that drops at item level 21 or more is a
+  Legendary 6% of the time (12% for a boss's or Champion's drops, and a
+  named boss's first drop has 10% more), raised by magic find. It is one of
+  the 8 Legendaries of the item's band. About 11 items drop over an area
+  (pack monsters, Alphas, vases and the boss), so a run through an area
+  finds about 0.8 Legendaries: **none about 45% of the time, one about 37%,
+  two or more about 18%** (a little more in areas with a named boss, whose
+  3 drops count more). `scripts/tools/dropsim.gd` simulates the odds on
+  generated levels (`godot --headless -s scripts/tools/dropsim.gd`), to
+  retune `LegendaryDB.LEGENDARY_CHANCE` as areas get more content.
 
-  | Set | Pieces | 2 pieces | 4 pieces |
+  | Item levels | Area | Weapon | Chest | Pants | Hat | Boots | Rings | Necklace |
+  |---|---|---|---|---|---|---|---|---|
+  | 21-25 | Act 2 · Hollowmere Graveyard 1 | Gravedigger's Spade | Shroud of the Restless | Mourner's Leggings | Sexton's Lantern Hat | Cryptwalkers | Ring of the Pale Hand / Bonebound Band | Lantern of Lost Souls |
+  | 26-30 | Act 2 · Hollowmere Graveyard 2 | Tombstone Mallet | Ossuary Vest | Grave-Moss Trousers | Crown of Withered Roses | Mistwalker Boots | Coffin Nail Ring / Seal of the Ninth Bell | Reliquary of Whispers |
+  | 31-35 | Act 2 · Hollowmere Graveyard 3 | Howard's Fishbone Club | Drowned Captain's Coat | Bogwater Waders | Gill-Hood of the Deep | Barnacle Boots | Hook of the Deep / Ring of Rotting Tides | Pearl of the Restless Dead |
+  | 36-40 | Act 3 · Scorchsand Ruins 1 | Sandstorm Cudgel | Sunbaked Cuirass | Dune Strider Breeches | Pharaoh's Sun Crown | Scarab-Shell Sandals | Eye of the Scorpion / Ring of Endless Sands | Ankh of Ten Lives |
+  | 41-45 | Act 3 · Scorchsand Ruins 2 | Tomb King's Scepter | Wrappings of the Embalmed | Sandscoured Greaves | Mask of the Jackal God | Mirage Steppers | Signet of the Vizier / Sunstone Loop | Scarab of Rebirth |
+  | 46-50 | Act 3 · Scorchsand Ruins 3 | Obelisk Shard | Sandwyrm Scale Coat | Caravan Master's Pants | Desert Seer's Turban | Sidewinder Boots | Wyrmtooth Ring / Band of the Burning Sun | Hourglass of the Ancients |
+  | 51-55 | Act 4 · Cinderpeak Caldera 1 | Magma-Forged Bat | Ashen Guardplate | Cinderwalker Legguards | Helm of the Ember Lord | Lavastep Boots | Ring of Smouldering Wrath / Obsidian Coil | Heart of the Volcano |
+  | 56-60 | Act 4 · Cinderpeak Caldera 2 | Fireborn Bat | Salamander Hide | Pyreclad Greaves | Crown of Cinders | Ashwalker Treads | Flamebrand Signet / Ember of Kinship | Phoenix Feather Charm |
+  | 61-65 | Act 4 · Cinderpeak Caldera 3 | Caldera's Wrath | Molten Core Plate | Brimstone Breeches | Titan's Ash Helm | Firestorm Striders | Ring of the Erupting Peak / Scorched Seal | Eye of the Inferno |
+  | 66-70 | Act 5 · Frostveil Expanse 1 | Glacierbreaker | Frostbound Mantle | Rimewoven Leggings | Crown of Winter's Edge | Snowdrift Treads | Band of Endless Winter / Frostfang Loop | Shard of the Aurora |
+  | 71-75 | Act 5 · Frostveil Expanse 2 | Hailstorm Basher | Yeti-Fur Greatcoat | Icewalker Greaves | Helm of the Northern Lights | Avalanche Boots | Ring of the Frozen Heart / Pack Alpha's Signet | Locket of the Eternal Pack |
+  | 76-80 | Act 5 · Frostveil Expanse 3 | Worldsplitter | Aegis of the Pack Leader | Legplates of the Last Stand | Crown of the Beastmaster | Boots of the Endless Hunt | Ring of a Thousand Hunts / Alpha's Promise | Heart of the Wild |
+
+  The legendary powers (N = the value: in the 21-25 band → in the 76-80 band; each item rolls 85-100% of its band's):
+
+  | Power | Does | N | On |
   |---|---|---|---|
-  | Archmage's Regalia (cats) | hat, necklace, ring, collar | +20% ability damage | abilities recharge 25% faster, +20% attack damage |
-  | Crusader's Oath (dogs) | jacket, pants, necklace, collar | +25% healing and shields | +30% health, 15% less damage taken |
-  | Hawkeye's Gear (birds) | boots, ring, necklace, collar | +10% crit chance | +50% crit damage, attacks 15% faster |
-  | Basilisk's Coils (lizards) | hat, ring, necklace, collar | +25% poison damage | poison lasts 30% longer, +50% toxic blood |
+  | Pack might | Pets deal +N% damage for each pet in your party | 4 → 12 | Seal of the Ninth Bell (26-30), Obsidian Coil (51-55), Pack Alpha's Signet (71-75) |
+  | Kin bond | Pets deal +N% damage for each pet family in your party | 5 → 15 | Pearl of the Restless Dead (31-35), Ember of Kinship (56-60), Locket of the Eternal Pack (71-75) |
+  | Heel | Pets within 10 units of you take N% less damage | 8 → 20 | Drowned Captain's Coat (31-35), Dune Strider Breeches (36-40), Salamander Hide (56-60), Rimewoven Leggings (66-70), Aegis of the Pack Leader (76-80) |
+  | Hunt far | Pets more than 10 units from you deal +N% damage | 12 → 36 | Mirage Steppers (41-45), Ashwalker Treads (56-60), Boots of the Endless Hunt (76-80) |
+  | Vigor | Pets above 80% health deal +N% damage | 12 → 36 | Ring of Endless Sands (36-40), Scorched Seal (61-65) |
+  | Last stand | Pets below 35% health take N% less damage | 15 → 35 | Mourner's Leggings (21-25), Sandscoured Greaves (41-45), Brimstone Breeches (61-65), Legplates of the Last Stand (76-80) |
+  | Quicken | Pets: abilities recharge N% faster | 8 → 20 | Lantern of Lost Souls (21-25), Hourglass of the Ancients (46-50), Shard of the Aurora (66-70) |
+  | Arcane flow | Pets: +N% ability damage, healing and shields | 12 → 40 | Reliquary of Whispers (26-30), Pharaoh's Sun Crown (36-40), Heart of the Volcano (51-55), Helm of the Northern Lights (71-75) |
+  | Keen eye | Pets: +N% critical hit chance | 4 → 12 | Sunstone Loop (41-45), Helm of the Ember Lord (51-55), Heart of the Wild (76-80) |
+  | Venom lore | Pets: +N% poison and burn damage, and they last that much longer | 15 → 45 | Eye of the Scorpion (36-40), Eye of the Inferno (61-65) |
+  | Executioner | Pets deal +N% damage to enemies below 30% health | 20 → 60 | Ring of the Pale Hand (21-25), Signet of the Vizier (41-45), Flamebrand Signet (56-60), Ring of the Frozen Heart (71-75) |
+  | First strike | Pets deal +N% damage to enemies above 90% health | 20 → 60 | Coffin Nail Ring (26-30), Band of the Burning Sun (46-50), Band of Endless Winter (66-70) |
+  | Giant slayer | Pets deal +N% damage to Champions, pack Alphas and bosses | 15 → 45 | Hook of the Deep (31-35), Wyrmtooth Ring (46-50), Frostfang Loop (66-70) |
+  | Bully | Pets deal +N% damage to poisoned or stunned enemies | 15 → 45 | Ring of Rotting Tides (31-35), Ring of Smouldering Wrath (51-55) |
+  | Feast | When your pets kill an enemy, all your pets heal N% of their max health | 3 → 8 | Bonebound Band (21-25), Ankh of Ten Lives (36-40), Phoenix Feather Charm (56-60), Alpha's Promise (76-80) |
+  | Corpse blast | Enemies your pets kill explode, dealing N% of their max health to enemies nearby | 10 → 30 | Scarab of Rebirth (41-45), Ring of the Erupting Peak (61-65), Ring of a Thousand Hunts (76-80) |
+  | Rush | After you or your pets kill an enemy, you move N% faster for 4 seconds | 15 → 35 | Cryptwalkers (21-25), Scarab-Shell Sandals (36-40), Lavastep Boots (51-55), Avalanche Boots (71-75) |
+  | Siphon | When you or your pets kill an enemy, you heal N% of your max health | 2 → 6 | Barnacle Boots (31-35), Firestorm Striders (61-65) |
+  | Thorns | Enemies that hit you take N% of the damage back | 30 → 100 | Ossuary Vest (26-30), Bogwater Waders (31-35), Sandwyrm Scale Coat (46-50), Pyreclad Greaves (56-60), Icewalker Greaves (71-75) |
+  | Evasion | N% chance to dodge an attack | 6 → 15 | Mistwalker Boots (26-30), Sunbaked Cuirass (36-40), Sidewinder Boots (46-50), Molten Core Plate (61-65), Snowdrift Treads (66-70) |
+  | Second wind | Dropping below 30% health shields you for N% of your max health (once a minute) | 30 → 60 | Shroud of the Restless (21-25), Ashen Guardplate (51-55), Frostbound Mantle (66-70) |
+  | Regrowth | Heal N% of your max health every 5 seconds | 3 → 8 | Grave-Moss Trousers (26-30), Wrappings of the Embalmed (41-45), Cinderwalker Legguards (51-55), Yeti-Fur Greatcoat (71-75) |
+  | Heavy swing | Bat hits have a N% chance to stun for 1.5 seconds | 15 → 35 | Gravedigger's Spade (21-25), Tomb King's Scepter (41-45), Caldera's Wrath (61-65) |
+  | Chain swing | Bat hits arc to 2 more enemies nearby for N% of the damage | 40 → 100 | Sandstorm Cudgel (36-40), Magma-Forged Bat (51-55), Glacierbreaker (66-70) |
+  | Rally | Bat hits rouse your pets: +N% damage for 5 seconds | 10 → 30 | Tombstone Mallet (26-30), Obelisk Shard (46-50), Hailstorm Basher (71-75) |
+  | Leech swing | Bat hits heal you and your pets for N% of the damage | 20 → 50 | Howard's Fishbone Club (31-35), Fireborn Bat (56-60), Worldsplitter (76-80) |
+  | Charmer | +N% capture chance | 8 → 20 | Sexton's Lantern Hat (21-25), Mask of the Jackal God (41-45), Titan's Ash Helm (61-65), Crown of the Beastmaster (76-80) |
+  | Mentor | Pets gain N% more experience | 10 → 30 | Crown of Withered Roses (26-30), Desert Seer's Turban (46-50), Crown of Winter's Edge (66-70) |
+  | Fortune | N% better odds of good items (Legendaries too) | 20 → 50 | Gill-Hood of the Deep (31-35), Crown of Cinders (56-60) |
+  | Greed | N% more coins | 30 → 80 | Caravan Master's Pants (46-50) |
 
-  About 1 drop in 100 is a Unique or a set piece (more with magic find), and
-  each named boss has a 10% chance that its first drop is one (not in Act 1).
+  **Sets** (green): two six-piece sets for each class of pet, which drop
+  **only in the last act** of each cycle (Act 5, then Act 10...): there, every
+  item that drops is a set piece 7% of the time (with magic find), 60% of
+  them for a class in your party (smart loot). Set pieces roll their set
+  class's stats (they boost only that class's pets), and the pieces the tamer
+  wears count up to bonuses for every party pet of that class at 2, 4 and 6
+  pieces; the 6-piece bonus adds a big power. Each class has one set with a
+  bat and a necklace (leaving both ring slots free) and one with two rings
+  (leaving the bat and necklace free). In Act 5 a run through an area finds
+  about 0.8 set pieces:
+
+  | Set | Pieces | 2 pieces | 4 pieces | 6 pieces |
+  |---|---|---|---|---|
+  | Starweaver's Regalia (cats) | weapon, chest, pants, hat, boots, necklace | +25% ability damage | abilities recharge 20% faster | +100% ability damage, Enemies your cats kill explode, dealing 45% of their max health to enemies nearby |
+  | Stormcaller's Vestments (cats) | chest, pants, hat, boots, ring, ring | +10% critical hit chance | crits deal +60% more damage | +80% attack damage, Your cats deal +90% damage to enemies below 30% health |
+  | Oathkeeper's Armor (dogs) | weapon, chest, pants, hat, boots, necklace | +30% healing and shields | +30% max health | +100% healing and shields, When your dogs kill an enemy, all your pets heal 12% of their max health |
+  | Bulwark of the Pack (dogs) | chest, pants, hat, boots, ring, ring | take 12% less damage | +40% max health | +70% attack damage, Your dogs deal +70% damage to Champions, pack Alphas and bosses |
+  | Skyhunter's Plumage (birds) | weapon, chest, pants, hat, boots, necklace | +10% critical hit chance | attacks 20% faster | crits deal +150% more damage, Your birds deal +90% damage to enemies above 90% health |
+  | Windrider's Trappings (birds) | chest, pants, hat, boots, ring, ring | attacks 15% faster | +30% attack damage | +80% attack damage, Your birds more than 10 units from you deal +55% damage |
+  | Coils of the Basilisk Queen (lizards) | weapon, chest, pants, hat, boots, necklace | +30% poison and burn damage | poison and burns last 30% longer | +120% poison and burn damage, Your lizards deal +70% damage to poisoned or stunned enemies |
+  | Plaguebringer's Garb (lizards) | chest, pants, hat, boots, ring, ring | +50% toxic blood poison | take 12% less damage | +150% toxic blood poison, +40% attack damage, Enemies your lizards kill explode, dealing 45% of their max health to enemies nearby |
+
+  **Older items:** the Uniques and four-piece sets of earlier versions no
+  longer drop; ones already found keep working (Uniques now show as
+  Legendaries, without a power).
+
   Extra skill ranks from gear show in the skills window (K).
 
   **Item pictures:** every base item has its own full-colour picture (a Leather
@@ -553,7 +633,9 @@ played in the browser".
   on), with bronze, silver or gold fittings by tier. Its gem, badge or stripe
   shows the item's main bonus (red for pet damage, green for pet health,
   cyan for cooldowns, gold for magic find...) or, on class items, the class
-  colour. Uniques get a gold star and set pieces a green leaf.
+  colour. Legendaries get a gold star and set pieces a green leaf; Legendary
+  and set bats have their own picture (grip tape, iron bands from tier 2,
+  glowing runes at tier 3).
 
   **Comparing:** a green arrow marks bag items that beat what you (or one of
   your pets) wear. Click one and the inventory shows, beside its description,
@@ -802,7 +884,7 @@ The host is the authoritative server and also plays.
 | `scripts/ground_textures.gd` | The ground textures, painted in code per biome: grass, snow and ice, sand ripples, swamp mud and puddles, graveyard soil, volcanic basalt with glowing lava cracks, plus camp dirt, arena flagstones and village cobblestones |
 | `scripts/building_textures.gd` | The buildings' shared textures, painted in code: clay shingle roofs, plaster walls, plank doors (and stall woodwork) |
 | `scenes/obstacles/*.tscn` (built by `scripts/tools/build_obstacles.gd`) | Four premade trees and rocks per biome (meadow: oak, pine, mossy boulder, berry bush; frost: frosted white spruce, ice crystals, snow boulder, frozen tree; desert: cactus, sandstone pillar, palm, boulders; swamp: willow, vine tree, mossy rock, old stump; graveyard: headstones, dead tree, crypt, grave cross; volcano: lava spire, charred tree, obsidian shards, smoking vent). Areas can name their set, so the Act 3 desert and Act 5 ice areas reuse the desert and frost sets, placed turned and sized differently from the level seed. Rebuild with `godot --headless --path . -s res://scripts/tools/build_obstacles.gd` |
-| `scripts/item_db.gd`, `scripts/item_icons.gd`, `scripts/inventory_window.gd`, `scripts/loot.gd` | Gear (items: base types and tiers, item level, rarities, affixes and their ranges, class items, converting old saves), the inventory window (I: the Tamer tab, and the Pets tab with collars and the reserve) and loot sacks on the ground |
+| `scripts/item_db.gd`, `scripts/legendary_db.gd`, `scripts/item_icons.gd`, `scripts/inventory_window.gd`, `scripts/loot.gd` | Gear (items: base types and tiers, item level, rarities, affixes and their ranges, class items, converting old saves; LegendaryDB: the 96 Legendaries by band, their 30 powers and where those hook into combat, the 8 class sets and the drop odds), the inventory window (I: the Tamer tab, and the Pets tab with collars and the reserve) and loot sacks on the ground |
 | `scripts/mini_map.gd` | The mini map (and the large map, M), drawn from the level layout, with each tile's walls and fog of war on tile levels |
 | `scripts/skill_window.gd`, `scripts/skill_icons.gd` | The skills screen (K) and its skill icons, drawn in code |
 | `scripts/creature_model.gd` | Builds each creature's body from simple meshes: a cat, bird, dog or lizard, depending on its biome, or a monster (skeleton, zombie, mummy, sand scorpion, fire imp, magma golem, frost wraith, yeti) |

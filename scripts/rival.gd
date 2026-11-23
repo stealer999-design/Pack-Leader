@@ -204,8 +204,11 @@ func receive_damage(amount: float, source: Node3D, _knockback := Vector3.ZERO) -
 		return
 	if source and not Combat.are_enemies(source, self):
 		return
+	amount *= LegendaryDB.hit_multiplier(source, self)  # the tamer's legendary powers
 	health.take_damage(amount)
 	Combat.leech(source, amount)
+	if source is Player:
+		LegendaryDB.on_bat_hit(source, self, amount)
 	_flash.rpc()
 	if not engaged:
 		_engage()

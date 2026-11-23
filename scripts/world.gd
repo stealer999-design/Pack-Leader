@@ -824,15 +824,26 @@ func roll_loot(at: Vector3, chance: float, ilvl := -1, min_rarity := ItemDB.NORM
 				floor_rarity = ItemDB.RARE
 			if i == 0 and boss and p.rare_drought >= 3:
 				floor_rarity = ItemDB.RARE
-			if i == 0 and randf() < unique_chance:
-				floor_rarity = ItemDB.UNIQUE
 			var rarity := maxi(ItemDB.roll_rarity(null, p.magic_find()), floor_rarity)
 			if first_act:
 				rarity = mini(rarity, ItemDB.MAGIC)
-			if rarity >= ItemDB.RARE:
+			# Legendaries (item level 21 on) and, in the last act, set pieces: rolled
+			# apart from the rest, better odds from bosses and Champions and with magic find.
+			var find := 1.0 + p.magic_find() / 100.0
+			var legendary_odds := (LegendaryDB.BOSS_LEGENDARY_CHANCE if boss else LegendaryDB.LEGENDARY_CHANCE) * find
+			if i == 0:
+				legendary_odds += unique_chance
+			var item: Dictionary
+			if LegendaryDB.sets_drop_in(level_number) and randf() < LegendaryDB.SET_CHANCE * find:
+				var classes := get_pets(p.peer_id).map(func(c: Creature) -> String: return c.species.pet_class())
+				item = ItemDB.make_set_piece(ilvl, null, "", classes)
+			elif LegendaryDB.band_of(ilvl) >= 0 and randf() < legendary_odds:
+				item = ItemDB.make_legendary(ilvl)
+			else:
+				item = ItemDB.make_item(ilvl, null, local_class, ItemDB.NORMAL, rarity)
+			if int(item.rarity) >= ItemDB.RARE:
 				p.found_rare_this_level = true
 				p.rare_drought = 0
-			var item := ItemDB.make_item(ilvl, null, local_class, ItemDB.NORMAL, rarity)
 			var spread := Vector3(randf_range(-0.8, 0.8), 0.0, randf_range(-0.8, 0.8)) if count > 1 else Vector3.ZERO
 			loot_spawner.spawn({"pos": clamp_to_level(at + spread), "item": item, "owner": p.peer_id})
 
@@ -883,6 +894,7 @@ func award_xp(killed: Creature) -> void:
 
 ## XP for a tamer's whole team: each living party pet, and each living reserve pet.
 func _give_team_xp(p: Player, amount: int, foe_level: int) -> void:
+	amount = roundi(amount * (1.0 + LegendaryDB.amount(p.legend_powers(), "mentor") / 100.0))
 	for pet in get_pets(p.peer_id):
 		if not pet.fainted:
 			_give_xp(pet, amount, foe_level)

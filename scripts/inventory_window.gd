@@ -268,7 +268,9 @@ func refresh() -> void:
 		return
 	for slot in _equip_slots:
 		var item_slot: ItemSlot = _equip_slots[slot]
-		item_slot.item = _weapon() if slot == "weapon" else player.equipment.get(slot, {})
+		item_slot.item = player.equipment.get(slot, {})
+		if slot == "weapon" and item_slot.item.is_empty():
+			item_slot.item = _weapon()
 	var used := 0
 	for item_slot in _bag_slots:
 		item_slot.item = player.bag[item_slot.bag_index] if item_slot.bag_index < player.bag.size() else {}
@@ -382,10 +384,11 @@ func _show_tab(pets: bool) -> void:
 		refresh()
 
 
-## The bat, shown in the weapon slot (it can't be taken off; upgrade it at the Bat Shop).
+## The shop bat, shown in the weapon slot when no Legendary or set bat is worn
+## (it can't be taken off; upgrade it at the Bat Shop).
 func _weapon() -> Dictionary:
 	var bat: Dictionary = Player.BATS[player.bat_tier]
-	return {"type": "bat", "name": bat.name, "damage": bat.damage, "tier": player.bat_tier}
+	return {"type": "shop_bat", "name": bat.name, "damage": bat.damage, "tier": player.bat_tier}
 
 
 func _on_slot_clicked(item_slot: ItemSlot, double: bool) -> void:
@@ -394,7 +397,7 @@ func _on_slot_clicked(item_slot: ItemSlot, double: bool) -> void:
 			_toggle_mark(item_slot.bag_index)
 		return
 	_selected = item_slot if not item_slot.item.is_empty() else null
-	if double and _selected and _selected.item.get("type", "") != "bat":
+	if double and _selected and _selected.item.get("type", "") != "shop_bat":
 		# A shortcut: wear it / take it off.
 		if _selected.bag_index >= 0 and ItemDB.is_collar(_selected.item):
 			var pet_slot := _collar_target(_selected.item)
@@ -528,7 +531,7 @@ func _update_details() -> void:
 		_details.text = "Click an item to see what it does."
 		return
 	var item := _selected.item
-	if item.type == "bat":
+	if item.type == "shop_bat":
 		_details.text = "%s\nHits for %d. Upgrade it at the Bat Shop in the village." % [item.name, roundi(item.damage)]
 		return
 	_details.text = "[color=#%s]%s[/color]" % [ItemDB.rarity_color(item).to_html(false), ItemDB.describe(item)]
@@ -649,7 +652,7 @@ class ItemSlot:
 			accept_event()
 
 	func _get_drag_data(_at: Vector2) -> Variant:
-		if is_bin or no_drag or item.is_empty() or item.type == "bat":
+		if is_bin or no_drag or item.is_empty() or item.type == "shop_bat":
 			return null
 		var preview := ItemSlot.new()
 		preview.item = item
@@ -672,7 +675,7 @@ class ItemSlot:
 				ok = from.bag_index >= 0 or item.is_empty() or ItemDB.fits(item, from.equip_slot)
 			elif pet_slot >= 0:
 				ok = not locked and from.bag_index >= 0 and ItemDB.fits_pet(from.item, pet_species)
-			elif equip_slot != "" and equip_slot != "weapon":
+			elif equip_slot != "":
 				ok = ItemDB.fits(from.item, equip_slot)
 		if ok != _drop_hover:
 			_drop_hover = ok
@@ -708,7 +711,7 @@ class ItemSlot:
 		if _fits_dragged():
 			box.bg_color = Color(0.2, 0.18, 0.1)  # where the dragged item can go
 		var border := Color(1, 1, 1, 0.1)
-		if item.get("type", "") == "bat":
+		if item.get("type", "") == "shop_bat":
 			border = UiTheme.BORDER
 		elif not item.is_empty():
 			border = ItemDB.rarity_color(item)
@@ -729,7 +732,7 @@ class ItemSlot:
 				return
 			icon_name = ItemDB.SLOT_ICONS[equip_slot]
 			tint = Color(1, 1, 1, 0.07 if locked else 0.18)  # an empty slot shows what goes in it
-		elif item.type == "bat":
+		elif item.type == "shop_bat":
 			icon_name = "bat"
 			tint = Color(0.85, 0.65, 0.42)
 		else:  # gear: its own full-colour picture (ItemIcons), a little bigger
@@ -761,7 +764,7 @@ class ItemSlot:
 
 	## True while an item that could go in this gear slot is being dragged.
 	func _fits_dragged() -> bool:
-		if equip_slot == "" or equip_slot == "weapon" or not get_viewport().gui_is_dragging():
+		if equip_slot == "" or not get_viewport().gui_is_dragging():
 			return false
 		var data = get_viewport().gui_get_drag_data()
 		if not (data is Dictionary and data.has("item_slot") and data.item_slot != self) or locked:
@@ -775,7 +778,7 @@ class ItemSlot:
 			return "Drop an item here to throw it away."
 		if item.is_empty():
 			return ItemDB.SLOT_NAMES.get(equip_slot, "Empty")
-		if item.type == "bat":
+		if item.type == "shop_bat":
 			return "%s: hits for %d" % [item.name, roundi(item.damage)]
 		var price := ItemDB.sell_price(item)
 		return ItemDB.describe(item) + "\nSells for %d coin%s at the bat shop." % [price, "" if price == 1 else "s"]

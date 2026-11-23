@@ -99,6 +99,18 @@ static func _shape(type: String, tier: int, cloth: Color, a: String) -> String:
 				+ '<rect x="17" y="33" width="30" height="5" fill="%s" stroke="%s" stroke-width="1.8"/>' % [leather, k]
 				+ '<rect x="28" y="31.5" width="8" height="8" rx="1.5" fill="%s" stroke="%s" stroke-width="1.8"/><circle cx="32" cy="35.5" r="2.2" fill="%s"/>' % [m, k, a]
 				+ '<path d="M26 44l-4 14M38 44l4 14" stroke="%s" stroke-width="1.5"/>' % d)
+		# --- Bats (Legendary and set) -------------------------------------------
+		"bat1", "bat2", "bat3":  # a bat across the picture: grip tape, a knob, and the barrel
+			var out := ('<path d="M14 52l28-32c3-4 9-9 13-6s0 9-4 12L19 57z" fill="%s" stroke="%s" stroke-width="2.5"/>' % [c, k]
+				+ '<path d="M44 21c3-3 7-6 9-5" stroke="%s" stroke-width="1.6" fill="none"/>' % hi
+				+ '<path d="M12 50l7 7" stroke="%s" stroke-width="5" stroke-linecap="round"/><path d="M12 50l7 7" stroke="%s" stroke-width="2.6"/>' % [k, d]
+				+ '<path d="M18 46l5 5M21 43l5 5M24 40l5 5" stroke="%s" stroke-width="1.4"/>' % leather
+				+ '<circle cx="11" cy="56" r="3.4" fill="%s" stroke="%s" stroke-width="1.8"/>' % [m, k])
+			if tier >= 2:  # iron bands round the barrel
+				out += '<path d="M36 26l5 5M41 21l5 5" stroke="%s" stroke-width="2.6"/><path d="M36 26l5 5M41 21l5 5" stroke="%s" stroke-width="1.2"/>' % [k, m]
+			if tier >= 3:  # glowing runes
+				out += '<path d="M47 16l2 2M50 13l1 3M44 19l3 1" stroke="%s" stroke-width="1.8"/>' % a
+			return out + '<circle cx="48" cy="18" r="2.4" fill="%s" stroke="%s" stroke-width="1.2"/>' % [a, k]
 		# --- Pants ---------------------------------------------------------------
 		"pants1":  # Work Trousers: a waistband, a stitched knee patch, a button
 			return ('<path d="M17 8h30l4 50H37l-5-30-5 30H13z" fill="%s" stroke="%s" stroke-width="2.5"/>' % [c, k]

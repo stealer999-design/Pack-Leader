@@ -305,6 +305,7 @@ func skill_bonus(stat: String) -> float:
 			# Set bonuses: pieces worn by the tamer and collars worn by the party.
 			var collars := world.get_pets(owner_id).map(func(p: Creature) -> Dictionary: return p.collar)
 			bonus += ItemDB.set_bonus(stat, species.pet_class(), tamer.equipment, collars) / 100.0
+			bonus += LegendaryDB.pet_stat(self, stat)  # legendary and set powers, by circumstance
 	return minf(bonus, PetSkills.MAX_ARMOR) if stat == "armor" else bonus
 
 
@@ -401,6 +402,7 @@ func receive_damage(amount: float, source: Node3D, knockback := Vector3.ZERO) ->
 		return
 	if source and not Combat.are_enemies(source, self):
 		return  # no friendly fire
+	amount *= LegendaryDB.hit_multiplier(source, self)  # the attacking pet's tamer's legendary powers
 	amount *= 1.0 - skill_bonus("armor")
 	if species.is_paladin():
 		amount *= CreatureSpecies.PALADIN_DAMAGE_TAKEN
@@ -416,10 +418,13 @@ func receive_damage(amount: float, source: Node3D, knockback := Vector3.ZERO) ->
 	health.take_damage(amount)
 	Combat.leech(source, amount)
 	_flash.rpc()
+	if source is Player:
+		LegendaryDB.on_bat_hit(source, self, amount)
 	# Reflected damage has no source, so it can't bounce back again.
 	if _reflect_timer > 0.0 and source and is_instance_valid(source):
 		source.receive_damage(amount * _reflect_fraction, null)
 	if health.is_dead():
+		LegendaryDB.on_kill(source, self)
 		return
 	# Fight back against whoever hit us (wild creatures retaliate, pets defend themselves).
 	if source and _is_valid_target(source) and (is_wild() or target == null) and _pending_cast.is_empty():
@@ -479,6 +484,10 @@ func queue_ability(point: Vector3, cast_target: Creature) -> String:
 			return "%s needs a wild creature to target." % ability.display_name
 	_pending_cast = {"point": point, "target": cast_target, "time_left": CAST_TIMEOUT}
 	return ""
+
+
+func is_stunned() -> bool:
+	return _stun_timer > 0.0
 
 
 func stun(duration: float) -> void:

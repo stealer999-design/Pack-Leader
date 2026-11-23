@@ -10,12 +10,14 @@ class_name ItemDB
 ##   tiers grow with it, with no cap.
 ## - tier: the base tier (BASES): tier 2 drops from item level 21, tier 3 from 51.
 ## - rarity: NORMAL (base stat only), MAGIC (1-2 affixes), RARE (3-5, and a
-##   random name), UNIQUE and SET (reserved for named items).
+##   random name), UNIQUE (Legendary: a named item with a legendary power, see
+##   LegendaryDB) and SET (a piece of a class set, see LegendaryDB.SETS).
 ## - class: a class item (ring, necklace or collar made for cats, dogs, birds
 ##   or lizards) can roll that class's skill-tree affixes (cls_*); a class
 ##   collar fits only that class of pet, a class ring or necklace boosts only
 ##   that class.
-## The tamer's bat is not an item: bats are bought at the bat shop (Player.BATS).
+## The tamer's bat is bought at the bat shop (Player.BATS); Legendary and set
+## bats (type "bat") are items, worn in the weapon slot in its place.
 ## Items saved by older versions are converted by clean() (see _convert_v1).
 
 const VERSION := 2
@@ -44,15 +46,14 @@ const RARITIES := [
 	{"name": "Normal", "color": Color(0.86, 0.86, 0.84)},
 	{"name": "Magic", "color": Color(0.45, 0.62, 1.0)},
 	{"name": "Rare", "color": Color(1.0, 0.86, 0.3)},
-	{"name": "Unique", "color": Color(0.88, 0.62, 0.3)},
+	{"name": "Legendary", "color": Color(1.0, 0.52, 0.12)},
 	{"name": "Set", "color": Color(0.35, 0.95, 0.4)},
 ]
 ## How many affixes each rarity rolls: [fewest, most].
 const AFFIX_COUNT := [[0, 0], [1, 2], [3, 5], [4, 6], [2, 4]]
-## Chance of each rarity when an item drops (Normal, Magic, Rare, Unique-or-Set).
-## A Unique-or-Set roll is a Unique 60% of the time, else a set piece.
-const RARITY_WEIGHTS := [0.62, 0.30, 0.07, 0.01]
-const SET_SHARE := 0.4
+## Chance of each rarity when an item drops (Normal, Magic, Rare; Legendary and
+## set items are rolled apart, see LegendaryDB.LEGENDARY_CHANCE and SET_CHANCE).
+const RARITY_WEIGHTS := [0.62, 0.30, 0.08, 0.0]
 ## What the bat shop pays, by rarity, plus 1 coin per 20 item levels.
 const SELL_PRICES := [1, 3, 8, 20, 20]
 ## Armor from all gear is capped, so the tamer is never unhittable.
@@ -74,6 +75,9 @@ const BASES := {
 	"necklace": {"slot": "necklace", "names": ["Cord", "Pendant", "Talisman"], "base": {}},
 	"collar": {"slot": "collar", "names": ["Strap", "Studded Collar", "Runed Collar"],
 			"base": {"health": [[4, 8], [10, 16], [18, 26]]}},
+	# Only Legendary and set bats drop (see bat_damage_for); the shop sells the rest.
+	"bat": {"slot": "weapon", "names": ["Oak Bat", "Iron-Banded Bat", "Runed Bat"],
+			"base": {"bat_damage": [[38, 46], [44, 60], [55, 80]]}},
 }
 ## The item level each base tier starts dropping at.
 const TIER_ILVL := [1, 21, 51]
@@ -88,18 +92,19 @@ const OUTFIT_COLORS := {
 	"ring": [Color(0.85, 0.5, 0.3), Color(0.82, 0.85, 0.9), Color(0.95, 0.92, 0.82), Color(0.75, 0.3, 0.3), Color(1.0, 0.8, 0.3)],
 	"necklace": [Color(0.7, 0.55, 0.4), Color(0.95, 0.92, 0.8), Color(0.95, 0.75, 0.7), Color(0.35, 0.8, 0.5), Color(1.0, 0.45, 0.55)],
 	"collar": [Color(0.5, 0.33, 0.2), Color(0.35, 0.5, 0.75), Color(0.65, 0.68, 0.74), Color(0.6, 0.35, 0.65), Color(0.85, 0.25, 0.2)],
+	"bat": [Color(0.72, 0.52, 0.32), Color(0.6, 0.4, 0.24), Color(0.5, 0.34, 0.22), Color(0.42, 0.3, 0.26), Color(0.3, 0.24, 0.26)],
 }
 
 ## Affixes any item of the listed kinds can roll. `range` = [low, high] at item
 ## level 1 and [low, high] at item level 80 (in between, both grow evenly);
 ## `word` names the item ("Savage Band of Vigor"): a prefix or a suffix.
-const ALL_KINDS := ["jacket", "pants", "hat", "boots", "ring", "necklace", "collar"]
+const ALL_KINDS := ["jacket", "pants", "hat", "boots", "ring", "necklace", "collar", "bat"]
 const AFFIXES := {
 	"pet_damage": {"word": "Savage", "prefix": true, "kinds": ALL_KINDS, "range": [3, 6, 40, 60]},
 	"pet_health": {"word": "Hearty", "prefix": true, "kinds": ALL_KINDS, "range": [4, 8, 45, 70]},
 	"cooldown": {"word": "of Haste", "prefix": false, "kinds": ["necklace", "collar"], "range": [2, 4, 10, 15]},
 	"life_hit": {"word": "of the Leech", "prefix": false, "kinds": ["ring", "collar"], "range": [1, 2, 4, 6]},
-	"health": {"word": "of Vigor", "prefix": false, "kinds": ["jacket", "pants", "hat", "boots", "ring", "necklace"], "range": [5, 10, 120, 180]},
+	"health": {"word": "of Vigor", "prefix": false, "kinds": ["jacket", "pants", "hat", "boots", "ring", "necklace", "bat"], "range": [5, 10, 120, 180]},
 	"armor": {"word": "Sturdy", "prefix": true, "kinds": ["jacket", "pants", "hat", "boots"], "range": [2, 4, 15, 20]},
 	"poison_resist": {"word": "of Warding", "prefix": false, "kinds": ALL_KINDS, "range": [5, 10, 30, 50]},
 	"speed": {"word": "Swift", "prefix": true, "kinds": ["boots"], "range": [2, 4, 10, 15]},
@@ -140,9 +145,9 @@ const RARE_FIRST := ["Grim", "Dusk", "Storm", "Bone", "Ember", "Frost", "Wild", 
 const RARE_SECOND := ["Fang", "Howl", "Mark", "Bond", "Ward", "Claw", "Heart", "Song", "Coil", "Snare", "Crest", "Brand",
 		"Veil", "Pact", "Spur", "Knot"]
 
-## Unique items: one of a kind, named, with fixed affixes that roll near the
-## top of their range for the item level (x the multiplier given).
-## id: [name, type, tier, class ("" = any), {affix: multiplier}]
+## Legacy unique items (before the Legendary table, LegendaryDB): they no
+## longer drop, but ones already found keep working (as Legendaries without a
+## power). id: [name, type, tier, class ("" = any), {affix: multiplier}]
 const UNIQUES := {
 	"gravewarden": ["Gravewarden's Coat", "jacket", 1, "", {"health": 1.3, "armor": 1.2, "poison_resist": 1.0}],
 	"strays_overcoat": ["Stray's Overcoat", "jacket", 1, "", {"pet_health": 1.3, "health": 1.0, "coin_find": 1.0}],
@@ -186,9 +191,10 @@ const UNIQUES := {
 	"vipers_coil": ["Viper's Coil", "collar", 2, "venomancer", {"cls_dot_power": 1.4, "cls_toxic_blood": 1.3}],
 	"basilisk_fang": ["Basilisk Fang", "necklace", 3, "venomancer", {"cls_skills": 1.0, "cls_dot_duration": 1.3, "cls_dot_power": 1.2}],
 }
-## The four class sets: four pieces each (worn by the tamer, or the collar by
-## a party pet of the class), with bonuses for that class's pets at 2 and 4
-## pieces worn (skill-tree stats, percent).
+## Legacy class sets (before LegendaryDB.SETS): four pieces each (worn by
+## the tamer, or the collar by a party pet of the class), with bonuses for that
+## class's pets at 2 and 4 pieces worn. They no longer drop; pieces already
+## found keep working.
 const SETS := {
 	"archmage": {"name": "Archmage's Regalia", "class": "wizard", "bonus": {2: {"spell_power": 20}, 4: {"cooldown": 25, "damage": 20}},
 		"pieces": {
@@ -229,6 +235,7 @@ const TAMER_TEXT := {
 	"poison_resist": "Tamer and pets: take %d%% less poison",
 	"magic_find": "%d%% better odds of good items",
 	"coin_find": "%d%% more coins",
+	"bat_damage": "Bat: %d damage",
 }
 ## Pet stats from affixes: the skill-tree stat each feeds, and its words
 ## ("%s" = who: "Pets" or "This pet").
@@ -271,9 +278,42 @@ static func make_item(ilvl: int, rng: RandomNumberGenerator = null, local_class 
 	if rarity < 0:
 		rarity = roll_rarity(rng)
 	rarity = maxi(rarity, min_rarity)
-	if rarity >= UNIQUE:
-		return make_set_piece(ilvl, rng) if rng.randf() < SET_SHARE else make_unique(ilvl, rng)
+	if rarity == SET:
+		return make_set_piece(ilvl, rng)
+	if rarity == UNIQUE:
+		return make_legendary(ilvl, rng) if LegendaryDB.band_of(ilvl) >= 0 else make(type, ilvl, RARE, rng, local_class)
 	return make(type, ilvl, rarity, rng, local_class)
+
+
+## A Legendary for item level `ilvl` (at least 21): one of the 8 of its band
+## (or `id`). Its fixed stats roll near their best, it gets one more random
+## stat, and its power rolls 85-100% of its band's value. A bat's damage is
+## its band's (bat_damage_for).
+static func make_legendary(ilvl: int, rng: RandomNumberGenerator = null, id := "") -> Dictionary:
+	rng = _rng(rng)
+	if not LegendaryDB.LEGENDARIES.has(id):
+		var options := LegendaryDB.in_band(maxi(LegendaryDB.band_of(ilvl), 0))
+		id = options[rng.randi() % options.size()]
+	var spec: Array = LegendaryDB.LEGENDARIES[id]
+	var band: int = spec[2]
+	ilvl = clampi(ilvl, LegendaryDB.FIRST_ILVL + band * LegendaryDB.BAND_SIZE, MAX_ILVL)
+	var type: String = spec[1]
+	var item := _fixed_item(type, max_tier(ilvl), ilvl, UNIQUE, "", LegendaryDB.AFFIXES[type], rng)
+	var extra := affix_pool(type, "", ilvl).filter(func(a: String) -> bool: return not item.affixes.has(a))
+	if not extra.is_empty():
+		var pick: String = extra[rng.randi() % extra.size()]
+		item.affixes[pick] = roll_value(pick, ilvl, type, rng)
+	if type == "bat":
+		item.base = {"bat_damage": bat_damage_for(ilvl)}
+	item.unique = id
+	item.power = maxi(1, roundi(LegendaryDB.power_value(spec[3], band) * rng.randf_range(0.85, 1.0)))
+	return item
+
+
+## A Legendary or set bat's damage at item level `ilvl`: a little better than
+## the Chain Bat (36) in the first band, growing to about twice that.
+static func bat_damage_for(ilvl: int) -> int:
+	return roundi(36.0 * (1.1 + 0.1 * maxi(LegendaryDB.band_of(ilvl), 0)))
 
 
 ## A random unique item that can drop at `ilvl` (its tier must have started dropping).
@@ -289,8 +329,58 @@ static func make_unique(ilvl: int, rng: RandomNumberGenerator = null, id := "") 
 	return item
 
 
-## A random set piece (sets drop from item level 30).
-static func make_set_piece(ilvl: int, rng: RandomNumberGenerator = null, piece := "") -> Dictionary:
+## A piece of a class set (LegendaryDB.SETS): `piece`, or a random one, for
+## one of `classes` (the party's pet classes) SMART_SET_SHARE of the time.
+static func make_set_piece(ilvl: int, rng: RandomNumberGenerator = null, piece := "", classes: Array = []) -> Dictionary:
+	rng = _rng(rng)
+	ilvl = clampi(ilvl, 1, MAX_ILVL)
+	var set_id := LegendaryDB.set_of_piece(piece)
+	if set_id == "":
+		var sets: Array = LegendaryDB.SETS.keys()
+		var mine := sets.filter(func(k: String) -> bool: return LegendaryDB.SETS[k]["class"] in classes)
+		if not mine.is_empty() and rng.randf() < LegendaryDB.SMART_SET_SHARE:
+			sets = mine
+		set_id = sets[rng.randi() % sets.size()]
+		var pieces: Array = LegendaryDB.SETS[set_id].pieces.keys()
+		piece = pieces[rng.randi() % pieces.size()]
+	var info: Dictionary = LegendaryDB.SETS[set_id]
+	var type: String = info.pieces[piece][1]
+	var item := _fixed_item(type, max_tier(ilvl), ilvl, SET, info["class"], set_piece_affixes(set_id, piece), rng)
+	if type == "bat":
+		item.base = {"bat_damage": bat_damage_for(ilvl)}
+	item.unique = piece
+	item.set = set_id
+	return item
+
+
+## A set piece's fixed stats: {affix: multiplier}, by its slot, with the set's
+## class stats (its main one on the hat, chest, necklace and first ring).
+static func set_piece_affixes(set_id: String, piece: String) -> Dictionary:
+	var info: Dictionary = LegendaryDB.SETS[set_id]
+	var type: String = info.pieces[piece][1]
+	var main: String = "cls_" + info.main
+	var second: String = "cls_" + info.second
+	match type:
+		"bat":
+			return {"pet_damage": 1.2, second: 1.2}
+		"jacket":
+			return {"armor": 1.2, "health": 1.2, main: 1.1}
+		"pants":
+			return {"armor": 1.1, "health": 1.1, second: 1.1}
+		"hat":
+			return {"health": 1.2, "magic_find": 1.0, main: 1.2}
+		"boots":
+			return {"speed": 1.2, "health": 1.0, second: 1.1}
+		"necklace":
+			return {"cooldown": 1.1, "pet_damage": 1.0, main: 1.3}
+		"ring":
+			var rings: Array = info.pieces.keys().filter(func(k: String) -> bool: return info.pieces[k][1] == "ring")
+			return {"pet_damage": 1.1, "life_hit": 1.0, (main if rings.find(piece) == 0 else second): 1.3}
+	return {}
+
+
+## A legacy set piece (ItemDB.SETS), for saves.
+static func make_legacy_set_piece(ilvl: int, rng: RandomNumberGenerator = null, piece := "") -> Dictionary:
 	rng = _rng(rng)
 	ilvl = clampi(maxi(ilvl, 30), 1, MAX_ILVL)
 	var set_id := ""
@@ -490,8 +580,12 @@ static func display_name(item: Dictionary) -> String:
 		return ""
 	var base_name: String = BASES[item.type].names[clampi(int(item.tier), 1, 3) - 1]
 	var rarity := int(item.rarity)
+	if rarity == UNIQUE and LegendaryDB.LEGENDARIES.has(item.get("unique", "")):
+		return LegendaryDB.LEGENDARIES[item.unique][0]
 	if rarity == UNIQUE and UNIQUES.has(item.get("unique", "")):
 		return UNIQUES[item.unique][0]
+	if rarity == SET and LegendaryDB.SETS.has(item.get("set", "")) and LegendaryDB.SETS[item.set].pieces.has(item.get("unique", "")):
+		return LegendaryDB.SETS[item.set].pieces[item.unique][0]
 	if rarity == SET and SETS.has(item.get("set", "")) and SETS[item.set].pieces.has(item.get("unique", "")):
 		return SETS[item.set].pieces[item.unique][0]
 	if rarity >= RARE and str(item.get("name", "")) != "":
@@ -559,7 +653,24 @@ static func stats(item: Dictionary) -> Dictionary:
 		if PET_AFFIX_STAT.has(id):
 			var key: String = "pet_" + PET_AFFIX_STAT[id]
 			out[key] = out.get(key, 0) + value
+	var kind := power_kind(item)
+	if LegendaryDB.STAT_POWERS.has(kind):
+		var stat: String = LegendaryDB.STAT_POWERS[kind]
+		out[stat] = out.get(stat, 0) + int(item.get("power", 0))
 	return out
+
+
+## A Legendary's power ("" for other items).
+static func power_kind(item: Dictionary) -> String:
+	if int(item.get("rarity", 0)) == UNIQUE and LegendaryDB.LEGENDARIES.has(item.get("unique", "")):
+		return LegendaryDB.LEGENDARIES[item.unique][3]
+	return ""
+
+
+## A Legendary's power in words ("" for other items).
+static func power_text(item: Dictionary) -> String:
+	var kind := power_kind(item)
+	return LegendaryDB.power_text(kind, int(item.get("power", 0))) if kind != "" else ""
 
 
 ## How much of `stat` a set of worn gear gives in total (armor is capped).
@@ -583,17 +694,25 @@ static func class_bonus(item: Dictionary, pet_class: String, stat: String) -> fl
 ## each bonus whose piece count is reached adds its `stat` (percent).
 static func set_bonus(stat: String, pet_class: String, equipment: Dictionary, collars: Array) -> float:
 	var sum := 0.0
-	for set_id: String in SETS:
-		if SETS[set_id]["class"] != pet_class:
-			continue
-		var worn := {}
-		for item in equipment.values() + collars:
-			if item is Dictionary and item.get("set", "") == set_id and int(item.get("rarity", 0)) == SET:
-				worn[item.get("unique", "")] = true
-		for count: int in SETS[set_id].bonus:
-			if worn.size() >= count:
-				sum += float(SETS[set_id].bonus[count].get(stat, 0))
+	for table: Dictionary in [SETS, LegendaryDB.SETS]:
+		for set_id: String in table:
+			if table[set_id]["class"] != pet_class:
+				continue
+			var worn := {}
+			for item in equipment.values() + collars:
+				if item is Dictionary and item.get("set", "") == set_id and int(item.get("rarity", 0)) == SET:
+					worn[item.get("unique", "")] = true
+			for count: int in table[set_id].bonus:
+				if worn.size() >= count:
+					sum += float(table[set_id].bonus[count].get(stat, 0))
 	return sum
+
+
+## A set's entry (LegendaryDB.SETS, or a legacy one), or {}.
+static func set_info(set_id: String) -> Dictionary:
+	if LegendaryDB.SETS.has(set_id):
+		return LegendaryDB.SETS[set_id]
+	return SETS.get(set_id, {})
 
 
 ## How much of a skill-tree stat (or "skills") a collar gives the pet wearing it.
@@ -650,16 +769,29 @@ static func describe(item: Dictionary) -> String:
 	var fx := effect(item)
 	if fx != "":
 		lines.append(fx)
-	if int(item.rarity) == SET and SETS.has(item.get("set", "")):
-		var set_info: Dictionary = SETS[item.set]
-		var parts := []
-		for count: int in set_info.bonus:
-			var words := []
-			for stat: String in set_info.bonus[count]:
-				words.append(PetSkills.STAT_TEXT.get(stat, "+%d%%").replace("takes ", "take ") % int(set_info.bonus[count][stat]))
-			parts.append("%d pieces: %s" % [count, ", ".join(words)])
-		lines.append("%s (your %s): %s" % [set_info.name, PET_GEAR[set_info["class"]].pets, "; ".join(parts)])
+	var power := power_text(item)
+	if power != "":
+		lines.append("Legendary power: " + power)
+	if int(item.rarity) == SET:
+		lines.append(set_text(str(item.get("set", ""))))
 	return "\n".join(lines)
+
+
+## A set's bonuses in words: "Starweaver's Regalia (your cats): 2 pieces: ...".
+static func set_text(set_id: String) -> String:
+	var info := set_info(set_id)
+	if info.is_empty():
+		return ""
+	var parts := []
+	for count: int in info.bonus:
+		var words := []
+		for stat: String in info.bonus[count]:
+			words.append(PetSkills.STAT_TEXT.get(stat, "+%d%%").replace("takes ", "take ") % int(info.bonus[count][stat]))
+		if count == 6 and info.has("power"):
+			var power_words := LegendaryDB.power_text(info.power[0], info.power[1], info["class"])
+			words.append(power_words.left(1).to_lower() + power_words.substr(1))
+		parts.append("%d pieces: %s" % [count, ", ".join(words)])
+	return "%s (your %s): %s" % [info.name, PET_GEAR[info["class"]].pets, "; ".join(parts)]
 
 
 # --- Comparing items ---------------------------------------------------------------
@@ -739,11 +871,17 @@ static func power(item: Dictionary, pet_classes: Array = []) -> float:
 		if key.begins_with("cls:") and not key.split(":")[1] in pet_classes:
 			weight *= 0.1
 		sum += weight * float(summary(item)[key])
+	if power_kind(item) != "":
+		sum += LEGENDARY_POWER_WEIGHT
 	return sum
 
 
+## What a legendary power counts for in power() (the upgrade arrow).
+const LEGENDARY_POWER_WEIGHT := 25.0
+
+
 const _WEIGHTS := {
-	"armor": 1.5, "health": 0.12, "speed": 0.8, "poison_resist": 0.3, "magic_find": 0.25, "coin_find": 0.1,
+	"armor": 1.5, "health": 0.12, "speed": 0.8, "poison_resist": 0.3, "magic_find": 0.25, "coin_find": 0.1, "bat_damage": 0.5,
 	"pet_damage": 1.0, "pet_health": 0.8, "pet_cooldown": 1.2, "pet_life_hit": 3.0,
 	"damage": 1.0, "cooldown": 1.2, "life_hit": 3.0, "skills": 12.0,
 }
@@ -810,17 +948,34 @@ static func _clean_fixed(item: Dictionary) -> Dictionary:
 	var rng := RandomNumberGenerator.new()
 	var fresh: Dictionary
 	var mults: Dictionary
-	if int(item.rarity) == UNIQUE and UNIQUES.has(id):
+	var saved = item.get("affixes", {})
+	if int(item.rarity) == UNIQUE and LegendaryDB.LEGENDARIES.has(id):
+		fresh = make_legendary(ilvl, rng, id)
+		mults = LegendaryDB.AFFIXES[fresh.type]
+		# Its random extra stat: keep the saved one (if it could have rolled).
+		var pool := affix_pool(fresh.type, "", int(fresh.ilvl))
+		for affix in fresh.affixes.keys():
+			if not mults.has(affix):
+				fresh.affixes.erase(affix)
+		if saved is Dictionary:
+			for affix in saved:
+				if str(affix) in pool and not mults.has(str(affix)) and fresh.affixes.size() < mults.size() + 1:
+					fresh.affixes[str(affix)] = clampi(int(saved[affix]), 1, affix_range(str(affix), int(fresh.ilvl), fresh.type).y)
+		var spec: Array = LegendaryDB.LEGENDARIES[id]
+		fresh.power = clampi(int(item.get("power", 0)), 1, LegendaryDB.power_value(spec[3], spec[2]))
+	elif int(item.rarity) == UNIQUE and UNIQUES.has(id):
 		fresh = make_unique(ilvl, rng, id)
 		mults = UNIQUES[id][4]
-	elif int(item.rarity) == SET and SETS.has(str(item.get("set", ""))) and SETS[str(item.set)].pieces.has(id):
+	elif int(item.rarity) == SET and LegendaryDB.SETS.has(str(item.get("set", ""))) and LegendaryDB.SETS[str(item.set)].pieces.has(id):
 		fresh = make_set_piece(ilvl, rng, id)
+		mults = set_piece_affixes(str(item.set), id)
+	elif int(item.rarity) == SET and SETS.has(str(item.get("set", ""))) and SETS[str(item.set)].pieces.has(id):
+		fresh = make_legacy_set_piece(ilvl, rng, id)
 		mults = SETS[str(item.set)].pieces[id][2]
 	else:
 		return {}
-	var saved = item.get("affixes", {})
 	for affix: String in fresh.affixes:
-		var top := maxi(1, roundi(affix_range(affix, int(fresh.ilvl), fresh.type).y * float(mults[affix])))
+		var top := maxi(1, roundi(affix_range(affix, int(fresh.ilvl), fresh.type).y * float(mults.get(affix, 1.0))))
 		if saved is Dictionary and saved.has(affix):
 			fresh.affixes[affix] = clampi(int(saved[affix]), 1, top)
 	return fresh

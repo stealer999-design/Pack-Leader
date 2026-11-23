@@ -197,6 +197,8 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	_rally_timer -= delta
+	_rush_timer -= delta
 	if multiplayer.is_server():
 		_record_trail()
 		_server_attack_timer -= delta
@@ -367,7 +369,8 @@ func radius() -> float:
 
 
 func capture_boost() -> float:
-	return boost_multiplier if _boost_timer > 0.0 else 1.0
+	var charm := 1.0 + LegendaryDB.amount(legend_powers(), "charmer") / 100.0
+	return (boost_multiplier if _boost_timer > 0.0 else 1.0) * charm
 
 
 func boost_time_left() -> float:
@@ -535,7 +538,11 @@ func request_buy_potion() -> void:
 	world.tell(peer_id, "Thanks! One fresh potion.", Color(1, 0.85, 0.35))
 
 
+## The bat's damage: a worn Legendary or set bat's, else the shop bat's.
 func bat_damage() -> float:
+	var worn: Dictionary = equipment.get("weapon", {})
+	if ItemDB.is_item(worn):
+		return float(worn.base.get("bat_damage", BATS[bat_tier].damage))
 	return BATS[bat_tier].damage
 
 
@@ -998,13 +1005,35 @@ func receive_damage(amount: float, source: Node3D, _knockback := Vector3.ZERO) -
 		return
 	if source and not Combat.are_enemies(source, self):
 		return  # no friendly fire
+	var powers := legend_powers()
+	var dodge := LegendaryDB.amount(powers, "evasion")
+	if dodge > 0.0 and randf() < dodge / 100.0:
+		world.popup(self, "Dodged", "boots", Color(0.75, 0.9, 1.0))
+		return
 	_since_hit = 0.0
-	health.take_damage(amount * (1.0 - armor_percent() / 100.0))
+	var taken := amount * (1.0 - armor_percent() / 100.0)
+	health.take_damage(taken)
 	_flash.rpc()
+	# Thorns: the attacker takes a share back (with no source, so it can't bounce).
+	var thorns := LegendaryDB.amount(powers, "thorns")
+	if thorns > 0.0 and source and is_instance_valid(source) and source.has_method("receive_damage"):
+		source.receive_damage(taken * thorns / 100.0, null)
+	# Second wind: a shield when health drops low (once a minute).
+	var wind := LegendaryDB.amount(powers, "second_wind")
+	if wind > 0.0 and health.fraction() < 0.3 and not health.is_dead() and Time.get_ticks_msec() >= _second_wind_ready:
+		_second_wind_ready = Time.get_ticks_msec() + 60000
+		health.add_shield(health.max_health * wind / 100.0, 8.0)
+		world.popup(self, "Second wind!", "shield", Color(0.55, 0.8, 1.0))
 
 
 ## Server: out of combat, health slowly comes back.
 func _regenerate(delta: float) -> void:
+	var regrowth := LegendaryDB.amount(legend_powers(), "regrowth")
+	if regrowth > 0.0 and not downed:
+		_regrowth_timer += delta
+		if _regrowth_timer >= 5.0:
+			_regrowth_timer = 0.0
+			health.heal(health.max_health * regrowth / 100.0)
 	_since_hit += delta
 	if not downed and _since_hit >= regen_delay and health.current < health.max_health:
 		health.heal(health.max_health * regen_rate * delta)
@@ -1179,8 +1208,50 @@ func armor_percent() -> int:
 
 
 ## Walking speed, with boots.
+## Legendary powers -------------------------------------------------------------
+
+var _legend_cache := {}
+var _legend_dirty := true
+var _rally_timer := 0.0  ## Bat hits' "rally" power: pets hit harder while > 0 (server).
+var _rally_pct := 0.0
+var _rush_timer := 0.0  ## The "rush" power: faster while > 0 (the owner).
+var _rush_pct := 0.0
+var _second_wind_ready := 0.0  ## The "second wind" shield's cooldown, in ticks (ms).
+var _regrowth_timer := 0.0
+
+
+## The powers of the gear worn (LegendaryDB.gather), worked out again when the gear changes.
+func legend_powers() -> Dictionary:
+	if _legend_dirty:
+		_legend_cache = LegendaryDB.gather(equipment)
+		_legend_dirty = false
+	return _legend_cache
+
+
+func start_rally(pct: float) -> void:
+	_rally_timer = 5.0
+	_rally_pct = pct
+
+
+func rally_left() -> float:
+	return maxf(_rally_timer, 0.0)
+
+
+func rally_amount() -> float:
+	return _rally_pct if _rally_timer > 0.0 else 0.0
+
+
+## Server -> the owner: the "rush" power after a kill.
+@rpc("any_peer", "call_local", "reliable")
+func start_rush(pct: float) -> void:
+	if not _sent_by_server():
+		return
+	_rush_timer = 4.0
+	_rush_pct = pct
+
+
 func speed() -> float:
-	return move_speed * (1.0 + ItemDB.total(equipment, "speed") / 100.0)
+	return move_speed * (1.0 + ItemDB.total(equipment, "speed") / 100.0) * (1.0 + (_rush_pct / 100.0 if _rush_timer > 0.0 else 0.0))
 
 
 func first_empty_bag_place() -> int:
@@ -1222,7 +1293,7 @@ func request_equip(index: int, slot := "") -> void:
 ## place). If that place holds something that fits the slot, they swap.
 @rpc("any_peer", "call_local", "reliable")
 func request_unequip(slot: String, index := -1) -> void:
-	if not _sent_by_owner() or not equipment.has(slot) or equipment[slot].is_empty() or slot == "weapon":
+	if not _sent_by_owner() or not equipment.has(slot) or equipment[slot].is_empty():
 		return
 	if index >= 0 and index < bag.size() and not bag[index].is_empty():
 		if ItemDB.fits(bag[index], slot):
@@ -1492,6 +1563,7 @@ static func _pickup_glow() -> ImageTexture:
 
 
 func _gear_changed() -> void:
+	_legend_dirty = true
 	var looks := PackedInt32Array()
 	for slot in ["chest", "pants", "hat", "boots"]:
 		looks.append(ItemDB.look_level(equipment[slot]))
@@ -1545,6 +1617,7 @@ func _sync_inventory(new_bag: Array, new_equipment: Dictionary, new_stash: Array
 		bag.assign(new_bag)
 		equipment = new_equipment
 		stash.assign(new_stash)
+		_legend_dirty = true
 	inventory_changed.emit()
 
 
