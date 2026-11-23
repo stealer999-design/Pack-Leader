@@ -49,7 +49,6 @@ static func play(parent: Node3D, look: String, at: Vector3, from: Vector3, radiu
 			FXKit.sparkles(parent, at + Vector3.UP * 0.5, radius * 0.7, Color(1.0, 0.85, 0.6), 0.0, 60.0, 3.0, 0.12, false, 1.4, 70.0, -1.0)
 			for a in allies:
 				FXKit.pillar(parent, a, 0.45, 2.5, HEAL, WHITE, 0.7, 0.1)
-				FXKit.float_up(parent, a + Vector3.UP * 1.3, "+", HEAL)
 			FXKit.callout(parent, at + Vector3.UP * 2.6, "BLESSING!", PALE, OUTLINE)
 		"holy_light":  # a beam from the sky, a blinding flash, rays of light
 			FXKit.pillar(parent, at, 0.9, 14.0, WHITE, WHITE, 0.6, 0.08)
@@ -58,20 +57,14 @@ static func play(parent: Node3D, look: String, at: Vector3, from: Vector3, radiu
 			FXKit.ring(parent, at, radius, GOLD, WHITE, 0.5, 0.05, 0.05)
 			for e in enemies:
 				FXKit.flash(parent, e + Vector3.UP * 0.7, 1.3, WHITE, GOLD, 0.4, 0.1)
-			for a in allies:
-				FXKit.float_up(parent, a + Vector3.UP * 1.3, "+", HEAL)
 			FXKit.callout(parent, at + Vector3.UP * 2.6, "HOLY LIGHT!", WHITE, OUTLINE)
-		"aegis":  # a golden honeycomb dome over the allies, a little one round each
+		"aegis":  # a golden honeycomb dome over the allies (each gets a blue shield icon, play_shield_icons)
 			FXKit.dome(parent, at, radius, Color(1.0, 0.85, 0.4), 1.6)
 			FXKit.ring(parent, at, radius, GOLD, PALE, 0.5)
-			for a in allies:
-				FXKit.dome(parent, a, 0.9, BLUE, duration)
 			FXKit.callout(parent, at + Vector3.UP * 2.6, "AEGIS!", PALE, OUTLINE)
 		"shield_wall":  # tower shields slam down in a ring; a red pulse taunts
 			_shield_ring(parent, at, radius, duration)
 			FXKit.ring(parent, at, radius * 1.1, RED, Color(1.0, 0.7, 0.6), 0.6, 0.05, 0.25)
-			for a in allies:
-				FXKit.dome(parent, a, 0.9, Color(1.0, 0.85, 0.4), 1.5)
 			FXKit.callout(parent, at + Vector3.UP * 2.6, "SHIELD WALL!", PALE, OUTLINE)
 		"guardian", "challenge", "judgement":
 			_leap_trail(parent, from, at)
@@ -90,8 +83,6 @@ static func play(parent: Node3D, look: String, at: Vector3, from: Vector3, radiu
 				FXKit.callout(parent, at + Vector3.UP * 2.4, "CHALLENGE!", Color(1.0, 0.6, 0.5), OUTLINE)
 			else:
 				_hammer(parent, at)
-				for a in allies:
-					FXKit.float_up(parent, a + Vector3.UP * 1.3, "+", HEAL)
 				FXKit.callout(parent, at + Vector3.UP * 2.8, "JUDGEMENT!", PALE, OUTLINE)
 
 

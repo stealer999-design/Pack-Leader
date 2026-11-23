@@ -88,8 +88,12 @@ func _effects(pet_ref, at: Vector3, target_ref, from := Vector3.ZERO) -> void:
 	var hit := PackedVector3Array()
 	for enemy in world.enemies_near(pet, at, radius):
 		hit.append(enemy.global_position)
+	var shielded: Array = []  # (node paths: a blue shield goes over each)
+	var protect_for := 0.0
+	var healed := PackedVector3Array()  # (green plus signs go up off each)
 	if guard_duration > 0.0:
 		pet.guard(guard_duration, guard_reduction)
+		shielded.append(pet.get_path()); protect_for = maxf(protect_for, guard_duration)
 		if look == "":
 			world.play_burst.rpc(pet.global_position, Color(0.4, 0.7, 1.0), 1.6)
 	var allies := world.allies_near(pet, at, radius)
@@ -97,6 +101,10 @@ func _effects(pet_ref, at: Vector3, target_ref, from := Vector3.ZERO) -> void:
 	for ally in allies:
 		if heal_allies > 0.0:
 			ally.health.heal(ally.health.max_health * heal_allies * power)
+			healed.append(ally.global_position)
+		if shield_fraction > 0.0 or armor_duration > 0.0:
+			if not shielded.has(ally.get_path()): shielded.append(ally.get_path())
+			protect_for = maxf(protect_for, maxf(shield_duration if shield_fraction > 0.0 else 0.0, armor_duration))
 		if shield_fraction > 0.0 and ally.has_method("add_shield"):
 			ally.add_shield(ally.health.max_health * shield_fraction * power, shield_duration)
 		if armor_duration > 0.0:
@@ -106,9 +114,15 @@ func _effects(pet_ref, at: Vector3, target_ref, from := Vector3.ZERO) -> void:
 				ally.add_shield(ally.health.max_health * armor_reduction * power, armor_duration)
 	if heal_self > 0.0:
 		pet.health.heal(pet.health.max_health * heal_self * power)
+		if not healed.has(pet.global_position): healed.append(pet.global_position)
 	var injured := _most_injured(allies)
 	if injured and (heal_injured > 0.0 or (heal_from_smite > 0.0 and dealt > 0.0)):
 		injured.health.heal((injured.health.max_health * heal_injured + dealt * heal_from_smite) * power)
+		if not healed.has(injured.global_position): healed.append(injured.global_position)
+	if not healed.is_empty():
+		world.play_heal_marks.rpc(healed)
+	if not shielded.is_empty():
+		world.play_shield_icons.rpc(shielded, protect_for)
 		world.play_beam.rpc(at + Vector3.UP * 0.6, injured.global_position + Vector3.UP * 0.8, Color(0.6, 1.0, 0.6))
 		if look == "":
 			world.play_burst.rpc(injured.global_position, Color(0.6, 1.0, 0.6), 1.2)

@@ -260,3 +260,85 @@ static func ribbon_node(parent: Node, life := 5.0) -> ImmediateMesh:
 	m.global_transform = Transform3D.IDENTITY
 	_free_after(m, life)
 	return im
+
+
+static var _shield_mesh: ArrayMesh
+
+
+## A heal's mark: little green plus signs floating up off someone at `at` (their feet).
+static func heal_marks(parent: Node, at: Vector3, height := 1.3) -> void:
+	for k in 3:
+		var label := Label3D.new()
+		label.text = "+"; label.font_size = 64 if k == 0 else 44; label.outline_size = 10; label.pixel_size = 0.008
+		label.modulate = Color(0.45, 1.0, 0.4); label.outline_modulate = Color(0.0, 0.25, 0.05, 0.9)
+		label.billboard = BaseMaterial3D.BILLBOARD_ENABLED; label.no_depth_test = true; label.render_priority = 2
+		parent.add_child(label); label.top_level = true
+		var start := at + Vector3(randf_range(-0.35, 0.35), height + randf_range(-0.2, 0.15), randf_range(-0.35, 0.35))
+		label.global_position = start
+		label.scale = Vector3.ONE * 0.01
+		var tw := label.create_tween()
+		tw.tween_interval(0.12 * k)
+		tw.tween_property(label, "scale", Vector3.ONE, 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		tw.tween_property(label, "global_position:y", start.y + 0.9, 0.8).set_ease(Tween.EASE_OUT)
+		tw.tween_property(label, "scale", Vector3.ONE * 0.01, 0.25)
+		tw.tween_callback(label.queue_free)
+
+
+## A little blue shield floating over `who` (a pet or player) for `duration`, bobbing,
+## to show it's shielded or protected. A new one replaces any it already wears.
+static func shield_icon(who: Node3D, duration: float) -> void:
+	if _shield_mesh == null:
+		_shield_mesh = _make_shield()
+	var old := who.get_node_or_null("ShieldIcon")
+	if old:
+		old.name = "OldShieldIcon"; old.queue_free()
+	var icon := Node3D.new(); icon.name = "ShieldIcon"
+	who.add_child(icon)
+	var over: Node3D = who.get("overhead") as Node3D if who.get("overhead") != null else null
+	icon.position = Vector3(0, (over.position.y + 0.45) if over else 2.3, 0)
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED; mat.vertex_color_use_as_albedo = true
+	mat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED; mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	mat.no_depth_test = true; mat.render_priority = 3
+	var m := MeshInstance3D.new(); m.mesh = _shield_mesh; m.material_override = mat
+	m.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF; m.scale = Vector3.ONE * 0.38
+	icon.add_child(m)
+	icon.scale = Vector3.ONE * 0.2
+	var tw := icon.create_tween()
+	tw.tween_property(icon, "scale", Vector3.ONE, 0.2).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	var bob := icon.create_tween().set_loops(maxi(int(duration / 1.0), 1))
+	bob.tween_property(icon, "position:y", icon.position.y + 0.08, 0.5).set_trans(Tween.TRANS_SINE)
+	bob.tween_property(icon, "position:y", icon.position.y, 0.5).set_trans(Tween.TRANS_SINE)
+	icon.get_tree().create_timer(maxf(duration - 0.25, 0.1)).timeout.connect(func() -> void:
+		if not is_instance_valid(icon): return
+		var out := icon.create_tween()
+		out.tween_property(icon, "scale", Vector3.ONE * 0.05, 0.25)
+		out.tween_callback(icon.queue_free))
+
+
+## A heater shield's outline (flat top, curving to a point), 1 unit tall, facing +Z.
+static func _make_shield() -> ArrayMesh:
+	var pts: Array[Vector2] = []
+	pts.append(Vector2(-0.42, 0.5)); pts.append(Vector2(0.0, 0.44)); pts.append(Vector2(0.42, 0.5))  # (a slight dip along the top)
+	pts.append(Vector2(0.42, 0.05))  # straight sides down to the middle...
+	for i in range(1, 10):  # ...then curving in to the point
+		var u := float(i) / 10.0
+		pts.append(Vector2(0.42 * cos(u * PI * 0.5), 0.05 - 0.55 * sin(u * PI * 0.5)))
+	pts.append(Vector2(0.0, -0.5))
+	for i in range(9, 0, -1):
+		var u := float(i) / 10.0
+		pts.append(Vector2(-0.42 * cos(u * PI * 0.5), 0.05 - 0.55 * sin(u * PI * 0.5)))
+	pts.append(Vector2(-0.42, 0.05))
+	# drawn in order (no depth test): a white rim, the blue face inside it, a pale stripe down it
+	var st := SurfaceTool.new(); st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var c := Vector2(0, 0.05)
+	var fan := func(scale: float, col: Color, squeeze := 1.0) -> void:
+		for i in pts.size():
+			var a: Vector2 = c + (pts[i] - c) * scale * Vector2(squeeze, 1.0)
+			var b: Vector2 = c + (pts[(i + 1) % pts.size()] - c) * scale * Vector2(squeeze, 1.0)
+			for v in [c, a, b]:
+				st.set_color(col); st.add_vertex(Vector3(v.x, v.y, 0))
+	fan.call(1.0, Color(0.95, 0.98, 1.0))
+	fan.call(0.8, Color(0.2, 0.5, 1.0))
+	fan.call(0.62, Color(0.55, 0.78, 1.0), 0.2)
+	return st.commit()

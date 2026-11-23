@@ -734,8 +734,13 @@ func _tick_zones(delta: float) -> void:
 			continue
 		zone.tick = 0.5
 		if zone.heal > 0.0:  # a holy zone also heals its source's side (fraction of max health per second)
+			var healed := PackedVector3Array()
 			for ally in allies_near(zone.source, zone.pos, zone.radius):
 				ally.health.heal(ally.health.max_health * zone.heal * 0.5)
+				healed.append(ally.global_position)
+			zone["beat"] = not zone.get("beat", false)
+			if zone["beat"] and not healed.is_empty():  # (a plus sign once a second, not every tick)
+				play_heal_marks.rpc(healed)
 		if zone.dps <= 0.0 and zone.poison_dps <= 0.0:
 			continue
 		for enemy in enemies_near(zone.source, zone.pos, zone.radius):
@@ -2462,6 +2467,23 @@ func play_hail(from: Vector3, to: Vector3, travel: float, radius: float) -> void
 @rpc("authority", "call_local", "unreliable")
 func play_wave(origin: Vector3, forward: Vector3, radius: float, cone_degrees: float, color: Color) -> void:
 	TidalWaveFX.play(self, origin, forward, radius, cone_degrees, color)
+
+
+## Green plus signs floating up off each of `at` (someone healed by a dog's spell).
+@rpc("authority", "call_local", "unreliable")
+func play_heal_marks(at: PackedVector3Array) -> void:
+	for p in at:
+		FXKit.heal_marks(self, p)
+
+
+## A little blue shield over each of `who` (paths of pets or players a dog's spell
+## shielded or protected) for `duration` seconds.
+@rpc("authority", "call_local", "unreliable")
+func play_shield_icons(who: Array, duration: float) -> void:
+	for path in who:
+		var node := get_node_or_null(path) as Node3D
+		if node:
+			FXKit.shield_icon(node, duration)
 
 
 ## A dog's or lizard's ability look (HolyFX / SwampFX): `family` "holy" or
