@@ -21,7 +21,7 @@ const THEMES := {
 	},
 	"sandstone": {
 		"place": "the sandstone vault", "entrance": "Vault", "key": "Sun Key", "keeper": "Vault Keeper",
-		"floor_texture": "res://textures/dungeon/sandstone/tiles144_", "floor_tile": 8.0,
+		"floor_texture": "res://textures/dungeon/sandstone/tiles144_", "floor_tile": 8.0, "floor_roughness": 0.9,
 		# Sandstone from ambientCG (CC0): dressed blocks (Bricks084) for the walls,
 		# rough layered stone (Bricks083) for the pillars, wall_tile / pillar_tile
 		# units a repeat.

@@ -1964,9 +1964,13 @@ func _dungeon_floor_material(theme: Dictionary) -> Material:
 	mat.albedo_texture = load(base + "color.png")
 	mat.normal_enabled = true
 	mat.normal_texture = load(base + "normal.png")
-	mat.roughness_texture = load(base + "roughness.png")
-	mat.roughness = 1.0
-	mat.metallic_specular = 0.8
+	if theme.has("floor_roughness"):  # a matte floor: one roughness all over, little shine
+		mat.roughness = float(theme.floor_roughness)
+		mat.metallic_specular = 0.25
+	else:
+		mat.roughness_texture = load(base + "roughness.png")
+		mat.roughness = 1.0
+		mat.metallic_specular = 0.8
 	mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 	mat.uv1_triplanar = true
 	mat.uv1_world_triplanar = true
