@@ -1697,8 +1697,15 @@ func _add_door(at: Vector3, door_mat: Material, frame_mat: Material) -> void:
 
 
 ## A wall along z at local `x`, from `z_from` to `z_to`.
+## Tall dungeon walls built so far (for crown mouldings, DungeonBuilder):
+## [from, to] at their tops, the wall's mid line.
+var dungeon_wall_tops: Array = []
+
+
 func _add_wall_z(x: float, z_from: float, z_to: float, mat: Material, low := false, height := 2.0) -> void:
 	var length := absf(z_from - z_to)
+	if length > 0.05 and not low and height >= DUNGEON_WALL_HEIGHT:
+		dungeon_wall_tops.append([Vector3(x, height, z_from), Vector3(x, height, z_to)])
 	if length > 0.05:
 		_add_box(Vector3(x, height * 0.5, (z_from + z_to) * 0.5), Vector3(1.0, height, length), mat, low)
 
@@ -1850,6 +1857,7 @@ func _build_path(floor_mat: Material, camp_mat: Material, arena_mat: Material, w
 ## hides anyone), knee-high ruins, trampled dirt at the camp and the boss
 ## arena off the boss tile's right side.
 func _build_open(floor_mat: Material, camp_mat: Material, arena_mat: Material, wall_mat: StandardMaterial3D) -> void:
+	dungeon_wall_tops.clear()
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var dungeon_rooms: Array[SurfaceTool] = []  # the dungeon's floors, a room each
@@ -1948,7 +1956,7 @@ const DOORWAY_HALF := 3.3  ## Half the Keeper room's doorway (as wide as the ice
 ## The dungeon walls' material, by theme (carved ice glows faintly).
 func _dungeon_wall_material(theme: Dictionary) -> StandardMaterial3D:
 	if theme.has("wall_texture"):
-		return DungeonBuilder.textured(theme.wall_texture, theme.wall_tile)
+		return DungeonBuilder.textured(theme.wall_texture, theme.wall_tile, theme.get("wall_tint", Color.WHITE))
 	var mat := _material(theme.wall)
 	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 	if DungeonDB.theme_id(layout.get("biome", 0)) == "ice":
@@ -2083,6 +2091,8 @@ func _build_boss_arena(floor_mat: Material, arena_mat: Material, wall_mat: Mater
 ## A wall along x at local `z`, from `x_from` to `x_to`.
 func _add_wall_x(z: float, x_from: float, x_to: float, mat: Material, low := false, height := 2.0) -> void:
 	var length := absf(x_to - x_from)
+	if length > 0.05 and not low and height >= DUNGEON_WALL_HEIGHT:
+		dungeon_wall_tops.append([Vector3(x_from, height, z), Vector3(x_to, height, z)])
 	if length > 0.05:
 		_add_box(Vector3((x_from + x_to) * 0.5, height * 0.5, z), Vector3(length, height, 1.0), mat, low)
 

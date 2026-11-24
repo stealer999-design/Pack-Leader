@@ -31,6 +31,8 @@ static func build(world: World, layout: Dictionary, theme: Dictionary, theme_id:
 	var root: Node3D = world.level_root
 	var d: Dictionary = layout.dungeon
 	_entrance(root, d.entrance, theme, theme_id)
+	if theme.has("crown_moulding"):
+		_crown_mouldings(root, layout, world.dungeon_wall_tops, theme, wall_mat)
 	_interior(root, layout, theme, theme_id, wall_mat)
 	_stairs(root, d.exit, theme)
 	_key(root, theme)
@@ -594,6 +596,63 @@ static func _wall_torch(inside: Node3D, theme: Dictionary, at: Vector3) -> void:
 	var flame_at: Vector3 = at + Vector3(WALL_TORCH_FLAME.z * k, WALL_TORCH_FLAME.y * k, 0.0)
 	_flame(inside, flame_at, 0.5)
 	_flicker(inside, flame_at + Vector3(0.6, 0.3, 0.0), 0.8, 7.0)
+
+
+## A crown moulding along the top of every tall dungeon wall, on each face
+## that looks into a room (the outside of the dungeon's outer walls is never
+## seen): a light baked copy of the model's piece (scripts/tools/
+## cluster_model.gd; it runs along its x, its carved face towards -z),
+## repeated along the wall and stretched MOULDING_STRETCH times its own length
+## so the run's pieces meet end to end, in the walls' own material. One
+## MultiMesh per wall face, so walls off screen aren't drawn.
+const MOULDING_HEIGHT := 0.55  ## How tall the moulding stands.
+const MOULDING_STRETCH := 2.4  ## Each piece this many times its own length along the wall.
+
+
+static func _crown_mouldings(root: Node3D, layout: Dictionary, tops: Array, theme: Dictionary, wall_mat: Material) -> void:
+	var piece := load(theme.crown_moulding) as Mesh
+	var bounds := piece.get_aabb()
+	var k := MOULDING_HEIGHT / maxf(bounds.size.y, 0.001)
+	var length := bounds.size.x * k * MOULDING_STRETCH
+	var holder := Node3D.new()
+	holder.name = "CrownMouldings"
+	root.add_child(holder)
+	for top: Array in tops:
+		var a: Vector3 = top[0]
+		var b: Vector3 = top[1]
+		var run := a.distance_to(b)
+		var along := (b - a).normalized()
+		var count := maxi(1, roundi(run / length))
+		var stretch := run / (count * bounds.size.x * k)
+		for face in [-1.0, 1.0]:
+			var out: Vector3 = Vector3(-along.z, 0.0, along.x) * face  # one side of the wall
+			var probe: Vector3 = (a + b) * 0.5 + out * 1.5
+			probe.y = 0.0
+			var room := LevelGenerator.cell_at(layout, probe)
+			if room < 0 or layout.cells[room].get("grid", "") != "dungeon":
+				continue  # nothing to see on that side
+			# The piece's +x along the wall, its carved face (-z) outwards, its back
+			# (+z) against this face of the wall and its top level with the wall's.
+			var basis := Basis(along * k * stretch, Vector3.UP * k, -out * k)
+			if basis.determinant() < 0.0:
+				basis.x = -basis.x  # never mirrored (a mirrored piece draws inside out)
+			var spots: Array[Transform3D] = []
+			for i in count:
+				var mid := a + along * (run * (i + 0.5) / count)
+				var origin: Vector3 = mid + out * (0.5 + bounds.end.z * k) - Vector3(0.0, bounds.end.y * k, 0.0) \
+						- basis.x * bounds.get_center().x
+				spots.append(Transform3D(basis, origin))
+			var mm := MultiMesh.new()
+			mm.transform_format = MultiMesh.TRANSFORM_3D
+			mm.mesh = piece
+			mm.instance_count = spots.size()
+			for i in spots.size():
+				mm.set_instance_transform(i, spots[i])
+			var node := MultiMeshInstance3D.new()
+			node.multimesh = mm
+			node.material_override = wall_mat
+			node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			holder.add_child(node)
 
 
 ## A burning flame, `height` tall, its foot at `at`: two flame cards (the

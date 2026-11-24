@@ -21,6 +21,10 @@ const THEMES := {
 		"floor_texture": "res://textures/dungeon/crypt/floor_", "floor_tile": 18.0, "floor_roughness": 1.0, "floor_specular": 0.05,
 		"floor_aligned": true,  # its stones run along the walls (not on the world grid, which is diagonal to them)
 		"pillar_model": "res://models/dungeon/crypt/stone_pillar.glb", "pillar_width": 0.9, "centre_pillars": true,
+		# Concrete walls (ambientCG Concrete030) in the walls' own grey, a carved
+		# crown moulding along the top of every tall wall, in the same concrete.
+		"wall_texture": "res://textures/dungeon/crypt/wall_", "wall_tile": 5.0, "wall_tint": Color(0.89, 0.88, 0.99),
+		"crown_moulding": "res://models/dungeon/crypt/crown_moulding_lite.res",
 		"wall": Color(0.34, 0.33, 0.36), "trim": Color(0.22, 0.21, 0.24), "floor_style": "flagstone",
 		"floor": Color(0.3, 0.29, 0.32), "glow": Color(0.6, 0.85, 1.0), "key_color": Color(0.75, 0.85, 1.0),
 	},
