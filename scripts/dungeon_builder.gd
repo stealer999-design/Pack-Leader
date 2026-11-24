@@ -17,6 +17,13 @@ class_name DungeonBuilder
 const DOOR_GLOW := 2.2
 ## A brazier's light underground: energy, range (every dungeon alike, so all are as dark).
 const BRAZIER_LIGHT := Vector2(1.0, 8.0)
+## Torches (a theme's floor_torch / wall_torch models): their sizes, where a
+## wall torch is mounted, and where its flame sits in the model (its units:
+## y up, z out from the wall).
+const FLOOR_TORCH_HEIGHT := 1.9
+const WALL_TORCH_HEIGHT := 1.4
+const WALL_TORCH_MOUNT := 1.75
+const WALL_TORCH_FLAME := Vector3(0.0, 44.0, 27.0)
 
 
 static func build(world: World, layout: Dictionary, theme: Dictionary, theme_id: String, wall_mat: Material) -> void:
@@ -377,8 +384,8 @@ static func _interior(root: Node3D, layout: Dictionary, theme: Dictionary, theme
 	var rng := RandomNumberGenerator.new()
 	rng.seed = int(d.arrive.x * 1000.0 + d.arrive.z)
 	for cell: Dictionary in layout.cells:
-		if cell.get("grid", "") != "dungeon":
-			continue
+		if cell.get("grid", "") != "dungeon" or theme.has("wall_torch"):
+			continue  # (a theme with wall torches leaves its walls bare)
 		var r: Rect2 = cell.rect
 		for side in ["n", "w", "e"]:
 			if not cell.closed[side]:
@@ -427,12 +434,104 @@ static func _interior(root: Node3D, layout: Dictionary, theme: Dictionary, theme
 		lit += 1
 		for z in ([-3.5, 3.5] if cell.kind == "dungeon_keeper" else [0.0]):
 			var at := Vector3(r.position.x + 1.6, 0.0, r.get_center().y + z)
+			if theme.has("floor_torch"):  # a torch on its tripod, burning
+				_model(inside, theme.floor_torch, at, FLOOR_TORCH_HEIGHT)
+				_solid(inside, Vector3(0.7, FLOOR_TORCH_HEIGHT, 0.7), at + Vector3(0.0, FLOOR_TORCH_HEIGHT * 0.5, 0.0))
+				_flame(inside, at + Vector3(0.0, FLOOR_TORCH_HEIGHT * 0.83, 0.0), 0.65)
+				_flicker(inside, at + Vector3(0.0, FLOOR_TORCH_HEIGHT + 0.5, 0.0), BRAZIER_LIGHT.x, BRAZIER_LIGHT.y)
+				continue
 			_cylinder(inside, 0.12, 0.2, 1.0, at + Vector3(0.0, 0.5, 0.0), trim)
 			_cylinder(inside, 0.45, 0.25, 0.3, at + Vector3(0.0, 1.1, 0.0), trim)
 			_ball(inside, at + Vector3(0.0, 1.35, 0.0), Vector3(0.3, 0.42, 0.3), glow)
 			_solid(inside, Vector3(0.8, 1.3, 0.8), at + Vector3(0.0, 0.65, 0.0))
 			# Each brazier's own light, as dim as the ice halls' (BRAZIER_LIGHT).
 			_light(inside, at + Vector3(0.6, 2.4, 0.0), theme.glow, BRAZIER_LIGHT.x, BRAZIER_LIGHT.y)
+	if theme.has("wall_torch"):
+		_wall_torches(inside, layout, theme)
+
+
+## Wall torches: two on each room's far wall (facing the camera), where it
+## has one, either side of its middle.
+static func _wall_torches(inside: Node3D, layout: Dictionary, theme: Dictionary) -> void:
+	for cell: Dictionary in layout.cells:
+		if cell.get("grid", "") != "dungeon" or not cell.closed.n:
+			continue
+		var r: Rect2 = cell.rect
+		for side in [-1.0, 1.0]:  # two per wall, either side of its middle (where a floor torch may stand)
+			_wall_torch(inside, theme, Vector3(r.position.x + 0.5, WALL_TORCH_MOUNT, r.get_center().y + side * 5.5))
+
+
+static func _wall_torch(inside: Node3D, theme: Dictionary, at: Vector3) -> void:
+	var torch := (load(theme.wall_torch) as PackedScene).instantiate() as Node3D
+	var k := WALL_TORCH_HEIGHT / maxf(_bounds(torch).size.y, 0.001)
+	torch.scale = Vector3.ONE * k
+	torch.rotation.y = PI / 2.0  # its back plate on the wall, the torch leaning out into the room
+	torch.position = at
+	inside.add_child(torch)
+	var flame_at: Vector3 = at + Vector3(WALL_TORCH_FLAME.z * k, WALL_TORCH_FLAME.y * k, 0.0)
+	_flame(inside, flame_at, 0.5)
+	_flicker(inside, flame_at + Vector3(0.6, 0.3, 0.0), 0.8, 7.0)
+
+
+## A burning flame, `height` tall, its foot at `at`: two flame cards (the
+## torch_flame shader, each moving its own way) round a smaller, hotter core,
+## and a few sparks rising and fading.
+static func _flame(parent: Node3D, at: Vector3, height: float) -> void:
+	var f := Node3D.new()
+	f.name = "Flame"
+	f.position = at
+	parent.add_child(f)
+	var shader := load("res://scripts/torch_flame.gdshader") as Shader
+	for layer in [[0.62, 1.0, 1.7], [0.5, 0.88, 1.5], [0.3, 0.55, 2.6]]:  # width, height, brightness
+		var card := QuadMesh.new()
+		card.size = Vector2(height * layer[0], height * layer[1])
+		card.center_offset = Vector3(0.0, height * layer[1] * 0.5, 0.0)
+		var mat := ShaderMaterial.new()
+		mat.shader = shader
+		mat.set_shader_parameter("seed", randf() * 50.0)
+		mat.set_shader_parameter("intensity", layer[2])
+		mat.set_shader_parameter("speed", randf_range(0.85, 1.15))
+		var part := MeshInstance3D.new()
+		part.mesh = card
+		part.material_override = mat
+		part.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		f.add_child(part)
+	var sparks := CPUParticles3D.new()
+	sparks.amount = 7
+	sparks.lifetime = 1.1
+	sparks.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
+	sparks.emission_sphere_radius = height * 0.12
+	sparks.direction = Vector3.UP
+	sparks.spread = 22.0
+	sparks.initial_velocity_min = 0.5
+	sparks.initial_velocity_max = 1.1
+	sparks.gravity = Vector3(0.0, 0.3, 0.0)
+	sparks.position = Vector3(0.0, height * 0.35, 0.0)
+	var dot := QuadMesh.new()
+	dot.size = Vector2(0.035, 0.035)
+	var spark_mat := StandardMaterial3D.new()
+	spark_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	spark_mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	spark_mat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	spark_mat.vertex_color_use_as_albedo = true
+	spark_mat.albedo_color = Color(1.0, 0.65, 0.25)
+	dot.material = spark_mat
+	sparks.mesh = dot
+	var fade := Gradient.new()
+	fade.set_color(0, Color(1.0, 0.85, 0.5, 1.0))
+	fade.set_color(1, Color(1.0, 0.3, 0.05, 0.0))
+	sparks.color_ramp = fade
+	f.add_child(sparks)
+
+
+## A torch's flickering light.
+static func _flicker(parent: Node3D, at: Vector3, energy: float, reach: float) -> void:
+	var light := FlickerLight.new()
+	light.position = at
+	light.light_color = Color(1.0, 0.64, 0.32)
+	light.light_energy = energy
+	light.omni_range = reach
+	parent.add_child(light)
 
 
 ## A model (a .glb), `size` units tall (wider or deeper by `stretch`), turned
@@ -453,7 +552,14 @@ static func _bounds(node: Node3D) -> AABB:
 	var box := AABB()
 	var first := true
 	for m in node.find_children("*", "MeshInstance3D", true, false):
-		var part := (m as MeshInstance3D).get_aabb()
+		# Through the model's own node transforms (Sketchfab exports nest scales and turns).
+		var t := Transform3D()
+		var up: Node = m
+		while up != node and up != null:
+			if up is Node3D:
+				t = (up as Node3D).transform * t
+			up = up.get_parent()
+		var part := t * (m as MeshInstance3D).get_aabb()
 		box = part if first else box.merge(part)
 		first = false
 	return box
