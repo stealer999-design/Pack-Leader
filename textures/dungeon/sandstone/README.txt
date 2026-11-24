@@ -2,6 +2,6 @@ The sandstone vault's floor (DungeonDB "sandstone", World._dungeon_floor_materia
 tiles144_color.png, tiles144_normal.png (OpenGL convention), tiles144_roughness.png
 from ambientCG Tiles144 (CC0, https://ambientcg.com/a/Tiles144), 1K PNG.
 
-wall_*.png (staggered sandstone blocks) and pillar_*.png (fluted column drums)
-are painted by scripts/tools/sandstone_textures.py (seamless, 1024 px; color,
-normal (OpenGL), roughness).
+wall_*.png from ambientCG Bricks084 (CC0, https://ambientcg.com/a/Bricks084), 1K PNG.
+pillar_*.png from ambientCG Bricks083 (CC0, https://ambientcg.com/a/Bricks083), 1K PNG.
+(scripts/tools/sandstone_textures.py paints stand-ins in the same format.)
