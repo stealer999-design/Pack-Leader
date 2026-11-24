@@ -52,6 +52,10 @@ const THEMES := {
 	},
 	"ancient": {
 		"place": "the ancient caves", "entrance": "Ancient Cave", "key": "Ember Key", "keeper": "Cave Keeper",
+		# An open hall like the ice halls' (walls only round the outside and the
+		# Keeper's room), a pillar in every room but the Keeper's, and less dark
+		# than the other dungeons (its ambient light, World._update_darkness).
+		"open_hall": true, "dark_sun": 0.3, "dark_ambient": 0.6,
 		"wall": Color(0.2, 0.18, 0.19), "trim": Color(0.34, 0.3, 0.28), "floor_style": "flagstone",
 		"floor": Color(0.2, 0.17, 0.17), "glow": Color(1.0, 0.45, 0.12), "key_color": Color(1.0, 0.5, 0.2),
 	},

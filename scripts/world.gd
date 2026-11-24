@@ -2009,8 +2009,10 @@ func _update_darkness(delta: float) -> void:
 	if is_equal_approx(_dark, target) and target == 0.0:
 		return
 	_dark = move_toward(_dark, target, delta * 1.6)
-	sun.light_energy = lerpf(_sun_energy, DARK_SUN, _dark)
-	env_node.environment.ambient_light_energy = lerpf(_ambient_energy, DARK_AMBIENT, _dark)
+	# A theme can be less dark (its dark_sun and dark_ambient: the volcano's caves).
+	var theme := dungeon_theme()
+	sun.light_energy = lerpf(_sun_energy, float(theme.get("dark_sun", DARK_SUN)), _dark)
+	env_node.environment.ambient_light_energy = lerpf(_ambient_energy, float(theme.get("dark_ambient", DARK_AMBIENT)), _dark)
 	for p in get_players():
 		_glow(p, TAMER_GLOW.energy, TAMER_GLOW.range, TAMER_GLOW.color)
 	for pet in get_all_pets():

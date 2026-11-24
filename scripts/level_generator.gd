@@ -574,7 +574,8 @@ static func generate_open(level_seed: int, path: Dictionary) -> Dictionary:
 	entrance_cell.entrance = true
 	var entrance_at := Vector3(entrance_cell.rect.get_center().x - 4.0, 0.0, entrance_cell.rect.get_center().y)
 	var hall: bool = DungeonDB.theme(path.biome).get("open_hall", false)
-	var dungeon := _dungeon(rng, cells, cell_index, entrance_at, hall)
+	var dungeon := _dungeon(rng, cells, cell_index, entrance_at, hall,
+			DungeonDB.theme(path.biome).get("models", {}).has("centre"))
 	if DungeonDB.theme(path.biome).get("centre_pillars", false):
 		_centre_pillars(dungeon, cells)
 
@@ -801,12 +802,12 @@ static func in_dungeon(layout: Dictionary, p: Vector3) -> bool:
 ## out, in front of the entrance), arrive, exit, keeper: Vector3, spots:
 ## [{pos, group}], pillars: [Vector3], bounds: Rect2}.
 static func _dungeon(rng: RandomNumberGenerator, cells: Array[Dictionary], cell_index: Dictionary,
-		entrance_at: Vector3, hall := false) -> Dictionary:
+		entrance_at: Vector3, hall := false, centrepiece := true) -> Dictionary:
 	var inside := func(c: Vector2i) -> bool: return c.x >= 0 and c.x < DUNGEON_COLS and c.y >= 0 and c.y < DUNGEON_ROWS
 	var start := Vector2i(0, rng.randi_range(0, DUNGEON_ROWS - 1))
 	var links := {}
 	if hall:
-		return _hall(rng, cells, cell_index, entrance_at, start)
+		return _hall(rng, cells, cell_index, entrance_at, start, centrepiece)
 	# The Keeper's room: the far back corner, walled all round but for a
 	# doorway in the middle of its south wall (the camera's side), as in every
 	# dungeon. The maze fills the other rooms and leads to that doorway.
@@ -893,7 +894,7 @@ static func _dungeon(rng: RandomNumberGenerator, cells: Array[Dictionary], cell_
 ## room but the Keeper's and the quiet room with the centrepiece; packs and
 ## the centrepiece as in a maze.
 static func _hall(rng: RandomNumberGenerator, cells: Array[Dictionary], cell_index: Dictionary,
-		entrance_at: Vector3, start: Vector2i) -> Dictionary:
+		entrance_at: Vector3, start: Vector2i, centrepiece := true) -> Dictionary:
 	var keeper := Vector2i(DUNGEON_COLS - 1, 0)
 	var links := {}
 	for col in DUNGEON_COLS:
@@ -935,7 +936,7 @@ static func _hall(rng: RandomNumberGenerator, cells: Array[Dictionary], cell_ind
 			spots.append({"pos": mid + Vector3(cos(angle), 0.0, sin(angle)) * rng.randf_range(1.5, 3.2), "group": 1000 + group})
 	var centre := Vector3.INF
 	var quiet := Rect2()
-	if middle_rooms.size() > packs:
+	if centrepiece and middle_rooms.size() > packs:  # (a theme with a centrepiece model: the ice halls' fountain)
 		quiet = middle_rooms[packs]
 		centre = Vector3(quiet.get_center().x, 0.0, quiet.get_center().y)
 	var first := dungeon_rect(start)
