@@ -237,6 +237,7 @@ static func _entrance(root: Node3D, at: Vector3, theme: Dictionary, theme_id: St
 			crypt.rotation.y = PI / 2.0
 			crypt.scale = Vector3.ONE * 2.6
 			e.add_child(crypt)
+			_open_crypt_door(e)
 			for z in [-1.9, 1.9]:  # ghostly candles either side of the steps
 				_cylinder(e, 0.07, 0.07, 0.45, Vector3(3.2, 0.22, z), _mat(Color(0.9, 0.88, 0.8)))
 				_ball(e, Vector3(3.2, 0.55, z), Vector3(0.09, 0.15, 0.09), glow)
@@ -312,6 +313,44 @@ static func _entrance(root: Node3D, at: Vector3, theme: Dictionary, theme_id: St
 			_solid(e, Vector3(5.2, 2.7, 5.2), Vector3(-0.8, 1.3, 0.0))
 			_solid(e, Vector3(2.6, 1.3, 2.5), Vector3(1.5, 0.65, 0.0))
 	_sign(e, theme.entrance, Vector3(2.4, {"crypt": 8.0, "ice": 3.6}.get(theme_id, 5.4), 0.0), Color(theme.key_color).lightened(0.3))
+
+
+## The crypt model's iron gate, thrown open: its arched doorway (measured on
+## the model: the gate's plane 1.6 out from the centre (its lock a little
+## further, so the darkness stands at 1.9), 2.3 wide, from the top
+## step at 0.85 up to a pointed top at 4.6) covered by darkness, and two iron
+## gate leaves swung wide on their hinges at the jambs.
+const CRYPT_DOOR := {"x": 1.9, "half": 1.1, "bottom": 0.85, "spring": 3.85, "top": 4.6}
+
+
+static func _open_crypt_door(e: Node3D) -> void:
+	var d := CRYPT_DOOR
+	var dark := _dark()
+	var tall: float = d.spring - d.bottom
+	_box(e, Vector3(0.04, tall, d.half * 2.0), Vector3(d.x, d.bottom + tall * 0.5, 0.0), dark)
+	var arch := PrismMesh.new()  # the pointed top
+	arch.size = Vector3(d.half * 2.0, d.top - d.spring, 0.04)
+	_add(e, arch, Vector3(d.x, (d.spring + d.top) * 0.5, 0.0), dark, Vector3(0.0, PI / 2.0, 0.0))
+	var iron := _mat(Color(0.2, 0.18, 0.16))
+	iron.metallic = 0.6
+	iron.roughness = 0.55
+	var rust := _mat(Color(0.36, 0.24, 0.15))
+	for side in [-1.0, 1.0]:
+		# A leaf hinged at its jamb, swung out ~105 degrees towards the camera.
+		var hinge := Node3D.new()
+		hinge.position = Vector3(d.x + 0.18, d.bottom, side * (d.half + 0.05))
+		hinge.rotation.y = -side * deg_to_rad(100.0)  # outwards, towards the camera
+		e.add_child(hinge)
+		var width: float = d.half
+		var height: float = tall + 0.35
+		for y in [0.12, height * 0.5, height - 0.1]:  # rails
+			_box(hinge, Vector3(0.06, 0.08, width), Vector3(0.0, y, -side * width * 0.5), rust)
+		_box(hinge, Vector3(0.07, height, 0.07), Vector3(0.0, height * 0.5, 0.0), iron)  # the hinge stile
+		_box(hinge, Vector3(0.07, height, 0.07), Vector3(0.0, height * 0.5, -side * width), iron)
+		for k in range(1, 5):  # bars, with spear points
+			var z: float = -side * width * k / 5.0
+			_cylinder(hinge, 0.025, 0.025, height, Vector3(0.0, height * 0.5, z), iron, Vector3.ZERO, 6)
+			_cylinder(hinge, 0.0, 0.06, 0.2, Vector3(0.0, height + 0.1, z), iron, Vector3.ZERO, 6)
 
 
 # --- Inside --------------------------------------------------------------------------------
