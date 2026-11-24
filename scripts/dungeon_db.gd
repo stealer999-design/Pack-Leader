@@ -43,6 +43,9 @@ const THEMES := {
 			"brazier": "res://models/dungeon/ice/brazier_pillar.glb", "arch": "res://models/dungeon/ice/archway.glb",
 			"centre": "res://models/dungeon/ice/fountain.glb",
 		},
+		# An open hall instead of a maze: walls only round the outside and round
+		# the Keeper's corner room, entered through an archway (LevelGenerator._hall).
+		"open_hall": true,
 		# The floor: a photo-scanned ice texture (textures/dungeon/ice/), tiled every floor_tile units.
 		"floor_texture": "res://textures/dungeon/ice/ice002_", "floor_tile": 7.0,
 		"wall": Color(0.72, 0.86, 0.97), "trim": Color(0.55, 0.74, 0.92), "floor_style": "snow",

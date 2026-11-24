@@ -573,7 +573,8 @@ static func generate_open(level_seed: int, path: Dictionary) -> Dictionary:
 	entrance_cell.template = "open"
 	entrance_cell.entrance = true
 	var entrance_at := Vector3(entrance_cell.rect.get_center().x - 4.0, 0.0, entrance_cell.rect.get_center().y)
-	var dungeon := _dungeon(rng, cells, cell_index, entrance_at)
+	var hall: bool = DungeonDB.theme(path.biome).get("open_hall", false)
+	var dungeon := _dungeon(rng, cells, cell_index, entrance_at, hall)
 
 	# The boss arena, off the boss tile's right side.
 	var boss_rect := cell_rect(boss_cell)
@@ -798,10 +799,12 @@ static func in_dungeon(layout: Dictionary, p: Vector3) -> bool:
 ## out, in front of the entrance), arrive, exit, keeper: Vector3, spots:
 ## [{pos, group}], pillars: [Vector3], bounds: Rect2}.
 static func _dungeon(rng: RandomNumberGenerator, cells: Array[Dictionary], cell_index: Dictionary,
-		entrance_at: Vector3) -> Dictionary:
+		entrance_at: Vector3, hall := false) -> Dictionary:
 	var inside := func(c: Vector2i) -> bool: return c.x >= 0 and c.x < DUNGEON_COLS and c.y >= 0 and c.y < DUNGEON_ROWS
 	var start := Vector2i(0, rng.randi_range(0, DUNGEON_ROWS - 1))
 	var links := {}
+	if hall:
+		return _hall(rng, cells, cell_index, entrance_at, start)
 	var seen := {start: true}
 	var stack: Array[Vector2i] = [start]
 	while not stack.is_empty():
@@ -882,6 +885,89 @@ static func _dungeon(rng: RandomNumberGenerator, cells: Array[Dictionary], cell_
 		"exit": Vector3(first.get_center().x, 0.0, first.end.y - 2.5),  # the stairs back up
 		"keeper": Vector3(keeper_room.get_center().x, 0.0, keeper_room.get_center().y),
 		"spots": spots, "pillars": pillars, "centre": centre,
+		"bounds": Rect2(o.x, o.y - DUNGEON_COLS * DUNGEON_TILE, DUNGEON_ROWS * DUNGEON_TILE, DUNGEON_COLS * DUNGEON_TILE),
+	}
+
+
+## An open hall (a theme's "open_hall", the ice halls): no walls between its
+## rooms, only round the outside, except the Keeper's room in the far back
+## corner, walled all round but for a doorway (an archway) in the middle of
+## its south wall (the camera's side). One pillar stands somewhere in each
+## room but the Keeper's and the quiet room with the centrepiece; packs and
+## the centrepiece as in a maze.
+static func _hall(rng: RandomNumberGenerator, cells: Array[Dictionary], cell_index: Dictionary,
+		entrance_at: Vector3, start: Vector2i) -> Dictionary:
+	var keeper := Vector2i(DUNGEON_COLS - 1, 0)
+	var links := {}
+	for col in DUNGEON_COLS:
+		for row in DUNGEON_ROWS:
+			var c := Vector2i(col, row)
+			for d in [Vector2i(1, 0), Vector2i(0, 1)]:
+				var n: Vector2i = c + d
+				if n.x >= DUNGEON_COLS or n.y >= DUNGEON_ROWS:
+					continue
+				if (c == keeper or n == keeper) and not (c == keeper and n == keeper + Vector2i(0, 1)):
+					continue  # the Keeper's room is walled, but for its south doorway
+				links[_link_key(c, n)] = true
+	var middle_rooms: Array[Rect2] = []
+	for col in DUNGEON_COLS:
+		for row in DUNGEON_ROWS:
+			var c := Vector2i(col, row)
+			var closed := {}
+			for side: String in SIDES:
+				closed[side] = not links.has(_link_key(c, c + SIDES[side]))
+			var kind := "dungeon_entry" if c == start else ("dungeon_keeper" if c == keeper else "dungeon")
+			var r := dungeon_rect(c)
+			cell_index[Vector2i(DUNGEON_KEY + col, DUNGEON_KEY + row)] = cells.size()
+			var cell := {"cell": Vector2i(DUNGEON_KEY + col, DUNGEON_KEY + row), "rect": r, "kind": kind, "closed": closed,
+					"template": kind, "grid": "dungeon"}
+			if c == keeper:
+				cell.doorway = "s"  # open for walking, but walled either side of an archway (DungeonBuilder)
+			cells.append(cell)
+			if kind == "dungeon":
+				middle_rooms.append(r)
+	_shuffle(rng, middle_rooms)
+	var spots: Array[Dictionary] = []
+	var packs := mini(rng.randi_range(2, 3), middle_rooms.size())
+	for group in packs:
+		var r: Rect2 = middle_rooms[group]
+		var mid := Vector3(r.get_center().x, 0.0, r.get_center().y)
+		var size := rng.randi_range(3, 4)
+		for k in size:
+			var angle: float = TAU * k / size + rng.randf_range(-0.3, 0.3)
+			spots.append({"pos": mid + Vector3(cos(angle), 0.0, sin(angle)) * rng.randf_range(1.5, 3.2), "group": 1000 + group})
+	var centre := Vector3.INF
+	var quiet := Rect2()
+	if middle_rooms.size() > packs:
+		quiet = middle_rooms[packs]
+		centre = Vector3(quiet.get_center().x, 0.0, quiet.get_center().y)
+	var first := dungeon_rect(start)
+	var exit := Vector3(first.get_center().x, 0.0, first.end.y - 2.5)
+	# One pillar per room, somewhere off its middle (clear of the packs, the stairs and the walls).
+	var pillars: Array[Vector3] = []
+	for col in DUNGEON_COLS:
+		for row in DUNGEON_ROWS:
+			var c := Vector2i(col, row)
+			var r := dungeon_rect(c)
+			if c == keeper or r == quiet:
+				continue
+			var mid := Vector3(r.get_center().x, 0.0, r.get_center().y)
+			for attempt in 12:
+				var angle := rng.randf() * TAU
+				var p := mid + Vector3(cos(angle), 0.0, sin(angle)) * rng.randf_range(4.5, 6.8)
+				if Vector2(p.x - exit.x, p.z - exit.z).length() > 4.0:
+					pillars.append(p)
+					break
+	var keeper_room := dungeon_rect(keeper)
+	var o := dungeon_origin()
+	return {
+		"entrance": entrance_at,
+		"door": entrance_at + Vector3(2.6, 0.0, 0.0),
+		"back": entrance_at + Vector3(5.5, 0.0, 0.0),
+		"arrive": Vector3(first.get_center().x, 0.0, first.get_center().y),
+		"exit": exit,
+		"keeper": Vector3(keeper_room.get_center().x, 0.0, keeper_room.get_center().y),
+		"spots": spots, "pillars": pillars, "centre": centre, "hall": true,
 		"bounds": Rect2(o.x, o.y - DUNGEON_COLS * DUNGEON_TILE, DUNGEON_ROWS * DUNGEON_TILE, DUNGEON_COLS * DUNGEON_TILE),
 	}
 

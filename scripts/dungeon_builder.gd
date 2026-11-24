@@ -413,14 +413,24 @@ static func _interior_models(inside: Node3D, layout: Dictionary, theme: Dictiona
 			_model(inside, models.brazier, at, 2.9)
 			_solid(inside, Vector3(0.8, 2.8, 0.8), at + Vector3(0.0, 1.4, 0.0))
 			_light(inside, at + Vector3(0.6, 3.2, 0.0), theme.glow, 1.0, 8.0)
-	# The archway behind the Keeper, against its room's far wall.
+	# The Keeper's room (open halls): its south wall, the camera's side, walled
+	# either side of the archway in its middle, the way in to fight the Keeper.
+	# (Its other walls are the usual closed sides.)
 	for cell: Dictionary in layout.cells:
-		if cell.kind == "dungeon_keeper":
-			var r: Rect2 = cell.rect
-			var at := Vector3(r.position.x + 2.4, 0.0, r.get_center().y)
-			_model(inside, models.arch, at, 6.4, PI / 2.0, Vector3(1.0, 1.0, 0.55))
-			for z in [-2.9, 2.9]:
-				_solid(inside, Vector3(2.0, 5.0, 1.2), at + Vector3(0.0, 2.5, z))
+		if cell.get("doorway", "") != "s":
+			continue
+		var r: Rect2 = cell.rect
+		var mid := r.get_center().y
+		var gap := 3.3
+		var x := r.end.x
+		for span in [[mid + gap, r.end.y], [r.position.y, mid - gap]]:
+			var lo: float = span[0] if span[0] < span[1] else span[1]
+			var hi: float = span[1] if span[0] < span[1] else span[0]
+			_wall_run(inside, models.wall, walls, Rect2(x, lo, 0.0, hi - lo), "n", true)
+			_solid(inside, Vector3(1.0, 3.4, hi - lo + 1.0), Vector3(x, 1.7, (lo + hi) * 0.5))
+		_model(inside, models.arch, Vector3(x, 0.0, mid), 6.4, PI / 2.0, Vector3(1.0, 1.0, 0.55))
+		for z in [-gap, gap]:
+			_solid(inside, Vector3(1.6, 5.0, 0.8), Vector3(x, 2.5, mid + z))
 	# The fountain plaza.
 	if d.centre != Vector3.INF:
 		var f := _model(inside, models.centre, d.centre, 2.3)
@@ -450,13 +460,13 @@ const WALL_DEPTH := 1.7
 
 
 static func _wall_run(parent: Node3D, path: String, rng: RandomNumberGenerator, r: Rect2, side: String, middle: bool) -> void:
-	var count := rng.randi_range(2, 4)
+	var length := r.size.y if side == "n" else r.size.x
+	var count := rng.randi_range(maxi(1, floori(length / 10.0)), maxi(1, floori(length / 5.0)))
 	var shares: Array[float] = []
 	var total := 0.0
 	for i in count:
 		shares.append(rng.randf_range(0.7, 1.3))
 		total += shares[-1]
-	var length := r.size.y if side == "n" else r.size.x
 	var along := 0.0
 	for i in count:
 		var width := length * shares[i] / total
