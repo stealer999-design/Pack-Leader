@@ -1901,8 +1901,9 @@ func _build_open(floor_mat: Material, camp_mat: Material, arena_mat: Material, w
 			if neighbour and (side == "n" or side == "e"):
 				continue
 			match side:
-				"s":  # towards the camera: always low
-					_add_wall_z(r.end.x, r.end.y + WALL_OVERLAP, r.position.y - WALL_OVERLAP, mat, true, high)
+				"s":  # towards the camera: always low (between two modelled rooms, the models show it)
+					_add_wall_z(r.end.x, r.end.y + WALL_OVERLAP, r.position.y - WALL_OVERLAP,
+							null if modelled and neighbour else mat, true, high)
 				"n":
 					_add_wall_z(r.position.x, r.end.y + WALL_OVERLAP, r.position.y - WALL_OVERLAP, null if modelled else mat, false, high)
 				"w":

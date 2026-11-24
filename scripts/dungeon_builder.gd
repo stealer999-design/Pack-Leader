@@ -375,36 +375,25 @@ static func _bounds(node: Node3D) -> AABB:
 static func _interior_models(inside: Node3D, layout: Dictionary, theme: Dictionary) -> void:
 	var d: Dictionary = layout.dungeon
 	var models: Dictionary = theme.models
-	var wall_height := 3.4
-	var wall_depth := 1.7  # how far a segment comes out from its wall line
+	# The walls: every closed side of a room, once. A wall between two rooms is
+	# one row of pieces down its middle (not a row from each side).
+	var walls := RandomNumberGenerator.new()
+	walls.seed = int(d.arrive.x * 7919.0 + d.arrive.z * 31.0) ^ 0x1ce
+	var done := {}
 	for cell: Dictionary in layout.cells:
 		if cell.get("grid", "") != "dungeon":
 			continue
-		var r: Rect2 = cell.rect
-		# Three segments per wall, each a little wider than its share so they meet.
-		var per := 3
 		for side in ["n", "w", "e"]:
 			if not cell.closed[side]:
 				continue
-			for k in per:
-				var t := (k + 0.5) / per
-				var at: Vector3
-				var turn := 0.0
-				match side:
-					"n":  # faces +x, into the room and the camera
-						at = Vector3(r.position.x + wall_depth * 0.5 - 0.5, 0.0, lerpf(r.end.y, r.position.y, t))
-						turn = PI / 2.0
-					"w":
-						at = Vector3(lerpf(r.position.x, r.end.x, t), 0.0, r.end.y - wall_depth * 0.5 + 0.5)
-						turn = PI
-					"e":
-						at = Vector3(lerpf(r.position.x, r.end.x, t), 0.0, r.position.y + wall_depth * 0.5 - 0.5)
-				var seg := _model(inside, models.wall, at, wall_height, turn)
-				var aabb := _bounds(seg)
-				var k_h: float = seg.scale.y
-				seg.scale.x = (r.size.x / per) * 1.08 / maxf(aabb.size.x, 0.001)
-				seg.scale.z = wall_depth / maxf(aabb.size.z, 0.001)
-				seg.scale.y = k_h
+			var across: Vector2i = cell.cell + LevelGenerator.SIDES[side]
+			var shared: bool = layout.cell_index.has(across)
+			if shared and side != "n":
+				var key := LevelGenerator._link_key(cell.cell, across)
+				if done.has(key):
+					continue
+				done[key] = true
+			_wall_run(inside, models.wall, walls, cell.rect, side, shared)
 	for p: Vector3 in d.pillars:
 		_model(inside, models.pillar, p, 3.8)
 		_solid(inside, Vector3(1.1, 3.6, 1.1), p + Vector3(0.0, 1.8, 0.0))
@@ -448,6 +437,54 @@ static func _interior_models(inside: Node3D, layout: Dictionary, theme: Dictiona
 		body.position = d.centre + Vector3(0.0, 1.0, 0.0)
 		inside.add_child(body)
 		_light(inside, d.centre + Vector3(0.0, 3.5, 0.0), theme.glow, 1.4, 11.0)
+
+
+## One wall of a room, dressed with wall models: 2-4 pieces of random widths
+## (overlapping a little so they meet), each a little taller or shorter,
+## deeper or shallower and turned a touch, half of them mirrored, and now and
+## then one turned round to show the model's smooth ice back. `middle`: a wall
+## between two rooms, one row down its middle; otherwise the pieces stand
+## against the wall line, facing into the room.
+const WALL_HEIGHT := 3.4
+const WALL_DEPTH := 1.7
+
+
+static func _wall_run(parent: Node3D, path: String, rng: RandomNumberGenerator, r: Rect2, side: String, middle: bool) -> void:
+	var count := rng.randi_range(2, 4)
+	var shares: Array[float] = []
+	var total := 0.0
+	for i in count:
+		shares.append(rng.randf_range(0.7, 1.3))
+		total += shares[-1]
+	var length := r.size.y if side == "n" else r.size.x
+	var along := 0.0
+	for i in count:
+		var width := length * shares[i] / total
+		var t := (along + width * 0.5) / length
+		along += width
+		var depth := WALL_DEPTH * rng.randf_range(0.85, 1.2)
+		var inset := 0.0 if middle else depth * 0.5 - 0.5 + rng.randf_range(-0.12, 0.12)
+		var at: Vector3
+		var turn := 0.0
+		match side:
+			"n":  # faces +x, into the room and the camera
+				at = Vector3(r.position.x + inset, 0.0, lerpf(r.end.y, r.position.y, t))
+				turn = PI / 2.0
+			"w":
+				at = Vector3(lerpf(r.position.x, r.end.x, t), 0.0, r.end.y - inset)
+				turn = PI
+			"e":
+				at = Vector3(lerpf(r.position.x, r.end.x, t), 0.0, r.position.y + inset)
+		# Sometimes the smooth back faces out (never on a far wall between rooms:
+		# its face is the one the camera sees).
+		if (middle and side != "n") or (not middle and rng.randf() < 0.2):
+			turn += PI if rng.randf() < 0.5 else 0.0
+		turn += rng.randf_range(-0.06, 0.06)
+		var seg := _model(parent, path, at, WALL_HEIGHT * rng.randf_range(0.85, 1.2), turn)
+		var aabb := _bounds(seg)
+		var mirror := -1.0 if rng.randf() < 0.5 else 1.0
+		seg.scale.x = mirror * width * 1.12 / maxf(aabb.size.x, 0.001)
+		seg.scale.z = depth / maxf(aabb.size.z, 0.001)
 
 
 ## The stairs back up, against the first room's left wall.
