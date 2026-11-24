@@ -26,7 +26,10 @@ const WALL_TORCH_HEIGHT := 1.4
 const WALL_TORCH_MOUNT := 1.75
 const WALL_TORCH_FLAME := Vector3(0.0, 44.0, 27.0)
 const WALL_TORCH_OFFSET := 5.5  ## Wall torches this far either side of a long wall's middle (unless the theme says).
-const TORCH_LIGHT := Color(1.0, 0.5, 0.18)  ## A torch's light: orange.
+const TORCH_LIGHT := Color(1.0, 1.0, 1.0)  ## A torch's light: white, so the stone keeps its own colour (the flames are orange).
+## White light is brighter than the braziers' tinted light at the same energy:
+## a torch's is turned down by this, so it lights its room as dimly (BRAZIER_LIGHT).
+const TORCH_STRENGTH := 0.7
 
 
 static func build(world: World, layout: Dictionary, theme: Dictionary, theme_id: String, wall_mat: Material) -> void:
@@ -764,7 +767,7 @@ static func _flicker(parent: Node3D, at: Vector3, energy: float, reach: float) -
 	var light := FlickerLight.new()
 	light.position = at
 	light.light_color = TORCH_LIGHT
-	light.light_energy = energy
+	light.light_energy = energy * TORCH_STRENGTH
 	light.omni_range = reach
 	parent.add_child(light)
 
