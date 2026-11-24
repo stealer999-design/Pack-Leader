@@ -43,6 +43,8 @@ const THEMES := {
 			"brazier": "res://models/dungeon/ice/brazier_pillar.glb", "arch": "res://models/dungeon/ice/archway.glb",
 			"centre": "res://models/dungeon/ice/fountain.glb",
 		},
+		# The floor: a photo-scanned ice texture (textures/dungeon/ice/), tiled every floor_tile units.
+		"floor_texture": "res://textures/dungeon/ice/ice002_", "floor_tile": 7.0,
 		"wall": Color(0.72, 0.86, 0.97), "trim": Color(0.55, 0.74, 0.92), "floor_style": "snow",
 		"floor": Color(0.72, 0.84, 0.96), "glow": Color(0.55, 0.9, 1.0), "key_color": Color(0.6, 0.95, 1.0),
 	},

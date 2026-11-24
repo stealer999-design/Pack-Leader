@@ -226,6 +226,15 @@ played in the browser".
   | Swamp | A mossy rock mound with a dark **natural cave** mouth, hanging vines and glowing mushrooms | Rough rock lumps along the walls, stalagmites, mushroom-green light | Bog Key |
   | Ice (Act 5) | An **igloo** of ice blocks with its tunnel | Models (`models/dungeon/ice/`, low-poly Meshy): carved **ice cavern wall segments** with icicles along the far and side walls (three per room wall; the box walls there stay solid but aren't drawn), carved stone **support pillars**, **brazier pillars** with blue fire and light, a ruined **ice archway** behind the Keeper, and a **fountain plaza** with statues in a quiet room (solid, to walk round) | Frost Key |
 
+  **Underground it's dark:** when you go down into a dungeon the sun and the
+  ambient light fade almost out (over about half a second; back again when
+  you come up), and a soft light glows round every tamer (warm white) and
+  pet (in its own colour), so the rooms are lit by your party, the braziers
+  and (in the ice halls) the fountain. Each room's floor is its own mesh, so
+  renderers with a lights-per-mesh limit light them properly. The ice halls'
+  floor is a photo-scanned ice texture (ambientCG Ice002, CC0,
+  `textures/dungeon/ice/`).
+
   (The swamp is an Act 1 biome, whose areas are paths and have no dungeon;
   its cave is ready for when a swamp area has one.) In the tile levels the
   violet Travel portal stands at the camp, since the arena is behind the gate.

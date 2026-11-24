@@ -172,6 +172,7 @@ func _process(delta: float) -> void:
 		portal.rotate_y(delta * 1.5)
 	if travel_portal.visible:
 		travel_portal.rotate_y(-delta * 1.2)
+	_update_darkness(delta)
 	var key := level_root.get_node_or_null("KeyPickup") as Node3D
 	if key and key.visible:
 		var spin := key.get_node("Spin") as Node3D
@@ -1851,24 +1852,33 @@ func _build_path(floor_mat: Material, camp_mat: Material, arena_mat: Material, w
 func _build_open(floor_mat: Material, camp_mat: Material, arena_mat: Material, wall_mat: StandardMaterial3D) -> void:
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	var under := SurfaceTool.new()  # the dungeon's floor
-	under.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var dungeon_rooms: Array[SurfaceTool] = []  # the dungeon's floors, a room each
 	for cell: Dictionary in layout.cells:
 		var r: Rect2 = cell.rect
 		var closed: Dictionary = cell.closed
 		# Tucked under the walls on closed sides; edge to edge with the next tile on open ones.
 		var lo := Vector2(r.position.x - (0.6 if closed.n else 0.0), r.position.y - (0.6 if closed.e else 0.0))
 		var hi := Vector2(r.end.x + (0.6 if closed.s else 0.0), r.end.y + (0.6 if closed.w else 0.0))
-		_up_quad(under if cell.get("grid", "") == "dungeon" else st,
-				Vector3(lo.x, 0, lo.y), Vector3(hi.x, 0, lo.y), Vector3(hi.x, 0, hi.y), Vector3(lo.x, 0, hi.y))
+		if cell.get("grid", "") == "dungeon":
+			# Each dungeon room's floor is its own mesh, so only the lights near
+			# it count against a renderer's lights-per-mesh limit (the glows round
+			# the party, the braziers).
+			var room := SurfaceTool.new()
+			room.begin(Mesh.PRIMITIVE_TRIANGLES)
+			_up_quad(room, Vector3(lo.x, 0, lo.y), Vector3(hi.x, 0, lo.y), Vector3(hi.x, 0, hi.y), Vector3(lo.x, 0, hi.y))
+			dungeon_rooms.append(room)
+		else:
+			_up_quad(st, Vector3(lo.x, 0, lo.y), Vector3(hi.x, 0, lo.y), Vector3(hi.x, 0, hi.y), Vector3(lo.x, 0, hi.y))
 	var floor_mesh := st.commit()
 	floor_mesh.surface_set_material(0, floor_mat)
 	_add_solid(floor_mesh, floor_mesh)
 	var theme := dungeon_theme()
 	if layout.has("dungeon"):
-		var dungeon_floor := under.commit()
-		dungeon_floor.surface_set_material(0, GroundTextures.material(theme.floor_style, theme.floor))
-		_add_solid(dungeon_floor, dungeon_floor)
+		var dungeon_floor_mat := _dungeon_floor_material(theme)
+		for room in dungeon_rooms:
+			var room_floor := room.commit()
+			room_floor.surface_set_material(0, dungeon_floor_mat)
+			_add_solid(room_floor, room_floor)
 	var dungeon_wall := _dungeon_wall_material(theme)
 	# The camp patch, just above the floor (no collision of its own).
 	_add_disc(layout.camp_center, LevelGenerator.CAMP_RADIUS, camp_mat)
@@ -1935,9 +1945,80 @@ func _dungeon_wall_material(theme: Dictionary) -> StandardMaterial3D:
 	if DungeonDB.theme_id(layout.get("biome", 0)) == "ice":
 		mat.roughness = 0.15
 		mat.metallic_specular = 0.9
-		mat.emission_enabled = true
-		mat.emission = Color(theme.wall).darkened(0.55)
+		if not theme.has("models"):  # (with wall models, only the low camera-side walls use it: unlit)
+			mat.emission_enabled = true
+			mat.emission = Color(theme.wall).darkened(0.55)
 	return mat
+
+
+## The dungeon floor's material: a theme's own texture (the ice halls' ice),
+## else a ground style in its floor colour.
+func _dungeon_floor_material(theme: Dictionary) -> Material:
+	if not theme.has("floor_texture"):
+		return GroundTextures.material(theme.floor_style, theme.floor)
+	var base: String = theme.floor_texture
+	var mat := StandardMaterial3D.new()
+	mat.albedo_texture = load(base + "color.png")
+	mat.normal_enabled = true
+	mat.normal_texture = load(base + "normal.png")
+	mat.roughness_texture = load(base + "roughness.png")
+	mat.roughness = 1.0
+	mat.metallic_specular = 0.8
+	mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+	mat.uv1_triplanar = true
+	mat.uv1_world_triplanar = true
+	mat.uv1_scale = Vector3.ONE / float(theme.get("floor_tile", 5.0))
+	return mat
+
+
+# --- Darkness underground (every peer, for its own player) ---------------------------
+## Down in a dungeon the sun and the ambient light fade almost out, and a soft
+## light glows round every tamer and pet: the light comes from you, your pets,
+## the braziers and the fountain.
+const DARK_SUN := 0.05
+const DARK_AMBIENT := 0.06
+const TAMER_GLOW := {"energy": 3.2, "range": 9.5, "color": Color(1.0, 0.92, 0.8)}
+const PET_GLOW := {"energy": 1.8, "range": 5.5}
+var _dark := 0.0
+var _sun_energy := -1.0
+var _ambient_energy := -1.0
+
+
+func _update_darkness(delta: float) -> void:
+	var sun := get_node_or_null("Sun") as DirectionalLight3D
+	var env_node := get_node_or_null("WorldEnvironment") as WorldEnvironment
+	if sun == null or env_node == null:
+		return
+	if _sun_energy < 0.0:
+		_sun_energy = sun.light_energy
+		_ambient_energy = env_node.environment.ambient_light_energy
+	var me := get_player(multiplayer.get_unique_id())
+	var target := 1.0 if me and in_dungeon(me.global_position) else 0.0
+	if is_equal_approx(_dark, target) and target == 0.0:
+		return
+	_dark = move_toward(_dark, target, delta * 1.6)
+	sun.light_energy = lerpf(_sun_energy, DARK_SUN, _dark)
+	env_node.environment.ambient_light_energy = lerpf(_ambient_energy, DARK_AMBIENT, _dark)
+	for p in get_players():
+		_glow(p, TAMER_GLOW.energy, TAMER_GLOW.range, TAMER_GLOW.color)
+	for pet in get_all_pets():
+		_glow(pet, PET_GLOW.energy, PET_GLOW.range, Color(pet.species.color).lerp(Color.WHITE, 0.55))
+
+
+## A soft light round `who` (made the first time), as bright as it's dark.
+func _glow(who: Node3D, energy: float, reach: float, color: Color) -> void:
+	var light := who.get_node_or_null("DarkGlow") as OmniLight3D
+	if light == null:
+		light = OmniLight3D.new()
+		light.name = "DarkGlow"
+		light.position = Vector3(0.0, 2.2, 0.0)
+		light.omni_range = reach
+		light.omni_attenuation = 1.4
+		light.light_color = color
+		light.shadow_enabled = false
+		who.add_child(light)
+	light.light_energy = energy * _dark
+	light.visible = _dark > 0.01
 
 
 func dungeon_theme() -> Dictionary:
