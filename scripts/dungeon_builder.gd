@@ -610,7 +610,7 @@ const MOULDING_STRETCH := 2.4  ## Each piece this many times its own length alon
 
 
 static func _crown_mouldings(root: Node3D, layout: Dictionary, tops: Array, theme: Dictionary, wall_mat: Material) -> void:
-	var piece := load(theme.crown_moulding) as Mesh
+	var piece := _wall_lit(load(theme.crown_moulding) as Mesh)
 	var bounds := piece.get_aabb()
 	var k := MOULDING_HEIGHT / maxf(bounds.size.y, 0.001)
 	var length := bounds.size.x * k * MOULDING_STRETCH
@@ -653,6 +653,30 @@ static func _crown_mouldings(root: Node3D, layout: Dictionary, tops: Array, them
 			node.material_override = wall_mat
 			node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 			holder.add_child(node)
+
+
+## The moulding lit like the wall it's on: each normal bent almost all the
+## way to the piece's front (-z, which faces out from the wall), keeping a
+## hint of the carving (MOULDING_RELIEF), so a run of pieces shades as one
+## smooth band, as the wall face below it does.
+const MOULDING_RELIEF := 0.15
+static var _lit_meshes := {}
+
+
+static func _wall_lit(mesh: Mesh) -> Mesh:
+	if _lit_meshes.has(mesh):
+		return _lit_meshes[mesh]
+	var out := ArrayMesh.new()
+	for s in mesh.get_surface_count():
+		var arrays := mesh.surface_get_arrays(s)
+		var n: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL]
+		for i in n.size():
+			n[i] = Vector3(0.0, 0.0, -1.0).lerp(n[i], MOULDING_RELIEF).normalized()
+		arrays[Mesh.ARRAY_NORMAL] = n
+		arrays[Mesh.ARRAY_TANGENT] = null
+		out.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	_lit_meshes[mesh] = out
+	return out
 
 
 ## A burning flame, `height` tall, its foot at `at`: two flame cards (the
