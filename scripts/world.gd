@@ -1972,7 +1972,7 @@ func _dungeon_floor_material(theme: Dictionary) -> Material:
 	mat.normal_texture = load(base + "normal.png")
 	if theme.has("floor_roughness"):  # a matte floor: one roughness all over, little shine
 		mat.roughness = float(theme.floor_roughness)
-		mat.metallic_specular = 0.25
+		mat.metallic_specular = float(theme.get("floor_specular", 0.25))
 	else:
 		mat.roughness_texture = load(base + "roughness.png")
 		mat.roughness = 1.0
