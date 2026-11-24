@@ -47,7 +47,7 @@ const THEMES := {
 		# the Keeper's corner room, entered through an archway (LevelGenerator._hall).
 		"open_hall": true,
 		# The floor: a photo-scanned ice texture (textures/dungeon/ice/), tiled every floor_tile units.
-		"floor_texture": "res://textures/dungeon/ice/ice002_", "floor_tile": 7.0,
+		"floor_texture": "res://textures/dungeon/ice/ice002_", "floor_tile": 9.1,
 		"wall": Color(0.72, 0.86, 0.97), "trim": Color(0.55, 0.74, 0.92), "floor_style": "snow",
 		"floor": Color(0.72, 0.84, 0.96), "glow": Color(0.55, 0.9, 1.0), "key_color": Color(0.6, 0.95, 1.0),
 	},
