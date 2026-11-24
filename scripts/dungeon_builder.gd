@@ -52,7 +52,7 @@ static func build(world: World, layout: Dictionary, theme: Dictionary, theme_id:
 # --- Shapes ----------------------------------------------------------------------------
 
 ## A textured material (<base>color.png, normal.png, roughness.png), mapped by
-## world position every `tile` units, tinted by `tint`.
+## position in its own (the level's) space every `tile` units, tinted by `tint`.
 static func textured(base: String, tile: float, tint := Color.WHITE) -> StandardMaterial3D:
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = tint
@@ -62,8 +62,10 @@ static func textured(base: String, tile: float, tint := Color.WHITE) -> Standard
 	mat.roughness_texture = load(base + "roughness.png")
 	mat.roughness = 1.0
 	mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+	# Mapped in each piece's own space (walls, pillars and mouldings stand square
+	# to the level), not the world's, which is turned diagonally to the level:
+	# the bricks on a wall's top then run along it instead of across it.
 	mat.uv1_triplanar = true
-	mat.uv1_world_triplanar = true
 	mat.uv1_scale = Vector3.ONE / tile
 	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 	return mat
