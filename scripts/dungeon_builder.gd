@@ -94,8 +94,8 @@ static func _add(parent: Node3D, mesh: Mesh, pos: Vector3, mat: Material, rot :=
 static var _prisms := {}
 
 
-static func rounded_prism(size: Vector3, radius: float, segments := 4) -> ArrayMesh:
-	var key := "%s|%s|%d" % [size, radius, segments]
+static func rounded_prism(size: Vector3, radius: float, segments := 4, top_round := 0.0, round_steps := 4) -> ArrayMesh:
+	var key := "%s|%s|%d|%s" % [size, radius, segments, top_round]
 	if _prisms.has(key):
 		return _prisms[key]
 	var hx := size.x * 0.5
@@ -112,27 +112,41 @@ static func rounded_prism(size: Vector3, radius: float, segments := 4) -> ArrayM
 			var dir := Vector2(cos(a), sin(a))
 			ring.append(centre + dir * radius)
 			normals.append(dir)
+	# The side, from the bottom up, in levels: straight up to where the top
+	# edge starts to round over (`top_round`), then curving in to the top.
+	var top := size.y * 0.5
+	var rt := minf(top_round, size.y)
+	var levels: Array[Dictionary] = [{"y": -top, "in": 0.0, "up": 0.0}, {"y": top - rt, "in": 0.0, "up": 0.0}]
+	if rt > 0.0:
+		for k in range(1, round_steps + 1):
+			var th := k / float(round_steps) * PI / 2.0
+			levels.append({"y": top - rt + rt * sin(th), "in": rt * (1.0 - cos(th)), "up": th})
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	var top := size.y * 0.5
 	var n := ring.size()
+	var point := func(i: int, lv: Dictionary) -> Vector3:
+		var q: Vector2 = ring[i] - normals[i] * float(lv["in"])
+		return Vector3(q.x, lv["y"], q.y)
+	var normal := func(i: int, lv: Dictionary) -> Vector3:
+		var th: float = lv["up"]
+		return Vector3(normals[i].x * cos(th), sin(th), normals[i].y * cos(th)).normalized()
 	for i in n:
 		var j := (i + 1) % n
-		var a := ring[i]
-		var b := ring[j]
-		var na := Vector3(normals[i].x, 0.0, normals[i].y)
-		var nb := Vector3(normals[j].x, 0.0, normals[j].y)
-		# The side, clockwise seen from outside (Godot's front faces).
-		for v in [[a, -top, na], [b, -top, nb], [b, top, nb], [a, -top, na], [b, top, nb], [a, top, na]]:
-			st.set_normal(v[2])
-			st.add_vertex(Vector3(v[0].x, v[1], v[0].y))
+		for l in levels.size() - 1:
+			var lo: Dictionary = levels[l]
+			var hi: Dictionary = levels[l + 1]
+			# Clockwise seen from outside (Godot's front faces).
+			for v in [[i, lo], [j, lo], [j, hi], [i, lo], [j, hi], [i, hi]]:
+				st.set_normal(normal.call(v[0], v[1]))
+				st.add_vertex(point.call(v[0], v[1]))
 		# The top and bottom, as fans from the middle.
-		for v in [[Vector2.ZERO, top], [a, top], [b, top]]:
+		var last: Dictionary = levels[-1]
+		for v in [Vector3(0.0, top, 0.0), point.call(i, last), point.call(j, last)]:
 			st.set_normal(Vector3.UP)
-			st.add_vertex(Vector3(v[0].x, v[1], v[0].y))
-		for v in [[Vector2.ZERO, -top], [b, -top], [a, -top]]:
+			st.add_vertex(v)
+		for v in [Vector3(0.0, -top, 0.0), point.call(j, levels[0]), point.call(i, levels[0])]:
 			st.set_normal(Vector3.DOWN)
-			st.add_vertex(Vector3(v[0].x, v[1], v[0].y))
+			st.add_vertex(v)
 	var mesh := st.commit()
 	_prisms[key] = mesh
 	return mesh
@@ -321,7 +335,7 @@ static func _interior(root: Node3D, layout: Dictionary, theme: Dictionary, theme
 			_:
 				_add(inside, rounded_prism(Vector3(1.2, 3.4, 1.2), 0.24), p + Vector3(0.0, 1.7, 0.0), column)
 				_add(inside, rounded_prism(Vector3(1.5, 0.3, 1.5), 0.3), p + Vector3(0.0, 3.4, 0.0), cap)
-				_add(inside, rounded_prism(Vector3(1.5, 0.3, 1.5), 0.3), p + Vector3(0.0, 0.15, 0.0), cap)
+				_add(inside, rounded_prism(Vector3(1.5, 0.3, 1.5), 0.3, 4, 0.13), p + Vector3(0.0, 0.15, 0.0), cap)  # the base: its top edge rounded over
 				if theme_id == "ancient":
 					_box(inside, Vector3(1.22, 0.12, 1.22), p + Vector3(0.0, 2.4, 0.0), glow)
 		_solid(inside, Vector3(1.2, 3.4, 1.2), p + Vector3(0.0, 1.7, 0.0))
