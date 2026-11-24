@@ -21,6 +21,7 @@ const THEMES := {
 	},
 	"sandstone": {
 		"place": "the sandstone vault", "entrance": "Vault", "key": "Sun Key", "keeper": "Vault Keeper",
+		"floor_texture": "res://textures/dungeon/sandstone/tiles144_", "floor_tile": 8.0,
 		"wall": Color(0.8, 0.64, 0.42), "trim": Color(0.62, 0.47, 0.3), "floor_style": "flagstone",
 		"floor": Color(0.7, 0.57, 0.38), "glow": Color(1.0, 0.72, 0.3), "key_color": Color(1.0, 0.82, 0.35),
 	},

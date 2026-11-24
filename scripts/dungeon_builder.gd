@@ -15,6 +15,8 @@ class_name DungeonBuilder
 ## (World._build_open).
 
 const DOOR_GLOW := 2.2
+## A brazier's light underground: energy, range (every dungeon alike, so all are as dark).
+const BRAZIER_LIGHT := Vector2(1.0, 8.0)
 
 
 static func build(world: World, layout: Dictionary, theme: Dictionary, theme_id: String, wall_mat: Material) -> void:
@@ -341,7 +343,8 @@ static func _interior(root: Node3D, layout: Dictionary, theme: Dictionary, theme
 			_cylinder(inside, 0.45, 0.25, 0.3, at + Vector3(0.0, 1.1, 0.0), trim)
 			_ball(inside, at + Vector3(0.0, 1.35, 0.0), Vector3(0.3, 0.42, 0.3), glow)
 			_solid(inside, Vector3(0.8, 1.3, 0.8), at + Vector3(0.0, 0.65, 0.0))
-		_light(inside, Vector3(r.get_center().x - 3.0, 2.6, r.get_center().y), theme.glow, 1.3, 13.0)
+			# Each brazier's own light, as dim as the ice halls' (BRAZIER_LIGHT).
+			_light(inside, at + Vector3(0.6, 2.4, 0.0), theme.glow, BRAZIER_LIGHT.x, BRAZIER_LIGHT.y)
 
 
 ## A model (a .glb), `size` units tall (wider or deeper by `stretch`), turned
@@ -412,7 +415,7 @@ static func _interior_models(inside: Node3D, layout: Dictionary, theme: Dictiona
 			var at := Vector3(r.position.x + 2.6, 0.0, r.get_center().y + z)
 			_model(inside, models.brazier, at, 2.9)
 			_solid(inside, Vector3(0.8, 2.8, 0.8), at + Vector3(0.0, 1.4, 0.0))
-			_light(inside, at + Vector3(0.6, 3.2, 0.0), theme.glow, 1.0, 8.0)
+			_light(inside, at + Vector3(0.6, 3.2, 0.0), theme.glow, BRAZIER_LIGHT.x, BRAZIER_LIGHT.y)
 	# The Keeper's room (open halls): its south wall, the camera's side, walled
 	# either side of the archway in its middle, the way in to fight the Keeper.
 	# (Its other walls are the usual closed sides.)
