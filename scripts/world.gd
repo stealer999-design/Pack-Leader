@@ -1941,6 +1941,8 @@ const DUNGEON_WALL_HEIGHT := 3.2
 
 ## The dungeon walls' material, by theme (carved ice glows faintly).
 func _dungeon_wall_material(theme: Dictionary) -> StandardMaterial3D:
+	if theme.has("wall_texture"):
+		return DungeonBuilder.textured(theme.wall_texture, theme.wall_tile)
 	var mat := _material(theme.wall)
 	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 	if DungeonDB.theme_id(layout.get("biome", 0)) == "ice":

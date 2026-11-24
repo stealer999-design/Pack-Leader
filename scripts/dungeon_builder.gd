@@ -31,6 +31,24 @@ static func build(world: World, layout: Dictionary, theme: Dictionary, theme_id:
 
 # --- Shapes ----------------------------------------------------------------------------
 
+## A textured material (<base>color.png, normal.png, roughness.png), mapped by
+## world position every `tile` units, tinted by `tint`.
+static func textured(base: String, tile: float, tint := Color.WHITE) -> StandardMaterial3D:
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = tint
+	mat.albedo_texture = load(base + "color.png")
+	mat.normal_enabled = true
+	mat.normal_texture = load(base + "normal.png")
+	mat.roughness_texture = load(base + "roughness.png")
+	mat.roughness = 1.0
+	mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+	mat.uv1_triplanar = true
+	mat.uv1_world_triplanar = true
+	mat.uv1_scale = Vector3.ONE / tile
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	return mat
+
+
 static func _mat(color: Color, glow := Color.BLACK, energy := 0.0) -> StandardMaterial3D:
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = color
@@ -238,6 +256,11 @@ static func _interior(root: Node3D, layout: Dictionary, theme: Dictionary, theme
 	var stone := _mat(theme.wall)
 	var trim := _mat(theme.trim)
 	var glow := _glow_mat(theme.glow)
+	var column: Material = stone  # the pillars' shafts and caps
+	var cap: Material = trim
+	if theme.has("pillar_texture"):
+		column = textured(theme.pillar_texture, theme.pillar_tile)
+		cap = textured(theme.wall_texture if theme.has("wall_texture") else theme.pillar_texture, 2.0, Color(0.8, 0.76, 0.7))
 	# Pillars.
 	for p: Vector3 in d.pillars:
 		match theme_id:
@@ -246,9 +269,9 @@ static func _interior(root: Node3D, layout: Dictionary, theme: Dictionary, theme
 			"ice":  # ice crystals
 				_cylinder(inside, 0.15, 0.75, 3.6, p + Vector3(0.0, 1.8, 0.0), wall_mat, Vector3(0.0, 0.4, 0.0), 6)
 			_:
-				_box(inside, Vector3(1.2, 3.4, 1.2), p + Vector3(0.0, 1.7, 0.0), stone)
-				_box(inside, Vector3(1.5, 0.3, 1.5), p + Vector3(0.0, 3.4, 0.0), trim)
-				_box(inside, Vector3(1.5, 0.3, 1.5), p + Vector3(0.0, 0.15, 0.0), trim)
+				_box(inside, Vector3(1.2, 3.4, 1.2), p + Vector3(0.0, 1.7, 0.0), column)
+				_box(inside, Vector3(1.5, 0.3, 1.5), p + Vector3(0.0, 3.4, 0.0), cap)
+				_box(inside, Vector3(1.5, 0.3, 1.5), p + Vector3(0.0, 0.15, 0.0), cap)
 				if theme_id == "ancient":
 					_box(inside, Vector3(1.22, 0.12, 1.22), p + Vector3(0.0, 2.4, 0.0), glow)
 		_solid(inside, Vector3(1.2, 3.4, 1.2), p + Vector3(0.0, 1.7, 0.0))
