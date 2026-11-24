@@ -575,6 +575,8 @@ static func generate_open(level_seed: int, path: Dictionary) -> Dictionary:
 	var entrance_at := Vector3(entrance_cell.rect.get_center().x - 4.0, 0.0, entrance_cell.rect.get_center().y)
 	var hall: bool = DungeonDB.theme(path.biome).get("open_hall", false)
 	var dungeon := _dungeon(rng, cells, cell_index, entrance_at, hall)
+	if DungeonDB.theme(path.biome).get("centre_pillars", false):
+		_centre_pillars(dungeon, cells)
 
 	# The boss arena, off the boss tile's right side.
 	var boss_rect := cell_rect(boss_cell)
@@ -965,6 +967,17 @@ static func _hall(rng: RandomNumberGenerator, cells: Array[Dictionary], cell_ind
 		"spots": spots, "pillars": pillars, "centre": centre, "hall": true,
 		"bounds": Rect2(o.x, o.y - DUNGEON_COLS * DUNGEON_TILE, DUNGEON_ROWS * DUNGEON_TILE, DUNGEON_COLS * DUNGEON_TILE),
 	}
+
+
+## A theme's "centre_pillars": one pillar in the middle of each room instead,
+## but the first (where you arrive) and the Keeper's (where it stands).
+static func _centre_pillars(dungeon: Dictionary, cells: Array[Dictionary]) -> void:
+	var pillars: Array[Vector3] = []
+	for cell: Dictionary in cells:
+		if cell.get("grid", "") == "dungeon" and cell.kind == "dungeon":
+			var r: Rect2 = cell.rect
+			pillars.append(Vector3(r.get_center().x, 0.0, r.get_center().y))
+	dungeon.pillars = pillars
 
 
 const PACK_MIN := 3

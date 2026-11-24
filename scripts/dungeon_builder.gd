@@ -21,6 +21,7 @@ const BRAZIER_LIGHT := Vector2(1.0, 8.0)
 ## wall torch is mounted, and where its flame sits in the model (its units:
 ## y up, z out from the wall).
 const FLOOR_TORCH_HEIGHT := 1.9
+const PILLAR_MODEL_HEIGHT := 4.2  ## A theme's pillar model (the crypt's gothic column), this tall.
 const WALL_TORCH_HEIGHT := 1.4
 const WALL_TORCH_MOUNT := 1.75
 const WALL_TORCH_FLAME := Vector3(0.0, 44.0, 27.0)
@@ -451,6 +452,10 @@ static func _interior(root: Node3D, layout: Dictionary, theme: Dictionary, theme
 			_box(inside, Vector3(0.05, 0.14, half * 2.0), Vector3(r.end.x + 0.76, 4.15, mid), glow)
 	# Pillars.
 	for p: Vector3 in d.pillars:
+		if theme.has("pillar_model"):
+			_model(inside, theme.pillar_model, p, PILLAR_MODEL_HEIGHT)
+			_solid(inside, Vector3(1.3, 3.4, 1.3), p + Vector3(0.0, 1.7, 0.0))
+			continue
 		match theme_id:
 			"cave":  # stalagmites
 				_cylinder(inside, 0.12, 0.85, 3.2, p + Vector3(0.0, 1.6, 0.0), stone, Vector3.ZERO, 9)
@@ -659,7 +664,9 @@ static func _model(parent: Node3D, path: String, at: Vector3, height: float, tur
 	var k := height / maxf(aabb.size.y, 0.001)
 	node.scale = Vector3(k * stretch.x, k, k * stretch.z)
 	node.rotation.y = turn
-	node.position = at + Vector3(0.0, -aabb.position.y * k, 0.0)
+	# Standing on the floor, centred on `at` (some models aren't made round their middle).
+	var centre := Vector3(aabb.get_center().x * k * stretch.x, 0.0, aabb.get_center().z * k * stretch.z).rotated(Vector3.UP, turn)
+	node.position = at + Vector3(-centre.x, -aabb.position.y * k, -centre.z)
 	parent.add_child(node)
 	return node
 
