@@ -24,7 +24,7 @@ const THEMES := {
 		# Concrete walls (ambientCG Concrete030) in the walls' own grey, a carved
 		# crown moulding along the top of every tall wall, in the same concrete.
 		"wall_texture": "res://textures/dungeon/crypt/wall_", "wall_tile": 5.0, "wall_tint": Color(0.89, 0.88, 0.99),
-		"crown_moulding": "res://models/dungeon/crypt/crown_moulding_lite.res",
+		"crown_moulding": true,
 		"wall": Color(0.34, 0.33, 0.36), "trim": Color(0.22, 0.21, 0.24), "floor_style": "flagstone",
 		"floor": Color(0.3, 0.29, 0.32), "glow": Color(0.6, 0.85, 1.0), "key_color": Color(0.75, 0.85, 1.0),
 	},

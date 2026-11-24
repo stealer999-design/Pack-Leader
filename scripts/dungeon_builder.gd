@@ -600,30 +600,45 @@ static func _wall_torch(inside: Node3D, theme: Dictionary, at: Vector3) -> void:
 
 ## A crown moulding along the top of every tall dungeon wall, on each face
 ## that looks into a room (the outside of the dungeon's outer walls is never
-## seen): a light baked copy of the model's piece (scripts/tools/
-## cluster_model.gd; it runs along its x, its carved face towards -z),
-## repeated along the wall and stretched MOULDING_STRETCH times its own length
-## so the run's pieces meet end to end, in the walls' own material. One
-## MultiMesh per wall face, so walls off screen aren't drawn.
+## seen): one unbroken piece per wall face, the full length of the wall, made
+## of MOULDING_TIERS stacked tiers of the walls' own material that step out
+## towards the top, following the cross-section of the supplied crown
+## moulding model (CROWN_PROFILE, measured across its plain end). Boxes like
+## the walls themselves, so it's lit exactly as they are.
 const MOULDING_HEIGHT := 0.55  ## How tall the moulding stands.
-const MOULDING_STRETCH := 2.4  ## Each piece this many times its own length along the wall.
+const MOULDING_TIERS := 7
+## The cross-section: [height, depth out from the wall], in the model's units
+## (0.788 tall), from the bottom up.
+const CROWN_PROFILE := [
+	[0.0, 0.100], [0.069, 0.102], [0.089, 0.140], [0.108, 0.183], [0.128, 0.198],
+	[0.167, 0.209], [0.187, 0.225], [0.207, 0.225], [0.404, 0.357], [0.423, 0.372], [0.463, 0.373],
+	[0.483, 0.416], [0.502, 0.418], [0.522, 0.436], [0.561, 0.459], [0.601, 0.473], [0.620, 0.473],
+	[0.640, 0.501], [0.680, 0.515], [0.788, 0.515],
+]
+
+
+## The profile's depth at height `h` (model units).
+static func _crown_depth(h: float) -> float:
+	for i in CROWN_PROFILE.size() - 1:
+		var p: Array = CROWN_PROFILE[i]
+		var q: Array = CROWN_PROFILE[i + 1]
+		if h <= float(q[0]):
+			return lerpf(float(p[1]), float(q[1]), inverse_lerp(float(p[0]), float(q[0]), h))
+	return float(CROWN_PROFILE[-1][1])
 
 
 static func _crown_mouldings(root: Node3D, layout: Dictionary, tops: Array, theme: Dictionary, wall_mat: Material) -> void:
-	var piece := _wall_lit(load(theme.crown_moulding) as Mesh)
-	var bounds := piece.get_aabb()
-	var k := MOULDING_HEIGHT / maxf(bounds.size.y, 0.001)
-	var length := bounds.size.x * k * MOULDING_STRETCH
+	var k := MOULDING_HEIGHT / 0.788
 	var holder := Node3D.new()
 	holder.name = "CrownMouldings"
 	root.add_child(holder)
+	# One box mesh per tier length is enough (runs share them by length).
+	var boxes := {}
 	for top: Array in tops:
 		var a: Vector3 = top[0]
 		var b: Vector3 = top[1]
-		var run := a.distance_to(b)
 		var along := (b - a).normalized()
-		var count := maxi(1, roundi(run / length))
-		var stretch := run / (count * bounds.size.x * k)
+		var run := a.distance_to(b)
 		for face in [-1.0, 1.0]:
 			var out: Vector3 = Vector3(-along.z, 0.0, along.x) * face  # one side of the wall
 			var probe: Vector3 = (a + b) * 0.5 + out * 1.5
@@ -631,52 +646,24 @@ static func _crown_mouldings(root: Node3D, layout: Dictionary, tops: Array, them
 			var room := LevelGenerator.cell_at(layout, probe)
 			if room < 0 or layout.cells[room].get("grid", "") != "dungeon":
 				continue  # nothing to see on that side
-			# The piece's +x along the wall, its carved face (-z) outwards, its back
-			# (+z) against this face of the wall and its top level with the wall's.
-			var basis := Basis(along * k * stretch, Vector3.UP * k, -out * k)
-			if basis.determinant() < 0.0:
-				basis.x = -basis.x  # never mirrored (a mirrored piece draws inside out)
-			var spots: Array[Transform3D] = []
-			for i in count:
-				var mid := a + along * (run * (i + 0.5) / count)
-				var origin: Vector3 = mid + out * (0.5 + bounds.end.z * k) - Vector3(0.0, bounds.end.y * k, 0.0) \
-						- basis.x * bounds.get_center().x
-				spots.append(Transform3D(basis, origin))
-			var mm := MultiMesh.new()
-			mm.transform_format = MultiMesh.TRANSFORM_3D
-			mm.mesh = piece
-			mm.instance_count = spots.size()
-			for i in spots.size():
-				mm.set_instance_transform(i, spots[i])
-			var node := MultiMeshInstance3D.new()
-			node.multimesh = mm
-			node.material_override = wall_mat
-			node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-			holder.add_child(node)
-
-
-## The moulding lit like the wall it's on: each normal bent almost all the
-## way to the piece's front (-z, which faces out from the wall), keeping a
-## hint of the carving (MOULDING_RELIEF), so a run of pieces shades as one
-## smooth band, as the wall face below it does.
-const MOULDING_RELIEF := 0.15
-static var _lit_meshes := {}
-
-
-static func _wall_lit(mesh: Mesh) -> Mesh:
-	if _lit_meshes.has(mesh):
-		return _lit_meshes[mesh]
-	var out := ArrayMesh.new()
-	for s in mesh.get_surface_count():
-		var arrays := mesh.surface_get_arrays(s)
-		var n: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL]
-		for i in n.size():
-			n[i] = Vector3(0.0, 0.0, -1.0).lerp(n[i], MOULDING_RELIEF).normalized()
-		arrays[Mesh.ARRAY_NORMAL] = n
-		arrays[Mesh.ARRAY_TANGENT] = null
-		out.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-	_lit_meshes[mesh] = out
-	return out
+			for t in MOULDING_TIERS:
+				var h0 := 0.788 * t / MOULDING_TIERS
+				var h1 := 0.788 * (t + 1) / MOULDING_TIERS
+				var depth := _crown_depth((h0 + h1) * 0.5) * k
+				var tall := (h1 - h0) * k
+				var key := "%.2f|%.3f|%.3f" % [run, tall, depth]
+				if not boxes.has(key):
+					var mesh := BoxMesh.new()
+					mesh.size = Vector3(run, tall, depth)
+					boxes[key] = mesh
+				var part := MeshInstance3D.new()
+				part.mesh = boxes[key]
+				part.material_override = wall_mat
+				part.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+				var mid := (a + b) * 0.5
+				part.position = mid + out * (0.5 + depth * 0.5) + Vector3.UP * ((h0 + h1) * 0.5 * k - MOULDING_HEIGHT)
+				part.basis = Basis(along, Vector3.UP, along.cross(Vector3.UP))
+				holder.add_child(part)
 
 
 ## A burning flame, `height` tall, its foot at `at`: two flame cards (the
