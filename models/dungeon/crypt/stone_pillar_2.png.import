@@ -2,19 +2,19 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b40p38m1vuwwl"
-path="res://.godot/imported/gothic_pillar_1.png-a82e531e87537fb65289290f3ff2a8a3.ctex"
+uid="uid://b8dustlnbxt1t"
+path="res://.godot/imported/stone_pillar_2.png-3a22ef548dfd7561ede0d19a3d08b665.ctex"
 metadata={
 "vram_texture": false
 }
 generator_parameters={
-"md5": "98cd13057e6cacbf3b784cd243d8ec2e"
+"md5": "44ad1ecabd5e8511d591d158b2061a5f"
 }
 
 [deps]
 
-source_file="res://models/dungeon/crypt/gothic_pillar_1.png"
-dest_files=["res://.godot/imported/gothic_pillar_1.png-a82e531e87537fb65289290f3ff2a8a3.ctex"]
+source_file="res://models/dungeon/crypt/stone_pillar_2.png"
+dest_files=["res://.godot/imported/stone_pillar_2.png-3a22ef548dfd7561ede0d19a3d08b665.ctex"]
 
 [params]
 

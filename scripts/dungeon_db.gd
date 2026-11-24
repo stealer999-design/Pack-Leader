@@ -16,10 +16,10 @@ class_name DungeonDB
 const THEMES := {
 	"crypt": {
 		"place": "the crypt", "entrance": "Crypt", "key": "Crypt Key", "keeper": "Crypt Keeper",
-		# Worn grey flagstones (ambientCG Bricks008), fully dull; a gothic pillar
+		# Worn grey flagstones (ambientCG Bricks008), fully dull; a dark stone pillar
 		# model standing in the middle of each room (LevelGenerator._dungeon).
 		"floor_texture": "res://textures/dungeon/crypt/floor_", "floor_tile": 6.0, "floor_roughness": 1.0, "floor_specular": 0.05,
-		"pillar_model": "res://models/dungeon/crypt/gothic_pillar_lite.scn", "centre_pillars": true,
+		"pillar_model": "res://models/dungeon/crypt/stone_pillar.glb", "pillar_width": 0.9, "centre_pillars": true,
 		"wall": Color(0.34, 0.33, 0.36), "trim": Color(0.22, 0.21, 0.24), "floor_style": "flagstone",
 		"floor": Color(0.3, 0.29, 0.32), "glow": Color(0.6, 0.85, 1.0), "key_color": Color(0.75, 0.85, 1.0),
 	},

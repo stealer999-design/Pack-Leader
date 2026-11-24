@@ -21,7 +21,7 @@ const BRAZIER_LIGHT := Vector2(1.0, 8.0)
 ## wall torch is mounted, and where its flame sits in the model (its units:
 ## y up, z out from the wall).
 const FLOOR_TORCH_HEIGHT := 1.9
-const PILLAR_MODEL_HEIGHT := 4.2  ## A theme's pillar model (the crypt's gothic column), this tall.
+const PILLAR_MODEL_HEIGHT := 4.2  ## A theme's pillar model (the crypt's stone column), this tall.
 const WALL_TORCH_HEIGHT := 1.4
 const WALL_TORCH_MOUNT := 1.75
 const WALL_TORCH_FLAME := Vector3(0.0, 44.0, 27.0)
@@ -454,7 +454,8 @@ static func _interior(root: Node3D, layout: Dictionary, theme: Dictionary, theme
 	for p: Vector3 in d.pillars:
 		if theme.has("pillar_model"):
 			_model(inside, theme.pillar_model, p, PILLAR_MODEL_HEIGHT)
-			_solid(inside, Vector3(1.3, 3.4, 1.3), p + Vector3(0.0, 1.7, 0.0))
+			var thick: float = theme.get("pillar_width", 1.3)
+			_solid(inside, Vector3(thick, 3.4, thick), p + Vector3(0.0, 1.7, 0.0))
 			continue
 		match theme_id:
 			"cave":  # stalagmites
