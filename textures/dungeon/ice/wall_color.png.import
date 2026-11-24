@@ -2,19 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://do8sj1jl3mdqt"
-path="res://.godot/imported/wall_segment_0.png-f4e77aba33d7aefc98f9924ac4f82db0.ctex"
+uid="uid://cvdjtqnk0ac2s"
+path="res://.godot/imported/wall_color.png-911ed0e345d343b2b839747b8b8fc282.ctex"
 metadata={
 "vram_texture": false
-}
-generator_parameters={
-"md5": "c5c5e5f7585e65fd8a81452caeddfcb3"
 }
 
 [deps]
 
-source_file="res://models/dungeon/ice/wall_segment_0.png"
-dest_files=["res://.godot/imported/wall_segment_0.png-f4e77aba33d7aefc98f9924ac4f82db0.ctex"]
+source_file="res://textures/dungeon/ice/wall_color.png"
+dest_files=["res://.godot/imported/wall_color.png-911ed0e345d343b2b839747b8b8fc282.ctex"]
 
 [params]
 
@@ -24,7 +21,7 @@ compress/lossy_quality=0.7
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=true
+mipmaps/generate=false
 mipmaps/limit=-1
 roughness/mode=0
 roughness/src_normal=""

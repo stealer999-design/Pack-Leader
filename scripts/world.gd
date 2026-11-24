@@ -1898,10 +1898,7 @@ func _build_open(floor_mat: Material, camp_mat: Material, arena_mat: Material, w
 		var under_ground: bool = cell.get("grid", "") == "dungeon"
 		var mat: Material = dungeon_wall if under_ground else wall_mat
 		var high := DUNGEON_WALL_HEIGHT if under_ground else 2.0
-		# A theme with wall models (DungeonBuilder) draws its far and side walls
-		# with them: the walls here are then solid but not drawn.
-		var modelled: bool = under_ground and theme.has("models")
-		if cell.get("doorway", "") == "s" and not modelled:
+		if cell.get("doorway", "") == "s":
 			# The Keeper's room: its south wall either side of the doorway, full height.
 			var mid := r.get_center().y
 			_add_wall_z(r.end.x, r.end.y + WALL_OVERLAP, mid + DOORWAY_HALF, mat, false, high)
@@ -1914,20 +1911,18 @@ func _build_open(floor_mat: Material, camp_mat: Material, arena_mat: Material, w
 			if neighbour and (side == "n" or side == "e"):
 				continue
 			match side:
-				"s":  # towards the camera: always low (between two modelled rooms, the models show it)
-					_add_wall_z(r.end.x, r.end.y + WALL_OVERLAP, r.position.y - WALL_OVERLAP,
-							null if modelled and neighbour else mat, true, high)
+				"s":  # towards the camera: always low
+					_add_wall_z(r.end.x, r.end.y + WALL_OVERLAP, r.position.y - WALL_OVERLAP, mat, true, high)
 				"n":
-					_add_wall_z(r.position.x, r.end.y + WALL_OVERLAP, r.position.y - WALL_OVERLAP, null if modelled else mat, false, high)
+					_add_wall_z(r.position.x, r.end.y + WALL_OVERLAP, r.position.y - WALL_OVERLAP, mat, false, high)
 				"w":
-					_add_wall_x(r.end.y, r.position.x - WALL_OVERLAP, r.end.x + WALL_OVERLAP, null if modelled else mat, false, high)
+					_add_wall_x(r.end.y, r.position.x - WALL_OVERLAP, r.end.x + WALL_OVERLAP, mat, false, high)
 				"e":
 					if cell.kind == "boss":  # the doorway into the corridor to the boss
 						_add_wall_x(r.position.y, r.position.x - WALL_OVERLAP, corridor.position.x - 0.5, mat)
 						_add_wall_x(r.position.y, corridor.end.x + 0.5, r.end.x + WALL_OVERLAP, mat)
 					else:
-						_add_wall_x(r.position.y, r.position.x - WALL_OVERLAP, r.end.x + WALL_OVERLAP,
-								null if modelled and not neighbour else (null if modelled else mat), false, high)
+						_add_wall_x(r.position.y, r.position.x - WALL_OVERLAP, r.end.x + WALL_OVERLAP, mat, false, high)
 	# Ruins: broken stubs of stone wall, a run of blocks of uneven height.
 	var ruin_mat := GroundTextures.material("cobble", Color(biome().rock).lerp(Color(0.6, 0.57, 0.52), 0.5))
 	var rng := RandomNumberGenerator.new()
@@ -1953,18 +1948,12 @@ const DUNGEON_WALL_HEIGHT := 3.2
 const DOORWAY_HALF := 3.3  ## Half the Keeper room's doorway (as wide as the ice halls' archway).
 
 
-## The dungeon walls' material, by theme (carved ice glows faintly).
+## The dungeon walls' material: a theme's own texture, else its wall colour.
 func _dungeon_wall_material(theme: Dictionary) -> StandardMaterial3D:
 	if theme.has("wall_texture"):
 		return DungeonBuilder.textured(theme.wall_texture, theme.wall_tile, theme.get("wall_tint", Color.WHITE))
 	var mat := _material(theme.wall)
 	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
-	if DungeonDB.theme_id(layout.get("biome", 0)) == "ice":
-		mat.roughness = 0.15
-		mat.metallic_specular = 0.9
-		if not theme.has("models"):  # (with wall models, only the low camera-side walls use it: unlit)
-			mat.emission_enabled = true
-			mat.emission = Color(theme.wall).darkened(0.55)
 	return mat
 
 

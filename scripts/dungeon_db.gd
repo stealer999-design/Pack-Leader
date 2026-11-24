@@ -62,13 +62,15 @@ const THEMES := {
 	},
 	"ice": {
 		"place": "the ice halls", "entrance": "Igloo", "key": "Frost Key", "keeper": "Ice Warden",
-		# Models (Meshy, low poly; see DungeonBuilder): carved ice wall segments,
-		# support pillars, brazier pillars, an archway and a fountain plaza.
+		# Models (Meshy, low poly; see DungeonBuilder): support pillars, brazier
+		# pillars, an archway and a fountain plaza.
 		"models": {
-			"wall": "res://models/dungeon/ice/wall_segment.glb", "pillar": "res://models/dungeon/ice/support_pillar.glb",
+			"pillar": "res://models/dungeon/ice/support_pillar.glb",
 			"brazier": "res://models/dungeon/ice/brazier_pillar.glb", "arch": "res://models/dungeon/ice/archway.glb",
 			"centre": "res://models/dungeon/ice/fountain.glb",
 		},
+		# Flat walls like the other dungeons', of cracked blue ice (ambientCG Ice004).
+		"wall_texture": "res://textures/dungeon/ice/wall_", "wall_tile": 6.0, "wall_tint": Color(0.72, 0.86, 1.0),
 		# An open hall instead of a maze: walls only round the outside and round
 		# the Keeper's corner room, entered through an archway (LevelGenerator._hall).
 		"open_hall": true,

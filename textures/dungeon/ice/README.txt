@@ -1,3 +1,6 @@
 The ice halls' floor (DungeonDB "ice", World._dungeon_floor_material):
 ice002_color.png, ice002_normal.png (OpenGL convention), ice002_roughness.png
 from ambientCG Ice002 (CC0, https://ambientcg.com/a/Ice002), 1K PNG.
+The ice halls' walls (DungeonDB "ice", World._dungeon_wall_material):
+wall_color.png, wall_normal.png (OpenGL convention), wall_roughness.png
+from ambientCG Ice004 (CC0, https://ambientcg.com/a/Ice004), 1K PNG, tinted blue.

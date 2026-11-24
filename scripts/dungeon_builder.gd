@@ -808,32 +808,13 @@ static func _bounds(node: Node3D) -> AABB:
 	return box
 
 
-## A dungeon with models (the ice halls): carved wall segments along the far
-## and side walls (the box walls there are solid but not drawn), support
-## pillars, brazier pillars with light, an archway against the Keeper room's
-## far wall and a fountain plaza in a quiet room. The models face +z as made.
+## A dungeon with models (the ice halls): support pillars, brazier pillars
+## with light, an archway in the Keeper room's doorway and a fountain plaza in
+## a quiet room (its walls are World's, flat and textured like the other
+## dungeons'). The models face +z as made.
 static func _interior_models(inside: Node3D, layout: Dictionary, theme: Dictionary) -> void:
 	var d: Dictionary = layout.dungeon
 	var models: Dictionary = theme.models
-	# The walls: every closed side of a room, once. A wall between two rooms is
-	# one row of pieces down its middle (not a row from each side).
-	var walls := RandomNumberGenerator.new()
-	walls.seed = int(d.arrive.x * 7919.0 + d.arrive.z * 31.0) ^ 0x1ce
-	var done := {}
-	for cell: Dictionary in layout.cells:
-		if cell.get("grid", "") != "dungeon":
-			continue
-		for side in ["n", "w", "e"]:
-			if not cell.closed[side]:
-				continue
-			var across: Vector2i = cell.cell + LevelGenerator.SIDES[side]
-			var shared: bool = layout.cell_index.has(across)
-			if shared and side != "n":
-				var key := LevelGenerator._link_key(cell.cell, across)
-				if done.has(key):
-					continue
-				done[key] = true
-			_wall_run(inside, models.wall, walls, cell.rect, side, shared)
 	for p: Vector3 in d.pillars:
 		_model(inside, models.pillar, p, 3.8)
 		_solid(inside, Vector3(1.1, 3.6, 1.1), p + Vector3(0.0, 1.8, 0.0))
@@ -853,21 +834,16 @@ static func _interior_models(inside: Node3D, layout: Dictionary, theme: Dictiona
 			_model(inside, models.brazier, at, 2.9)
 			_solid(inside, Vector3(0.8, 2.8, 0.8), at + Vector3(0.0, 1.4, 0.0))
 			_light(inside, at + Vector3(0.6, 3.2, 0.0), theme.glow, BRAZIER_LIGHT.x, BRAZIER_LIGHT.y)
-	# The Keeper's room (open halls): its south wall, the camera's side, walled
-	# either side of the archway in its middle, the way in to fight the Keeper.
-	# (Its other walls are the usual closed sides.)
+	# The Keeper's room (open halls): the ice archway in the doorway in the
+	# middle of its south wall (World walls it either side), the way in to fight
+	# the Keeper.
 	for cell: Dictionary in layout.cells:
 		if cell.get("doorway", "") != "s":
 			continue
 		var r: Rect2 = cell.rect
 		var mid := r.get_center().y
-		var gap := 3.3
+		var gap := World.DOORWAY_HALF
 		var x := r.end.x
-		for span in [[mid + gap, r.end.y], [r.position.y, mid - gap]]:
-			var lo: float = span[0] if span[0] < span[1] else span[1]
-			var hi: float = span[1] if span[0] < span[1] else span[0]
-			_wall_run(inside, models.wall, walls, Rect2(x, lo, 0.0, hi - lo), "n", true)
-			_solid(inside, Vector3(1.0, 3.4, hi - lo + 1.0), Vector3(x, 1.7, (lo + hi) * 0.5))
 		_model(inside, models.arch, Vector3(x, 0.0, mid), 6.4, PI / 2.0, Vector3(1.0, 1.0, 0.55))
 		for z in [-gap, gap]:
 			_solid(inside, Vector3(1.6, 5.0, 0.8), Vector3(x, 2.5, mid + z))
@@ -887,54 +863,6 @@ static func _interior_models(inside: Node3D, layout: Dictionary, theme: Dictiona
 		body.position = d.centre + Vector3(0.0, 1.0, 0.0)
 		inside.add_child(body)
 		_light(inside, d.centre + Vector3(0.0, 3.5, 0.0), theme.glow, 1.4, 11.0)
-
-
-## One wall of a room, dressed with wall models: 2-4 pieces of random widths
-## (overlapping a little so they meet), each a little taller or shorter,
-## deeper or shallower and turned a touch, half of them mirrored, and now and
-## then one turned round to show the model's smooth ice back. `middle`: a wall
-## between two rooms, one row down its middle; otherwise the pieces stand
-## against the wall line, facing into the room.
-const WALL_HEIGHT := 3.4
-const WALL_DEPTH := 1.7
-
-
-static func _wall_run(parent: Node3D, path: String, rng: RandomNumberGenerator, r: Rect2, side: String, middle: bool) -> void:
-	var length := r.size.y if side == "n" else r.size.x
-	var count := rng.randi_range(maxi(1, floori(length / 10.0)), maxi(1, floori(length / 5.0)))
-	var shares: Array[float] = []
-	var total := 0.0
-	for i in count:
-		shares.append(rng.randf_range(0.7, 1.3))
-		total += shares[-1]
-	var along := 0.0
-	for i in count:
-		var width := length * shares[i] / total
-		var t := (along + width * 0.5) / length
-		along += width
-		var depth := WALL_DEPTH * rng.randf_range(0.85, 1.2)
-		var inset := 0.0 if middle else depth * 0.5 - 0.5 + rng.randf_range(-0.12, 0.12)
-		var at: Vector3
-		var turn := 0.0
-		match side:
-			"n":  # faces +x, into the room and the camera
-				at = Vector3(r.position.x + inset, 0.0, lerpf(r.end.y, r.position.y, t))
-				turn = PI / 2.0
-			"w":
-				at = Vector3(lerpf(r.position.x, r.end.x, t), 0.0, r.end.y - inset)
-				turn = PI
-			"e":
-				at = Vector3(lerpf(r.position.x, r.end.x, t), 0.0, r.position.y + inset)
-		# Sometimes the smooth back faces out (never on a far wall between rooms:
-		# its face is the one the camera sees).
-		if (middle and side != "n") or (not middle and rng.randf() < 0.2):
-			turn += PI if rng.randf() < 0.5 else 0.0
-		turn += rng.randf_range(-0.06, 0.06)
-		var seg := _model(parent, path, at, WALL_HEIGHT * rng.randf_range(0.85, 1.2), turn)
-		var aabb := _bounds(seg)
-		var mirror := -1.0 if rng.randf() < 0.5 else 1.0
-		seg.scale.x = mirror * width * 1.12 / maxf(aabb.size.x, 0.001)
-		seg.scale.z = depth / maxf(aabb.size.z, 0.001)
 
 
 ## The stairs back up, against the first room's left wall.
