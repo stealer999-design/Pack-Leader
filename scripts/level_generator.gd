@@ -805,7 +805,11 @@ static func _dungeon(rng: RandomNumberGenerator, cells: Array[Dictionary], cell_
 	var links := {}
 	if hall:
 		return _hall(rng, cells, cell_index, entrance_at, start)
-	var seen := {start: true}
+	# The Keeper's room: the far back corner, walled all round but for a
+	# doorway in the middle of its south wall (the camera's side), as in every
+	# dungeon. The maze fills the other rooms and leads to that doorway.
+	var far := Vector2i(DUNGEON_COLS - 1, 0)
+	var seen := {start: true, far: true}
 	var stack: Array[Vector2i] = [start]
 	while not stack.is_empty():
 		var here: Vector2i = stack[-1]
@@ -822,20 +826,9 @@ static func _dungeon(rng: RandomNumberGenerator, cells: Array[Dictionary], cell_
 		stack.append(go)
 	for c: Vector2i in seen:
 		for d in [Vector2i(1, 0), Vector2i(0, 1)]:
-			if seen.has(c + d) and rng.randf() < 0.2:
+			if c != far and c + d != far and seen.has(c + d) and rng.randf() < 0.2:
 				links[_link_key(c, c + d)] = true
-	# The Keeper's room: the furthest from the first, by the maze's paths.
-	var dist := {start: 0}
-	var queue: Array[Vector2i] = [start]
-	var far := start
-	while not queue.is_empty():
-		var c: Vector2i = queue.pop_front()
-		if dist[c] > dist[far]:
-			far = c
-		for d: Vector2i in SIDES.values():
-			if links.has(_link_key(c, c + d)) and not dist.has(c + d):
-				dist[c + d] = dist[c] + 1
-				queue.append(c + d)
+	links[_link_key(far, far + Vector2i(0, 1))] = true  # the doorway
 	var pillars: Array[Vector3] = []
 	var spots: Array[Dictionary] = []
 	var middle_rooms: Array[Rect2] = []
@@ -850,6 +843,8 @@ static func _dungeon(rng: RandomNumberGenerator, cells: Array[Dictionary], cell_
 			cell_index[Vector2i(DUNGEON_KEY + col, DUNGEON_KEY + row)] = cells.size()
 			cells.append({"cell": Vector2i(DUNGEON_KEY + col, DUNGEON_KEY + row), "rect": r, "kind": kind, "closed": closed,
 					"template": kind, "grid": "dungeon"})
+			if c == far:
+				cells[-1].doorway = "s"  # walled either side of its doorway (World, DungeonBuilder)
 			var mid := Vector3(r.get_center().x, 0.0, r.get_center().y)
 			if kind == "dungeon_keeper":
 				for k in [Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1)]:

@@ -332,6 +332,27 @@ static func _interior(root: Node3D, layout: Dictionary, theme: Dictionary, theme
 	if theme.has("pillar_texture"):
 		column = textured(theme.pillar_texture, theme.pillar_tile)
 		cap = textured(theme.wall_texture if theme.has("wall_texture") else theme.pillar_texture, 2.0, Color(0.8, 0.76, 0.7))
+	# The Keeper room's doorway: a frame of two posts and a lintel.
+	for cell: Dictionary in layout.cells:
+		if cell.get("doorway", "") != "s":
+			continue
+		var r: Rect2 = cell.rect
+		var mid := r.get_center().y
+		var half := World.DOORWAY_HALF
+		for z in [mid - half, mid + half]:
+			_add(inside, rounded_prism(Vector3(1.3, 3.8, 1.3), 0.26), Vector3(r.end.x, 1.9, z), column)
+			_solid(inside, Vector3(1.3, 3.8, 1.3), Vector3(r.end.x, 1.9, z))
+			# A light on the room's front at each post, so the way in shows from across the hall.
+			var lamp := Vector3(r.end.x + 0.9, 2.6, z)
+			if theme.has("floor_torch"):
+				_flame(inside, lamp + Vector3(0.0, -0.25, 0.0), 0.5)
+				_flicker(inside, lamp + Vector3(0.6, 0.4, 0.0), 1.1, 8.0)
+			else:
+				_ball(inside, lamp, Vector3(0.16, 0.22, 0.16), glow)
+				_light(inside, lamp + Vector3(0.8, 0.4, 0.0), theme.glow, 1.2, 8.0)
+		_add(inside, rounded_prism(Vector3(1.5, 0.7, half * 2.0 + 1.8), 0.3), Vector3(r.end.x, 4.15, mid), cap)
+		if theme_id == "ancient":
+			_box(inside, Vector3(0.05, 0.14, half * 2.0), Vector3(r.end.x + 0.76, 4.15, mid), glow)
 	# Pillars.
 	for p: Vector3 in d.pillars:
 		match theme_id:

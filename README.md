@@ -208,8 +208,10 @@ played in the browser".
   to go down (your pets come with you); its **way out** stairs bring you back
   in front of the entrance. Inside is a maze of 12 rooms (20 units a side,
   a random spanning tree with a few loops, so you have to search it), two or
-  three packs in the rooms between, and in the room furthest from the stairs,
-  round four pillars, an elite **Keeper** (1.5x size, 4x health, 1.35x
+  three packs in the rooms between, and in the far back corner, in its own
+  room walled all round but for a **doorway in the middle of its south wall**
+  (the camera's side; a lit frame of two posts and a lintel, or the ice
+  halls' archway), round four pillars, an elite **Keeper** (1.5x size, 4x health, 1.35x
   damage, of the area's top level). Beat it and it drops the area's **key**
   (and a couple of items): a glowing key, turning above the floor. Whoever
   picks it up opens the gate for the whole party ("Tamer took the Crypt Key:

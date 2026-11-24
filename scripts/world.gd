@@ -1893,6 +1893,11 @@ func _build_open(floor_mat: Material, camp_mat: Material, arena_mat: Material, w
 		# A theme with wall models (DungeonBuilder) draws its far and side walls
 		# with them: the walls here are then solid but not drawn.
 		var modelled: bool = under_ground and theme.has("models")
+		if cell.get("doorway", "") == "s" and not modelled:
+			# The Keeper's room: its south wall either side of the doorway, full height.
+			var mid := r.get_center().y
+			_add_wall_z(r.end.x, r.end.y + WALL_OVERLAP, mid + DOORWAY_HALF, mat, false, high)
+			_add_wall_z(r.end.x, mid - DOORWAY_HALF, r.position.y - WALL_OVERLAP, mat, false, high)
 		for side: String in LevelGenerator.SIDES:
 			if not cell.closed[side]:
 				continue
@@ -1937,6 +1942,7 @@ func _build_open(floor_mat: Material, camp_mat: Material, arena_mat: Material, w
 
 const WALL_OVERLAP := 0.5  ## Walls run this far past a tile's corner, so corners close.
 const DUNGEON_WALL_HEIGHT := 3.2
+const DOORWAY_HALF := 3.3  ## Half the Keeper room's doorway (as wide as the ice halls' archway).
 
 
 ## The dungeon walls' material, by theme (carved ice glows faintly).
