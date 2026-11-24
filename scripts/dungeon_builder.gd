@@ -88,6 +88,56 @@ static func _add(parent: Node3D, mesh: Mesh, pos: Vector3, mat: Material, rot :=
 	return part
 
 
+## A box with its four upright edges rounded off (`radius`, in `segments`
+## faces each, smooth-shaded), centred on the origin: a pillar or a cap with
+## soft corners. Cached by size.
+static var _prisms := {}
+
+
+static func rounded_prism(size: Vector3, radius: float, segments := 4) -> ArrayMesh:
+	var key := "%s|%s|%d" % [size, radius, segments]
+	if _prisms.has(key):
+		return _prisms[key]
+	var hx := size.x * 0.5
+	var hz := size.z * 0.5
+	radius = minf(radius, minf(hx, hz))
+	# The outline seen from above: each corner an arc round its own centre.
+	var ring: Array[Vector2] = []
+	var normals: Array[Vector2] = []
+	var corners := [Vector2(hx, hz), Vector2(-hx, hz), Vector2(-hx, -hz), Vector2(hx, -hz)]
+	for c in 4:
+		var centre: Vector2 = corners[c] - Vector2(signf(corners[c].x), signf(corners[c].y)) * radius
+		for k in segments + 1:
+			var a := (c + k / float(segments)) * PI / 2.0
+			var dir := Vector2(cos(a), sin(a))
+			ring.append(centre + dir * radius)
+			normals.append(dir)
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var top := size.y * 0.5
+	var n := ring.size()
+	for i in n:
+		var j := (i + 1) % n
+		var a := ring[i]
+		var b := ring[j]
+		var na := Vector3(normals[i].x, 0.0, normals[i].y)
+		var nb := Vector3(normals[j].x, 0.0, normals[j].y)
+		# The side, clockwise seen from outside (Godot's front faces).
+		for v in [[a, -top, na], [b, -top, nb], [b, top, nb], [a, -top, na], [b, top, nb], [a, top, na]]:
+			st.set_normal(v[2])
+			st.add_vertex(Vector3(v[0].x, v[1], v[0].y))
+		# The top and bottom, as fans from the middle.
+		for v in [[Vector2.ZERO, top], [a, top], [b, top]]:
+			st.set_normal(Vector3.UP)
+			st.add_vertex(Vector3(v[0].x, v[1], v[0].y))
+		for v in [[Vector2.ZERO, -top], [b, -top], [a, -top]]:
+			st.set_normal(Vector3.DOWN)
+			st.add_vertex(Vector3(v[0].x, v[1], v[0].y))
+	var mesh := st.commit()
+	_prisms[key] = mesh
+	return mesh
+
+
 static func _box(parent: Node3D, size: Vector3, pos: Vector3, mat: Material, rot := Vector3.ZERO) -> MeshInstance3D:
 	var mesh := BoxMesh.new()
 	mesh.size = size
@@ -269,9 +319,9 @@ static func _interior(root: Node3D, layout: Dictionary, theme: Dictionary, theme
 			"ice":  # ice crystals
 				_cylinder(inside, 0.15, 0.75, 3.6, p + Vector3(0.0, 1.8, 0.0), wall_mat, Vector3(0.0, 0.4, 0.0), 6)
 			_:
-				_box(inside, Vector3(1.2, 3.4, 1.2), p + Vector3(0.0, 1.7, 0.0), column)
-				_box(inside, Vector3(1.5, 0.3, 1.5), p + Vector3(0.0, 3.4, 0.0), cap)
-				_box(inside, Vector3(1.5, 0.3, 1.5), p + Vector3(0.0, 0.15, 0.0), cap)
+				_add(inside, rounded_prism(Vector3(1.2, 3.4, 1.2), 0.24), p + Vector3(0.0, 1.7, 0.0), column)
+				_add(inside, rounded_prism(Vector3(1.5, 0.3, 1.5), 0.3), p + Vector3(0.0, 3.4, 0.0), cap)
+				_add(inside, rounded_prism(Vector3(1.5, 0.3, 1.5), 0.3), p + Vector3(0.0, 0.15, 0.0), cap)
 				if theme_id == "ancient":
 					_box(inside, Vector3(1.22, 0.12, 1.22), p + Vector3(0.0, 2.4, 0.0), glow)
 		_solid(inside, Vector3(1.2, 3.4, 1.2), p + Vector3(0.0, 1.7, 0.0))
