@@ -26,7 +26,7 @@ const THEMES := {
 		# rough layered stone (Bricks083) for the pillars, wall_tile / pillar_tile
 		# units a repeat.
 		"wall_texture": "res://textures/dungeon/sandstone/wall_", "wall_tile": 4.0,
-		"pillar_texture": "res://textures/dungeon/sandstone/pillar_", "pillar_tile": 3.0,
+		"pillar_texture": "res://textures/dungeon/sandstone/pillar_", "pillar_tile": 9.0,
 		"wall": Color(0.8, 0.64, 0.42), "trim": Color(0.62, 0.47, 0.3), "floor_style": "flagstone",
 		"floor": Color(0.7, 0.57, 0.38), "glow": Color(1.0, 0.72, 0.3), "key_color": Color(1.0, 0.82, 0.35),
 	},
