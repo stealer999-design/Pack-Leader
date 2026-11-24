@@ -71,10 +71,8 @@ const THEMES := {
 		},
 		# Flat walls like the other dungeons', of white snow (ambientCG Snow002).
 		"wall_texture": "res://textures/dungeon/ice/wall_", "wall_tile": 6.0,
-		# A torch to each room (DungeonBuilder._tile_torches): on its wall if it
-		# has one, else on a tripod; their light white, as dim as the braziers'.
-		"wall_torch": "res://models/dungeon/torches/wall_torch.glb",
-		"floor_torch": "res://models/dungeon/torches/floor_torch.glb", "torch_per_tile": true,
+		# The brazier pillars are its torches, one to each room (two in the
+		# Keeper's), their light white (DungeonBuilder._interior_models).
 		"torch_light": Color(1.0, 1.0, 1.0), "torch_strength": 0.7,
 		# An open hall instead of a maze: walls only round the outside and round
 		# the Keeper's corner room, entered through an archway (LevelGenerator._hall).

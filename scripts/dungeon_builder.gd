@@ -42,9 +42,7 @@ static func build(world: World, layout: Dictionary, theme: Dictionary, theme_id:
 	if theme.has("crown_moulding"):
 		_crown_mouldings(root, layout, world.dungeon_wall_tops, theme, wall_mat)
 	_interior(root, layout, theme, theme_id, wall_mat)
-	if theme.get("torch_per_tile", false):
-		_tile_torches(root.get_node("Dungeon"), layout, theme, world.dungeon_wall_tops)
-	elif theme.has("wall_torch"):
+	if theme.has("wall_torch"):
 		_wall_torches(root.get_node("Dungeon"), layout, theme, world.dungeon_wall_tops)
 	_stairs(root, d.exit, theme)
 	_key(root, theme)
@@ -633,82 +631,6 @@ static func _wall_torches(inside: Node3D, layout: Dictionary, theme: Dictionary,
 
 
 ## A wall torch, its back plate on the wall at `at`, leaning out along `out`.
-## One torch to each room (a theme's torch_per_tile: the ice halls, an open
-## hall whose rooms mostly have no walls of their own): in the middle of a tall
-## wall looking into the room if it has one (its far wall, facing the camera,
-## before a side wall; moved along the wall, clear of the stairs back up), else
-## a floor torch standing in the room, clear of its pillar, braziers,
-## fountain, packs, the stairs and the way into the Keeper's room.
-static func _tile_torches(inside: Node3D, layout: Dictionary, theme: Dictionary, tops: Array) -> void:
-	var d: Dictionary = layout.dungeon
-	# The best wall face looking into each room: [middle of the wall, outward, along].
-	var faces := {}
-	for top: Array in tops:
-		var a: Vector3 = top[0]
-		var b: Vector3 = top[1]
-		if a.distance_to(b) < 4.0:
-			continue
-		var along := (b - a).normalized()
-		var mid := (a + b) * 0.5
-		mid.y = 0.0
-		for face in [-1.0, 1.0]:
-			var out: Vector3 = Vector3(-along.z, 0.0, along.x) * face
-			if out.x < -0.5:
-				continue  # turned away from the camera
-			var room := LevelGenerator.cell_at(layout, mid + out * 1.5)
-			if room < 0 or layout.cells[room].get("grid", "") != "dungeon":
-				continue
-			if not faces.has(room) or out.x > (faces[room][1] as Vector3).x + 0.5:
-				faces[room] = [mid, out, along, a.distance_to(b)]
-	# What a floor torch keeps clear of: [where, how far].
-	var taken: Array = [[d.arrive, 3.0], [d.exit, 4.0], [d.keeper, 3.0]]
-	if d.centre != Vector3.INF:
-		taken.append([d.centre, 6.5])
-	for p: Vector3 in d.pillars:
-		taken.append([p, 2.5])
-	for spot: Dictionary in d.spots:
-		taken.append([spot.pos, 2.0])
-	for n in inside.get_children():
-		if n is Node3D and (n as Node3D).scene_file_path != "":
-			taken.append([(n as Node3D).position * Vector3(1, 0, 1), 2.5])  # braziers, pillars, the archway
-	for i in layout.cells.size():
-		var cell: Dictionary = layout.cells[i]
-		if cell.get("grid", "") != "dungeon":
-			continue
-		var r: Rect2 = cell.rect
-		if faces.has(i):
-			var f: Array = faces[i]
-			var half: float = f[3] * 0.5 - 1.5
-			var hung := false
-			for s: float in [0.0, 5.0, -5.0]:
-				if absf(s) > half:
-					continue
-				var at: Vector3 = f[0] + (f[2] as Vector3) * s + (f[1] as Vector3) * 0.5
-				if Vector2(at.x - d.exit.x, at.z - d.exit.z).length() < 4.0:
-					continue  # not over the stairs back up
-				at.y = WALL_TORCH_MOUNT
-				_wall_torch(inside, theme, at, f[1])
-				hung = true
-				break
-			if hung:
-				continue
-		var centre := Vector3(r.get_center().x, 0.0, r.get_center().y)
-		var tries: Array[Vector3] = [centre]
-		for ring in [5.0, 7.5]:
-			for k in 8:
-				tries.append(centre + Vector3(cos(TAU * k / 8.0 + 0.4), 0.0, sin(TAU * k / 8.0 + 0.4)) * ring)
-		for at: Vector3 in tries:
-			var clear := true
-			for t: Array in taken:
-				if Vector2(at.x - t[0].x, at.z - t[0].z).length() < t[1]:
-					clear = false
-					break
-			if clear:
-				_floor_torch(inside, theme, at)
-				taken.append([at, 2.5])
-				break
-
-
 ## A torch on its tripod, burning, standing at `at`.
 static func _floor_torch(inside: Node3D, theme: Dictionary, at: Vector3) -> void:
 	_model(inside, theme.floor_torch, at, FLOOR_TORCH_HEIGHT)
@@ -901,22 +823,25 @@ static func _interior_models(inside: Node3D, layout: Dictionary, theme: Dictiona
 	for p: Vector3 in d.pillars:
 		_model(inside, models.pillar, p, 3.8)
 		_solid(inside, Vector3(1.1, 3.6, 1.1), p + Vector3(0.0, 1.8, 0.0))
-	# Brazier pillars, lit: in the first room, the Keeper's and a few between.
-	var rng := RandomNumberGenerator.new()
-	rng.seed = int(d.arrive.x * 1000.0 + d.arrive.z)
-	var lit := 0
+	# Brazier pillars, the halls' torches: one in every room, towards its far
+	# side, at the end away from the room's pillar; two in the Keeper's, either
+	# side of it. Each burns with a torch's flickering light (the theme's
+	# torch_light, white).
 	for cell: Dictionary in layout.cells:
 		if cell.get("grid", "") != "dungeon":
 			continue
 		var r: Rect2 = cell.rect
-		if not (cell.kind != "dungeon" or (lit < 6 and rng.randf() < 0.45)):
-			continue
-		lit += 1
-		for z in ([-3.5, 3.5] if cell.kind == "dungeon_keeper" else [-6.0, 6.0]):
+		var across: Array = [-3.5, 3.5]
+		if cell.kind != "dungeon_keeper":
+			across = [6.0]
+			for p: Vector3 in d.pillars:
+				if r.has_point(Vector2(p.x, p.z)) and p.z > r.get_center().y:
+					across = [-6.0]
+		for z: float in across:
 			var at := Vector3(r.position.x + 2.6, 0.0, r.get_center().y + z)
 			_model(inside, models.brazier, at, 2.9)
 			_solid(inside, Vector3(0.8, 2.8, 0.8), at + Vector3(0.0, 1.4, 0.0))
-			_light(inside, at + Vector3(0.6, 3.2, 0.0), theme.glow, BRAZIER_LIGHT.x, BRAZIER_LIGHT.y)
+			_flicker(inside, at + Vector3(0.6, 3.2, 0.0), BRAZIER_LIGHT.x, BRAZIER_LIGHT.y, theme)
 	# The Keeper's room (open halls): the ice archway in the doorway in the
 	# middle of its south wall (World walls it either side), the way in to fight
 	# the Keeper.
