@@ -56,11 +56,14 @@ const THEMES := {
 		# Keeper's room), a pillar in every room but the Keeper's, and less dark
 		# than the other dungeons (its ambient light, World._update_darkness).
 		"open_hall": true, "dark_sun": 0.3, "dark_ambient": 0.6,
-		# A floor of dark irregular flagstones (ambientCG Tiles090), matte; its
-		# braziers' and doorway lamps' light ("light", else its glow) a deep
-		# red-orange.
+		# A floor of dark irregular flagstones (ambientCG Tiles090), matte.
 		"floor_texture": "res://textures/dungeon/ancient/floor_", "floor_tile": 10.0, "floor_roughness": 1.0, "floor_specular": 0.2,
-		"light": Color(0.95, 0.3, 0.07),
+		# Torches as in the sandstone vault (models/dungeon/torches/): on tripods in
+		# place of braziers, flames on the Keeper doorway's posts, and on the tall
+		# walls between the runes; their light a deep red-orange.
+		"floor_torch": "res://models/dungeon/torches/floor_torch.glb",
+		"wall_torch": "res://models/dungeon/torches/wall_torch.glb", "wall_torch_offset": 4.0,
+		"torch_light": Color(0.95, 0.3, 0.07), "torch_strength": 1.0,
 		"wall": Color(0.2, 0.18, 0.19), "trim": Color(0.34, 0.3, 0.28), "floor_style": "flagstone",
 		"floor": Color(0.2, 0.17, 0.17), "glow": Color(1.0, 0.45, 0.12), "key_color": Color(1.0, 0.5, 0.2),
 	},

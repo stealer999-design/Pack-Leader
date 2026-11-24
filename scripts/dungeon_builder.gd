@@ -458,7 +458,7 @@ static func _interior(root: Node3D, layout: Dictionary, theme: Dictionary, theme
 				_flicker(inside, lamp + Vector3(0.6, 0.4, 0.0), 1.1, 8.0, theme)
 			else:
 				_ball(inside, lamp, Vector3(0.16, 0.22, 0.16), glow)
-				_light(inside, lamp + Vector3(0.8, 0.4, 0.0), theme.get("light", theme.glow), 1.2, 8.0)
+				_light(inside, lamp + Vector3(0.8, 0.4, 0.0), theme.glow, 1.2, 8.0)
 		_add(inside, rounded_prism(Vector3(1.5, 0.7, half * 2.0 + 1.8), 0.3), Vector3(r.end.x, 4.15, mid), cap)
 		if theme_id == "ancient":
 			_box(inside, Vector3(0.05, 0.14, half * 2.0), Vector3(r.end.x + 0.76, 4.15, mid), glow)
@@ -583,7 +583,7 @@ static func _interior(root: Node3D, layout: Dictionary, theme: Dictionary, theme
 			_ball(inside, at + Vector3(0.0, 1.35, 0.0), Vector3(0.3, 0.42, 0.3), glow)
 			_solid(inside, Vector3(0.8, 1.3, 0.8), at + Vector3(0.0, 0.65, 0.0))
 			# Each brazier's own light, as dim as the ice halls' (BRAZIER_LIGHT).
-			_light(inside, at + Vector3(0.6, 2.4, 0.0), theme.get("light", theme.glow), BRAZIER_LIGHT.x, BRAZIER_LIGHT.y)
+			_light(inside, at + Vector3(0.6, 2.4, 0.0), theme.glow, BRAZIER_LIGHT.x, BRAZIER_LIGHT.y)
 
 
 ## Wall torches on the tall walls (`tops`, World.dungeon_wall_tops: the far
