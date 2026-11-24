@@ -25,6 +25,10 @@ const THEMES := {
 		# crown moulding along the top of every tall wall, in the same concrete.
 		"wall_texture": "res://textures/dungeon/crypt/wall_", "wall_tile": 5.0, "wall_tint": Color(0.89, 0.88, 0.99),
 		"crown_moulding": true,
+		# Torches (models/dungeon/torches/): on tripods in place of braziers, and on
+		# the tall walls, between its burial niches.
+		"floor_torch": "res://models/dungeon/torches/floor_torch.glb",
+		"wall_torch": "res://models/dungeon/torches/wall_torch.glb", "wall_torch_offset": 4.0,
 		"wall": Color(0.34, 0.33, 0.36), "trim": Color(0.22, 0.21, 0.24), "floor_style": "flagstone",
 		"floor": Color(0.3, 0.29, 0.32), "glow": Color(0.6, 0.85, 1.0), "key_color": Color(0.75, 0.85, 1.0),
 	},
@@ -35,9 +39,10 @@ const THEMES := {
 		# rough layered stone (Bricks083) for the pillars, wall_tile / pillar_tile
 		# units a repeat.
 		"wall_texture": "res://textures/dungeon/sandstone/wall_", "wall_tile": 4.0,
-		# Torches (models/dungeon/torches/): on tripods in place of braziers, and on the walls.
+		# Torches (models/dungeon/torches/): on tripods in place of braziers, and on
+		# the tall walls, which are otherwise bare.
 		"floor_torch": "res://models/dungeon/torches/floor_torch.glb",
-		"wall_torch": "res://models/dungeon/torches/wall_torch.glb",
+		"wall_torch": "res://models/dungeon/torches/wall_torch.glb", "bare_walls": true,
 		"pillar_texture": "res://textures/dungeon/sandstone/pillar_", "pillar_tile": 9.0,
 		"wall": Color(0.8, 0.64, 0.42), "trim": Color(0.62, 0.47, 0.3), "floor_style": "flagstone",
 		"floor": Color(0.7, 0.57, 0.38), "glow": Color(1.0, 0.72, 0.3), "key_color": Color(1.0, 0.82, 0.35),

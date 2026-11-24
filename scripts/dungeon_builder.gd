@@ -25,6 +25,8 @@ const PILLAR_MODEL_HEIGHT := 4.2  ## A theme's pillar model (the crypt's stone c
 const WALL_TORCH_HEIGHT := 1.4
 const WALL_TORCH_MOUNT := 1.75
 const WALL_TORCH_FLAME := Vector3(0.0, 44.0, 27.0)
+const WALL_TORCH_OFFSET := 5.5  ## Wall torches this far either side of a long wall's middle (unless the theme says).
+const TORCH_LIGHT := Color(1.0, 0.5, 0.18)  ## A torch's light: orange.
 
 
 static func build(world: World, layout: Dictionary, theme: Dictionary, theme_id: String, wall_mat: Material) -> void:
@@ -34,6 +36,8 @@ static func build(world: World, layout: Dictionary, theme: Dictionary, theme_id:
 	if theme.has("crown_moulding"):
 		_crown_mouldings(root, layout, world.dungeon_wall_tops, theme, wall_mat)
 	_interior(root, layout, theme, theme_id, wall_mat)
+	if theme.has("wall_torch"):
+		_wall_torches(root.get_node("Dungeon"), layout, theme, world.dungeon_wall_tops)
 	_stairs(root, d.exit, theme)
 	_key(root, theme)
 	_gate(root, layout.gate, Vector2(layout.corridor_rect.size.x, 0.0), theme)
@@ -472,7 +476,8 @@ static func _interior(root: Node3D, layout: Dictionary, theme: Dictionary, theme
 				if theme_id == "ancient":
 					_box(inside, Vector3(1.22, 0.12, 1.22), p + Vector3(0.0, 2.4, 0.0), glow)
 		_solid(inside, Vector3(1.2, 3.4, 1.2), p + Vector3(0.0, 1.7, 0.0))
-	# Along the walls (the far and side walls; the low camera-side ones stay bare).
+	# Along the tall walls (the far and side walls; the low walls between rooms,
+	# knee high, stay bare).
 	var decor := MultiMesh.new()
 	decor.transform_format = MultiMesh.TRANSFORM_3D
 	var shape: Mesh
@@ -509,12 +514,14 @@ static func _interior(root: Node3D, layout: Dictionary, theme: Dictionary, theme
 	var rng := RandomNumberGenerator.new()
 	rng.seed = int(d.arrive.x * 1000.0 + d.arrive.z)
 	for cell: Dictionary in layout.cells:
-		if cell.get("grid", "") != "dungeon" or theme.has("wall_torch"):
-			continue  # (a theme with wall torches leaves its walls bare)
+		if cell.get("grid", "") != "dungeon" or theme.get("bare_walls", false):
+			continue
 		var r: Rect2 = cell.rect
 		for side in ["n", "w", "e"]:
 			if not cell.closed[side]:
 				continue
+			if side == "n" and layout.cell_index.has(cell.cell + LevelGenerator.SIDES["n"]):
+				continue  # a low wall between two rooms: nothing hangs on it
 			for k in range(1, 5):
 				var t := k / 5.0
 				var pos: Vector3
@@ -553,6 +560,9 @@ static func _interior(root: Node3D, layout: Dictionary, theme: Dictionary, theme
 		if cell.get("grid", "") != "dungeon":
 			continue
 		var r: Rect2 = cell.rect
+		var ahead: int = layout.cell_index.get(cell.cell + LevelGenerator.SIDES["n"], -1)
+		if ahead >= 0 and layout.cells[ahead].get("doorway", "") == "s":
+			continue  # it would stand in the Keeper's doorway (whose posts burn already)
 		var wanted: bool = cell.kind != "dungeon" or (lit < 6 and rng.randf() < 0.45)
 		if not wanted:
 			continue
@@ -571,31 +581,63 @@ static func _interior(root: Node3D, layout: Dictionary, theme: Dictionary, theme
 			_solid(inside, Vector3(0.8, 1.3, 0.8), at + Vector3(0.0, 0.65, 0.0))
 			# Each brazier's own light, as dim as the ice halls' (BRAZIER_LIGHT).
 			_light(inside, at + Vector3(0.6, 2.4, 0.0), theme.glow, BRAZIER_LIGHT.x, BRAZIER_LIGHT.y)
-	if theme.has("wall_torch"):
-		_wall_torches(inside, layout, theme)
 
 
-## Wall torches: two on each room's far wall (facing the camera), where it
-## has one, either side of its middle.
-static func _wall_torches(inside: Node3D, layout: Dictionary, theme: Dictionary) -> void:
-	for cell: Dictionary in layout.cells:
-		if cell.get("grid", "") != "dungeon" or not cell.closed.n:
-			continue
-		var r: Rect2 = cell.rect
-		for side in [-1.0, 1.0]:  # two per wall, either side of its middle (where a floor torch may stand)
-			_wall_torch(inside, theme, Vector3(r.position.x + 0.5, WALL_TORCH_MOUNT, r.get_center().y + side * 5.5))
+## Wall torches on the tall walls (`tops`, World.dungeon_wall_tops: the far
+## walls and the side walls; the low walls between rooms are knee high), on
+## each face that looks into a room and isn't turned away from the camera
+## (whose torches would only be seen from behind): two on a long wall,
+## either side of its middle (the theme's wall_torch_offset, between its
+## niches), one in the middle of a short one. A spot too close to a torch
+## already burning (a floor torch, the Keeper doorway's) is left out.
+static func _wall_torches(inside: Node3D, layout: Dictionary, theme: Dictionary, tops: Array) -> void:
+	var burning: Array[Vector3] = []
+	for n in inside.get_children():
+		if n is FlickerLight:
+			burning.append((n as Node3D).position)
+	var offset: float = theme.get("wall_torch_offset", WALL_TORCH_OFFSET)
+	for top: Array in tops:
+		var a: Vector3 = top[0]
+		var b: Vector3 = top[1]
+		var along := (b - a).normalized()
+		var run := a.distance_to(b)
+		var mid := (a + b) * 0.5
+		var spots: Array[float] = []
+		if run >= offset * 2.0 + 4.0:
+			spots = [-offset, offset]
+		elif run >= 4.0:
+			spots = [0.0]
+		for face in [-1.0, 1.0]:
+			var out: Vector3 = Vector3(-along.z, 0.0, along.x) * face  # one side of the wall
+			if out.x < -0.5:
+				continue  # turned away from the camera
+			var probe: Vector3 = mid + out * 1.5
+			probe.y = 0.0
+			var room := LevelGenerator.cell_at(layout, probe)
+			if room < 0 or layout.cells[room].get("grid", "") != "dungeon":
+				continue  # no room on this side
+			for s: float in spots:
+				var at: Vector3 = mid + along * s + out * 0.5
+				at.y = WALL_TORCH_MOUNT
+				var clear := true
+				for lit: Vector3 in burning:
+					if Vector2(lit.x - at.x, lit.z - at.z).length() < 2.2:
+						clear = false
+				if clear:
+					_wall_torch(inside, theme, at, out)
 
 
-static func _wall_torch(inside: Node3D, theme: Dictionary, at: Vector3) -> void:
+## A wall torch, its back plate on the wall at `at`, leaning out along `out`.
+static func _wall_torch(inside: Node3D, theme: Dictionary, at: Vector3, out := Vector3.RIGHT) -> void:
 	var torch := (load(theme.wall_torch) as PackedScene).instantiate() as Node3D
 	var k := WALL_TORCH_HEIGHT / maxf(_bounds(torch).size.y, 0.001)
 	torch.scale = Vector3.ONE * k
-	torch.rotation.y = PI / 2.0  # its back plate on the wall, the torch leaning out into the room
+	torch.rotation.y = atan2(out.x, out.z)  # the model leans out along its +z
 	torch.position = at
 	inside.add_child(torch)
-	var flame_at: Vector3 = at + Vector3(WALL_TORCH_FLAME.z * k, WALL_TORCH_FLAME.y * k, 0.0)
+	var flame_at: Vector3 = at + out * (WALL_TORCH_FLAME.z * k) + Vector3.UP * (WALL_TORCH_FLAME.y * k)
 	_flame(inside, flame_at, 0.5)
-	_flicker(inside, flame_at + Vector3(0.6, 0.3, 0.0), 0.8, 7.0)
+	_flicker(inside, flame_at + out * 0.6 + Vector3.UP * 0.3, 0.8, 7.0)
 
 
 ## A crown moulding along the top of every tall dungeon wall, on each face
@@ -675,7 +717,7 @@ static func _flame(parent: Node3D, at: Vector3, height: float) -> void:
 	f.position = at
 	parent.add_child(f)
 	var shader := load("res://scripts/torch_flame.gdshader") as Shader
-	for layer in [[0.62, 1.0, 1.7], [0.5, 0.88, 1.5], [0.3, 0.55, 2.6]]:  # width, height, brightness
+	for layer in [[0.62, 1.0, 0.68], [0.5, 0.88, 0.6], [0.3, 0.55, 1.04]]:  # width, height, brightness
 		var card := QuadMesh.new()
 		card.size = Vector2(height * layer[0], height * layer[1])
 		card.center_offset = Vector3(0.0, height * layer[1] * 0.5, 0.0)
@@ -721,7 +763,7 @@ static func _flame(parent: Node3D, at: Vector3, height: float) -> void:
 static func _flicker(parent: Node3D, at: Vector3, energy: float, reach: float) -> void:
 	var light := FlickerLight.new()
 	light.position = at
-	light.light_color = Color(1.0, 0.64, 0.32)
+	light.light_color = TORCH_LIGHT
 	light.light_energy = energy
 	light.omni_range = reach
 	parent.add_child(light)
