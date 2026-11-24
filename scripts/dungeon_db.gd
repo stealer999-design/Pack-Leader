@@ -29,6 +29,8 @@ const THEMES := {
 		# the tall walls, between its burial niches.
 		"floor_torch": "res://models/dungeon/torches/floor_torch.glb",
 		"wall_torch": "res://models/dungeon/torches/wall_torch.glb", "wall_torch_offset": 4.0,
+		# Their light white (turned down, as dim as the braziers'), so the grey stone stays grey.
+		"torch_light": Color(1.0, 1.0, 1.0), "torch_strength": 0.7,
 		"wall": Color(0.34, 0.33, 0.36), "trim": Color(0.22, 0.21, 0.24), "floor_style": "flagstone",
 		"floor": Color(0.3, 0.29, 0.32), "glow": Color(0.6, 0.85, 1.0), "key_color": Color(0.75, 0.85, 1.0),
 	},
@@ -43,6 +45,7 @@ const THEMES := {
 		# the tall walls, which are otherwise bare.
 		"floor_torch": "res://models/dungeon/torches/floor_torch.glb",
 		"wall_torch": "res://models/dungeon/torches/wall_torch.glb", "bare_walls": true,
+		"torch_light": Color(1.0, 0.5, 0.18), "torch_strength": 1.0,  # their light orange, warming the sandstone
 		"pillar_texture": "res://textures/dungeon/sandstone/pillar_", "pillar_tile": 9.0,
 		"wall": Color(0.8, 0.64, 0.42), "trim": Color(0.62, 0.47, 0.3), "floor_style": "flagstone",
 		"floor": Color(0.7, 0.57, 0.38), "glow": Color(1.0, 0.72, 0.3), "key_color": Color(1.0, 0.82, 0.35),

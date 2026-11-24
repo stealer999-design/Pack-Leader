@@ -26,9 +26,12 @@ const WALL_TORCH_HEIGHT := 1.4
 const WALL_TORCH_MOUNT := 1.75
 const WALL_TORCH_FLAME := Vector3(0.0, 44.0, 27.0)
 const WALL_TORCH_OFFSET := 5.5  ## Wall torches this far either side of a long wall's middle (unless the theme says).
-const TORCH_LIGHT := Color(1.0, 1.0, 1.0)  ## A torch's light: white, so the stone keeps its own colour (the flames are orange).
+## A torch's light (unless the theme says, torch_light): white, so the stone
+## keeps its own colour (the flames are orange whatever the light).
+const TORCH_LIGHT := Color(1.0, 1.0, 1.0)
 ## White light is brighter than the braziers' tinted light at the same energy:
-## a torch's is turned down by this, so it lights its room as dimly (BRAZIER_LIGHT).
+## a torch's is turned down by this (unless the theme says, torch_strength),
+## so it lights its room as dimly (BRAZIER_LIGHT).
 const TORCH_STRENGTH := 0.7
 
 
@@ -452,7 +455,7 @@ static func _interior(root: Node3D, layout: Dictionary, theme: Dictionary, theme
 			var lamp := Vector3(r.end.x + 0.9, 2.6, z)
 			if theme.has("floor_torch"):
 				_flame(inside, lamp + Vector3(0.0, -0.25, 0.0), 0.5)
-				_flicker(inside, lamp + Vector3(0.6, 0.4, 0.0), 1.1, 8.0)
+				_flicker(inside, lamp + Vector3(0.6, 0.4, 0.0), 1.1, 8.0, theme)
 			else:
 				_ball(inside, lamp, Vector3(0.16, 0.22, 0.16), glow)
 				_light(inside, lamp + Vector3(0.8, 0.4, 0.0), theme.glow, 1.2, 8.0)
@@ -576,7 +579,7 @@ static func _interior(root: Node3D, layout: Dictionary, theme: Dictionary, theme
 				_model(inside, theme.floor_torch, at, FLOOR_TORCH_HEIGHT)
 				_solid(inside, Vector3(0.7, FLOOR_TORCH_HEIGHT, 0.7), at + Vector3(0.0, FLOOR_TORCH_HEIGHT * 0.5, 0.0))
 				_flame(inside, at + Vector3(0.0, FLOOR_TORCH_HEIGHT * 0.83, 0.0), 0.65)
-				_flicker(inside, at + Vector3(0.0, FLOOR_TORCH_HEIGHT + 0.5, 0.0), BRAZIER_LIGHT.x, BRAZIER_LIGHT.y)
+				_flicker(inside, at + Vector3(0.0, FLOOR_TORCH_HEIGHT + 0.5, 0.0), BRAZIER_LIGHT.x, BRAZIER_LIGHT.y, theme)
 				continue
 			_cylinder(inside, 0.12, 0.2, 1.0, at + Vector3(0.0, 0.5, 0.0), trim)
 			_cylinder(inside, 0.45, 0.25, 0.3, at + Vector3(0.0, 1.1, 0.0), trim)
@@ -640,7 +643,7 @@ static func _wall_torch(inside: Node3D, theme: Dictionary, at: Vector3, out := V
 	inside.add_child(torch)
 	var flame_at: Vector3 = at + out * (WALL_TORCH_FLAME.z * k) + Vector3.UP * (WALL_TORCH_FLAME.y * k)
 	_flame(inside, flame_at, 0.5)
-	_flicker(inside, flame_at + out * 0.6 + Vector3.UP * 0.3, 0.8, 7.0)
+	_flicker(inside, flame_at + out * 0.6 + Vector3.UP * 0.3, 0.8, 7.0, theme)
 
 
 ## A crown moulding along the top of every tall dungeon wall, on each face
@@ -763,11 +766,11 @@ static func _flame(parent: Node3D, at: Vector3, height: float) -> void:
 
 
 ## A torch's flickering light.
-static func _flicker(parent: Node3D, at: Vector3, energy: float, reach: float) -> void:
+static func _flicker(parent: Node3D, at: Vector3, energy: float, reach: float, theme := {}) -> void:
 	var light := FlickerLight.new()
 	light.position = at
-	light.light_color = TORCH_LIGHT
-	light.light_energy = energy * TORCH_STRENGTH
+	light.light_color = theme.get("torch_light", TORCH_LIGHT)
+	light.light_energy = energy * float(theme.get("torch_strength", TORCH_STRENGTH))
 	light.omni_range = reach
 	parent.add_child(light)
 
