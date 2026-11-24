@@ -1945,7 +1945,7 @@ func _build_open(floor_mat: Material, camp_mat: Material, arena_mat: Material, w
 
 const WALL_OVERLAP := 0.5  ## Walls run this far past a tile's corner, so corners close.
 const DUNGEON_WALL_HEIGHT := 3.2
-const DOORWAY_HALF := 3.3  ## Half the Keeper room's doorway (as wide as the ice halls' archway).
+const DOORWAY_HALF := 3.3  ## Half the Keeper room's doorway.
 
 
 ## The dungeon walls' material: a theme's own texture, else its wall colour.

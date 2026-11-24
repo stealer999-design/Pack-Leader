@@ -814,9 +814,9 @@ static func _bounds(node: Node3D) -> AABB:
 
 
 ## A dungeon with models (the ice halls): support pillars, brazier pillars
-## with light, an archway in the Keeper room's doorway and a fountain plaza in
-## a quiet room (its walls are World's, flat and textured like the other
-## dungeons'). The models face +z as made.
+## with light and a fountain plaza in a quiet room (its walls, and the plain
+## doorway into the Keeper's room, are World's, flat and textured like the
+## other dungeons'). The models face +z as made.
 static func _interior_models(inside: Node3D, layout: Dictionary, theme: Dictionary) -> void:
 	var d: Dictionary = layout.dungeon
 	var models: Dictionary = theme.models
@@ -842,19 +842,6 @@ static func _interior_models(inside: Node3D, layout: Dictionary, theme: Dictiona
 			_model(inside, models.brazier, at, 2.9)
 			_solid(inside, Vector3(0.8, 2.8, 0.8), at + Vector3(0.0, 1.4, 0.0))
 			_flicker(inside, at + Vector3(0.6, 3.2, 0.0), BRAZIER_LIGHT.x, BRAZIER_LIGHT.y, theme)
-	# The Keeper's room (open halls): the ice archway in the doorway in the
-	# middle of its south wall (World walls it either side), the way in to fight
-	# the Keeper.
-	for cell: Dictionary in layout.cells:
-		if cell.get("doorway", "") != "s":
-			continue
-		var r: Rect2 = cell.rect
-		var mid := r.get_center().y
-		var gap := World.DOORWAY_HALF
-		var x := r.end.x
-		_model(inside, models.arch, Vector3(x, 0.0, mid), 6.4, PI / 2.0, Vector3(1.0, 1.0, 0.55))
-		for z in [-gap, gap]:
-			_solid(inside, Vector3(1.6, 5.0, 0.8), Vector3(x, 2.5, mid + z))
 	# The fountain plaza.
 	if d.centre != Vector3.INF:
 		var f := _model(inside, models.centre, d.centre, 2.3)

@@ -888,7 +888,7 @@ static func _dungeon(rng: RandomNumberGenerator, cells: Array[Dictionary], cell_
 
 ## An open hall (a theme's "open_hall", the ice halls): no walls between its
 ## rooms, only round the outside, except the Keeper's room in the far back
-## corner, walled all round but for a doorway (an archway) in the middle of
+## corner, walled all round but for a doorway in the middle of
 ## its south wall (the camera's side). One pillar stands somewhere in each
 ## room but the Keeper's and the quiet room with the centrepiece; packs and
 ## the centrepiece as in a maze.
@@ -919,7 +919,7 @@ static func _hall(rng: RandomNumberGenerator, cells: Array[Dictionary], cell_ind
 			var cell := {"cell": Vector2i(DUNGEON_KEY + col, DUNGEON_KEY + row), "rect": r, "kind": kind, "closed": closed,
 					"template": kind, "grid": "dungeon"}
 			if c == keeper:
-				cell.doorway = "s"  # open for walking, but walled either side of an archway (DungeonBuilder)
+				cell.doorway = "s"  # open for walking, but walled either side of the doorway (World)
 			cells.append(cell)
 			if kind == "dungeon":
 				middle_rooms.append(r)
