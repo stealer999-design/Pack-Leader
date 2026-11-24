@@ -237,6 +237,7 @@ static func _entrance(root: Node3D, at: Vector3, theme: Dictionary, theme_id: St
 			crypt.rotation.y = PI / 2.0
 			crypt.scale = Vector3.ONE * 2.6
 			e.add_child(crypt)
+			_blacken_crypt_gate(crypt, e)
 			_open_crypt_door(e)
 			for z in [-1.9, 1.9]:  # ghostly candles either side of the steps
 				_cylinder(e, 0.07, 0.07, 0.45, Vector3(3.2, 0.22, z), _mat(Color(0.9, 0.88, 0.8)))
@@ -320,7 +321,63 @@ static func _entrance(root: Node3D, at: Vector3, theme: Dictionary, theme_id: St
 ## further, so the darkness stands at 1.9), 2.3 wide, from the top
 ## step at 0.85 up to a pointed top at 4.6) covered by darkness, and two iron
 ## gate leaves swung wide on their hinges at the jambs.
-const CRYPT_DOOR := {"x": 1.9, "half": 1.1, "bottom": 0.85, "spring": 3.85, "top": 4.6}
+const CRYPT_DOOR := {"x": 1.5, "hinge_x": 2.08, "half": 1.1, "bottom": 0.85, "spring": 3.85, "top": 4.6}
+
+
+## The crypt model's own closed gate and padlock, turned black to match the
+## darkness behind them: each of its meshes is split in two, the triangles
+## in the doorway (CRYPT_GATE, in the entrance's space) drawn flat black.
+const CRYPT_GATE := {"x": Vector2(1.35, 2.0), "z": 1.05, "y": Vector2(0.8, 4.65)}
+static var _black_gate_meshes := {}
+
+
+static func _blacken_crypt_gate(crypt: Node3D, e: Node3D) -> void:
+	var black := _dark()
+	for m in crypt.find_children("*", "MeshInstance3D", true, false):
+		var part := m as MeshInstance3D
+		if part.mesh == null or part.mesh.get_surface_count() == 0:
+			continue
+		var key := part.mesh.resource_path + "|" + str(part.mesh.get_instance_id())
+		if not _black_gate_meshes.has(key):
+			_black_gate_meshes[key] = _split_gate(part, crypt, e, black)
+		part.mesh = _black_gate_meshes[key]
+
+
+static func _split_gate(part: MeshInstance3D, crypt: Node3D, e: Node3D, black: Material) -> ArrayMesh:
+	# From the mesh's own space to the entrance's.
+	var t := crypt.transform
+	var chain := Transform3D()
+	var up: Node = part
+	while up != crypt and up != null:
+		if up is Node3D:
+			chain = (up as Node3D).transform * chain
+		up = up.get_parent()
+	t = t * chain
+	var arrays := part.mesh.surface_get_arrays(0)
+	var material := part.mesh.surface_get_material(0)
+	if part.get_surface_override_material(0):
+		material = part.get_surface_override_material(0)
+	var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+	var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX] if arrays[Mesh.ARRAY_INDEX] != null else PackedInt32Array(range(verts.size()))
+	var g := CRYPT_GATE
+	var keep := PackedInt32Array()
+	var gate := PackedInt32Array()
+	for i in range(0, indices.size(), 3):
+		var c: Vector3 = t * ((verts[indices[i]] + verts[indices[i + 1]] + verts[indices[i + 2]]) / 3.0)
+		var inside: bool = c.x > g.x.x and c.x < g.x.y and absf(c.z) < g.z and c.y > g.y.x and c.y < g.y.y
+		var target := gate if inside else keep
+		target.append(indices[i])
+		target.append(indices[i + 1])
+		target.append(indices[i + 2])
+	var mesh := ArrayMesh.new()
+	for pair in [[keep, material], [gate, black]]:
+		if (pair[0] as PackedInt32Array).is_empty():
+			continue
+		var a := arrays.duplicate()
+		a[Mesh.ARRAY_INDEX] = pair[0]
+		mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, a)
+		mesh.surface_set_material(mesh.get_surface_count() - 1, pair[1])
+	return mesh
 
 
 static func _open_crypt_door(e: Node3D) -> void:
@@ -338,7 +395,7 @@ static func _open_crypt_door(e: Node3D) -> void:
 	for side in [-1.0, 1.0]:
 		# A leaf hinged at its jamb, swung out ~105 degrees towards the camera.
 		var hinge := Node3D.new()
-		hinge.position = Vector3(d.x + 0.18, d.bottom, side * (d.half + 0.05))
+		hinge.position = Vector3(d.hinge_x, d.bottom, side * (d.half + 0.05))
 		hinge.rotation.y = -side * deg_to_rad(100.0)  # outwards, towards the camera
 		e.add_child(hinge)
 		var width: float = d.half
