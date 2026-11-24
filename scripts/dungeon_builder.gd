@@ -334,7 +334,8 @@ static func _interior(root: Node3D, layout: Dictionary, theme: Dictionary, theme
 				_cylinder(inside, 0.15, 0.75, 3.6, p + Vector3(0.0, 1.8, 0.0), wall_mat, Vector3(0.0, 0.4, 0.0), 6)
 			_:
 				_add(inside, rounded_prism(Vector3(1.2, 3.4, 1.2), 0.24), p + Vector3(0.0, 1.7, 0.0), column)
-				_add(inside, rounded_prism(Vector3(1.5, 0.3, 1.5), 0.3), p + Vector3(0.0, 3.4, 0.0), cap)
+				# The cap: the base's slab upside down, its bottom edge rounded over.
+				_add(inside, rounded_prism(Vector3(1.5, 0.3, 1.5), 0.3, 4, 0.13), p + Vector3(0.0, 3.4, 0.0), cap, Vector3(PI, 0.0, 0.0))
 				_add(inside, rounded_prism(Vector3(1.5, 0.3, 1.5), 0.3, 4, 0.13), p + Vector3(0.0, 0.15, 0.0), cap)  # the base: its top edge rounded over
 				if theme_id == "ancient":
 					_box(inside, Vector3(1.22, 0.12, 1.22), p + Vector3(0.0, 2.4, 0.0), glow)
