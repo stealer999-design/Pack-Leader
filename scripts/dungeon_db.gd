@@ -62,9 +62,9 @@ const THEMES := {
 		"wall_texture": "res://textures/dungeon/ancient/wall_", "wall_tile": 5.0,
 		# Torches as in the sandstone vault (models/dungeon/torches/): on tripods in
 		# place of braziers, flames on the Keeper doorway's posts, and on the tall
-		# walls between the runes; their light a deep red-orange.
+		# walls, which are otherwise bare (no runes); their light a deep red-orange.
 		"floor_torch": "res://models/dungeon/torches/floor_torch.glb",
-		"wall_torch": "res://models/dungeon/torches/wall_torch.glb", "wall_torch_offset": 4.0,
+		"wall_torch": "res://models/dungeon/torches/wall_torch.glb", "wall_torch_offset": 4.0, "bare_walls": true,
 		"torch_light": Color(0.95, 0.3, 0.07), "torch_strength": 1.0,
 		"wall": Color(0.2, 0.18, 0.19), "trim": Color(0.34, 0.3, 0.28), "floor_style": "flagstone",
 		"floor": Color(0.2, 0.17, 0.17), "glow": Color(1.0, 0.45, 0.12), "key_color": Color(1.0, 0.5, 0.2),
