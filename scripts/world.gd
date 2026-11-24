@@ -1981,6 +1981,8 @@ func _dungeon_floor_material(theme: Dictionary) -> Material:
 	mat.uv1_triplanar = true
 	mat.uv1_world_triplanar = true
 	mat.uv1_scale = Vector3.ONE / float(theme.get("floor_tile", 5.0))
+	if theme.get("floor_aligned", false):
+		mat.uv1_world_triplanar = false  # mapped in the level's own space: lined up with the walls
 	return mat
 
 
