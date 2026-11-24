@@ -58,6 +58,8 @@ const THEMES := {
 		"open_hall": true, "dark_sun": 0.3, "dark_ambient": 0.6,
 		# A floor of dark irregular flagstones (ambientCG Tiles090), matte.
 		"floor_texture": "res://textures/dungeon/ancient/floor_", "floor_tile": 10.0, "floor_roughness": 1.0, "floor_specular": 0.2,
+		# Red brick walls (ambientCG Bricks082C), as they come.
+		"wall_texture": "res://textures/dungeon/ancient/wall_", "wall_tile": 5.0,
 		# Torches as in the sandstone vault (models/dungeon/torches/): on tripods in
 		# place of braziers, flames on the Keeper doorway's posts, and on the tall
 		# walls between the runes; their light a deep red-orange.
