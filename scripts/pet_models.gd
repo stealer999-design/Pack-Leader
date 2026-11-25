@@ -7,13 +7,13 @@ class_name PetModels
 
 const DIR := "res://models/pets/"
 ## How tall a size-1 creature of each body type stands (the code-built ones).
-const HEIGHT := {"cat": 1.25, "dog": 1.25, "bird": 1.1, "skeleton": 1.95, "zombie": 1.95, "mummy": 1.95, "imp": 1.4, "golem": 1.95}
+const HEIGHT := {"cat": 1.25, "dog": 1.25, "bird": 1.1, "skeleton": 1.95, "zombie": 1.95, "mummy": 1.95, "imp": 1.4, "golem": 1.95, "yeti": 1.8}
 ## ...or how long, nose to tail tip (lizards: long and low, some much flatter than others).
 const LENGTH := {"lizard": 1.93, "scorpion": 1.6}
 ## Species whose model (made elsewhere, skinned) is sized and placed by its
 ## posed vertices, not its mesh box (the Sand Scorpion: "SCORPION ANIMATION"
 ## by hino, Sketchfab, CC-BY-4.0; models/pets/CREDITS.txt).
-const POSED_FIT := {"Sand Scorpion": true, "Skeleton": true, "Zombie": true, "Mummy": true, "Fire Imp": true, "Magma Golem": true}
+const POSED_FIT := {"Sand Scorpion": true, "Skeleton": true, "Zombie": true, "Mummy": true, "Fire Imp": true, "Magma Golem": true, "Yeti": true}
 ## Per species: stretches (seconds) cut out of one of its model's animations
 ## (`source`) as the animations the game plays. The armoured Skeleton's
 ## Attack is 2.8 s of crouch, wind-up, lunge and recovery: its attack plays
@@ -21,6 +21,10 @@ const POSED_FIT := {"Sand Scorpion": true, "Skeleton": true, "Zombie": true, "Mu
 const CLIPS := {
 	"Skeleton": {"source": "Attack", "Swipe": [0.35, 1.75], "Hiss": [0.35, 1.75]},
 	"Magma Golem": {"source": "Attack", "Swipe": [0.35, 1.75], "Hiss": [0.35, 1.75]},  # the same slam
+	# The Yeti's Charged_Ground_Slam (3 s): it raises a fist, holds it high (0.5-1.3 s),
+	# brings it down (hits the ground 1.75 s in) and straightens. Its attack leaves
+	# out most of the hold: 1.2 s, the fist landing 0.85 s in.
+	"Yeti": {"source": "Charged_Ground_Slam", "Swipe": [[0.2, 0.55], [1.25, 2.1]], "Hiss": [[0.2, 0.55], [1.25, 2.1]]},
 }
 ## Per species, how much faster a one-off animation plays, so it's over
 ## before the next attack (each species' attack_cooldown).
@@ -54,6 +58,9 @@ const RENAME := {
 	# runs when it chases (Running, see RUN_PACE_BY_SPECIES), slams with its
 	# Attack (CLIPS) and, killed, plays Dead. No idle: it stands in its walk's first pose.
 	"Magma Golem": {"Walking": "Walk", "Running": "Run", "Dead": "Die"},
+	# The Yeti (the user's, Meshy and Mixamo): walks, runs when it chases, slams
+	# (CLIPS). No idle (its walk's first pose) and no death.
+	"Yeti": {"Walking": "Walk", "Running": "Run"},
 }
 ## Per species, degrees a model is turned (about up) so it faces its way of
 ## travel, where it isn't made facing +Z like the Meshy models (measured: the
@@ -90,12 +97,12 @@ const MAX_WALK_SPEED_BY_TYPE := {"dog": 4.0, "bird": 5.0, "cat": 6.0}
 ## the reference walk) covers the reference's stride in leg heights, x1.25, per 0.83 s, so each
 ## cat's pace is its own (rig units a second, like every pace here: stride / cycle).
 const WALK_PACE_BY_SPECIES := {"Emberkitty": 0.839, "Mossback": 0.995, "Voltwing": 0.782, "Gloomhorn": 0.862, "Magmashell": 0.881, "Thundershell": 0.708, "Stonehorn": 0.831, "Blitzkitty": 0.794, "Stormhorn": 0.419, "Duskbloom": 0.574,
-		"Skeleton": 1.22, "Zombie": 0.25, "Mummy": 0.72, "Fire Imp": 1.98, "Magma Golem": 0.6}  # (its feet slide back 4.66 model units a second on the ground)
-const MAX_WALK_SPEED_BY_SPECIES := {"Skeleton": 4.0, "Zombie": 4.0, "Mummy": 4.0, "Fire Imp": 4.0, "Magma Golem": 2.0}
+		"Skeleton": 1.22, "Zombie": 0.25, "Mummy": 0.72, "Fire Imp": 1.98, "Magma Golem": 0.6, "Yeti": 1.15}  # (its feet slide back 4.66 model units a second on the ground)
+const MAX_WALK_SPEED_BY_SPECIES := {"Skeleton": 4.0, "Zombie": 4.0, "Mummy": 4.0, "Fire Imp": 4.0, "Magma Golem": 2.0, "Yeti": 2.0}
 ## Per species whose model has a Run: its pace (as WALK_PACE_BY_SPECIES). It
 ## runs once the walk would play faster than RUN_FROM (and walks again below
 ## WALK_BELOW, so it doesn't flicker between the two).
-const RUN_PACE_BY_SPECIES := {"Magma Golem": 1.87}
+const RUN_PACE_BY_SPECIES := {"Magma Golem": 1.87, "Yeti": 1.9}
 const RUN_FROM := 1.7
 const WALK_BELOW := 1.3
 
@@ -214,27 +221,38 @@ static func _cut_clips(player: AnimationPlayer, clips: Dictionary) -> void:
 	for clip_name: String in clips:
 		if clip_name == "source" or player.has_animation(clip_name):
 			continue
-		var from: float = clips[clip_name][0]
-		var to: float = clips[clip_name][1]
+		# One stretch [from, to], or several [[from, to], ...] joined end to end
+		# (to leave out a long held pose in the middle).
+		var pieces: Array = clips[clip_name] if clips[clip_name][0] is Array else [clips[clip_name]]
 		var anim := Animation.new()
-		anim.length = to - from
-		var steps := maxi(ceili((to - from) * 30.0), 1)
+		var length := 0.0
+		for piece: Array in pieces:
+			length += float(piece[1]) - float(piece[0])
+		anim.length = length
 		for t in src.get_track_count():
 			var kind := src.track_get_type(t)
 			if kind not in [Animation.TYPE_POSITION_3D, Animation.TYPE_ROTATION_3D, Animation.TYPE_SCALE_3D]:
 				continue
 			var nt := anim.add_track(kind)
 			anim.track_set_path(nt, src.track_get_path(t))
-			for i in steps + 1:
-				var at := minf(from + (to - from) * i / steps, to)
-				var key := at - from
-				match kind:
-					Animation.TYPE_POSITION_3D:
-						anim.position_track_insert_key(nt, key, src.position_track_interpolate(t, at))
-					Animation.TYPE_ROTATION_3D:
-						anim.rotation_track_insert_key(nt, key, src.rotation_track_interpolate(t, at))
-					Animation.TYPE_SCALE_3D:
-						anim.scale_track_insert_key(nt, key, src.scale_track_interpolate(t, at))
+			var offset := 0.0
+			for piece: Array in pieces:
+				var from: float = piece[0]
+				var to: float = piece[1]
+				var steps := maxi(ceili((to - from) * 30.0), 1)
+				for i in steps + 1:
+					var at := minf(from + (to - from) * i / steps, to)
+					var key := offset + at - from
+					if i == 0 and offset > 0.0:
+						key += 0.001  # (just after the last piece's final key)
+					match kind:
+						Animation.TYPE_POSITION_3D:
+							anim.position_track_insert_key(nt, key, src.position_track_interpolate(t, at))
+						Animation.TYPE_ROTATION_3D:
+							anim.rotation_track_insert_key(nt, key, src.rotation_track_interpolate(t, at))
+						Animation.TYPE_SCALE_3D:
+							anim.scale_track_insert_key(nt, key, src.scale_track_interpolate(t, at))
+				offset += to - from
 		lib.add_animation(clip_name, anim)
 
 
