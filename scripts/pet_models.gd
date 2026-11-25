@@ -14,6 +14,10 @@ const LENGTH := {"lizard": 1.93, "scorpion": 1.6}
 ## posed vertices, not its mesh box (the Sand Scorpion: "SCORPION ANIMATION"
 ## by hino, Sketchfab, CC-BY-4.0; models/pets/CREDITS.txt).
 const POSED_FIT := {"Sand Scorpion": true}
+## Per species, degrees a model is turned (about up) so it faces its way of
+## travel, where it isn't made facing +Z like the Meshy models (measured: the
+## Sand Scorpion's pincers point 62 degrees off; it walked half sideways).
+const YAW := {"Sand Scorpion": -62.3}
 ## Per species: a colour multiplied into the model's texture (pale Meshy textures
 ## wash out in the bright sun).
 const TINT := {"voltwing": Color(0.62, 0.74, 0.95), "frostfinch": Color(0.78, 0.85, 0.95)}
@@ -87,8 +91,9 @@ static func build(body: MeshInstance3D, species: CreatureSpecies) -> AnimationPl
 		k = LENGTH[species.body_type] / maxf(box.size.z, 0.01)
 	scene.scale = Vector3.ONE * k
 	scene.position = Vector3(-box.get_center().x * k, -box.position.y * k, -box.get_center().z * k)
-	scene.rotation.y = PI  # Meshy models face +Z
-	scene.position = scene.position.rotated(Vector3.UP, PI)
+	var turn: float = PI + deg_to_rad(YAW.get(species.display_name, 0.0))  # Meshy models face +Z
+	scene.rotation.y = turn
+	scene.position = scene.position.rotated(Vector3.UP, turn)
 	scene.position.y -= body.position.y  # Body sits raised (for the code-built shapes); feet back on the ground
 	scene.set_meta("scale", k)
 	var key := species.display_name.to_lower().replace(" ", "_")
@@ -141,6 +146,8 @@ static func _pose_first_frame(player: AnimationPlayer, anim_name: String) -> voi
 				skeleton.set_bone_pose_rotation(bone, anim.rotation_track_interpolate(t, 0.0))
 			Animation.TYPE_SCALE_3D:
 				skeleton.set_bone_pose_scale(bone, anim.scale_track_interpolate(t, 0.0))
+	for skeleton: Skeleton3D in root.find_children("*", "Skeleton3D", true, false):
+		skeleton.force_update_all_bone_transforms()  # (else the global poses keep the rest)
 
 
 ## The box round a skinned model as it stands posed (in `scene`'s space), from
