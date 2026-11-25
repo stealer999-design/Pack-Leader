@@ -7,13 +7,21 @@ class_name PetModels
 
 const DIR := "res://models/pets/"
 ## How tall a size-1 creature of each body type stands (the code-built ones).
-const HEIGHT := {"cat": 1.25, "dog": 1.25, "bird": 1.1}
+const HEIGHT := {"cat": 1.25, "dog": 1.25, "bird": 1.1, "skeleton": 1.95}
 ## ...or how long, nose to tail tip (lizards: long and low, some much flatter than others).
 const LENGTH := {"lizard": 1.93, "scorpion": 1.6}
 ## Species whose model (made elsewhere, skinned) is sized and placed by its
 ## posed vertices, not its mesh box (the Sand Scorpion: "SCORPION ANIMATION"
 ## by hino, Sketchfab, CC-BY-4.0; models/pets/CREDITS.txt).
-const POSED_FIT := {"Sand Scorpion": true}
+const POSED_FIT := {"Sand Scorpion": true, "Skeleton": true}
+## Per species whose model has all its moves in one long animation: the
+## stretches (seconds) cut out of it as the animations the game plays. The
+## Skeleton ("Skeleton (Animated)" by One_Boy, Sketchfab, CC-BY-4.0): its
+## walk (two strides, a seamless loop), one sword strike from its guard back
+## to its guard (it lands 0.34 s in), and falling to pieces on the ground.
+const CLIPS := {
+	"Skeleton": {"source": "Take 001", "Walk": [0.0, 2.4667], "Attack": [27.333, 28.467], "Die": [40.8, 42.8]},
+}
 ## Per species, degrees a model is turned (about up) so it faces its way of
 ## travel, where it isn't made facing +Z like the Meshy models (measured: the
 ## Sand Scorpion's pincers point 62 degrees off; it walked half sideways).
@@ -40,8 +48,9 @@ const MAX_WALK_SPEED_BY_TYPE := {"dog": 4.0, "bird": 5.0, "cat": 6.0}
 ## ...and per species, where its model has its own walk: the cats' (meshy_skin/cat/cat_pet_anims.py,
 ## the reference walk) covers the reference's stride in leg heights, x1.25, per 0.83 s, so each
 ## cat's pace is its own (rig units a second, like every pace here: stride / cycle).
-const WALK_PACE_BY_SPECIES := {"Emberkitty": 0.839, "Mossback": 0.995, "Voltwing": 0.782, "Gloomhorn": 0.862, "Magmashell": 0.881, "Thundershell": 0.708, "Stonehorn": 0.831, "Blitzkitty": 0.794, "Stormhorn": 0.419, "Duskbloom": 0.574}
-const MAX_WALK_SPEED_BY_SPECIES := {}
+const WALK_PACE_BY_SPECIES := {"Emberkitty": 0.839, "Mossback": 0.995, "Voltwing": 0.782, "Gloomhorn": 0.862, "Magmashell": 0.881, "Thundershell": 0.708, "Stonehorn": 0.831, "Blitzkitty": 0.794, "Stormhorn": 0.419, "Duskbloom": 0.574,
+		"Skeleton": 4.66}  # (its feet slide back 4.66 model units a second on the ground)
+const MAX_WALK_SPEED_BY_SPECIES := {"Skeleton": 4.0}
 
 
 static func max_walk_speed(body_type: String, species_name := "") -> float:
@@ -79,8 +88,11 @@ static func build(body: MeshInstance3D, species: CreatureSpecies) -> AnimationPl
 	# A skinned model made elsewhere (POSED_FIT): its mesh box isn't where it
 	# stands. Measured in its walk's first pose (its bones' rests can be far
 	# from how it moves: the Sand Scorpion's walk carries it far off its rest).
+	var clip_player: AnimationPlayer = scene.find_children("*", "AnimationPlayer", true, false).pop_front()
+	if clip_player and CLIPS.has(species.display_name):
+		_cut_clips(clip_player, CLIPS[species.display_name])
 	if POSED_FIT.has(species.display_name):
-		var first_player: AnimationPlayer = scene.find_children("*", "AnimationPlayer", true, false).pop_front()
+		var first_player: AnimationPlayer = clip_player
 		if first_player and first_player.has_animation("Walk"):
 			_pose_first_frame(first_player, "Walk")
 		var posed := _skinned_box(scene)
@@ -122,6 +134,40 @@ static func build(body: MeshInstance3D, species: CreatureSpecies) -> AnimationPl
 			if player.has_animation(anim_name):
 				player.get_animation(anim_name).loop_mode = Animation.LOOP_LINEAR
 	return player
+
+
+## Cuts a model's one long animation into the clips the game plays (see CLIPS),
+## each resampled at 30 frames a second from its stretch of the source.
+static func _cut_clips(player: AnimationPlayer, clips: Dictionary) -> void:
+	var lib := player.get_animation_library("")
+	if lib == null or not player.has_animation(clips.source):
+		return
+	var src := player.get_animation(clips.source)
+	for clip_name: String in clips:
+		if clip_name == "source" or player.has_animation(clip_name):
+			continue
+		var from: float = clips[clip_name][0]
+		var to: float = clips[clip_name][1]
+		var anim := Animation.new()
+		anim.length = to - from
+		var steps := maxi(ceili((to - from) * 30.0), 1)
+		for t in src.get_track_count():
+			var kind := src.track_get_type(t)
+			if kind not in [Animation.TYPE_POSITION_3D, Animation.TYPE_ROTATION_3D, Animation.TYPE_SCALE_3D]:
+				continue
+			var nt := anim.add_track(kind)
+			anim.track_set_path(nt, src.track_get_path(t))
+			for i in steps + 1:
+				var at := minf(from + (to - from) * i / steps, to)
+				var key := at - from
+				match kind:
+					Animation.TYPE_POSITION_3D:
+						anim.position_track_insert_key(nt, key, src.position_track_interpolate(t, at))
+					Animation.TYPE_ROTATION_3D:
+						anim.rotation_track_insert_key(nt, key, src.rotation_track_interpolate(t, at))
+					Animation.TYPE_SCALE_3D:
+						anim.scale_track_insert_key(nt, key, src.scale_track_interpolate(t, at))
+		lib.add_animation(clip_name, anim)
 
 
 ## Puts a model's skeletons in `anim_name`'s first frame (by hand: the model
@@ -195,8 +241,8 @@ static func _skinned_box(scene: Node3D) -> AABB:
 	return box
 
 
-## A model made elsewhere (not rigged by rig_quad.py, e.g. the Sand Scorpion,
-## with Walk, Attack and Die): its attack also serves as Swipe (the attack)
+## A model made elsewhere (not rigged by rig_quad.py, e.g. the Sand Scorpion
+## and the Skeleton, with Walk, Attack and Die): its attack also serves as Swipe (the attack)
 ## and Hiss (the ability), and with no Idle it stands in its walk's first pose.
 static func _alias_animations(player: AnimationPlayer) -> void:
 	var lib := player.get_animation_library("")
