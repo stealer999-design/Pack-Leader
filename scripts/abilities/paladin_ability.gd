@@ -123,9 +123,10 @@ func _effects(pet_ref, at: Vector3, target_ref, from := Vector3.ZERO) -> void:
 		world.play_heal_marks.rpc(healed)
 	if not shielded.is_empty():
 		world.play_shield_icons.rpc(shielded, protect_for)
-		world.play_beam.rpc(at + Vector3.UP * 0.6, injured.global_position + Vector3.UP * 0.8, Color(0.6, 1.0, 0.6))
-		if look == "":
-			world.play_burst.rpc(injured.global_position, Color(0.6, 1.0, 0.6), 1.2)
+		if injured:  # (no ally hurt: nobody to send the beam to)
+			world.play_beam.rpc(at + Vector3.UP * 0.6, injured.global_position + Vector3.UP * 0.8, Color(0.6, 1.0, 0.6))
+			if look == "":
+				world.play_burst.rpc(injured.global_position, Color(0.6, 1.0, 0.6), 1.2)
 	if sanctuary_duration > 0.0:
 		world.add_zone(pet, world.clamp_to_level(at), radius, sanctuary_duration,
 				pet.ability_damage() * sanctuary_dps_multiplier, HOLY if look == "" else Color(0, 0, 0, 0), 0.0, sanctuary_heal * power)
