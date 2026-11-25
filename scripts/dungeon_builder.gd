@@ -28,6 +28,9 @@ const WALL_TORCH_FLAME := Vector3(0.0, 44.0, 27.0)
 const WALL_TORCH_OFFSET := 5.5  ## Wall torches this far either side of a long wall's middle (unless the theme says).
 ## A torch's light (unless the theme says, torch_light): white, so the stone
 ## keeps its own colour (the flames are orange whatever the light).
+const VAULT_ARCH_MODEL := "res://models/dungeon/sandstone/vault_entrance.glb"  ## The sandstone vault's entrance.
+const VAULT_ARCH_HEIGHT := 5.0
+const VAULT_ARCH_AT := Vector3(0.0, 0.0, 0.0)  ## Where its footprint is centred, in the entrance's space.
 const CAVE_MODEL := "res://models/dungeon/ancient/cave_entrance.glb"  ## The volcano caves' entrance.
 const CAVE_HEIGHT := 4.6
 const CAVE_AT := Vector3(-0.4, 0.0, 0.8)  ## Where its footprint is centred, in the entrance's space.
@@ -261,20 +264,13 @@ static func _entrance(root: Node3D, at: Vector3, theme: Dictionary, theme_id: St
 				_cylinder(e, 0.07, 0.07, 0.45, Vector3(3.2, 0.22, z), _mat(Color(0.9, 0.88, 0.8)))
 				_ball(e, Vector3(3.2, 0.55, z), Vector3(0.09, 0.15, 0.09), glow)
 			_light(e, Vector3(3.6, 1.6, 0.0), theme.glow, 0.9, 5.0)
-		"sandstone":  # a stepped sandstone block, a doorway between obelisks
-			_box(e, Vector3(6.0, 1.4, 8.0), Vector3(-0.5, 0.7, 0.0), stone)
-			_box(e, Vector3(5.0, 1.2, 6.6), Vector3(-0.9, 2.0, 0.0), stone)
-			_box(e, Vector3(3.8, 1.0, 5.0), Vector3(-1.3, 3.1, 0.0), stone)
-			for z in [-2.4, 2.4]:
-				_cylinder(e, 0.12, 0.45, 4.2, Vector3(2.9, 2.1, z), trim, Vector3(0.0, PI / 4.0, 0.0), 4)
-				_solid(e, Vector3(0.8, 4.0, 0.8), Vector3(2.9, 2.0, z))
-			for z in [-1.15, 1.15]:
-				_box(e, Vector3(0.6, 2.6, 0.6), Vector3(2.55, 1.3, z), trim)
-			_box(e, Vector3(0.8, 0.6, 3.0), Vector3(2.55, 2.85, 0.0), trim)
-			_cylinder(e, 0.42, 0.42, 0.1, Vector3(2.98, 2.85, 0.0), glow, Vector3(0.0, 0.0, PI / 2.0))
-			_box(e, Vector3(0.1, 2.3, 1.7), Vector3(2.52, 1.15, 0.0), dark)
-			_box(e, Vector3(1.2, 0.15, 2.4), Vector3(3.2, 0.07, 0.0), trim)
-			_solid(e, Vector3(6.0, 3.6, 8.0), Vector3(-0.5, 1.8, 0.0))
+		"sandstone":  # a sandstone rock arch (models/dungeon/sandstone/vault_entrance.glb), black behind, a torch either side
+			_model(e, VAULT_ARCH_MODEL, VAULT_ARCH_AT, VAULT_ARCH_HEIGHT)  # its arch opens along x as made
+			_box(e, Vector3(0.2, 2.5, 3.8), Vector3(VAULT_ARCH_AT.x - 0.9, 1.25, 0.0), dark)  # the black at the back
+			_solid(e, Vector3(2.4, 4.0, 5.6), Vector3(VAULT_ARCH_AT.x - 2.0, 2.0, 0.0))
+			for z in [-1.0, 1.0]:
+				_solid(e, Vector3(5.0, 4.0, 2.0), Vector3(VAULT_ARCH_AT.x, 2.0, z * 3.4))
+				_floor_torch(e, theme, Vector3(VAULT_ARCH_AT.x + 3.0, 0.0, z * 3.0))
 		"ancient":  # a rocky cave (models/dungeon/ancient/cave_entrance.glb), its mouth to the camera
 			_model(e, CAVE_MODEL, CAVE_AT, CAVE_HEIGHT, -PI / 2.0)  # the model's mouth faces its -z
 			_solid(e, Vector3(3.6, 4.0, 7.0), Vector3(-1.6, 2.0, 0.0))
@@ -319,7 +315,7 @@ static func _entrance(root: Node3D, at: Vector3, theme: Dictionary, theme_id: St
 			_cylinder(e, 0.95, 0.95, 0.1, Vector3(2.92, 0.0, 0.0), _dark(), Vector3(0.0, 0.0, PI / 2.0), 20)
 			_solid(e, Vector3(5.2, 2.7, 5.2), Vector3(-0.8, 1.3, 0.0))
 			_solid(e, Vector3(2.6, 1.3, 2.5), Vector3(1.5, 0.65, 0.0))
-	_sign(e, theme.entrance, Vector3(2.4, {"crypt": 8.0, "ice": 3.6}.get(theme_id, 5.4), 0.0), Color(theme.key_color).lightened(0.3))
+	_sign(e, theme.entrance, Vector3(2.4, {"crypt": 8.0, "ice": 3.6, "sandstone": 6.0}.get(theme_id, 5.4), 0.0), Color(theme.key_color).lightened(0.3))
 
 
 ## The crypt model's iron gate, thrown open: its arched doorway (measured on
