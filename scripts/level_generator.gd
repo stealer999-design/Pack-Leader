@@ -464,7 +464,7 @@ const DUNGEON_COLS := 4
 const DUNGEON_ROWS := 3
 const DUNGEON_KEY := 100
 const DUNGEON_GAP := 70.0  ## Between the map's camera-facing edge and the dungeon.
-const ENTRANCE_CLEARANCE := 9.0  ## Nothing else is placed this close to the dungeon entrance.
+const ENTRANCE_CLEARANCE := 9.0  ## Nothing else is placed this close to the dungeon entrance (nor in its tile at all).
 
 
 ## The tile layout, with the same keys as a path layout (where they make sense)
@@ -619,6 +619,8 @@ static func generate_open(level_seed: int, path: Dictionary) -> Dictionary:
 			return true
 		if Vector2(p.x - entrance_at.x, p.z - entrance_at.z).length() < ENTRANCE_CLEARANCE:
 			return true
+		if cell_at(layout, p) >= 0 and layout.cells[cell_at(layout, p)].get("entrance", false):
+			return true  # the dungeon entrance's tile holds the entrance alone
 		if cell_at(layout, p) >= 0 and layout.cells[cell_at(layout, p)].get("grid", "") == "dungeon":
 			return true  # the dungeon fills itself (_dungeon)
 		var q := p - town
@@ -692,7 +694,7 @@ static func generate_open(level_seed: int, path: Dictionary) -> Dictionary:
 	# packs, further right, are tougher (World._start_level).
 	var deck: Array[Rect2] = []
 	for cell: Dictionary in cells:
-		if cell.kind == "field" or cell.kind == "boss":
+		if (cell.kind == "field" or cell.kind == "boss") and not cell.get("entrance", false):
 			deck.append(cell.rect)
 	var sizes := pack_sizes(rng, path.creature_spots.size())
 	var spots: Array[Dictionary] = []
