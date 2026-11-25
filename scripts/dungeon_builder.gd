@@ -28,6 +28,9 @@ const WALL_TORCH_FLAME := Vector3(0.0, 44.0, 27.0)
 const WALL_TORCH_OFFSET := 5.5  ## Wall torches this far either side of a long wall's middle (unless the theme says).
 ## A torch's light (unless the theme says, torch_light): white, so the stone
 ## keeps its own colour (the flames are orange whatever the light).
+const CAVE_MODEL := "res://models/dungeon/ancient/cave_entrance.glb"  ## The volcano caves' entrance.
+const CAVE_HEIGHT := 4.6
+const CAVE_AT := Vector3(-0.4, 0.0, 0.8)  ## Where its footprint is centred, in the entrance's space.
 const TORCH_LIGHT := Color(1.0, 1.0, 1.0)
 ## White light is brighter than the braziers' tinted light at the same energy:
 ## a torch's is turned down by this (unless the theme says, torch_strength),
@@ -272,23 +275,11 @@ static func _entrance(root: Node3D, at: Vector3, theme: Dictionary, theme_id: St
 			_box(e, Vector3(0.1, 2.3, 1.7), Vector3(2.52, 1.15, 0.0), dark)
 			_box(e, Vector3(1.2, 0.15, 2.4), Vector3(3.2, 0.07, 0.0), trim)
 			_solid(e, Vector3(6.0, 3.6, 8.0), Vector3(-0.5, 1.8, 0.0))
-		"ancient":  # a rock mound with a carved archway and glowing runes: someone built this
-			for b in [[Vector3(-2.8, 1.0, 0.0), Vector3(3.6, 3.2, 4.6)], [Vector3(-1.8, 0.6, 2.9), Vector3(2.4, 2.0, 2.4)],
-					[Vector3(-1.9, 0.5, -3.0), Vector3(2.4, 1.9, 2.6)], [Vector3(-3.8, 1.4, 0.5), Vector3(3.0, 3.0, 3.0)],
-					[Vector3(0.7, 0.6, 2.6), Vector3(1.3, 1.2, 1.3)], [Vector3(0.6, 0.5, -2.6), Vector3(1.2, 1.1, 1.4)]]:
-				_ball(e, b[0], b[1], stone)
-			_box(e, Vector3(0.3, 2.7, 2.2), Vector3(1.75, 1.35, 0.0), dark)
-			for z in [-1.5, 1.5]:
-				_box(e, Vector3(0.9, 3.0, 0.9), Vector3(2.0, 1.5, z), trim)
-				for y in [0.7, 1.3, 1.9, 2.5]:
-					_box(e, Vector3(0.05, 0.28, 0.14), Vector3(2.47, y, z), glow)
-				_solid(e, Vector3(0.9, 3.0, 0.9), Vector3(2.0, 1.5, z))
-			_box(e, Vector3(1.1, 0.8, 4.0), Vector3(2.0, 3.3, 0.0), trim)
-			_box(e, Vector3(0.05, 0.14, 2.8), Vector3(2.57, 3.3, 0.0), glow)
-			_light(e, Vector3(3.2, 2.0, 0.0), theme.glow, 1.4, 6.0)
-			_solid(e, Vector3(5.0, 3.6, 6.6), Vector3(-2.0, 1.8, 0.0))
-			_solid(e, Vector3(1.6, 1.4, 1.6), Vector3(0.7, 0.7, 2.6))
-			_solid(e, Vector3(1.6, 1.4, 1.6), Vector3(0.6, 0.7, -2.6))
+		"ancient":  # a rocky cave (models/dungeon/ancient/cave_entrance.glb), its mouth to the camera
+			_model(e, CAVE_MODEL, CAVE_AT, CAVE_HEIGHT, -PI / 2.0)  # the model's mouth faces its -z
+			_solid(e, Vector3(3.6, 4.0, 7.0), Vector3(-1.6, 2.0, 0.0))
+			for z in [-2.6, 2.6]:
+				_solid(e, Vector3(2.2, 4.0, 1.8), Vector3(1.2, 2.0, z))
 		"cave":  # a mossy rock mound with a dark natural mouth, vines and glowing mushrooms
 			var moss := _mat(Color(theme.trim))
 			for b in [[Vector3(-2.8, 1.0, 0.0), Vector3(3.6, 3.0, 5.0)], [Vector3(-1.8, 0.7, 2.7), Vector3(2.4, 2.2, 2.6)],
