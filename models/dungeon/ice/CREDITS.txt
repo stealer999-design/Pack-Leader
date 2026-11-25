@@ -1,0 +1,5 @@
+snow_cave.glb: "Low Poly Rock Cave" by Adrian21
+(https://sketchfab.com/Adrian21), from
+https://sketchfab.com/3d-models/low-poly-rock-cave-7923065c6e5449dc8cdc5dd2ae653fbe,
+licensed CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/).
+Used as the ice halls' entrance, retextured with snow (ambientCG Snow002).

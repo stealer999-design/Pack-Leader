@@ -75,7 +75,7 @@ const THEMES := {
 		"floor": Color(0.42, 0.45, 0.32), "glow": Color(0.55, 1.0, 0.6), "key_color": Color(0.6, 1.0, 0.55),
 	},
 	"ice": {
-		"place": "the ice halls", "entrance": "Igloo", "key": "Frost Key", "keeper": "Ice Warden",
+		"place": "the ice halls", "entrance": "Ice Cave", "key": "Frost Key", "keeper": "Ice Warden",
 		# Models (Meshy, low poly; see DungeonBuilder): support pillars, brazier
 		# pillars and a fountain plaza.
 		"models": {

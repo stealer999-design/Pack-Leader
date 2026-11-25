@@ -28,6 +28,10 @@ const WALL_TORCH_FLAME := Vector3(0.0, 44.0, 27.0)
 const WALL_TORCH_OFFSET := 5.5  ## Wall torches this far either side of a long wall's middle (unless the theme says).
 ## A torch's light (unless the theme says, torch_light): white, so the stone
 ## keeps its own colour (the flames are orange whatever the light).
+const SNOW_CAVE_MODEL := "res://models/dungeon/ice/snow_cave.glb"  ## The ice halls' entrance (Adrian21, CC-BY-4.0).
+const SNOW_CAVE_HEIGHT := 5.0
+const SNOW_CAVE_AT := Vector3(0.0, 0.0, 0.0)  ## Where its footprint is centred, in the entrance's space.
+const SNOW_CAVE_MOUTH := Vector2(2.4, 2.1)  ## The black in its mouth: width, height.
 const VAULT_ARCH_MODEL := "res://models/dungeon/sandstone/vault_entrance.glb"  ## The sandstone vault's entrance.
 const VAULT_ARCH_HEIGHT := 5.0
 const VAULT_ARCH_AT := Vector3(0.0, 0.0, 0.0)  ## Where its footprint is centred, in the entrance's space.
@@ -295,27 +299,17 @@ static func _entrance(root: Node3D, at: Vector3, theme: Dictionary, theme_id: St
 			_solid(e, Vector3(4.6, 3.2, 6.6), Vector3(-2.3, 1.6, 0.0))
 			for z in [-1.9, 1.9]:
 				_solid(e, Vector3(1.8, 1.6, 1.6), Vector3(0.6, 0.8, z))
-		"ice":  # an igloo of ice blocks, with its tunnel
-			var snow := _mat(Color(0.93, 0.95, 0.98))
-			_ball(e, Vector3(-0.4, 0.05, 0.0), Vector3(4.4, 0.35, 4.4), snow)
-			var dome := SphereMesh.new()
-			dome.radius = 2.6
-			dome.height = 2.6
-			dome.is_hemisphere = true
-			dome.radial_segments = 24
-			dome.rings = 8
-			_add(e, dome, Vector3(-0.8, 0.0, 0.0), stone)
-			for h in [0.65, 1.25, 1.8, 2.25]:
-				var ring := TorusMesh.new()
-				var r := sqrt(2.62 * 2.62 - h * h)
-				ring.inner_radius = r - 0.04
-				ring.outer_radius = r + 0.04
-				_add(e, ring, Vector3(-0.8, h, 0.0), trim)
-			_cylinder(e, 1.25, 1.25, 2.6, Vector3(1.6, 0.0, 0.0), stone, Vector3(0.0, 0.0, PI / 2.0), 20)
-			_cylinder(e, 0.95, 0.95, 0.1, Vector3(2.92, 0.0, 0.0), _dark(), Vector3(0.0, 0.0, PI / 2.0), 20)
-			_solid(e, Vector3(5.2, 2.7, 5.2), Vector3(-0.8, 1.3, 0.0))
-			_solid(e, Vector3(2.6, 1.3, 2.5), Vector3(1.5, 0.65, 0.0))
-	_sign(e, theme.entrance, Vector3(2.4, {"crypt": 8.0, "ice": 3.6, "sandstone": 6.0}.get(theme_id, 5.4), 0.0), Color(theme.key_color).lightened(0.3))
+		"ice":  # a low rocky cave (models/dungeon/ice/snow_cave.glb) under snow, black inside its mouth
+			var cave := _model(e, SNOW_CAVE_MODEL, SNOW_CAVE_AT, SNOW_CAVE_HEIGHT, PI)  # its mouth faces its -x
+			var snow := textured("res://textures/dungeon/ice/wall_", 4.0)
+			snow.uv1_world_triplanar = true  # (the model is made huge and scaled down: mapped by the world's units)
+			for m in cave.find_children("*", "MeshInstance3D", true, false):
+				(m as MeshInstance3D).material_override = snow
+			_box(e, Vector3(0.2, SNOW_CAVE_MOUTH.y, SNOW_CAVE_MOUTH.x), Vector3(SNOW_CAVE_AT.x - 2.0, SNOW_CAVE_MOUTH.y * 0.5, 0.0), dark)
+			_solid(e, Vector3(2.6, 3.6, 5.0), Vector3(SNOW_CAVE_AT.x - 1.2, 1.8, 0.0))
+			for z in [-1.0, 1.0]:
+				_solid(e, Vector3(2.4, 3.6, 1.2), Vector3(SNOW_CAVE_AT.x + 0.9, 1.8, z * 2.0))
+	_sign(e, theme.entrance, Vector3(2.4, {"crypt": 8.0, "ice": 5.8, "sandstone": 6.0}.get(theme_id, 5.4), 0.0), Color(theme.key_color).lightened(0.3))
 
 
 ## The crypt model's iron gate, thrown open: its arched doorway (measured on
