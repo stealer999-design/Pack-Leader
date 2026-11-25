@@ -29,9 +29,9 @@ const WALL_TORCH_OFFSET := 5.5  ## Wall torches this far either side of a long w
 ## A torch's light (unless the theme says, torch_light): white, so the stone
 ## keeps its own colour (the flames are orange whatever the light).
 const SNOW_CAVE_MODEL := "res://models/dungeon/ice/snow_cave.glb"  ## The ice halls' entrance (Adrian21, CC-BY-4.0).
-const SNOW_CAVE_HEIGHT := 5.0
+const SNOW_CAVE_HEIGHT := 3.6
 const SNOW_CAVE_AT := Vector3(0.0, 0.0, 0.0)  ## Where its footprint is centred, in the entrance's space.
-const SNOW_CAVE_MOUTH := Vector2(2.4, 2.1)  ## The black in its mouth: width, height.
+const SNOW_CAVE_MOUTH := Vector2(3.0, 2.0)  ## The black in its mouth: width, height.
 const VAULT_ARCH_MODEL := "res://models/dungeon/sandstone/vault_entrance.glb"  ## The sandstone vault's entrance.
 const VAULT_ARCH_HEIGHT := 5.0
 const VAULT_ARCH_AT := Vector3(0.0, 0.0, 0.0)  ## Where its footprint is centred, in the entrance's space.
@@ -300,16 +300,18 @@ static func _entrance(root: Node3D, at: Vector3, theme: Dictionary, theme_id: St
 			for z in [-1.9, 1.9]:
 				_solid(e, Vector3(1.8, 1.6, 1.6), Vector3(0.6, 0.8, z))
 		"ice":  # a low rocky cave (models/dungeon/ice/snow_cave.glb) under snow, black inside its mouth
-			var cave := _model(e, SNOW_CAVE_MODEL, SNOW_CAVE_AT, SNOW_CAVE_HEIGHT, PI)  # its mouth faces its -x
+			# Sized and set down by its vertices (its turned, sheared nodes make its box
+			# loose: by that it stood in the air, small and off to one side).
+			var cave := _model(e, SNOW_CAVE_MODEL, SNOW_CAVE_AT, SNOW_CAVE_HEIGHT, PI, Vector3.ONE, true)  # its mouth faces its -x
 			var snow := textured("res://textures/dungeon/ice/wall_", 4.0)
 			snow.uv1_world_triplanar = true  # (the model is made huge and scaled down: mapped by the world's units)
 			for m in cave.find_children("*", "MeshInstance3D", true, false):
 				(m as MeshInstance3D).material_override = snow
-			_box(e, Vector3(0.2, SNOW_CAVE_MOUTH.y, SNOW_CAVE_MOUTH.x), Vector3(SNOW_CAVE_AT.x - 2.0, SNOW_CAVE_MOUTH.y * 0.5, 0.0), dark)
-			_solid(e, Vector3(2.6, 3.6, 5.0), Vector3(SNOW_CAVE_AT.x - 1.2, 1.8, 0.0))
+			_box(e, Vector3(0.2, SNOW_CAVE_MOUTH.y, SNOW_CAVE_MOUTH.x), Vector3(SNOW_CAVE_AT.x - 0.3, SNOW_CAVE_MOUTH.y * 0.5, 0.0), dark)
+			_solid(e, Vector3(2.8, 3.6, 7.4), Vector3(SNOW_CAVE_AT.x - 1.6, 1.8, 0.0))
 			for z in [-1.0, 1.0]:
-				_solid(e, Vector3(2.4, 3.6, 1.2), Vector3(SNOW_CAVE_AT.x + 0.9, 1.8, z * 2.0))
-	_sign(e, theme.entrance, Vector3(2.4, {"crypt": 8.0, "ice": 5.8, "sandstone": 6.0}.get(theme_id, 5.4), 0.0), Color(theme.key_color).lightened(0.3))
+				_solid(e, Vector3(3.2, 3.6, 2.1), Vector3(SNOW_CAVE_AT.x + 1.4, 1.8, z * 2.65))
+	_sign(e, theme.entrance, Vector3(2.4, {"crypt": 8.0, "ice": 4.4, "sandstone": 6.0}.get(theme_id, 5.4), 0.0), Color(theme.key_color).lightened(0.3))
 
 
 ## The crypt model's iron gate, thrown open: its arched doorway (measured on
@@ -765,9 +767,9 @@ static func _flicker(parent: Node3D, at: Vector3, energy: float, reach: float, t
 
 ## A model (a .glb), `size` units tall (wider or deeper by `stretch`), turned
 ## `turn` about the vertical, standing on the floor at `at`.
-static func _model(parent: Node3D, path: String, at: Vector3, height: float, turn := 0.0, stretch := Vector3.ONE) -> Node3D:
+static func _model(parent: Node3D, path: String, at: Vector3, height: float, turn := 0.0, stretch := Vector3.ONE, exact := false) -> Node3D:
 	var node := (load(path) as PackedScene).instantiate() as Node3D
-	var aabb := _bounds(node)
+	var aabb := _bounds_exact(node) if exact else _bounds(node)
 	var k := height / maxf(aabb.size.y, 0.001)
 	node.scale = Vector3(k * stretch.x, k, k * stretch.z)
 	node.rotation.y = turn
@@ -776,6 +778,31 @@ static func _model(parent: Node3D, path: String, at: Vector3, height: float, tur
 	node.position = at + Vector3(-centre.x, -aabb.position.y * k, -centre.z)
 	parent.add_child(node)
 	return node
+
+
+## A model's bounds by its vertices (its meshes, through its own node
+## transforms, unscaled): exact, where _bounds' boxes grow loose round
+## turned or sheared nodes.
+static func _bounds_exact(node: Node3D) -> AABB:
+	var box := AABB()
+	var first := true
+	for m in node.find_children("*", "MeshInstance3D", true, false):
+		var t := Transform3D()
+		var up: Node = m
+		while up != node and up != null:
+			if up is Node3D:
+				t = (up as Node3D).transform * t
+			up = up.get_parent()
+		var mesh := (m as MeshInstance3D).mesh
+		for sfc in mesh.get_surface_count():
+			for v: Vector3 in mesh.surface_get_arrays(sfc)[Mesh.ARRAY_VERTEX]:
+				var p := t * v
+				if first:
+					box = AABB(p, Vector3.ZERO)
+					first = false
+				else:
+					box = box.expand(p)
+	return box
 
 
 ## A model's bounds (its meshes, unscaled).
