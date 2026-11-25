@@ -140,6 +140,12 @@ var _anime_style := false
 @onready var body: MeshInstance3D = $Model/Body
 var _meshy: AnimationPlayer  ## a Meshy model's animations (PetModels), or null
 var _dying := false  ## killed, playing its Die animation before it goes
+## A boss (Champion or Keeper) whose model has a Dance (the Mummy's): when the
+## tamer it's after has lost every pet, it stops and dances, once through,
+## unless it's hit. Again only once a pet of theirs is back on its feet.
+var _dance_left := 0.0
+var _dance_armed := true
+var _dance_health := 0.0
 @onready var collision: CollisionShape3D = $CollisionShape3D
 @onready var ring: MeshInstance3D = $Ring
 @onready var overhead: Node3D = $Overhead
@@ -585,10 +591,28 @@ func gain_xp(amount: int) -> void:
 # --- AI (server only) ----------------------------------------------------------
 
 func _wild_ai(delta: float) -> Vector3:
+	if _dance_left > 0.0:
+		_dance_left -= delta
+		if _dance_left <= 0.0 or health.current < _dance_health - 0.01:  # done, or hit
+			_dance_left = 0.0
+			_set_dancing.rpc(false)
+		else:
+			return Vector3.ZERO
 	if target and (not _is_valid_target(target) or _flat_distance(target.global_position) > leash_range):
 		target = null
 	if target == null and species.aggressive:
 		target = _nearest_hostile(species.aggro_range)
+	if target and _can_dance():
+		var gone := _all_pets_down(target)
+		if gone and _dance_armed:
+			_dance_armed = false
+			_dance_left = (get_node("Animator") as CreatureAnimator).anim.get_animation("Dance").length
+			_dance_health = health.current
+			target = null
+			_set_dancing.rpc(true)
+			return Vector3.ZERO
+		if not gone:
+			_dance_armed = true
 	if target:
 		return _chase_and_attack(target)
 
@@ -1200,6 +1224,37 @@ func _flash() -> void:
 		return
 	_material.albedo_color = Color.WHITE
 	create_tween().tween_property(_material, "albedo_color", _body_color, 0.15)
+
+
+## A boss with a Dance animation (see _dance_left).
+func _can_dance() -> bool:
+	if not (elite or keeper):
+		return false
+	var animator := get_node_or_null("Animator") as CreatureAnimator
+	return animator != null and animator.anim != null and animator.anim.has_animation("Dance")
+
+
+## True if `who` is a tamer whose pets are all down (and who has some).
+func _all_pets_down(who: Node3D) -> bool:
+	if not who is Player:
+		return false
+	var pets := world.get_pets((who as Player).peer_id)
+	if pets.is_empty():
+		return false
+	for pet in pets:
+		if not pet.fainted:
+			return false
+	return true
+
+
+## Starts or stops the dance on every peer.
+@rpc("authority", "call_local", "reliable")
+func _set_dancing(on: bool) -> void:
+	var animator := get_node_or_null("Animator") as CreatureAnimator
+	if animator:
+		animator.play_dance(on)
+	if on and multiplayer.is_server():
+		world.popup(self, "Dances on your pets' graves!", "skull", Color(1.0, 0.85, 0.35))
 
 
 ## Killed, with a Die animation: it plays, then a puff as it's gone.

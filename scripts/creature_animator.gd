@@ -31,6 +31,8 @@ var anim: AnimationPlayer
 var _one_shot_left := 0.0
 ## Playing its Die animation (a monster with one, killed): nothing else plays.
 var dying := false
+## Dancing (a boss whose foe has lost every pet; Creature._set_dancing).
+var dancing := false
 
 
 func setup(owner_creature: Creature, model_body: Node3D, kind: String, player: AnimationPlayer = null) -> void:
@@ -97,7 +99,7 @@ func _process(delta: float) -> void:
 
 ## A Meshy model: walk at the pace it moves, stand idle, and play one-off moves.
 func _animate_meshy(delta: float) -> void:
-	if dying:
+	if dying or dancing:
 		return
 	if creature.fainted:
 		anim.pause()
@@ -125,6 +127,17 @@ func play_death() -> bool:
 	anim.speed_scale = 1.0
 	anim.play("Die", 0.05)
 	return true
+
+
+## Starts (on) or ends the model's Dance.
+func play_dance(on: bool) -> void:
+	if anim == null or not anim.has_animation("Dance"):
+		return
+	dancing = on
+	_one_shot_left = 0.0
+	if on:
+		anim.speed_scale = 1.0
+		anim.play("Dance", 0.2)
 
 
 ## How long the model's Die animation runs (0 without one).
