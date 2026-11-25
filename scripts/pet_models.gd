@@ -7,25 +7,43 @@ class_name PetModels
 
 const DIR := "res://models/pets/"
 ## How tall a size-1 creature of each body type stands (the code-built ones).
-const HEIGHT := {"cat": 1.25, "dog": 1.25, "bird": 1.1, "skeleton": 1.95, "zombie": 1.95}
+const HEIGHT := {"cat": 1.25, "dog": 1.25, "bird": 1.1, "skeleton": 1.95, "zombie": 1.95, "mummy": 1.95}
 ## ...or how long, nose to tail tip (lizards: long and low, some much flatter than others).
 const LENGTH := {"lizard": 1.93, "scorpion": 1.6}
 ## Species whose model (made elsewhere, skinned) is sized and placed by its
 ## posed vertices, not its mesh box (the Sand Scorpion: "SCORPION ANIMATION"
 ## by hino, Sketchfab, CC-BY-4.0; models/pets/CREDITS.txt).
-const POSED_FIT := {"Sand Scorpion": true, "Skeleton": true, "Zombie": true}
-## Per species whose model has all its moves in one long animation: the
-## stretches (seconds) cut out of it as the animations the game plays. The
-## Skeleton ("Skeleton (Animated)" by One_Boy, Sketchfab, CC-BY-4.0): its
-## walk (two strides, a seamless loop), one sword strike from its guard back
-## to its guard (it lands 0.34 s in), and falling to pieces on the ground.
+const POSED_FIT := {"Sand Scorpion": true, "Skeleton": true, "Zombie": true, "Mummy": true}
+## Per species: stretches (seconds) cut out of one of its model's animations
+## (`source`) as the animations the game plays. The armoured Skeleton's
+## Attack is 2.8 s of crouch, wind-up, lunge and recovery: its attack plays
+## only the wind-up, the lunge (0.7 s in) and the landing.
 const CLIPS := {
-	"Skeleton": {"source": "Take 001", "Walk": [0.0, 2.4667], "Attack": [27.333, 28.467], "Die": [40.8, 42.8]},
+	"Skeleton": {"source": "Attack", "Swipe": [0.35, 1.75], "Hiss": [0.35, 1.75]},
 }
-## Per species, its model's animations under the names the game plays (the
-## Zombie, "Zombie (Rigged & Animated)" by Aiden Studios, Sketchfab, CC-BY-4.0:
-## Walk1, Attack1.001 and Idle).
-const RENAME := {"Zombie": {"Walk1": "Walk", "Attack1_001": "Attack"}}
+## Per species, how much faster a one-off animation plays, so it's over
+## before the next attack (each species' attack_cooldown).
+const ANIM_SPEED := {
+	"Skeleton": {"Swipe": 1.6, "Hiss": 1.6},  # 1.4 s -> 0.88 s (cooldown 0.9)
+	"Mummy": {"Swipe": 1.25, "Hiss": 1.25},  # 1.67 s -> 1.33 s (cooldown 1.4)
+	"Zombie": {"Swipe": 1.6, "Hiss": 1.6},  # 2.16 s -> 1.35 s (cooldown 1.4)
+}
+
+
+static func anim_speed(species_name: String, anim_name: String) -> float:
+	return ANIM_SPEED.get(species_name, {}).get(anim_name, 1.0)
+## Per species, its model's animations under the names the game plays: the
+## Zombie ("Zombie (Rigged & Animated)" by Aiden Studios, Sketchfab,
+## CC-BY-4.0: Walk1, Attack1.001 and Idle), and the user's Meshy models
+## animated with Mixamo: the armoured Skeleton (Walking, Attack, Dead and
+## Alert, its stance when still) and the Mummy, the Tombwalker (Walking, a
+## lunging swipe, Skill_03, and All_Night_Dance, kept as Dance; no Idle and
+## no death).
+const RENAME := {
+	"Zombie": {"Walk1": "Walk", "Attack1_001": "Attack"},
+	"Skeleton": {"Walking": "Walk", "Alert": "Idle", "Dead": "Die"},
+	"Mummy": {"Walking": "Walk", "Skill_03": "Attack", "All_Night_Dance": "Dance"},
+}
 ## Per species, degrees a model is turned (about up) so it faces its way of
 ## travel, where it isn't made facing +Z like the Meshy models (measured: the
 ## Sand Scorpion's pincers point 62 degrees off; it walked half sideways).
@@ -53,8 +71,8 @@ const MAX_WALK_SPEED_BY_TYPE := {"dog": 4.0, "bird": 5.0, "cat": 6.0}
 ## the reference walk) covers the reference's stride in leg heights, x1.25, per 0.83 s, so each
 ## cat's pace is its own (rig units a second, like every pace here: stride / cycle).
 const WALK_PACE_BY_SPECIES := {"Emberkitty": 0.839, "Mossback": 0.995, "Voltwing": 0.782, "Gloomhorn": 0.862, "Magmashell": 0.881, "Thundershell": 0.708, "Stonehorn": 0.831, "Blitzkitty": 0.794, "Stormhorn": 0.419, "Duskbloom": 0.574,
-		"Skeleton": 4.66, "Zombie": 0.25}  # (its feet slide back 4.66 model units a second on the ground)
-const MAX_WALK_SPEED_BY_SPECIES := {"Skeleton": 4.0, "Zombie": 4.0}
+		"Skeleton": 1.22, "Zombie": 0.25, "Mummy": 0.72}  # (its feet slide back 4.66 model units a second on the ground)
+const MAX_WALK_SPEED_BY_SPECIES := {"Skeleton": 4.0, "Zombie": 4.0, "Mummy": 4.0}
 
 
 static func max_walk_speed(body_type: String, species_name := "") -> float:

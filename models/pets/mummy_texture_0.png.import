@@ -2,19 +2,19 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bsk8se1x2u8t0"
-path="res://.godot/imported/skeleton_1.png-28224aa1068afc234c9c3d074ce34c49.ctex"
+uid="uid://car7rxxh3ydhn"
+path="res://.godot/imported/mummy_texture_0.png-22f8fb70d796f8ddeeea20e9f98cfe3d.ctex"
 metadata={
 "vram_texture": false
 }
 generator_parameters={
-"md5": "453beb915837d4666c31c1da749d5d38"
+"md5": "b59a3f15831a6664832b3dd8bb6b1898"
 }
 
 [deps]
 
-source_file="res://models/pets/skeleton_1.png"
-dest_files=["res://.godot/imported/skeleton_1.png-28224aa1068afc234c9c3d074ce34c49.ctex"]
+source_file="res://models/pets/mummy_texture_0.png"
+dest_files=["res://.godot/imported/mummy_texture_0.png-22f8fb70d796f8ddeeea20e9f98cfe3d.ctex"]
 
 [params]
 

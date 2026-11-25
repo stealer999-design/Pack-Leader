@@ -136,6 +136,7 @@ func death_length() -> float:
 func play_once(anim_name: String, speed := 1.0) -> void:
 	if anim == null or not anim.has_animation(anim_name) or creature.fainted:
 		return
+	speed *= PetModels.anim_speed(creature.species.display_name if creature.species else "", anim_name)
 	anim.speed_scale = 1.0
 	anim.play(anim_name, 0.08, speed)
 	_one_shot_left = anim.get_animation(anim_name).length / speed
