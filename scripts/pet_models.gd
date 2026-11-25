@@ -56,7 +56,15 @@ const RENAME := {
 const YAW := {"Sand Scorpion": -62.3}
 ## Per species: a colour multiplied into the model's texture (pale Meshy textures
 ## wash out in the bright sun).
-const TINT := {"voltwing": Color(0.62, 0.74, 0.95), "frostfinch": Color(0.78, 0.85, 0.95)}
+const TINT := {"voltwing": Color(0.62, 0.74, 0.95), "frostfinch": Color(0.78, 0.85, 0.95),
+		"fire_imp": Color(1.0, 0.42, 0.32)}  # red, to stand out on the volcano's dark rock
+## Per species: its model glows ([colour, strength]): its own texture lit in that
+## colour (brightest where the texture is, as the imp's lava cracks), bright
+## enough that the bloom puts a halo round it.
+const SELF_GLOW := {"fire_imp": [Color(1.0, 0.45, 0.1), 0.9]}
+## Per species: a small light it carries ([colour, energy, range]), a pool of
+## its glow on the ground round it.
+const AURA := {"fire_imp": [Color(1.0, 0.45, 0.12), 1.2, 2.6]}
 ## Per species with models/pets/<species>_emit.png: those parts of its texture
 ## glow (an additive layer). Per species with models/pets/<species>_core.json (from core_shapes.py): a
 ## core of flickering fire inside the model, capsules riding its bones, seen
@@ -142,12 +150,28 @@ static func build(body: MeshInstance3D, species: CreatureSpecies) -> AnimationPl
 	scene.position.y -= body.position.y  # Body sits raised (for the code-built shapes); feet back on the ground
 	scene.set_meta("scale", k)
 	var key := species.display_name.to_lower().replace(" ", "_")
-	if TINT.has(key):
+	if TINT.has(key) or SELF_GLOW.has(key):
 		for mesh: MeshInstance3D in scene.find_children("*", "MeshInstance3D", true, false):
 			for i in mesh.mesh.get_surface_count():
 				var mat := mesh.get_active_material(i).duplicate() as StandardMaterial3D
-				mat.albedo_color = TINT[key]
+				if TINT.has(key):
+					mat.albedo_color = TINT[key]
+				if SELF_GLOW.has(key):
+					mat.emission_enabled = true
+					mat.emission = SELF_GLOW[key][0]
+					mat.emission_energy_multiplier = SELF_GLOW[key][1]
+					mat.emission_texture = mat.albedo_texture
+					mat.emission_operator = BaseMaterial3D.EMISSION_OP_MULTIPLY
 				mesh.set_surface_override_material(i, mat)
+	if AURA.has(key):
+		var aura := OmniLight3D.new()
+		aura.name = "Aura"
+		aura.light_color = AURA[key][0]
+		aura.light_energy = AURA[key][1]
+		aura.omni_range = AURA[key][2]
+		aura.shadow_enabled = false
+		aura.position = Vector3(0.0, 0.9 - body.position.y, 0.0)
+		body.add_child(aura)
 	var glow_path := DIR + key + "_emit.png"
 	if ResourceLoader.exists(glow_path):  # glowing parts (Magmashell's lava cracks): an additive layer
 		var glow := StandardMaterial3D.new()
