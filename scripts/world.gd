@@ -1858,9 +1858,11 @@ func _build_path(floor_mat: Material, camp_mat: Material, arena_mat: Material, w
 ## arena off the boss tile's right side.
 func _build_open(floor_mat: Material, camp_mat: Material, arena_mat: Material, wall_mat: StandardMaterial3D) -> void:
 	dungeon_wall_tops.clear()
-	var st := SurfaceTool.new()
-	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var dungeon_rooms: Array[SurfaceTool] = []  # the dungeon's floors, a room each
+	# Every tile's floor is its own mesh too: a renderer with a lights-per-mesh
+	# limit (the web build's) then lights each from the lights near it (a Magma
+	# Golem's glow, torches), not from whichever eight of the level's it picks.
+	var tile_floors: Array[SurfaceTool] = []
 	for cell: Dictionary in layout.cells:
 		var r: Rect2 = cell.rect
 		var closed: Dictionary = cell.closed
@@ -1876,10 +1878,14 @@ func _build_open(floor_mat: Material, camp_mat: Material, arena_mat: Material, w
 			_up_quad(room, Vector3(lo.x, 0, lo.y), Vector3(hi.x, 0, lo.y), Vector3(hi.x, 0, hi.y), Vector3(lo.x, 0, hi.y))
 			dungeon_rooms.append(room)
 		else:
-			_up_quad(st, Vector3(lo.x, 0, lo.y), Vector3(hi.x, 0, lo.y), Vector3(hi.x, 0, hi.y), Vector3(lo.x, 0, hi.y))
-	var floor_mesh := st.commit()
-	floor_mesh.surface_set_material(0, floor_mat)
-	_add_solid(floor_mesh, floor_mesh)
+			var tile := SurfaceTool.new()
+			tile.begin(Mesh.PRIMITIVE_TRIANGLES)
+			_up_quad(tile, Vector3(lo.x, 0, lo.y), Vector3(hi.x, 0, lo.y), Vector3(hi.x, 0, hi.y), Vector3(lo.x, 0, hi.y))
+			tile_floors.append(tile)
+	for tile in tile_floors:
+		var tile_floor := tile.commit()
+		tile_floor.surface_set_material(0, floor_mat)
+		_add_solid(tile_floor, tile_floor)
 	var theme := dungeon_theme()
 	if layout.has("dungeon"):
 		var dungeon_floor_mat := _dungeon_floor_material(theme)

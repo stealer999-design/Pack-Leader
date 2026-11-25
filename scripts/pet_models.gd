@@ -7,19 +7,20 @@ class_name PetModels
 
 const DIR := "res://models/pets/"
 ## How tall a size-1 creature of each body type stands (the code-built ones).
-const HEIGHT := {"cat": 1.25, "dog": 1.25, "bird": 1.1, "skeleton": 1.95, "zombie": 1.95, "mummy": 1.95, "imp": 1.4}
+const HEIGHT := {"cat": 1.25, "dog": 1.25, "bird": 1.1, "skeleton": 1.95, "zombie": 1.95, "mummy": 1.95, "imp": 1.4, "golem": 1.95}
 ## ...or how long, nose to tail tip (lizards: long and low, some much flatter than others).
 const LENGTH := {"lizard": 1.93, "scorpion": 1.6}
 ## Species whose model (made elsewhere, skinned) is sized and placed by its
 ## posed vertices, not its mesh box (the Sand Scorpion: "SCORPION ANIMATION"
 ## by hino, Sketchfab, CC-BY-4.0; models/pets/CREDITS.txt).
-const POSED_FIT := {"Sand Scorpion": true, "Skeleton": true, "Zombie": true, "Mummy": true, "Fire Imp": true}
+const POSED_FIT := {"Sand Scorpion": true, "Skeleton": true, "Zombie": true, "Mummy": true, "Fire Imp": true, "Magma Golem": true}
 ## Per species: stretches (seconds) cut out of one of its model's animations
 ## (`source`) as the animations the game plays. The armoured Skeleton's
 ## Attack is 2.8 s of crouch, wind-up, lunge and recovery: its attack plays
 ## only the wind-up, the lunge (0.7 s in) and the landing.
 const CLIPS := {
 	"Skeleton": {"source": "Attack", "Swipe": [0.35, 1.75], "Hiss": [0.35, 1.75]},
+	"Magma Golem": {"source": "Attack", "Swipe": [0.35, 1.75], "Hiss": [0.35, 1.75]},  # the same slam
 }
 ## Per species, how much faster a one-off animation plays, so it's over
 ## before the next attack (each species' attack_cooldown).
@@ -49,6 +50,10 @@ const RENAME := {
 	# flings its arms wide: its fire bolt), spins and lunges with Skill_03 (its
 	# ability) and, killed, plays Dead.
 	"Fire Imp": {"Running": "Walk", "Alert": "Idle", "Dead": "Die", "Skill_01": "Swipe", "Skill_03": "Hiss"},
+	# The fire golem (the user's, Meshy and Mixamo): it walks when it wanders and
+	# runs when it chases (Running, see RUN_PACE_BY_SPECIES), slams with its
+	# Attack (CLIPS) and, killed, plays Dead. No idle: it stands in its walk's first pose.
+	"Magma Golem": {"Walking": "Walk", "Running": "Run", "Dead": "Die"},
 }
 ## Per species, degrees a model is turned (about up) so it faces its way of
 ## travel, where it isn't made facing +Z like the Meshy models (measured: the
@@ -61,10 +66,10 @@ const TINT := {"voltwing": Color(0.62, 0.74, 0.95), "frostfinch": Color(0.78, 0.
 ## Per species: its model glows ([colour, strength]): its own texture lit in that
 ## colour (brightest where the texture is, as the imp's lava cracks), bright
 ## enough that the bloom puts a halo round it.
-const SELF_GLOW := {"fire_imp": [Color(1.0, 0.45, 0.1), 0.9]}
+const SELF_GLOW := {"fire_imp": [Color(1.0, 0.45, 0.1), 0.9], "magma_golem": [Color(1.0, 0.45, 0.1), 0.6]}
 ## Per species: a small light it carries ([colour, energy, range]), a pool of
 ## its glow on the ground round it.
-const AURA := {"fire_imp": [Color(1.0, 0.45, 0.12), 1.2, 2.6]}
+const AURA := {"fire_imp": [Color(1.0, 0.45, 0.12), 1.2, 2.6], "magma_golem": [Color(1.0, 0.45, 0.12), 2.6, 4.5]}
 ## Per species with models/pets/<species>_emit.png: those parts of its texture
 ## glow (an additive layer). Per species with models/pets/<species>_core.json (from core_shapes.py): a
 ## core of flickering fire inside the model, capsules riding its bones, seen
@@ -85,8 +90,14 @@ const MAX_WALK_SPEED_BY_TYPE := {"dog": 4.0, "bird": 5.0, "cat": 6.0}
 ## the reference walk) covers the reference's stride in leg heights, x1.25, per 0.83 s, so each
 ## cat's pace is its own (rig units a second, like every pace here: stride / cycle).
 const WALK_PACE_BY_SPECIES := {"Emberkitty": 0.839, "Mossback": 0.995, "Voltwing": 0.782, "Gloomhorn": 0.862, "Magmashell": 0.881, "Thundershell": 0.708, "Stonehorn": 0.831, "Blitzkitty": 0.794, "Stormhorn": 0.419, "Duskbloom": 0.574,
-		"Skeleton": 1.22, "Zombie": 0.25, "Mummy": 0.72, "Fire Imp": 1.98}  # (its feet slide back 4.66 model units a second on the ground)
-const MAX_WALK_SPEED_BY_SPECIES := {"Skeleton": 4.0, "Zombie": 4.0, "Mummy": 4.0, "Fire Imp": 4.0}
+		"Skeleton": 1.22, "Zombie": 0.25, "Mummy": 0.72, "Fire Imp": 1.98, "Magma Golem": 0.6}  # (its feet slide back 4.66 model units a second on the ground)
+const MAX_WALK_SPEED_BY_SPECIES := {"Skeleton": 4.0, "Zombie": 4.0, "Mummy": 4.0, "Fire Imp": 4.0, "Magma Golem": 2.0}
+## Per species whose model has a Run: its pace (as WALK_PACE_BY_SPECIES). It
+## runs once the walk would play faster than RUN_FROM (and walks again below
+## WALK_BELOW, so it doesn't flicker between the two).
+const RUN_PACE_BY_SPECIES := {"Magma Golem": 1.87}
+const RUN_FROM := 1.7
+const WALK_BELOW := 1.3
 
 
 static func max_walk_speed(body_type: String, species_name := "") -> float:

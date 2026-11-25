@@ -33,6 +33,7 @@ var _one_shot_left := 0.0
 var dying := false
 ## Dancing (a boss whose foe has lost every pet; Creature._set_dancing).
 var dancing := false
+var _running := false  ## playing its Run (a model with one, moving fast)
 
 
 func setup(owner_creature: Creature, model_body: Node3D, kind: String, player: AnimationPlayer = null) -> void:
@@ -111,6 +112,17 @@ func _animate_meshy(delta: float) -> void:
 		var scale_k: float = body.get_node("Meshy").get_meta("scale", 1.0) * creature.body_size()
 		var sp_name: String = creature.species.display_name if creature.species else ""
 		var pace := PetModels.walk_pace(body_type, sp_name) * scale_k
+		# A model with a Run runs when its walk would play too fast (PetModels.RUN_FROM).
+		if anim.has_animation("Run") and PetModels.RUN_PACE_BY_SPECIES.has(sp_name):
+			var walk_rate := _speed / maxf(pace, 0.01)
+			if walk_rate > PetModels.RUN_FROM or (_running and walk_rate > PetModels.WALK_BELOW):
+				_running = true
+				var run_pace: float = PetModels.RUN_PACE_BY_SPECIES[sp_name] * scale_k
+				if anim.current_animation != "Run":
+					anim.play("Run", 0.2)
+				anim.speed_scale = clampf(_speed / maxf(run_pace, 0.01), 0.5, 2.0)
+				return
+			_running = false
 		if anim.current_animation != "Walk":
 			anim.play("Walk", 0.2)
 		anim.speed_scale = clampf(_speed / maxf(pace, 0.01), 0.4, PetModels.max_walk_speed(body_type, sp_name))
