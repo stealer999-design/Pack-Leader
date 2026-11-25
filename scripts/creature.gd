@@ -139,6 +139,7 @@ var _anime_style := false
 @onready var model: Node3D = $Model
 @onready var body: MeshInstance3D = $Model/Body
 var _meshy: AnimationPlayer  ## a Meshy model's animations (PetModels), or null
+var _dying := false  ## killed, playing its Die animation before it goes
 @onready var collision: CollisionShape3D = $CollisionShape3D
 @onready var ring: MeshInstance3D = $Ring
 @onready var overhead: Node3D = $Overhead
@@ -201,7 +202,7 @@ func _update_catch_label() -> void:
 
 
 func _physics_process(delta: float) -> void:
-	if not multiplayer.is_server():
+	if not multiplayer.is_server() or _dying:
 		return
 	_stats_timer -= delta
 	if _stats_timer <= 0.0:
@@ -272,7 +273,7 @@ func is_rival_pet() -> bool:
 
 
 func is_targetable() -> bool:
-	return not fainted and not health.is_dead() and not is_queued_for_deletion()
+	return not fainted and not _dying and not health.is_dead() and not is_queued_for_deletion()
 
 
 func radius() -> float:
@@ -996,6 +997,18 @@ func _on_died() -> void:
 			world.roll_loot(global_position, 0.35, level, ItemDB.MAGIC)
 		else:
 			world.roll_loot(global_position, 0.08, level)
+		# A model with a Die animation plays it (on every peer) before it goes.
+		var animator := get_node_or_null("Animator") as CreatureAnimator
+		var dying_for := animator.death_length() if animator else 0.0
+		if dying_for > 0.0:
+			_dying = true
+			target = null
+			collision_layer = 0
+			_play_death.rpc()
+			get_tree().create_timer(dying_for + 0.6).timeout.connect(func() -> void:
+				world.play_burst.rpc(global_position, species.color, 2.0)
+				queue_free())
+			return
 		world.play_burst.rpc(global_position, species.color, 2.5)
 		queue_free()
 	else:
@@ -1187,6 +1200,17 @@ func _flash() -> void:
 		return
 	_material.albedo_color = Color.WHITE
 	create_tween().tween_property(_material, "albedo_color", _body_color, 0.15)
+
+
+## Killed, with a Die animation: it plays, then a puff as it's gone.
+@rpc("authority", "call_local", "reliable")
+func _play_death() -> void:
+	_dying = true
+	collision_layer = 0
+	var animator := get_node_or_null("Animator") as CreatureAnimator
+	if animator:
+		animator.play_death()
+	overhead.visible = false
 
 
 @rpc("authority", "call_local", "unreliable")

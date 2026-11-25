@@ -1,0 +1,4 @@
+sand_scorpion.glb: "SCORPION ANIMATION" by hino (https://sketchfab.com/Slava251114),
+from https://sketchfab.com/3d-models/scorpion-animation-90b975d2108f437c81b2e5d362249b34,
+licensed CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/).
+The Sand Scorpion monster: its Walk, Attack (also its ability) and Die animations.

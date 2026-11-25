@@ -29,6 +29,8 @@ var _time := 0.0
 ## A Meshy model's animations (PetModels): played instead of moving the shapes.
 var anim: AnimationPlayer
 var _one_shot_left := 0.0
+## Playing its Die animation (a monster with one, killed): nothing else plays.
+var dying := false
 
 
 func setup(owner_creature: Creature, model_body: Node3D, kind: String, player: AnimationPlayer = null) -> void:
@@ -95,6 +97,8 @@ func _process(delta: float) -> void:
 
 ## A Meshy model: walk at the pace it moves, stand idle, and play one-off moves.
 func _animate_meshy(delta: float) -> void:
+	if dying:
+		return
 	if creature.fainted:
 		anim.pause()
 		return
@@ -111,6 +115,21 @@ func _animate_meshy(delta: float) -> void:
 	elif anim.current_animation != "Idle" or not anim.is_playing():
 		anim.speed_scale = 1.0
 		anim.play("Idle", 0.25)
+
+
+## The model's Die animation, played to its end and held (true if it has one).
+func play_death() -> bool:
+	if anim == null or not anim.has_animation("Die"):
+		return false
+	dying = true
+	anim.speed_scale = 1.0
+	anim.play("Die", 0.05)
+	return true
+
+
+## How long the model's Die animation runs (0 without one).
+func death_length() -> float:
+	return anim.get_animation("Die").length if anim and anim.has_animation("Die") else 0.0
 
 
 ## A one-off animation (an attack, an ability), if the model has it.
