@@ -7,13 +7,13 @@ class_name PetModels
 
 const DIR := "res://models/pets/"
 ## How tall a size-1 creature of each body type stands (the code-built ones).
-const HEIGHT := {"cat": 1.25, "dog": 1.25, "bird": 1.1, "skeleton": 1.95}
+const HEIGHT := {"cat": 1.25, "dog": 1.25, "bird": 1.1, "skeleton": 1.95, "zombie": 1.95}
 ## ...or how long, nose to tail tip (lizards: long and low, some much flatter than others).
 const LENGTH := {"lizard": 1.93, "scorpion": 1.6}
 ## Species whose model (made elsewhere, skinned) is sized and placed by its
 ## posed vertices, not its mesh box (the Sand Scorpion: "SCORPION ANIMATION"
 ## by hino, Sketchfab, CC-BY-4.0; models/pets/CREDITS.txt).
-const POSED_FIT := {"Sand Scorpion": true, "Skeleton": true}
+const POSED_FIT := {"Sand Scorpion": true, "Skeleton": true, "Zombie": true}
 ## Per species whose model has all its moves in one long animation: the
 ## stretches (seconds) cut out of it as the animations the game plays. The
 ## Skeleton ("Skeleton (Animated)" by One_Boy, Sketchfab, CC-BY-4.0): its
@@ -22,6 +22,10 @@ const POSED_FIT := {"Sand Scorpion": true, "Skeleton": true}
 const CLIPS := {
 	"Skeleton": {"source": "Take 001", "Walk": [0.0, 2.4667], "Attack": [27.333, 28.467], "Die": [40.8, 42.8]},
 }
+## Per species, its model's animations under the names the game plays (the
+## Zombie, "Zombie (Rigged & Animated)" by Aiden Studios, Sketchfab, CC-BY-4.0:
+## Walk1, Attack1.001 and Idle).
+const RENAME := {"Zombie": {"Walk1": "Walk", "Attack1_001": "Attack"}}
 ## Per species, degrees a model is turned (about up) so it faces its way of
 ## travel, where it isn't made facing +Z like the Meshy models (measured: the
 ## Sand Scorpion's pincers point 62 degrees off; it walked half sideways).
@@ -49,8 +53,8 @@ const MAX_WALK_SPEED_BY_TYPE := {"dog": 4.0, "bird": 5.0, "cat": 6.0}
 ## the reference walk) covers the reference's stride in leg heights, x1.25, per 0.83 s, so each
 ## cat's pace is its own (rig units a second, like every pace here: stride / cycle).
 const WALK_PACE_BY_SPECIES := {"Emberkitty": 0.839, "Mossback": 0.995, "Voltwing": 0.782, "Gloomhorn": 0.862, "Magmashell": 0.881, "Thundershell": 0.708, "Stonehorn": 0.831, "Blitzkitty": 0.794, "Stormhorn": 0.419, "Duskbloom": 0.574,
-		"Skeleton": 4.66}  # (its feet slide back 4.66 model units a second on the ground)
-const MAX_WALK_SPEED_BY_SPECIES := {"Skeleton": 4.0}
+		"Skeleton": 4.66, "Zombie": 0.25}  # (its feet slide back 4.66 model units a second on the ground)
+const MAX_WALK_SPEED_BY_SPECIES := {"Skeleton": 4.0, "Zombie": 4.0}
 
 
 static func max_walk_speed(body_type: String, species_name := "") -> float:
@@ -91,6 +95,11 @@ static func build(body: MeshInstance3D, species: CreatureSpecies) -> AnimationPl
 	var clip_player: AnimationPlayer = scene.find_children("*", "AnimationPlayer", true, false).pop_front()
 	if clip_player and CLIPS.has(species.display_name):
 		_cut_clips(clip_player, CLIPS[species.display_name])
+	if clip_player and RENAME.has(species.display_name):
+		var lib := clip_player.get_animation_library("")
+		for old: String in RENAME[species.display_name]:
+			if clip_player.has_animation(old) and not clip_player.has_animation(RENAME[species.display_name][old]):
+				lib.add_animation(RENAME[species.display_name][old], clip_player.get_animation(old).duplicate())
 	if POSED_FIT.has(species.display_name):
 		var first_player: AnimationPlayer = clip_player
 		if first_player and first_player.has_animation("Walk"):

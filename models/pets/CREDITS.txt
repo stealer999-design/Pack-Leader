@@ -8,3 +8,8 @@ from https://sketchfab.com/3d-models/skeleton-animated-bd1de4a8153a44fe93e728ca8
 licensed CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/).
 The Skeleton monster: its walk, a sword strike and falling to pieces, cut from
 its one long animation (PetModels.CLIPS).
+
+zombie.glb: "Zombie (Rigged & Animated)" by Aiden Studios (https://sketchfab.com/aidenstudios),
+from https://sketchfab.com/3d-models/zombie-rigged-animated-131688807ad444609ed9b2ed572dc4aa,
+licensed CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/).
+The Zombie monster: its Walk1, Attack1.001 and Idle (PetModels.RENAME).
