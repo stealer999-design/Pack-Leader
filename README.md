@@ -718,9 +718,9 @@ played in the browser".
   party pets, each with one slot, for a **collar**. Drag a collar from the bag
   onto a pet to put it on (swapping with the one it wore), back into the bag
   to take it off, or double-click a collar in the bag to put it on the first
-  pet without one. A collar buffs only the pet wearing it, shows on the pet
-  (everyone sees it), and stays on it in the stable and in saves; releasing a
-  pet puts its collar back in your bag.
+  pet without one. A collar buffs only the pet wearing it (it isn't drawn on
+  the pet) and stays on it in the stable and in saves; releasing a pet puts
+  its collar back in your bag.
 
   The inventory adds it all up under your gear. Your jacket, pants, hat and
   boots show on your tamer (every hat looks different). Armor is capped at

@@ -30,13 +30,8 @@ var species_index := 0
 ## Trained ranks of each of the species' skills (see PetSkills). Replicated.
 var skill_ranks: Array = PetSkills.empty_ranks()
 ## The pet's collar (ItemDB; {} = none): its only gear slot. Buffs this pet
-## alone. Set by the server and replicated, so everyone sees it on the pet.
-var collar := {}:
-	set(v):
-		collar = v
-		if is_node_ready():
-			_show_collar()
-var _collar_model: Node3D
+## alone (it isn't drawn on the pet). Set by the server and replicated.
+var collar := {}
 ## A name its tamer gave it ("" = none: it goes by its species). Replicated.
 var nickname := "":
 	set(v):
@@ -1064,20 +1059,6 @@ func refresh_max_health() -> void:
 		health.current = health.current * health.max_health / old_max
 
 
-## Puts the collar on the model (or takes it off).
-func _show_collar() -> void:
-	if _collar_model:
-		_collar_model.queue_free()
-		_collar_model = null
-	if not collar.is_empty() and body:
-		CreatureModel.use_style(_anime_style)
-		_collar_model = CreatureModel.add_collar(body, species.body_type, ItemDB.item_color(collar))
-		if _anime_style:
-			AnimeLook.apply(_collar_model, 0.035)
-		else:
-			ModelLook.apply(_collar_model)
-
-
 ## Above PET_GROWTH_FROM a player's pet falls behind the monsters it fights:
 ## its level multiplier is divided by 1 + PET_GROWTH_LAG per level above, so
 ## from Act 2 on gear has to make up the difference (see ItemDB; the gear
@@ -1130,7 +1111,6 @@ func _build_body() -> void:
 	_body_color = _material.albedo_color
 	if fainted:
 		_material.albedo_color = _body_color.darkened(0.6)
-	_show_collar()
 	var old := get_node_or_null("Animator")
 	if old:
 		remove_child(old)
