@@ -417,11 +417,12 @@ func _update_bat_shop() -> void:
 	var current: Dictionary = Player.BATS[_player.bat_tier]
 	var next := _player.next_bat()
 	_bat_shop_info.text = "Your bat: %s (hits for %d).   You have %d coins." % [current.name, roundi(current.damage), _player.coins]
+	_bat_buy_button.icon = ItemIcons.shop_bat(_player.bat_tier + 1, 56) if not next.is_empty() else null
 	if next.is_empty():
 		_bat_buy_button.text = "You have the best bat in the shop"
 		_bat_buy_button.disabled = true
 	elif _player.world.level_number < int(next.get("min_area", 1)):
-		_bat_buy_button.text = "%s: hits for %d   (%d coins, sold from Act 2)" % [next.name, roundi(next.damage), next.price]
+		_bat_buy_button.text = "%s: hits for %d   (%d coins, sold from Act %d)" % [next.name, roundi(next.damage), next.price, int(next.get("act", 2))]
 		_bat_buy_button.disabled = true
 	elif _player.coins < next.price:
 		_bat_buy_button.text = "%s: hits for %d   (%d coins, not enough)" % [next.name, roundi(next.damage), next.price]

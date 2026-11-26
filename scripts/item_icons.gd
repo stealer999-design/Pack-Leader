@@ -9,7 +9,10 @@ class_name ItemIcons
 ##   for class items, else the colour of the item's main bonus (red for pet
 ##   damage, green for pet health, cyan for cooldowns...);
 ## - Unique and Set items get a small star or leaf in the corner.
-## Drawn as SVG (64x64, a bold ink outline) and cached.
+## Drawn as SVG (64x64, a bold ink outline) and cached. The tamer's clothes
+## (jackets, pants, hats, boots) are pictures of the clothes themselves, as he
+## wears them (rendered by tools/gear_icons.gd, one per look: ItemDB.look_level),
+## with the accent as a gem in the corner.
 
 const INK := "#141414"
 const METALS := ["#c07a3c", "#cfd4dc", "#f0c95a"]
@@ -20,6 +23,10 @@ const ACCENTS := {
 	"health": "#ff7ab0", "armor": "#9fb4cc", "poison_resist": "#9be03a", "speed": "#ffe24a",
 	"magic_find": "#ffb02e", "coin_find": "#ffd84a",
 }
+
+## Kinds pictured from the clothes themselves: textures/icons/gear/<kind>_<look level>.png.
+const RENDERED := ["jacket", "pants", "hat", "boots"]
+const RENDERED_DIR := "res://textures/icons/gear/"
 
 static var _cache := {}
 
@@ -34,7 +41,13 @@ static func texture(item: Dictionary, size: int) -> Texture2D:
 	var rarity := int(item.get("rarity", 0))
 	var key := "%s|%d|%s|%s|%d|%d" % [item.type, tier, cloth.to_html(false), accent, rarity, size]
 	if not _cache.has(key):
-		var body := _shape(str(item.type), tier, cloth, accent)
+		var picture := _picture(item)
+		var body := ""
+		if picture:  # the clothes themselves, with the accent as a gem in the corner
+			body = ('<circle cx="55.5" cy="55.5" r="5.6" fill="%s" stroke="%s" stroke-width="1.8"/>' % [accent, INK]
+					+ '<circle cx="53.8" cy="53.8" r="1.7" fill="#ffffff" fill-opacity="0.55"/>')
+		else:
+			body = _shape(str(item.type), tier, cloth, accent)
 		if rarity == ItemDB.UNIQUE:
 			body += '<path d="M8 2l1.8 3.8 4.2.6-3 2.9.7 4.1L8 11.4 4.3 13.4l.7-4.1-3-2.9 4.2-.6z" fill="#f0c95a" stroke="%s" stroke-width="1.2"/>' % INK
 		elif rarity == ItemDB.SET:
@@ -42,8 +55,44 @@ static func texture(item: Dictionary, size: int) -> Texture2D:
 		var svg := '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" stroke-linejoin="round" stroke-linecap="round">%s</svg>' % body
 		var image := Image.new()
 		image.load_svg_from_string(svg, size / 64.0)
+		if picture:
+			picture.resize(image.get_width(), image.get_height(), Image.INTERPOLATE_LANCZOS)
+			picture.blend_rect(image, Rect2i(Vector2i.ZERO, image.get_size()), Vector2i.ZERO)
+			image = picture
 		_cache[key] = ImageTexture.create_from_image(image)
 	return _cache[key]
+
+
+## The picture of a shop bat (a tier of Player.BATS), `size` pixels square, or
+## null if there isn't one.
+static func shop_bat(tier: int, size: int) -> Texture2D:
+	var key := "shop_bat|%d|%d" % [tier, size]
+	if not _cache.has(key):
+		var path := RENDERED_DIR + "shop_bat_%d.png" % tier
+		if not ResourceLoader.exists(path):
+			return null
+		var image := (load(path) as Texture2D).get_image()
+		if image.is_compressed():
+			image.decompress()
+		image.convert(Image.FORMAT_RGBA8)
+		image.resize(size, size, Image.INTERPOLATE_LANCZOS)
+		_cache[key] = ImageTexture.create_from_image(image)
+	return _cache[key]
+
+
+## The picture of a piece of the tamer's clothing as he wears it (null for
+## other kinds, or if it's missing).
+static func _picture(item: Dictionary) -> Image:
+	if str(item.type) not in RENDERED or ItemDB.is_rolled(item):
+		return null
+	var path := RENDERED_DIR + "%s_%d.png" % [item.type, ItemDB.look_level(item)]
+	if not ResourceLoader.exists(path):
+		return null
+	var image := (load(path) as Texture2D).get_image()
+	if image.is_compressed():
+		image.decompress()
+	image.convert(Image.FORMAT_RGBA8)
+	return image
 
 
 ## The accent colour: the class colour for class items, else the strongest affix's.

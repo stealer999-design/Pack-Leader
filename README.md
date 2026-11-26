@@ -417,16 +417,38 @@ played in the browser".
   In the tile levels (Acts 2-5) the map shows each tile's walls and starts **dark**: it's revealed as you walk
   (everything within about 18 units of you), and vases, wild creatures and
   the boss only show where you've explored. Each player has their own map.
-- **Your tamer** is a little person with a bat, drawn in your colour (hair
-  colour varies by player). They walk with swinging arms and legs; attacking
-  swings the bat, and every hit pops a ring of spinning stars.
+- **Your tamer** is the hero (the user's Meshy model, rigged and animated
+  with Mixamo), his shirt in your colour so co-op players stand apart, his
+  bat in his right hand. He stands breathing, walks or runs with his stride
+  paced to his speed, swings the bat with a slash (on his upper body, so his
+  legs keep running), tosses capture treats overhand with his free hand,
+  falls down when downed and gets back up. Every hit pops a ring of spinning
+  stars. **What you wear shows on him**: each jacket, pair of trousers, hat
+  and pair of boots (see the gear table) has its own look in its own colour,
+  made from his own body so it fits and moves with him: a Leather Jacket
+  hangs open over the shirt with lapels, a Padded Coat is quilted with a
+  stand-up collar, a Ranger's Duster reaches the knees; Work Trousers,
+  Reinforced Pants with knee pads, baggy Trail Breeches; a Cap, a Hard Hat,
+  a broad-brimmed Warden's Hat; Sneakers with white soles, ankle-high Hiking
+  Boots, tall Pathfinder Boots with a folded cuff. Their icons are pictures
+  of those same clothes.
 - **Village:** around halfway along every level (on a straight stretch of the
   winding path), a side path leads up the screen
   (through a doorway in the far wall) to a small village square: a few houses,
   a second **stable** and the **Bat Shop**. No wild creatures are placed
-  there. At the Bat Shop (F) you can upgrade your Wooden Bat (12 damage) to a
-  **Spiked Bat** (22 damage) for 60 coins, and once you reach Act 2, to the
-  **Chain Bat** (36 damage, wrapped in a heavy chain) for 150 coins. Every bat
+  there. At the Bat Shop (F) you upgrade your bat one step at a time, each
+  with its own model in your hand:
+
+  | Bat | Damage | Price | Sold from |
+  |---|---|---|---|
+  | Wooden Bat | 12 | (you start with it) | |
+  | Spiked Bat (steel spikes) | 22 | 60 | Act 1 |
+  | Chain Bat (wrapped in a heavy chain) | 36 | 150 | Act 2 |
+  | Barbed Wire Bat (coiled barbed wire) | 46 | 200 | Act 3 |
+  | Steel Slugger (steel cap, riveted bands) | 56 | 280 | Act 4 |
+  | Ember Bat (charred, glowing cracks) | 66 | 360 | Act 5 |
+
+  Each stays a little behind the Legendary bats that drop in its act. Every bat
   still stops creatures at 1 HP (monsters it kills). Your bat is saved.
   The Bat Shop also **buys gear**: your bag is shown under the bats; click
   items to mark them (or "Mark all") and sell them: **Normal 1 coin, Magic 3,
@@ -917,7 +939,12 @@ The host is the authoritative server and also plays.
 | `scripts/pet_skills.gd` | The four class skill trees, skill points and ranks, and how they add up |
 | `scripts/level_generator.gd` (village) + `World._build_village` | The village side path, square, houses and bat shop |
 | `scripts/breeding_db.gd`, `scripts/breeder_window.gd` | Which pairs breed into which hybrid, the rules, and the breeder's window |
-| `scripts/person_model.gd` | The tamer's body, bat, walk cycle and bat swing, built from simple meshes |
+| `scripts/hero_model.gd`, `scripts/hero_skin.gdshader`, `models/tamer/hero.glb` | The tamer: the user's Meshy hero (rigged and animated with Mixamo; credited in `models/tamer/CREDITS.txt`), played by an AnimationTree: idle, walk or run paced to how fast he moves, the swing and the throw on his upper body only, falling down and getting up; footsteps when a foot lands; the shirt turned to the player's colour (only its hue: the shading and buttons stay); hits flash him white and slows tint him icy; the clothes he wears (below) |
+| `scripts/tools/hero_anims.gd` → `models/tamer/hero_anims.res` | Bakes his animations from the model's Mixamo clips: Idle (the pose his stand-up ends in, breathing), Walk and Run (their paces measured, so the stride matches his speed; walking, his forearm turns so the bat points forward and down, not across his legs), Swing (the sword slash's wind-up, strike and follow-through), Throw, Fall, GetUp; in all of them his right hand keeps the slash's grip on the bat |
+| `scripts/tools/hero_gear.gd` → `models/tamer/gear/*.res`, `scripts/hero_gear.gdshader` | Bakes his clothes from his own body: each garment is the part of him it covers, cut cleanly along its edges (neckline, waist, cuffs, hems), pushed out a little and keeping his skin weights, so it bends with him; hems give it thickness; then lapels, collars, a long coat's skirt (clear of his hips and thighs), quilting, knee pads, baggy thighs, soles and a boot cuff; hats are shapes on his head bone. `folds.png` is his texture's creases and seams without its colours, so each garment shows the folds of the clothes underneath in its own colour |
+| `scripts/bat_models.gd` | The six shop bats, one model each, held at the grip (a `models/bats/<name>.glb` replaces a bat's built shape when there is one) |
+| `scripts/tools/gear_icons.gd` → `textures/icons/gear/` | Renders the icons of the clothes (each look, as it hangs on him, his body hidden) and the shop bats, outlined like the drawn icons (needs a display: `godot --path . --rendering-driver opengl3 -s res://scripts/tools/gear_icons.gd`) |
+| `scripts/person_model.gd` | The old code-built tamer, kept for the rival's fallback |
 | `scripts/creature_animator.gd` | Pet animations (walk, tails, wings, breathing), driven by how fast each pet moves |
 | `scripts/pause_menu.gd` | The in-game menu on Esc: resume, save, quit to the main menu |
 | `scripts/ui_theme.gd` → `resources/ui_theme.tres`, `scripts/ui_icons.gd` | The menus' look (dark panels, gold borders, light text) and their line icons (small SVGs drawn at runtime). Rebuild the theme file with `godot --headless --path . -s res://scripts/tools/build_ui_theme.gd` |

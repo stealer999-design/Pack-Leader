@@ -17,6 +17,10 @@ const TINY_SLOT := Vector2(32, 32)
 const PET_SLOT := Vector2(63, 63)
 const ORB_SIZE := 80.0
 const STACKED_SLOT := Vector2(30, 30)  ## Capture and potion, one above the other.
+## The bat button's colour for each shop bat (Player.BATS): wood, steel spikes,
+## chain, barbed wire, a steel slugger, embers.
+const BAT_TINTS := [Color(0.95, 0.75, 0.5), Color(0.85, 0.85, 0.9), Color(0.75, 0.8, 0.95),
+		Color(0.78, 0.76, 0.72), Color(0.7, 0.8, 0.95), Color(1.0, 0.55, 0.3)]
 
 var hud: HUD
 var player: Player
@@ -213,7 +217,7 @@ func _process(_delta: float) -> void:
 	bat_slot.cooldown = player.attack_cooldown_fraction()
 	bat_slot.tooltip_text = "%s (LMB): hits for %d. Hold to keep swinging.\nIt weakens creatures without killing them (they stop at 1 HP), so you can capture them; it finishes off monsters." \
 			% [bat.name, roundi(bat.damage)]
-	bat_slot.icon_tint = [Color(0.95, 0.75, 0.5), Color(0.85, 0.85, 0.9), Color(0.75, 0.8, 0.95)][clampi(player.bat_tier, 0, 2)]
+	bat_slot.icon_tint = BAT_TINTS[clampi(player.bat_tier, 0, BAT_TINTS.size() - 1)]
 	bat_slot.refresh()
 	# Pets.
 	var by_slot := {}

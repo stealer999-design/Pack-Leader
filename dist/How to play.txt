@@ -79,8 +79,10 @@ and buy more potions at the lemonade stand halfway along each level. The
 stand also sells Lucky Lemonade: capture chance x1.5 for 90 seconds.
 Village: halfway along each level a side path leads up to a village with a
 second stable (20 hay beds, same pets as the camp's). Its Bat Shop upgrades
-your bat to a Spiked Bat (more damage, 60 coins), then from Act 2 to the
-Chain Bat (36 damage, 150 coins). Every bat still stops creatures at 1 HP,
+your bat one step at a time: a Spiked Bat (22 damage, 60 coins), then from
+Act 2 the Chain Bat (36 damage, 150 coins), from Act 3 the Barbed Wire Bat
+(46, 200 coins), from Act 4 the Steel Slugger (56, 280 coins) and from Act 5
+the Ember Bat (66, 360 coins). Every bat still stops creatures at 1 HP,
 ready to capture (monsters it kills). The Bat Shop also buys gear from your
 bag: Normal 1 coin, Magic 3, Rare 8 (plus 1 per 20 item levels).
 Breeder (village): pick two different pets of the same kind (any level) and

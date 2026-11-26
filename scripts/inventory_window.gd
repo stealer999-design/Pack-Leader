@@ -733,8 +733,14 @@ class ItemSlot:
 			icon_name = ItemDB.SLOT_ICONS[equip_slot]
 			tint = Color(1, 1, 1, 0.07 if locked else 0.18)  # an empty slot shows what goes in it
 		elif item.type == "shop_bat":
-			icon_name = "bat"
-			tint = Color(0.85, 0.65, 0.42)
+			var art_size := int(minf(size.x, size.y) * 0.86)
+			var picture := ItemIcons.shop_bat(int(item.tier), art_size)
+			if picture:  # the bat itself
+				draw_texture(picture, (size - Vector2(art_size, art_size)) * 0.5)
+				icon_name = ""
+			else:
+				icon_name = "bat"
+				tint = Color(0.85, 0.65, 0.42)
 		else:  # gear: its own full-colour picture (ItemIcons), a little bigger
 			var art_size := int(minf(size.x, size.y) * 0.86)
 			draw_texture(ItemIcons.texture(item, art_size), (size - Vector2(art_size, art_size)) * 0.5)

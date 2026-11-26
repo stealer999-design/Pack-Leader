@@ -23,13 +23,18 @@ const SWAP_COOLDOWN := 0.6
 const RIVAL_COMMAND := "@rival"
 ## Potions a player can carry. Everyone starts each level with a full set.
 const MAX_POTIONS := 2
-## The bats a tamer can wield, upgraded at the village bat shop. Every bat
-## still stops at 1 HP on creatures, so they stay ready to capture.
+## The bats a tamer can wield, upgraded one after another at the village bat
+## shop (their models: BatModels). The later ones are sold once the players
+## reach their act (`min_area` is the act's first area); each stays a little
+## behind the Legendary bats that drop there. Every bat still stops at 1 HP on
+## creatures, so they stay ready to capture.
 const BATS := [
 	{"name": "Wooden Bat", "damage": 12.0, "price": 0},
 	{"name": "Spiked Bat", "damage": 22.0, "price": 60},
-	# Sold once the players reach Act 2 (area 5, the graveyard).
-	{"name": "Chain Bat", "damage": 36.0, "price": 150, "min_area": 5},
+	{"name": "Chain Bat", "damage": 36.0, "price": 150, "min_area": 5, "act": 2},
+	{"name": "Barbed Wire Bat", "damage": 46.0, "price": 200, "min_area": 8, "act": 3},
+	{"name": "Steel Slugger", "damage": 56.0, "price": 280, "min_area": 11, "act": 4},
+	{"name": "Ember Bat", "damage": 66.0, "price": 360, "min_area": 14, "act": 5},
 ]
 const HAIR_COLORS: Array[Color] = [Color(0.3, 0.18, 0.1), Color(0.12, 0.1, 0.08), Color(0.85, 0.65, 0.3),
 		Color(0.6, 0.25, 0.12), Color(0.45, 0.32, 0.2)]
@@ -150,7 +155,7 @@ var _swing_fx: MeshInstance3D
 var trail: Array[Vector3] = []
 const TRAIL_STEP := 0.8
 const TRAIL_LENGTH := 60
-var person: PersonModel
+var person: HeroModel
 var _base_max_health := 100.0  ## Max health before gear (hats).
 
 @onready var world: World = get_tree().get_first_node_in_group("world")
@@ -179,11 +184,12 @@ func _ready() -> void:
 	for slot in ItemDB.SLOTS:
 		equipment[slot] = {}
 	_material.albedo_color = color
-	person = PersonModel.new()
+	person = HeroModel.new()
 	person.name = "Person"
 	model.add_child(person)
 	person.build(_material, HAIR_COLORS[absi(peer_id) % HAIR_COLORS.size()])
 	person.set_bat_tier(bat_tier)
+	person.set_downed(downed)
 	_base_max_health = health.max_health
 	outfit = outfit  # dress the model
 	name_label.text = display_name
@@ -618,7 +624,7 @@ func request_buy_bat() -> void:
 		world.tell(peer_id, "You already have the best bat in the shop.", Color(1, 0.8, 0.5))
 		return
 	if world.level_number < int(bat.get("min_area", 1)):
-		world.tell(peer_id, "The %s is sold once you reach Act 2." % bat.name, Color(1, 0.8, 0.5))
+		world.tell(peer_id, "The %s is sold once you reach Act %d." % [bat.name, int(bat.get("act", 2))], Color(1, 0.8, 0.5))
 		return
 	if coins < bat.price:
 		world.tell(peer_id, "The %s costs %d coins (you have %d)." % [bat.name, bat.price, coins], Color(1, 0.8, 0.5))
@@ -1172,8 +1178,7 @@ func _show_swing(aim: Vector3) -> void:
 func _flash() -> void:
 	if not _sent_by_server():
 		return
-	_material.albedo_color = Color.WHITE
-	create_tween().tween_property(_material, "albedo_color", color, 0.15)
+	person.flash()
 
 
 @rpc("any_peer", "call_local", "reliable")
@@ -1181,8 +1186,7 @@ func _apply_slow(duration: float, factor: float) -> void:
 	if _sent_by_server():
 		_slow_timer = maxf(_slow_timer, duration)
 		_slow_factor = factor
-		_material.albedo_color = color.lerp(Color(0.7, 0.9, 1.0), 0.6)
-		create_tween().tween_property(_material, "albedo_color", color, duration)
+		person.chill(duration)
 
 
 ## Starts (or refreshes) Lucky Lemonade on every peer, so the owner's HUD and the
@@ -1673,8 +1677,7 @@ func _update_aim() -> void:
 
 
 func _apply_downed() -> void:
-	var tween := create_tween()
-	tween.tween_property(model, "rotation:x", -PI / 2.0 if downed else 0.0, 0.3)
+	person.set_downed(downed)
 
 
 func _play_swing_fx() -> void:

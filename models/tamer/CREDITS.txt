@@ -1,0 +1,5 @@
+hero.glb: the user's own Meshy AI hero, rigged and animated with Mixamo (Running,
+Walking, Toss_Treat, Right_Hand_Sword_Slash, Stand_Up2, falling_down).
+hero_anims.res is baked from those clips by scripts/tools/hero_anims.gd, and
+gear/ (the clothes, and folds.png) from the model itself by
+scripts/tools/hero_gear.gd.
