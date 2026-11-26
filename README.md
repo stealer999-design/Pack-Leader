@@ -787,7 +787,11 @@ played in the browser".
   tamer has a natural face. The tamer (and the rival tamer) has jointed limbs: knees and
   elbows, with a human walk (bending knees, swinging arms, a body that dips,
   twists and leans) and a batter's swing (wind-up, body turn,
-  follow-through). Pet portraits and menu icons keep their drawn style.
+  follow-through). Menu icons keep their drawn style. **Pet portraits** (the
+  action bar, the inventory's party and reserve, the stable's hay beds and the
+  breeder) are pictures of each pet's own model, like the gear icons: posed
+  standing, seen from the front three-quarter with a dark outline; dimmed when
+  the pet is dead, with a "z z" while it sleeps in a hay bed.
 - **Classes:** pets fight differently by kind. **Cats are Wizards**: instead
   of biting, they fire magic bolts in their own colour from about 6.5 units
   away (wild cats shoot at you too), and their ability is a spell, cast with a
@@ -980,7 +984,8 @@ The host is the authoritative server and also plays.
 | `scripts/tidal_wave_fx.gd`, `scripts/tidal_wave.gdshader`, `scripts/tidal_foam.gdshader` | Tidal Wave's look: a curling wall of dark water with glowing streaks, a foam crest, spray and a second swell, rolling out over the cone (each enemy is hit as the wave reaches it), leaving churned foam behind |
 | `scenes/crate.tscn` + `scripts/crate.gd`, `scenes/coin.tscn` + `scripts/coin.gd` | Breakable vases (still called crates in the code) and the coins they spill |
 | `scripts/components/health.gd` | Health with setter-driven signals (works with replication), plus poison and damage-absorbing shields |
-| `scripts/pet_slot.gd` | A drag-and-drop place in the stable window (hay bed, party cushion, reserve place or release gate), drawn in code |
+| `scripts/pet_slot.gd` | A drag-and-drop place in the stable window (hay bed, party cushion, reserve place or release gate), drawn in code, showing its pet's portrait |
+| `scripts/pet_icons.gd`, `scripts/tools/pet_icons.gd` → `textures/icons/pets/` | The pets' portraits: every species built as the game builds it (its Meshy model in its standing pose, or its code-built body), rendered with the gear icons' lighting and outline. Re-run after adding or changing a model (needs a display: `godot --path . --rendering-driver opengl3 -s res://scripts/tools/pet_icons.gd`) |
 | `scenes/hud.tscn` + `scripts/hud.gd` | The HUD: objective, hover/capture info, message feed, windows |
 | `scripts/sound_fx.gd`, `sounds/*.wav` (built by `scripts/tools/build_sounds.gd`, except the recorded `arrow_*.wav`) | The sound effects (attacks, abilities, item drops, footsteps): designed in code, saved as .wav files, played positionally |
 | `scripts/action_bar.gd`, `scripts/action_slot.gd`, `scripts/health_orb.gd` | The action bar along the bottom (health, potion, capture, bat, the three pets, stance and coins) and the tiny inventory, skills and menu buttons under the mini map; each box draws its icon or portrait, key, cooldown sweep, badges and strips |

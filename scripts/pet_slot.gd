@@ -183,6 +183,16 @@ func _draw_gate() -> void:
 ## dog or lizard. Eyes are closed while it sleeps on a hay bed.
 func _draw_pet(center: Vector2, r: float, sleeping: bool) -> void:
 	var species := SpeciesDB.get_species(pet.species)
+	# Its picture, rendered from its model (PetIcons); dimmed when it's dead.
+	var picture := PetIcons.texture(species, int(r * 3.0))
+	if picture:
+		var tint := Color(0.4, 0.4, 0.46) if pet.get("fainted", false) else Color.WHITE
+		draw_texture(picture, center - picture.get_size() * 0.5, tint)
+		if sleeping:
+			_draw_text_at("z", center + Vector2(r * 0.9, -r * 0.7), 14, Color(1, 1, 1, 0.85))
+			_draw_text_at("z", center + Vector2(r * 1.25, -r * 1.15), 11, Color(1, 1, 1, 0.6))
+		return
+	# (A species with no picture: drawn here, anime style.)
 	var body := species.color.darkened(0.5) if pet.get("fainted", false) else species.color
 	var kind := species.body_type
 	draw_circle(center + Vector2(0, r * 0.18), r * 1.08, Color(0, 0, 0, 0.25))  # shadow
