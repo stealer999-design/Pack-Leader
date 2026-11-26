@@ -74,15 +74,17 @@ func _build() -> void:
 
 func _process(delta: float) -> void:
 	_t += delta
-	if _t >= DURATION + FADE + 0.5:  # (the sparks land)
+	_alpha = 1.0 - clampf((_t - DURATION) / FADE, 0.0, 1.0)
+	if _alpha <= 0.0:  # faded out: gone at once, nothing left frozen (the sparks have landed by now)
 		queue_free()
 		return
-	_alpha = 1.0 - clampf((_t - DURATION) / FADE, 0.0, 1.0)
 	for child in get_children():
 		if child is MeshInstance3D and child.material_override is StandardMaterial3D and child.mesh is QuadMesh:
 			var mat: StandardMaterial3D = child.material_override
 			mat.albedo_color.a = child.get_meta("alpha", 1.0) * _alpha
-	if _t >= _next_strike and _alpha > 0.0:
+	# It flickers (re-struck every RESTRIKE); fading, it's redrawn every frame
+	# so it dims smoothly instead of holding a stale bolt.
+	if _t >= _next_strike or _t > DURATION:
 		_strike()
 
 
