@@ -16,6 +16,9 @@ uniform float blend_size = 45.0;
 uniform vec3 tint : source_color = vec3(1.0);
 uniform float normal_strength = 1.0;
 uniform float wetness = 0.0;  // 0 dry .. 1 slick: lowers roughness so it shines (the bog's slime)
+// How much softer than its finest the photo is drawn (a mip level bias): fine,
+// noisy detail (moss, grass) otherwise crawls and fizzes as the camera moves.
+uniform float soften = 0.0;
 
 varying vec3 world_pos;
 varying vec3 world_normal;
@@ -29,19 +32,27 @@ void fragment() {
 	vec2 uv_a = world_pos.xz / tile_a;
 	vec2 uv_b = world_pos.xz / tile_b + (tile_b == tile_a ? vec2(0.0) : vec2(0.37, 0.71));  // equal sizes: one pattern
 	float b = smoothstep(0.38, 0.62, texture(blend_noise, world_pos.xz / blend_size).r);
-	ALBEDO = mix(texture(albedo_tex, uv_a).rgb, texture(albedo_tex, uv_b).rgb, b) * tint;
+	ALBEDO = mix(texture(albedo_tex, uv_a, soften).rgb, texture(albedo_tex, uv_b, soften).rgb, b) * tint;
 	EMISSION = mix(texture(emission_tex, uv_a).rgb, texture(emission_tex, uv_b).rgb, b) * emission_strength;
-	float rough = mix(texture(rough_tex, uv_a).r, texture(rough_tex, uv_b).r, b);
+	float rough = mix(texture(rough_tex, uv_a, soften).r, texture(rough_tex, uv_b, soften).r, b);
 	// Wet ground: glossier, slicker in patches (the slow noise), a touch darker.
 	float wet = wetness * mix(0.7, 1.0, texture(blend_noise, world_pos.xz / (blend_size * 0.4)).r);
-	ROUGHNESS = mix(rough, 0.04, wet);
+	ROUGHNESS = mix(rough, 0.12, wet);
 	SPECULAR = mix(0.5, 1.0, wet);
 	ALBEDO *= mix(1.0, 0.7, wet);
 	// Normal map (OpenGL: red along +x, green along +z of the ground), in world space.
-	vec2 n = mix(texture(normal_tex, uv_a).rg, texture(normal_tex, uv_b).rg, b) * 2.0 - 1.0;
-	n *= normal_strength;
-	vec3 bumped = normalize(vec3(n.x, sqrt(max(1.0 - dot(n, n), 0.0)), n.y));
+	vec2 n = mix(texture(normal_tex, uv_a, soften).rg, texture(normal_tex, uv_b, soften).rg, b) * 2.0 - 1.0;
+	// Steepened by normal_strength, but never tipped flat on its side (a flat
+	// normal faces away from the sun and shows as a black speck that flickers
+	// as the camera moves).
+	float rise = max(sqrt(max(1.0 - dot(n, n), 0.0)), 0.3);
+	vec3 bumped = normalize(vec3(n.x * normal_strength, rise, n.y * normal_strength));
 	float up = smoothstep(0.7, 0.95, world_normal.y);
 	vec3 wn = normalize(mix(world_normal, bumped, up));
 	NORMAL = normalize((VIEW_MATRIX * vec4(wn, 0.0)).xyz);
+	// Where the bumps change faster than a pixel can show (the glossy wet mud
+	// most of all), the ground is a little rougher instead of glinting on and
+	// off as the camera moves.
+	vec3 dn = fwidth(wn);
+	ROUGHNESS = sqrt(clamp(ROUGHNESS * ROUGHNESS + dot(dn, dn) * 4.0, 0.0, 1.0));
 }

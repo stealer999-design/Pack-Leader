@@ -23,18 +23,20 @@ const BIOME_STYLES := ["grass", "snow", "sand", "swamp", "graveyard", "sand", "l
 ## Styles with a photo-scanned set in textures/ground/ (<style>_albedo.png,
 ## _normal.png, _roughness.png, and optionally _emission.png for parts that
 ## glow; "files" names a set another style already uses): drawn with ground_photo.gdshader instead of
-## being painted. Per style: tile size in world units and a colour tint.
+## being painted. Per style: tile size in world units and a colour tint;
+## "soften" draws it a little blurrier than its finest (a mip bias; 0.3 if
+## not given), so fine noisy detail (grass, moss) doesn't fizz as the camera moves.
 const PHOTO_DIR := "res://textures/ground/"
 const PHOTO := {
 	"sand": {"tile": 5.0, "tint": Color(0.8, 0.72, 0.62), "bumps": 1.6},
-	"grass": {"tile": 4.0, "tint": Color(0.6, 0.72, 0.48), "bumps": 1.2},  # darker and greener in the bright sun
+	"grass": {"tile": 4.0, "tint": Color(0.6, 0.72, 0.48), "bumps": 1.2, "soften": 0.6},  # darker and greener in the bright sun
 	"snow": {"tile": 5.0, "tint": Color(0.8, 0.83, 0.88), "bumps": 1.5},
 	# Brick paving at every start camp ("dirt") and town square ("cobble"). A
 	# regular pattern: one size only (two would blur the bricks into each other).
 	"dirt": {"files": "brick", "tile": 9.0, "tint": Color(0.58, 0.52, 0.5), "bumps": 1.6, "regular": true},
 	"cobble": {"files": "brick", "tile": 9.0, "tint": Color(0.58, 0.52, 0.5), "bumps": 1.6, "regular": true},
 	"lava": {"tile": 5.0, "tint": Color(1.35, 1.0, 0.85), "bumps": 1.3},  # black rock (the props glow against it)
-	"swamp": {"tile": 4.0, "tint": Color(0.8, 0.85, 0.66), "bumps": 1.8, "wet": 1.0},  # slimy: glossy and wet
+	"swamp": {"tile": 4.0, "tint": Color(0.8, 0.85, 0.66), "bumps": 1.8, "wet": 1.0, "soften": 1.0},  # slimy: glossy and wet
 	"graveyard": {"tile": 4.0, "tint": Color(0.58, 0.58, 0.64), "bumps": 1.2},  # gloomier than the photo
 }
 
@@ -78,6 +80,7 @@ static func photo_material(style: String) -> ShaderMaterial:
 		mat.set_shader_parameter("tint", spec.tint)
 		mat.set_shader_parameter("normal_strength", spec.get("bumps", 1.0))
 		mat.set_shader_parameter("wetness", spec.get("wet", 0.0))
+		mat.set_shader_parameter("soften", spec.get("soften", 0.3))
 		if ResourceLoader.exists(PHOTO_DIR + files + "_emission.png"):
 			mat.set_shader_parameter("emission_tex", load(PHOTO_DIR + files + "_emission.png"))
 			mat.set_shader_parameter("emission_strength", spec.get("glow", 2.0))
