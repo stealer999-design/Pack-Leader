@@ -1929,8 +1929,10 @@ func _build_open(floor_mat: Material, camp_mat: Material, arena_mat: Material, w
 						_add_wall_x(r.position.y, corridor.end.x + 0.5, r.end.x + WALL_OVERLAP, mat)
 					else:
 						_add_wall_x(r.position.y, r.position.x - WALL_OVERLAP, r.end.x + WALL_OVERLAP, mat, false, high)
-	# Ruins: broken stubs of stone wall, a run of blocks of uneven height.
-	var ruin_mat := GroundTextures.material("cobble", Color(biome().rock).lerp(Color(0.6, 0.57, 0.52), 0.5))
+	# Ruins: broken stubs of brick wall, a run of blocks of uneven height. The
+	# bricks are mapped in each block's own space and every block is turned to
+	# run along its stub, so its rows of bricks run along it, sides and top.
+	var ruin_mat := DungeonBuilder.textured(RUIN_BRICKS, RUIN_BRICK_TILE)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = level_state.x ^ 0x2b1
 	if layout.has("dungeon"):
@@ -1945,11 +1947,17 @@ func _build_open(floor_mat: Material, camp_mat: Material, arena_mat: Material, w
 			var center := Vector3(lerpf(stub.position.x, stub.end.x, t) if along_x else stub.get_center().x, height * 0.5,
 					stub.get_center().y if along_x else lerpf(stub.position.y, stub.end.y, t))
 			var block := length / blocks - 0.08
-			var size := Vector3(block if along_x else 1.0, height, 1.0 if along_x else block)
-			_add_box(center + Vector3(rng.randf_range(-0.1, 0.1), 0.0, rng.randf_range(-0.1, 0.1)), size, ruin_mat)
+			var piece := _add_box(center + Vector3(rng.randf_range(-0.1, 0.1), 0.0, rng.randf_range(-0.1, 0.1)),
+					Vector3(block, height, 1.0), ruin_mat)
+			if not along_x:
+				piece.rotation.y = PI / 2.0
 
 
 const WALL_OVERLAP := 0.5  ## Walls run this far past a tile's corner, so corners close.
+## The ruins' brick wall (ambientCG Bricks082C, as the ancient caves' walls) and
+## how many world units one repeat of it covers.
+const RUIN_BRICKS := "res://textures/dungeon/ancient/wall_"
+const RUIN_BRICK_TILE := 4.0
 const DUNGEON_WALL_HEIGHT := 3.2
 const DOORWAY_HALF := 3.3  ## Half the Keeper room's doorway.
 
