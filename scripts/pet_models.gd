@@ -21,11 +21,13 @@ const POSED_FIT := {"Sand Scorpion": true, "Skeleton": true, "Zombie": true, "Mu
 const CLIPS := {
 	"Skeleton": {"source": "Attack", "Swipe": [0.35, 1.75], "Hiss": [0.35, 1.75]},
 	"Magma Golem": {"source": "Attack", "Swipe": [0.35, 1.75], "Hiss": [0.35, 1.75]},  # the same slam
-	# The Yeti's Charged_Ground_Slam (3 s): it raises a fist, holds it high (0.5-1.3 s),
-	# brings it down (hits the ground 1.75 s in) and straightens. Its attack leaves
-	# out most of the hold: 1.2 s, the fist landing 0.85 s in.
-	"Yeti": {"source": "Charged_Ground_Slam", "Swipe": [[0.2, 0.55], [1.25, 2.1]], "Hiss": [[0.2, 0.55], [1.25, 2.1]]},
 }
+## Per species: animations baked by a tool, as Animation resources, under the
+## names the game plays. The Yeti's slam (scripts/tools/ground_slam.gd): its
+## Charged_Ground_Slam without most of the long hold with its fist raised
+## (0.2-0.55 s, then 1.25-2.75 s: the fist lands 0.85 s in), its arm swung
+## forward where the fist would have sunk into the ground, so it lands on it.
+const BAKED := {"Yeti": {"Swipe": "res://models/pets/yeti_slam.res", "Hiss": "res://models/pets/yeti_slam.res"}}
 ## Per species, how much faster a one-off animation plays, so it's over
 ## before the next attack (each species' attack_cooldown).
 const ANIM_SPEED := {
@@ -33,6 +35,7 @@ const ANIM_SPEED := {
 	"Mummy": {"Swipe": 1.25, "Hiss": 1.25},  # 1.67 s -> 1.33 s (cooldown 1.4)
 	"Zombie": {"Swipe": 1.6, "Hiss": 1.6},  # 2.16 s -> 1.35 s (cooldown 1.4)
 	"Fire Imp": {"Swipe": 1.3},  # 1.07 s -> 0.82 s (cooldown 1.2): the bolt flies as its arms fly open
+	"Yeti": {"Swipe": 1.3, "Hiss": 1.3},  # 1.85 s -> 1.42 s (cooldown 1.5)
 }
 
 
@@ -145,6 +148,10 @@ static func build(body: MeshInstance3D, species: CreatureSpecies) -> AnimationPl
 	var clip_player: AnimationPlayer = scene.find_children("*", "AnimationPlayer", true, false).pop_front()
 	if clip_player and CLIPS.has(species.display_name):
 		_cut_clips(clip_player, CLIPS[species.display_name])
+	if clip_player and BAKED.has(species.display_name):
+		for baked_name: String in BAKED[species.display_name]:
+			if not clip_player.has_animation(baked_name):
+				clip_player.get_animation_library("").add_animation(baked_name, (load(BAKED[species.display_name][baked_name]) as Animation).duplicate())
 	if clip_player and RENAME.has(species.display_name):
 		var lib := clip_player.get_animation_library("")
 		for old: String in RENAME[species.display_name]:
