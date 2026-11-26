@@ -4,10 +4,14 @@ extends Node3D
 ## rigged and animated with Mixamo; his moves baked by tools/hero_anims.gd)
 ## with his bat in his right hand. Faces -Z, feet at y = 0.
 ##
-## Animates itself on every peer from how fast it actually moves (measured
-## from its own position), so remote players animate too with no extra
-## syncing: stands breathing, walks or runs with the stride paced to the
-## speed. swing() and throw() play on the upper body, so the legs keep
+## Animates itself on every peer from how fast and which way it actually
+## moves (measured from its own position), so remote players animate too with
+## no extra syncing: stands breathing, walks or runs with the stride paced to
+## the speed. Its parent (the player's Model) faces where the tamer aims; his
+## legs face where he's going, and his torso follows them only TORSO_FOLLOWS
+## of the way, staying turned towards the aim (his head looks the rest of the
+## way). Going backwards he backs off: his legs face the aim and the run plays
+## in reverse. swing() and throw() play on the upper body, so the legs keep
 ## running; set_downed() falls down, and gets back up. The shirt takes the
 ## player's colour.
 
@@ -27,6 +31,13 @@ const RUN_FROM := 3.0  ## Runs above this speed (world units a second), walks be
 const GRIP_AT := Vector3(-0.0105, 0.112, 0.004)
 const GRIP_ALONG := Vector3(0.658, 0.303, 0.689)
 const FOOT_DOWN := 0.03  ## A foot this near its standing height (model units) is planted.
+## How far round his torso turns with his legs when he runs a different way to
+## where he aims (the rest of the way it stays towards the aim).
+const TORSO_FOLLOWS := 0.4
+## Going this far (radians) from where he aims, he backs off instead (and runs
+## forward again under BACK_TO, so it doesn't flip back and forth at the edge).
+const BACK_FROM := deg_to_rad(120.0)
+const BACK_TO := deg_to_rad(95.0)
 ## The clothes (made from the hero himself by tools/hero_gear.gd), for each look
 ## level (ItemDB.look_level: 1-2 the first tier's item, 3-4 the second's, 5 the
 ## third's), in the order of the outfit (jacket, pants, hat, boots).
@@ -52,6 +63,10 @@ var _bat_tier := -1
 var _scale := 1.0
 var _last_position := Vector3.INF
 var _speed := 0.0
+var _velocity := Vector3.ZERO  ## Smoothed, along the ground.
+var _legs := 0.0  ## How far (radians) his legs are turned from where he aims.
+var _backwards := false
+var _twist: TorsoTwist
 var _gait := "idle"
 var _downed := false
 var _rise_left := 0.0
@@ -90,6 +105,13 @@ func build(body_material: StandardMaterial3D, _hair_color := Color.BLACK) -> voi
 		var foot := _skeleton.find_bone("mixamorig_%sFoot" % side)
 		_feet.append(foot)
 		_foot_rest.append(_skeleton.get_bone_global_rest(foot).origin.y)
+	_twist = TorsoTwist.new()
+	_twist.name = "TorsoTwist"
+	for bone in ["Spine", "Spine1", "Spine2"]:
+		_twist.spine.append(_skeleton.find_bone("mixamorig_" + bone))
+	for bone in ["Neck", "Head"]:
+		_twist.head.append(_skeleton.find_bone("mixamorig_" + bone))
+	_skeleton.add_child(_twist)
 	_build_tree()
 
 
@@ -222,10 +244,13 @@ func _process(delta: float) -> void:
 	# jump of several units in a frame is a teleport, not a run).
 	var pos := global_position
 	if _last_position != Vector3.INF and delta > 0.0:
-		var moved := Vector2(pos.x - _last_position.x, pos.z - _last_position.z).length()
-		if moved < 3.0:
-			_speed = lerpf(_speed, moved / delta, 1.0 - exp(-10.0 * delta))
+		var step := Vector3(pos.x - _last_position.x, 0.0, pos.z - _last_position.z)
+		if step.length() < 3.0:
+			var blend := 1.0 - exp(-10.0 * delta)
+			_speed = lerpf(_speed, step.length() / delta, blend)
+			_velocity = _velocity.lerp(step / delta, blend)
 	_last_position = pos
+	_turn_legs(delta)
 	if _rise_left > 0.0:
 		_rise_left -= delta
 		if _rise_left <= 0.0 or _speed > 1.5:
@@ -247,9 +272,32 @@ func _process(delta: float) -> void:
 	if gait != _gait:
 		_gait = gait
 		_tree.set("parameters/Gait/transition_request", gait)
-	_tree.set("parameters/WalkRate/scale", clampf(_speed / (WALK_PACE * _scale), 0.6, 2.2))
-	_tree.set("parameters/RunRate/scale", clampf(_speed / (RUN_PACE * _scale), 0.75, 1.5))
+	var way := -1.0 if _backwards else 1.0  # backing off: the stride plays in reverse
+	_tree.set("parameters/WalkRate/scale", way * clampf(_speed / (WALK_PACE * _scale), 0.6, 2.2))
+	_tree.set("parameters/RunRate/scale", way * clampf(_speed / (RUN_PACE * _scale), 0.75, 1.5))
 	_footsteps()
+
+
+## Turns his legs to where he's going (he faces where he aims: our parent), or,
+## going backwards, to face the aim while he backs off; his torso turns back
+## towards the aim but for TORSO_FOLLOWS of the way, and his head looks at it.
+func _turn_legs(delta: float) -> void:
+	var target := 0.0
+	var parent := get_parent() as Node3D
+	if parent and _speed > 1.0 and not _downed and _rise_left <= 0.0:
+		var aim := -parent.global_basis.z
+		var off := wrapf(atan2(-_velocity.x, -_velocity.z) - atan2(-aim.x, -aim.z), -PI, PI)
+		if _backwards and absf(off) < BACK_TO:
+			_backwards = false
+		elif not _backwards and absf(off) > BACK_FROM:
+			_backwards = true
+		target = wrapf(off + PI, -PI, PI) if _backwards else off
+	elif _speed < 0.5:
+		_backwards = false
+	_legs = lerp_angle(_legs, target, 1.0 - exp(-12.0 * delta))
+	rotation.y = _legs
+	_twist.torso = -_legs * (1.0 - TORSO_FOLLOWS)
+	_twist.look = -_legs * TORSO_FOLLOWS
 
 
 ## A footstep each time a foot comes down (its bone back near its standing height).
@@ -350,3 +398,28 @@ func _tint(color: Color, fade: float) -> void:
 func _set_overlay(mat: Material) -> void:
 	for mesh: MeshInstance3D in find_children("*", "MeshInstance3D", true, false):
 		mesh.material_overlay = mat
+
+
+## Turns his spine (shared between its bones), then his neck and head, about
+## the up axis, after the animation has posed him: so his legs can face where
+## he runs while his torso and head turn towards where he aims.
+class TorsoTwist extends SkeletonModifier3D:
+	var spine: Array[int] = []
+	var head: Array[int] = []
+	var torso := 0.0  ## Radians, + to his left.
+	var look := 0.0
+
+	func _process_modification() -> void:
+		var skeleton := get_skeleton()
+		if skeleton == null or (is_zero_approx(torso) and is_zero_approx(look)):
+			return
+		for bone in spine:
+			_turn(skeleton, bone, torso / spine.size())
+		for bone in head:
+			_turn(skeleton, bone, look / head.size())
+
+	## Turns a bone about the skeleton's up axis (its parents' turns, being
+	## about that same axis, don't move it).
+	func _turn(skeleton: Skeleton3D, bone: int, angle: float) -> void:
+		var axis := (skeleton.get_bone_global_pose(bone).basis.orthonormalized().inverse() * Vector3.UP).normalized()
+		skeleton.set_bone_pose_rotation(bone, skeleton.get_bone_pose_rotation(bone) * Quaternion(axis, angle))

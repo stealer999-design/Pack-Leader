@@ -420,8 +420,11 @@ played in the browser".
 - **Your tamer** is the hero (the user's Meshy model, rigged and animated
   with Mixamo), his shirt in your colour so co-op players stand apart, his
   bat in his right hand. He stands breathing, walks or runs with his stride
-  paced to his speed, swings the bat with a slash (on his upper body, so his
-  legs keep running), tosses capture treats overhand with his free hand,
+  paced to his speed. He faces where you aim, but his legs run the way he's
+  going: running sideways his legs turn to the run while his torso turns only
+  40% of the way with them (his head looks at the aim), and running backwards
+  he backs off, facing the aim with the run played in reverse. He swings the
+  bat with a slash (on his upper body, so his legs keep running), tosses capture treats overhand with his free hand,
   falls down when downed and gets back up. Every hit pops a ring of spinning
   stars. **What you wear shows on him**: each jacket, pair of trousers, hat
   and pair of boots (see the gear table) has its own look in its own colour,
@@ -944,7 +947,7 @@ The host is the authoritative server and also plays.
 | `scripts/pet_skills.gd` | The four class skill trees, skill points and ranks, and how they add up |
 | `scripts/level_generator.gd` (village) + `World._build_village` | The village side path, square, houses and bat shop |
 | `scripts/breeding_db.gd`, `scripts/breeder_window.gd` | Which pairs breed into which hybrid, the rules, and the breeder's window |
-| `scripts/hero_model.gd`, `scripts/hero_skin.gdshader`, `models/tamer/hero.glb` | The tamer: the user's Meshy hero (rigged and animated with Mixamo; credited in `models/tamer/CREDITS.txt`), played by an AnimationTree: idle, walk or run paced to how fast he moves, the swing and the throw on his upper body only, falling down and getting up; footsteps when a foot lands; the shirt turned to the player's colour (only its hue: the shading and buttons stay); hits flash him white and slows tint him icy; the clothes he wears (below) |
+| `scripts/hero_model.gd`, `scripts/hero_skin.gdshader`, `models/tamer/hero.glb` | The tamer: the user's Meshy hero (rigged and animated with Mixamo; credited in `models/tamer/CREDITS.txt`), played by an AnimationTree: idle, walk or run paced to how fast he moves (in reverse when he backs off), the swing and the throw on his upper body only, falling down and getting up; his legs turned to the way he's moving and his spine and head turned back towards the aim after the animation (`HeroModel.TorsoTwist`, a SkeletonModifier3D: the torso follows the legs `TORSO_FOLLOWS` of the way); footsteps when a foot lands; the shirt turned to the player's colour (only its hue: the shading and buttons stay); hits flash him white and slows tint him icy; the clothes he wears (below) |
 | `scripts/tools/hero_anims.gd` → `models/tamer/hero_anims.res` | Bakes his animations from the model's Mixamo clips: Idle (the pose his stand-up ends in, breathing), Walk and Run (their paces measured, so the stride matches his speed; walking, his forearm turns so the bat points forward and down, not across his legs), Swing (the sword slash's wind-up, strike and follow-through), Throw, Fall, GetUp; in all of them his right hand keeps the slash's grip on the bat |
 | `scripts/tools/hero_gear.gd` → `models/tamer/gear/*.res`, `scripts/hero_gear.gdshader` | Bakes his clothes from his own body: each garment is the part of him it covers, cut cleanly along its edges (neckline, waist, cuffs, hems), pushed out a little and keeping his skin weights, so it bends with him; hems give it thickness; then lapels, collars, a long coat's skirt (clear of his hips and thighs), quilting, knee pads, baggy thighs, soles and a boot cuff; hats (a fedora, a cowboy hat and the Warden's Hat: a crown dented and pinched, a shaped brim, a band) are shapes on his head bone. `folds.png` is his texture's creases and seams without its colours, so each garment shows the folds of the clothes underneath in its own colour |
 | `scripts/bat_models.gd` | The six shop bats, one model each, held at the grip (a `models/bats/<name>.glb` replaces a bat's built shape when there is one) |
