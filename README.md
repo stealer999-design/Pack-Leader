@@ -428,8 +428,9 @@ played in the browser".
   made from his own body so it fits and moves with him: a Leather Jacket
   hangs open over the shirt with lapels, a Padded Coat is quilted with a
   stand-up collar, a Ranger's Duster reaches the knees; Work Trousers,
-  Reinforced Pants with knee pads, baggy Trail Breeches; a Cap, a Hard Hat,
-  a broad-brimmed Warden's Hat; Sneakers with white soles, ankle-high Hiking
+  Reinforced Pants with knee pads, baggy Trail Breeches; a Fedora (straw or
+  brown felt, a snap brim), a Cowboy Hat (black or silver-grey, its brim
+  rolled up at the sides), a broad-brimmed Warden's Hat; Sneakers with white soles, ankle-high Hiking
   Boots, tall Pathfinder Boots with a folded cuff. Their icons are pictures
   of those same clothes.
 - **Village:** around halfway along every level (on a straight stretch of the
@@ -540,7 +541,7 @@ played in the browser".
   |---|---|---|---|---|
   | Chest | Leather Jacket | Padded Coat | Ranger's Duster | Armor and tamer health |
   | Pants | Work Trousers | Reinforced Pants | Trail Breeches | Armor |
-  | Hat | Cap | Hard Hat | Warden's Hat | Tamer health |
+  | Hat | Fedora | Cowboy Hat | Warden's Hat | Tamer health |
   | Boots | Sneakers | Hiking Boots | Pathfinder Boots | Move speed |
   | Ring (x2) | Band | Signet | Seal | None (always Magic or better) |
   | Necklace | Cord | Pendant | Talisman | None (always Magic or better) |
@@ -941,7 +942,7 @@ The host is the authoritative server and also plays.
 | `scripts/breeding_db.gd`, `scripts/breeder_window.gd` | Which pairs breed into which hybrid, the rules, and the breeder's window |
 | `scripts/hero_model.gd`, `scripts/hero_skin.gdshader`, `models/tamer/hero.glb` | The tamer: the user's Meshy hero (rigged and animated with Mixamo; credited in `models/tamer/CREDITS.txt`), played by an AnimationTree: idle, walk or run paced to how fast he moves, the swing and the throw on his upper body only, falling down and getting up; footsteps when a foot lands; the shirt turned to the player's colour (only its hue: the shading and buttons stay); hits flash him white and slows tint him icy; the clothes he wears (below) |
 | `scripts/tools/hero_anims.gd` → `models/tamer/hero_anims.res` | Bakes his animations from the model's Mixamo clips: Idle (the pose his stand-up ends in, breathing), Walk and Run (their paces measured, so the stride matches his speed; walking, his forearm turns so the bat points forward and down, not across his legs), Swing (the sword slash's wind-up, strike and follow-through), Throw, Fall, GetUp; in all of them his right hand keeps the slash's grip on the bat |
-| `scripts/tools/hero_gear.gd` → `models/tamer/gear/*.res`, `scripts/hero_gear.gdshader` | Bakes his clothes from his own body: each garment is the part of him it covers, cut cleanly along its edges (neckline, waist, cuffs, hems), pushed out a little and keeping his skin weights, so it bends with him; hems give it thickness; then lapels, collars, a long coat's skirt (clear of his hips and thighs), quilting, knee pads, baggy thighs, soles and a boot cuff; hats are shapes on his head bone. `folds.png` is his texture's creases and seams without its colours, so each garment shows the folds of the clothes underneath in its own colour |
+| `scripts/tools/hero_gear.gd` → `models/tamer/gear/*.res`, `scripts/hero_gear.gdshader` | Bakes his clothes from his own body: each garment is the part of him it covers, cut cleanly along its edges (neckline, waist, cuffs, hems), pushed out a little and keeping his skin weights, so it bends with him; hems give it thickness; then lapels, collars, a long coat's skirt (clear of his hips and thighs), quilting, knee pads, baggy thighs, soles and a boot cuff; hats (a fedora, a cowboy hat and the Warden's Hat: a crown dented and pinched, a shaped brim, a band) are shapes on his head bone. `folds.png` is his texture's creases and seams without its colours, so each garment shows the folds of the clothes underneath in its own colour |
 | `scripts/bat_models.gd` | The six shop bats, one model each, held at the grip (a `models/bats/<name>.glb` replaces a bat's built shape when there is one) |
 | `scripts/tools/gear_icons.gd` → `textures/icons/gear/` | Renders the icons of the clothes (each look, as it hangs on him, his body hidden) and the shop bats, outlined like the drawn icons (needs a display: `godot --path . --rendering-driver opengl3 -s res://scripts/tools/gear_icons.gd`) |
 | `scripts/person_model.gd` | The old code-built tamer, kept for the rival's fallback |

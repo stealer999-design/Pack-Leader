@@ -93,8 +93,8 @@ func _init() -> void:
 	_folds((body.mesh.surface_get_material(0) as BaseMaterial3D).albedo_texture)
 	for piece: Array in PIECES:
 		_save(_garment(piece[1], piece[2]), piece[0])
-	_save(_hat_cap(), "hat_cap")
-	_save(_hat_hard(), "hat_hard")
+	_save(_shaped_hat(FEDORA), "hat_fedora")
+	_save(_shaped_hat(COWBOY), "hat_cowboy")
 	_save(_hat_warden(), "hat_warden")
 	quit()
 
@@ -543,37 +543,110 @@ func _folds(texture: Texture2D) -> void:
 
 # --- Hats: shapes on the head bone ---------------------------------------------------
 
-## A cap: a rounded crown, a stiff peak and a button on top.
-func _hat_cap() -> ArrayMesh:
+## Hats in the Warden's Hat's style (see _shaped_hat). A fedora: a medium
+## crown with a dent along the top and pinched at the front, a broad band,
+## and a snap brim, down at the front and up at the back.
+const FEDORA := {"crown": [0.105, 0.117, 0.112, 0.84], "crease": 0.026, "pinch": [0.13, 0.6],
+		"brim": [0.165, 0.18], "curl": [0.006, 0.024, 0.02], "band": 0.03}
+## A cowboy hat: a tall crown with a deep crease along the top and pinched
+## at the front, and a wide brim rolled up at the sides, dipping at the front.
+const COWBOY := {"crown": [0.106, 0.12, 0.138, 0.87], "crease": 0.034, "pinch": [0.11, 0.62],
+		"brim": [0.205, 0.228], "curl": [0.07, 0.016, 0.004], "band": 0.022}
+
+
+## A felt hat: an oval crown (`crown`: its radii across and front to back,
+## height, and how much it narrows to the top), its top dented by `crease`
+## along the middle, front to back, and pinched either side of the front
+## (`pinch`: how much, and how far round from the front); a brim out to
+## `brim` (its radii), curling (`curl`: the sides up, the front down, the back
+## up, by its edge); and a band of height `band` round the crown (the trim).
+func _shaped_hat(s: Dictionary) -> ArrayMesh:
 	var mesh := ArrayMesh.new()
 	var st := _begin()
-	_shape(st, _dome(0.112, 0.072), Transform3D(Basis.from_scale(Vector3(1.0, 1.0, 1.06)), HEAD + Vector3(0, 0.002, 0)))
-	_shape(st, _disc(0.1, 0.006), Transform3D(Basis(Vector3.RIGHT, 0.2).scaled(Vector3(0.82, 1.0, 1.0)), HEAD + Vector3(0, -0.004, 0.125)))
-	_shape(st, _ball(0.011), Transform3D(Basis(), HEAD + Vector3(0, 0.074, 0)))
+	var around := 40
+	var rows := []
+	for i in 9:  # the crown's side, bottom to top
+		rows.append(_hat_ring(around, func(a: float) -> Vector3: return _crown_point(s, a, i / 8.0)))
+	for i in range(5, -1, -1):  # its top, from the edge in to the middle
+		var u := i / 5.0
+		rows.append(_hat_ring(around, func(a: float) -> Vector3: return _crown_top(s, a, u)))
+	_hat_rows(st, rows)
+	rows = []
+	for i in 7:  # the brim, from the crown out
+		rows.append(_hat_ring(around, func(a: float) -> Vector3: return _brim_point(s, a, i / 6.0)))
+	var edge: PackedVector3Array = rows[-1]  # the brim's edge, given a little thickness
+	var under := PackedVector3Array()
+	for p in edge:
+		under.append(p - Vector3.UP * 0.007)
+	rows.append(under)
+	_hat_rows(st, rows)
 	st.index()
+	st.generate_normals()
 	st.commit(mesh)
-	st = _begin()  # trim: a band round the bottom of the crown
-	_shape(st, _ring(0.1145, 0.012), Transform3D(Basis.from_scale(Vector3(1.0, 1.0, 1.06)), HEAD + Vector3(0, -0.002, 0)))
+	st = _begin()  # trim: the band
+	var crown: Array = s.crown
+	var top: float = s.band / crown[2]
+	rows = []
+	for v in [0.0, top]:
+		rows.append(_hat_ring(around, func(a: float) -> Vector3:
+				var p := _crown_point(s, a, v)
+				return HEAD + (p - HEAD) * Vector3(1.03, 1.0, 1.03)))
+	_hat_rows(st, rows)
 	st.index()
+	st.generate_normals()
 	st.commit(mesh)
 	return mesh
 
 
-## A hard hat: a high domed shell with a ridge over the top and a brim, longer at the front.
-func _hat_hard() -> ArrayMesh:
-	var mesh := ArrayMesh.new()
-	var st := _begin()
-	_shape(st, _dome(0.124, 0.115), Transform3D(Basis.from_scale(Vector3(1.0, 1.0, 1.08)), HEAD + Vector3(0, -0.012, 0)))
-	_shape(st, _disc(0.15, 0.008), Transform3D(Basis(Vector3.RIGHT, 0.06).scaled(Vector3(0.94, 1.0, 1.12)), HEAD + Vector3(0, -0.012, 0.022)))
-	st.index()
-	st.commit(mesh)
-	st = _begin()  # trim: the ridge
-	var ridge := BoxMesh.new()
-	ridge.size = Vector3(0.03, 0.02, 0.2)
-	_shape(st, ridge.get_mesh_arrays(), Transform3D(Basis(), HEAD + Vector3(0, 0.1, 0)))
-	st.index()
-	st.commit(mesh)
-	return mesh
+## A point on a hat's crown: `a` the angle round from the front (towards his
+## left), `v` the height up it (0..1).
+func _crown_point(s: Dictionary, a: float, v: float) -> Vector3:
+	var crown: Array = s.crown
+	var pinch: Array = s.pinch
+	var from_front := wrapf(a, -PI, PI)
+	var dent: float = pinch[0] * (exp(-pow((absf(from_front) - pinch[1]) / 0.35, 2.0))) * smoothstep(0.35, 1.0, v)
+	var narrow: float = lerpf(1.0, crown[3], v) * (1.0 - dent)
+	var dip: float = s.crease * pow(cos(a), 2.0) * smoothstep(0.55, 1.0, v)
+	return HEAD + Vector3(sin(a) * crown[0] * narrow, crown[2] * v - dip, cos(a) * crown[1] * narrow)
+
+
+## A point on the crown's top: `u` from its edge (1) in to the middle (0),
+## dipping into the crease along the middle.
+func _crown_top(s: Dictionary, a: float, u: float) -> Vector3:
+	var crown: Array = s.crown
+	var edge := _crown_point(s, a, 1.0) - HEAD
+	return HEAD + Vector3(edge.x * u, crown[2] - s.crease * (1.0 - pow(u * sin(a), 2.0)), edge.z * u)
+
+
+## A point on the brim: `u` from the crown (0) out to its edge (1).
+func _brim_point(s: Dictionary, a: float, u: float) -> Vector3:
+	var crown: Array = s.crown
+	var brim: Array = s.brim
+	var curl: Array = s.curl
+	var front := maxf(cos(a), 0.0)
+	var back := maxf(-cos(a), 0.0)
+	var lift: float = u * u * (curl[0] * sin(a) * sin(a) - curl[1] * front * front + curl[2] * back * back)
+	return HEAD + Vector3(sin(a) * lerpf(crown[0] * 0.985, brim[0], u), lift, cos(a) * lerpf(crown[1] * 0.985, brim[1], u))
+
+
+func _hat_ring(count: int, at: Callable) -> PackedVector3Array:
+	var ring := PackedVector3Array()
+	for k in count:
+		ring.append(at.call(TAU * k / count))
+	return ring
+
+
+## Joins rings of points (all the same size, closed) into a surface, riding the head bone.
+func _hat_rows(st: SurfaceTool, rows: Array) -> void:
+	for r in rows.size() - 1:
+		var a: PackedVector3Array = rows[r]
+		var b: PackedVector3Array = rows[r + 1]
+		for k in a.size():
+			var k2 := (k + 1) % a.size()
+			for p in [a[k], b[k], b[k2], a[k], b[k2], a[k2]]:
+				st.set_bones(PackedInt32Array([head_bind, 0, 0, 0]))
+				st.set_weights(PackedFloat32Array([1.0, 0.0, 0.0, 0.0]))
+				st.add_vertex(p)
 
 
 ## A warden's hat: a broad flat brim and a tall crown with a band and a feather.
@@ -600,16 +673,6 @@ func _hat_warden() -> ArrayMesh:
 	return mesh
 
 
-func _dome(r: float, h: float) -> Array:
-	var dome := SphereMesh.new()
-	dome.radius = r
-	dome.height = h * 2.0
-	dome.is_hemisphere = true
-	dome.radial_segments = 24
-	dome.rings = 8
-	return dome.get_mesh_arrays()
-
-
 func _disc(r: float, h: float) -> Array:
 	var disc := CylinderMesh.new()
 	disc.top_radius = r
@@ -630,15 +693,6 @@ func _ring(r: float, h: float) -> Array:
 	ring.cap_top = false
 	ring.cap_bottom = false
 	return ring.get_mesh_arrays()
-
-
-func _ball(r: float) -> Array:
-	var ball := SphereMesh.new()
-	ball.radius = r
-	ball.height = r * 2.0
-	ball.radial_segments = 8
-	ball.rings = 4
-	return ball.get_mesh_arrays()
 
 
 ## A shape's triangles, placed by `xf`, riding the head bone.

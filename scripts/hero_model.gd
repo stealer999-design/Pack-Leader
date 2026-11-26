@@ -34,13 +34,13 @@ const GEAR_DIR := "res://models/tamer/gear/"
 const GEAR := {
 	"jacket": ["jacket_leather", "jacket_leather", "jacket_padded", "jacket_padded", "jacket_duster"],
 	"pants": ["pants_work", "pants_work", "pants_reinforced", "pants_reinforced", "pants_breeches"],
-	"hat": ["hat_cap", "hat_cap", "hat_hard", "hat_hard", "hat_warden"],
+	"hat": ["hat_fedora", "hat_fedora", "hat_cowboy", "hat_cowboy", "hat_warden"],
 	"boots": ["boots_sneakers", "boots_sneakers", "boots_hiking", "boots_hiking", "boots_pathfinder"],
 }
 const OUTFIT := ["jacket", "pants", "hat", "boots"]
 ## How each garment's cloth catches the light (leather and steel shine more).
 const FOLD_STRENGTH := 1.3  ## How strongly the clothes underneath crease a garment.
-const SHEEN := {"jacket_leather": 0.5, "hat_hard": 0.35, "boots_hiking": 0.6, "boots_pathfinder": 0.55}
+const SHEEN := {"jacket_leather": 0.5, "hat_cowboy": 0.15, "boots_hiking": 0.6, "boots_pathfinder": 0.55}
 
 var _scene: Node3D
 var _skeleton: Skeleton3D
@@ -171,6 +171,10 @@ func _trim(garment: String, color: Color) -> Color:
 			return color.darkened(0.3)  # knee pads
 		"hat_warden":
 			return Color(0.25, 0.17, 0.1)  # band and feather
+		"hat_fedora":
+			return Color(0.11, 0.09, 0.08)  # a dark ribbon
+		"hat_cowboy":
+			return Color(0.45, 0.28, 0.15)  # a leather band
 	return color.darkened(0.3)
 
 
