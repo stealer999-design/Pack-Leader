@@ -7,6 +7,9 @@ skeleton.glb (the armoured Skeleton), mummy.glb (the Tombwalker Mummy) and
 fire_imp.glb (the Ember Imp), magma_golem.glb (the fire golem) and yeti.glb (the
 stylized Yeti): the user's own Meshy AI models, animated with Mixamo.
 
+frost_wraith_source.glb: the user's own Meshy AI Frost Wraith (unrigged);
+frost_wraith.scn is it rigged and animated by scripts/tools/rig_wraith.gd.
+
 zombie.glb: "Zombie (Rigged & Animated)" by Aiden Studios (https://sketchfab.com/aidenstudios),
 from https://sketchfab.com/3d-models/zombie-rigged-animated-131688807ad444609ed9b2ed572dc4aa,
 licensed CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/).

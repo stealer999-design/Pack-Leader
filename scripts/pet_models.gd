@@ -7,7 +7,10 @@ class_name PetModels
 
 const DIR := "res://models/pets/"
 ## How tall a size-1 creature of each body type stands (the code-built ones).
-const HEIGHT := {"cat": 1.25, "dog": 1.25, "bird": 1.1, "skeleton": 1.95, "zombie": 1.95, "mummy": 1.95, "imp": 1.4, "golem": 1.95, "yeti": 1.8}
+const HEIGHT := {"cat": 1.25, "dog": 1.25, "bird": 1.1, "skeleton": 1.95, "zombie": 1.95, "mummy": 1.95, "imp": 1.4, "golem": 1.95, "yeti": 1.8, "wraith": 1.9}
+## Per species: how high it floats (the Frost Wraith hovers; its animations
+## never bob it up and down).
+const HOVER := {"Frost Wraith": 0.35}
 ## ...or how long, nose to tail tip (lizards: long and low, some much flatter than others).
 const LENGTH := {"lizard": 1.93, "scorpion": 1.6}
 ## Species whose model (made elsewhere, skinned) is sized and placed by its
@@ -100,8 +103,8 @@ const MAX_WALK_SPEED_BY_TYPE := {"dog": 4.0, "bird": 5.0, "cat": 6.0}
 ## the reference walk) covers the reference's stride in leg heights, x1.25, per 0.83 s, so each
 ## cat's pace is its own (rig units a second, like every pace here: stride / cycle).
 const WALK_PACE_BY_SPECIES := {"Emberkitty": 0.839, "Mossback": 0.995, "Voltwing": 0.782, "Gloomhorn": 0.862, "Magmashell": 0.881, "Thundershell": 0.708, "Stonehorn": 0.831, "Blitzkitty": 0.794, "Stormhorn": 0.419, "Duskbloom": 0.574,
-		"Skeleton": 1.22, "Zombie": 0.25, "Mummy": 0.72, "Fire Imp": 1.98, "Magma Golem": 0.6, "Yeti": 1.15}  # (its feet slide back 4.66 model units a second on the ground)
-const MAX_WALK_SPEED_BY_SPECIES := {"Skeleton": 4.0, "Zombie": 4.0, "Mummy": 4.0, "Fire Imp": 4.0, "Magma Golem": 2.0, "Yeti": 2.0}
+		"Skeleton": 1.22, "Zombie": 0.25, "Mummy": 0.72, "Fire Imp": 1.98, "Magma Golem": 0.6, "Yeti": 1.15, "Frost Wraith": 0.01}  # (its feet slide back 4.66 model units a second on the ground)
+const MAX_WALK_SPEED_BY_SPECIES := {"Skeleton": 4.0, "Zombie": 4.0, "Mummy": 4.0, "Fire Imp": 4.0, "Magma Golem": 2.0, "Yeti": 2.0, "Frost Wraith": 1.0}  # (no feet: its hover plays at its own pace)
 ## Per species whose model has a Run: its pace (as WALK_PACE_BY_SPECIES). It
 ## runs once the walk would play faster than RUN_FROM (and walks again below
 ## WALK_BELOW, so it doesn't flicker between the two).
@@ -119,7 +122,10 @@ static func walk_pace(body_type: String, species_name := "") -> float:
 
 
 static func path_for(species: CreatureSpecies) -> String:
-	return DIR + species.display_name.to_lower().replace(" ", "_") + ".glb"
+	var base := DIR + species.display_name.to_lower().replace(" ", "_")
+	if not ResourceLoader.exists(base + ".glb") and ResourceLoader.exists(base + ".scn"):
+		return base + ".scn"  # rigged and animated here (the Frost Wraith: scripts/tools/rig_wraith.gd)
+	return base + ".glb"
 
 
 static func has_model(species: CreatureSpecies) -> bool:
@@ -173,6 +179,7 @@ static func build(body: MeshInstance3D, species: CreatureSpecies) -> AnimationPl
 	scene.rotation.y = turn
 	scene.position = scene.position.rotated(Vector3.UP, turn)
 	scene.position.y -= body.position.y  # Body sits raised (for the code-built shapes); feet back on the ground
+	scene.position.y += HOVER.get(species.display_name, 0.0)
 	scene.set_meta("scale", k)
 	var key := species.display_name.to_lower().replace(" ", "_")
 	if TINT.has(key) or SELF_GLOW.has(key):
